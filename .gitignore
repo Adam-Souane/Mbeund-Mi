@@ -1,0 +1,16 @@
+# Sécurité : Ne JAMAIS envoyer ces fichiers sur GitHub
+.env
+firebase_credentials.json
+
+# Environnement Virtuel Python
+env/
+venv/
+__pycache__/
+*.pyc
+
+# Base de données
+db.sqlite3
+
+# Fichiers systèmes Windows/Mac
+.DS_Store
+Thumbs.db
