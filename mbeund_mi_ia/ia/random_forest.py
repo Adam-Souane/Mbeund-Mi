@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.calibration import CalibratedClassifierCV
+from sklearn.model_selection import train_test_split
 import pickle
 import os
 
@@ -32,15 +34,32 @@ def entrainer_rf():
     X = df[features].fillna(0)
     y = df['risque']
     
-    rf = RandomForestClassifier(n_estimators=50, random_state=42)
-    rf.fit(X, y)
+    # Split pour pouvoir évaluer la calibration proprement
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     
-    # Sauvegarde
+    rf = RandomForestClassifier(n_estimators=50, random_state=42)
+    rf.fit(X_train, y_train)
+    
+    # Sauvegarde du modèle de base
     with open(os.path.join(data_dir, 'modele_rf.pkl'), 'wb') as f:
         pickle.dump(rf, f)
         
-    accuracy = rf.score(X, y) * 100
-    print(f"[SUCCES] Modèle Random Forest entraîné avec une précision de {accuracy:.2f}% et sauvegardé !")
+    # Calibration
+    calibrated_rf = CalibratedClassifierCV(rf, method='isotonic', cv=5)
+    calibrated_rf.fit(X_train, y_train)
+    
+    # Sauvegarde du modèle calibré
+    with open(os.path.join(data_dir, 'modele_rf_calibre.pkl'), 'wb') as f:
+        pickle.dump(calibrated_rf, f)
+        
+    # Sauvegarde des données de test pour le rapport de soutenance
+    with open(os.path.join(data_dir, 'X_test.pkl'), 'wb') as f:
+        pickle.dump(X_test, f)
+    with open(os.path.join(data_dir, 'y_test.pkl'), 'wb') as f:
+        pickle.dump(y_test, f)
+        
+    accuracy = calibrated_rf.score(X_test, y_test) * 100
+    print(f"[SUCCES] Modèle Random Forest calibré entraîné avec une précision de {accuracy:.2f}% et sauvegardé !")
 
 if __name__ == "__main__":
     entrainer_rf()

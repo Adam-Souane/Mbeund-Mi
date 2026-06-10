@@ -1,16 +1,16 @@
-# Sécurité : Ne JAMAIS envoyer ces fichiers sur GitHub
 .env
-firebase_credentials.json
-
-# Environnement Virtuel Python
-env/
-venv/
+.env.local
 __pycache__/
-*.pyc
-
-# Base de données
+*.py[cod]
+*$py.class
+*.so
+*.pkl
+*.npy
+*.h5
+venv/
+env/
+secrets/
+alertes.log
+anomalies.log
 db.sqlite3
-
-# Fichiers systèmes Windows/Mac
-.DS_Store
-Thumbs.db
+firebase_credentials.json

@@ -6,6 +6,10 @@ import numpy as np
 import paho.mqtt.client as mqtt
 from datetime import datetime
 
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from config import MQTT_BROKER, MQTT_PORT, MQTT_TOPIC_BASE, CAPTEURS_EAU, PLUVIOMETRES
 
 def simuler_valeur(valeur_base, bruit_pct=0.05):
