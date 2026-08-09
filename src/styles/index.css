@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-900 text-slate-100 antialiased overflow-x-hidden;
+  }
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0F294A;
+}
+::-webkit-scrollbar-thumb {
+  background: #1E3A60;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #E61C24;
+}
+
+/* Leaflet Custom Popup Styling */
+.leaflet-popup-content-wrapper {
+  background: #0F294A !important;
+  color: #F8FAFC !important;
+  border: 1px solid #1E40AF !important;
+  border-radius: 12px !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3) !important;
+}
+
+.leaflet-popup-tip {
+  background: #0F294A !important;
+}
+
+.leaflet-container {
+  font-family: 'Inter', sans-serif !important;
+  background-color: #0b1728 !important;
+}
+
+/* Pulse animation for alert indicators */
+@keyframes pulse-red {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(230, 28, 36, 0.7);
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.9;
+    box-shadow: 0 0 0 12px rgba(230, 28, 36, 0);
+  }
+}
+
+.animate-pulse-red {
+  animation: pulse-red 2s infinite ease-in-out;
+}
