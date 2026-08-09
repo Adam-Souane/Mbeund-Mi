@@ -7,35 +7,31 @@ export default function Logo({ size = "md", showSlogan = true }) {
   const isSmall = size === "sm";
 
   return (
-    <div className="flex flex-col items-center justify-center select-none cursor-pointer group py-1.5 transition-all">
+    <div className="flex flex-col items-center justify-center select-none cursor-pointer group py-1">
       
-      {/* Enlarged clean logo image */}
-      <div className={`overflow-hidden flex items-center justify-center transition-all group-hover:scale-[1.03] ${
-        isSmall 
-          ? 'h-14 sm:h-16 md:h-18 max-w-[260px] sm:max-w-[320px]' 
-          : 'h-20 sm:h-24 md:h-28 max-w-[400px]'
-      } ${
-        darkMode 
-          ? 'filter drop-shadow-[0_3px_12px_rgba(255,255,255,0.95)] bg-white/95 p-1.5 rounded-2xl' 
-          : 'mix-blend-multiply'
-      }`}>
-        <img 
-          src={logoImg} 
-          alt="MBEUND MI" 
-          className="w-full h-full object-contain" 
-        />
-      </div>
+      {/* Clean logo image (smaller slogan inside image removed) */}
+      <img 
+        src={logoImg} 
+        alt="MBEUND MI" 
+        className={`object-contain transition-all group-hover:scale-[1.02] ${
+          isSmall 
+            ? 'h-10 sm:h-12 md:h-14 max-w-[200px] sm:max-w-[240px]' 
+            : 'h-16 sm:h-20 md:h-24 max-w-[320px]'
+        } ${
+          darkMode 
+            ? 'filter drop-shadow-[0_2px_10px_rgba(255,255,255,0.9)] bg-white/95 p-1 rounded-2xl' 
+            : 'mix-blend-multiply'
+        }`} 
+      />
 
-      {/* Enlarged crisp high-contrast slogan together with logo */}
+      {/* SINGLE LARGE HIGH-CONTRAST SLOGAN */}
       {showSlogan && (
-        <div className="flex items-center space-x-2 mt-2 font-extrabold tracking-widest uppercase">
-          <span className={`h-1 rounded-full ${isSmall ? 'w-4 sm:w-5' : 'w-6 sm:w-8'} ${darkMode ? 'bg-brand-sky' : 'bg-brand-navy'}`}></span>
-          <span className={`text-xs sm:text-sm md:text-base font-extrabold tracking-widest text-center ${
-            darkMode ? 'text-white' : 'text-slate-900'
-          }`}>
+        <div className="flex items-center space-x-2 mt-1.5 font-extrabold tracking-widest uppercase">
+          <span className={`h-1 rounded-full ${isSmall ? 'w-4' : 'w-6'} ${darkMode ? 'bg-brand-sky' : 'bg-brand-navy'}`}></span>
+          <span className={`text-xs sm:text-sm md:text-base font-extrabold tracking-widest ${darkMode ? 'text-white' : 'text-slate-900'}`}>
             BUL XAAR, WAAJAL KO.
           </span>
-          <span className={`h-1 bg-brand-red rounded-full ${isSmall ? 'w-4 sm:w-5' : 'w-6 sm:w-8'}`}></span>
+          <span className={`h-1 bg-brand-red rounded-full ${isSmall ? 'w-4' : 'w-6'}`}></span>
         </div>
       )}
     </div>
