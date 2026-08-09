@@ -11,8 +11,10 @@ import AdminPage from './pages/AdminPage';
 import EmergencyContactPage from './pages/EmergencyContactPage';
 import NewReportModal from './components/reports/NewReportModal';
 import LoginModal from './components/auth/LoginModal';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 
-export default function App() {
+function AppContent() {
+  const { darkMode } = useTheme();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -48,7 +50,9 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-brand-red selection:text-white">
+    <div className={`min-h-screen flex flex-col font-sans transition-colors duration-300 ${
+      darkMode ? 'bg-slate-950 text-slate-100' : 'bg-slate-100 text-slate-800'
+    }`}>
       
       {/* Sticky Header Navbar */}
       <Navbar 
@@ -72,12 +76,14 @@ export default function App() {
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-slate-800 bg-brand-navy py-6 text-center text-xs text-slate-400">
+      <footer className={`border-t py-6 text-center text-xs transition-colors ${
+        darkMode ? 'border-slate-800 bg-brand-navy text-slate-400' : 'border-slate-200 bg-white text-slate-500 shadow-inner'
+      }`}>
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <div>
-            <span className="font-bold text-slate-200">MBEUND MI</span> — Plateforme de Prévention des Inondations (Thiaroye-sur-Mer, Dakar 2026)
+            <span className={`font-bold ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>MBEUND MI</span> — Plateforme de Prévention des Inondations (Thiaroye-sur-Mer, Dakar 2026)
           </div>
-          <div className="text-[11px] text-slate-500">
+          <div className="text-[11px]">
             Projet PFE Frontend React — Université & Commune de Thiaroye-sur-Mer
           </div>
         </div>
@@ -100,5 +106,13 @@ export default function App() {
         onLoginSuccess={(user) => setCurrentUser(user)}
       />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 }

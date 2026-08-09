@@ -7,11 +7,13 @@ import {
   BarChart3, 
   ShieldAlert, 
   Settings, 
-  PhoneCall,
-  ChevronRight
+  PhoneCall
 } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function Sidebar({ activeTab, setActiveTab }) {
+  const { darkMode } = useTheme();
+
   const navItems = [
     { id: 'dashboard', label: 'Tableau de Bord', icon: LayoutDashboard, badge: null },
     { id: 'map', label: 'Carte Interactive', icon: Map, badge: 'SIG' },
@@ -24,10 +26,16 @@ export default function Sidebar({ activeTab, setActiveTab }) {
   ];
 
   return (
-    <aside className="w-full md:w-64 bg-brand-navy border-r border-slate-800 text-slate-300 flex flex-col shrink-0">
+    <aside className={`w-full md:w-64 border-r flex flex-col shrink-0 rounded-3xl transition-colors duration-300 ${
+      darkMode 
+        ? 'bg-brand-navy border-slate-800 text-slate-300' 
+        : 'bg-white border-slate-200 text-slate-700 shadow-md'
+    }`}>
       
       {/* Navigation menu title */}
-      <div className="p-4 text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+      <div className={`p-4 text-xs font-semibold uppercase tracking-wider flex items-center justify-between ${
+        darkMode ? 'text-slate-400' : 'text-slate-500'
+      }`}>
         <span>Navigation Principale</span>
       </div>
 
@@ -43,17 +51,21 @@ export default function Sidebar({ activeTab, setActiveTab }) {
               className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-sm font-medium transition-all ${
                 isActive 
                   ? 'bg-gradient-to-r from-brand-red to-red-700 text-white shadow-lg shadow-red-900/30' 
-                  : 'hover:bg-slate-800/80 text-slate-300 hover:text-white'
+                  : darkMode
+                    ? 'hover:bg-slate-800/80 text-slate-300 hover:text-white'
+                    : 'hover:bg-slate-100 text-slate-700 hover:text-slate-900'
               }`}
             >
               <div className="flex items-center space-x-3">
-                <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                <Icon className={`w-5 h-5 ${isActive ? 'text-white' : darkMode ? 'text-slate-400' : 'text-slate-500'}`} />
                 <span>{item.label}</span>
               </div>
 
               {item.badge && (
                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                  item.badgeColor || (isActive ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-300 border border-slate-700')
+                  item.badgeColor || (isActive 
+                    ? 'bg-white/20 text-white' 
+                    : darkMode ? 'bg-slate-800 text-slate-300 border border-slate-700' : 'bg-slate-100 text-slate-600 border border-slate-200')
                 }`}>
                   {item.badge}
                 </span>
@@ -64,17 +76,21 @@ export default function Sidebar({ activeTab, setActiveTab }) {
       </nav>
 
       {/* Emergency Hotline Footer Widget */}
-      <div className="p-4 m-3 bg-slate-900/90 rounded-2xl border border-red-500/20 text-xs">
+      <div className={`p-4 m-3 rounded-2xl border text-xs transition-colors ${
+        darkMode 
+          ? 'bg-slate-900/90 border-red-500/20' 
+          : 'bg-red-50/60 border-red-200'
+      }`}>
         <div className="flex items-center space-x-2 text-brand-red font-bold mb-1">
           <ShieldAlert className="w-4 h-4" />
           <span>Cellule de Crise</span>
         </div>
-        <p className="text-slate-400 text-[11px] leading-relaxed mb-2">
+        <p className={`text-[11px] leading-relaxed mb-2 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
           En cas d'inondation subite à Thiaroye-sur-Mer, contactez directement la mairie ou les sapeurs-pompiers.
         </p>
         <a 
           href="tel:18" 
-          className="block text-center bg-red-600/20 hover:bg-red-600/30 text-red-400 font-mono font-bold py-1.5 rounded-lg border border-red-500/30 transition"
+          className="block text-center bg-red-600 text-white hover:bg-red-700 font-mono font-bold py-1.5 rounded-lg transition shadow-sm"
         >
           SOS Pompiers : 18
         </a>
