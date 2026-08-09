@@ -26,20 +26,20 @@ export default function Sidebar({ activeTab, setActiveTab }) {
   ];
 
   return (
-    <aside className={`w-full md:w-64 border flex flex-col shrink-0 rounded-3xl transition-colors duration-300 md:sticky md:top-20 md:max-h-[calc(100vh-6rem)] overflow-y-auto shadow-lg select-none ${
+    <aside className={`w-full md:w-64 border flex flex-col shrink-0 rounded-3xl transition-all duration-300 md:sticky md:top-24 md:self-start md:max-h-[calc(100vh-7rem)] overflow-y-auto shadow-xl select-none z-30 ${
       darkMode 
         ? 'bg-brand-navy border-slate-800 text-slate-300' 
         : 'bg-white border-slate-200 text-slate-700'
     }`}>
       
       {/* Navigation menu title */}
-      <div className={`p-4 text-xs font-semibold uppercase tracking-wider flex items-center justify-between shrink-0 ${
-        darkMode ? 'text-slate-400' : 'text-slate-500'
+      <div className={`p-4 text-xs font-semibold uppercase tracking-wider flex items-center justify-between shrink-0 border-b ${
+        darkMode ? 'text-slate-400 border-slate-800/80' : 'text-slate-500 border-slate-100'
       }`}>
         <span>Navigation Principale</span>
       </div>
 
-      <nav className="flex-1 px-3 space-y-1 pb-4">
+      <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
