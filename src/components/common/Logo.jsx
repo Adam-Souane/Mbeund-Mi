@@ -6,13 +6,15 @@ export default function Logo({ size = "md", showSlogan = true }) {
 
   return (
     <div className="flex items-center select-none cursor-pointer">
-      {/* Exact official logo image */}
+      {/* Official logo image with enlarged dimensions */}
       <img 
         src={logoImg} 
         alt="MBEUND MI — Bul Xaar, Waajal Ko" 
-        className={`object-contain transition-all hover:opacity-95 ${
-          isSmall ? 'h-9 sm:h-11' : 'h-14 sm:h-16 md:h-20'
-        } bg-white p-1 rounded-xl shadow-sm border border-slate-200/80`} 
+        className={`object-contain transition-all hover:scale-[1.02] ${
+          isSmall 
+            ? 'h-12 sm:h-14 md:h-16 max-w-[220px] sm:max-w-[260px]' 
+            : 'h-16 sm:h-20 md:h-24 max-w-[320px]'
+        } bg-white p-1.5 rounded-2xl shadow-md border border-slate-200/90`} 
       />
     </div>
   );
