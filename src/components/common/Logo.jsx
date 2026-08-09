@@ -7,18 +7,18 @@ export default function Logo({ size = "md" }) {
   const isSmall = size === "sm";
 
   return (
-    <div className="flex items-center justify-center select-none cursor-pointer group py-0.5">
-      {/* Exact official logo image containing MBEUND MI and its single official slogan */}
+    <div className="flex items-center justify-center select-none cursor-pointer group py-1">
+      {/* Official logo image enlarged so the slogan text is 100% clear & readable */}
       <img 
         src={logoImg} 
         alt="MBEUND MI — Bul Xaar, Waajal Ko." 
         className={`object-contain transition-all group-hover:scale-[1.02] ${
           isSmall 
-            ? 'h-11 sm:h-13 md:h-14 max-w-[200px] sm:max-w-[240px]' 
-            : 'h-16 sm:h-20 md:h-22 max-w-[300px]'
+            ? 'h-14 sm:h-16 md:h-20 max-w-[240px] sm:max-w-[300px]' 
+            : 'h-20 sm:h-24 md:h-28 max-w-[360px]'
         } ${
           darkMode 
-            ? 'filter drop-shadow-[0_1px_6px_rgba(255,255,255,0.85)] bg-white/90 p-1 rounded-xl' 
+            ? 'filter drop-shadow-[0_2px_10px_rgba(255,255,255,0.9)] bg-white/95 p-1.5 rounded-2xl' 
             : 'mix-blend-multiply'
         }`} 
       />
