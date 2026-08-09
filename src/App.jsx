@@ -64,13 +64,13 @@ function AppContent() {
       />
 
       {/* Main Container Layout */}
-      <div className="flex-1 flex flex-col md:flex-row max-w-7xl w-full mx-auto px-4 lg:px-8 py-6 gap-6">
+      <div className="flex-1 flex flex-col md:flex-row items-start max-w-7xl w-full mx-auto px-4 lg:px-8 py-6 gap-6 min-w-0">
         
-        {/* Navigation Sidebar */}
+        {/* Navigation Sidebar (Fixed / Sticky) */}
         <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
         {/* Dynamic Page Content */}
-        <main className="flex-1 min-w-0">
+        <main className="flex-1 min-w-0 w-full overflow-hidden">
           {renderActivePage()}
         </main>
       </div>
