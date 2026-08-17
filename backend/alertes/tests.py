@@ -13,6 +13,8 @@ def api_client():
 @pytest.fixture
 def auth_client(api_client, db):
     user = User.objects.create_user(username='testuser', password='password123')
+    user.profile.role = 'autorite'
+    user.profile.save()
     api_client.force_authenticate(user=user)
     return api_client
 

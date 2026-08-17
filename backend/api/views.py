@@ -15,6 +15,7 @@ from api.serializers import (
     PredictionIASerializer,
     EpisodeInondationSerializer
 )
+from api.permissions import IsAutoriteOrAdmin
 
 class CapteurViewSet(viewsets.ModelViewSet):
     """
@@ -69,6 +70,7 @@ class MesureViewSet(viewsets.ModelViewSet):
 class AlerteViewSet(viewsets.ModelViewSet):
     queryset = Alerte.objects.all().select_related('zone')
     serializer_class = AlerteSerializer
+    permission_classes = [IsAutoriteOrAdmin]
 
     def get_queryset(self):
         queryset = self.queryset
