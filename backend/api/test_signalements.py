@@ -6,7 +6,10 @@ from io import BytesIO
 from PIL import Image
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APIClient
+from django.contrib.auth import get_user_model
 from alertes.models import SignalementCitoyen
+
+User = get_user_model()
 
 @pytest.fixture
 def api_client():
@@ -102,3 +105,91 @@ def test_create_signalement_compression(api_client):
     file_size = os.path.getsize(saved_path)
     # 200 KB is a safe bound for 800x533 JPEG at 70% quality, which is usually around 40-70 KB
     assert file_size < 200000
+
+@pytest.fixture
+def user_citoyen(db):
+    user = User.objects.create_user(username='citoyen', password='password123')
+    user.profile.role = 'citoyen'
+    user.profile.save()
+    return user
+
+@pytest.fixture
+def user_autorite(db):
+    user = User.objects.create_user(username='autorite', password='password123')
+    user.profile.role = 'autorite'
+    user.profile.save()
+    return user
+
+@pytest.fixture
+def signalement_instance(db):
+    return SignalementCitoyen.objects.create(
+        localisation="POINT(-17.38 14.76)",
+        description="Trou dans la route",
+        categorie="autre",
+        valide=False
+    )
+
+@pytest.mark.django_db
+def test_signalements_unauthorized(api_client, signalement_instance):
+    # GET list is restricted to Autorite/Admin -> 401
+    response = api_client.get('/api/signalements/')
+    assert response.status_code == 401
+
+    # GET detail is restricted -> 401
+    response = api_client.get(f'/api/signalements/{signalement_instance.id}/')
+    assert response.status_code == 401
+
+    # DELETE is restricted -> 401
+    response = api_client.delete(f'/api/signalements/{signalement_instance.id}/')
+    assert response.status_code == 401
+
+@pytest.mark.django_db
+def test_signalements_citoyen_forbidden(api_client, user_citoyen, signalement_instance):
+    api_client.force_authenticate(user=user_citoyen)
+
+    # GET list (SAFE_METHOD) is allowed -> 200
+    response = api_client.get('/api/signalements/')
+    assert response.status_code == 200
+
+    # GET detail (SAFE_METHOD) is allowed -> 200
+    response = api_client.get(f'/api/signalements/{signalement_instance.id}/')
+    assert response.status_code == 200
+
+    # DELETE (unsafe method) is restricted -> 403
+    response = api_client.delete(f'/api/signalements/{signalement_instance.id}/')
+    assert response.status_code == 403
+
+@pytest.mark.django_db
+def test_signalements_autorite_allowed(api_client, user_autorite, signalement_instance):
+    api_client.force_authenticate(user=user_autorite)
+
+    # GET list -> 200
+    response = api_client.get('/api/signalements/')
+    assert response.status_code == 200
+    assert len(response.data.get('features', [])) == 1
+
+    # GET detail -> 200
+    response = api_client.get(f'/api/signalements/{signalement_instance.id}/')
+    assert response.status_code == 200
+
+    # UPDATE (PATCH) -> 200
+    response = api_client.patch(f'/api/signalements/{signalement_instance.id}/', {'valide': True})
+    assert response.status_code == 200
+
+    # DELETE -> 204
+    response = api_client.delete(f'/api/signalements/{signalement_instance.id}/')
+    assert response.status_code == 204
+
+
+@pytest.mark.django_db
+def test_signalements_not_found(api_client, user_autorite):
+    api_client.force_authenticate(user=user_autorite)
+
+    response = api_client.get('/api/signalements/9999/')
+    assert response.status_code == 404
+
+    response = api_client.patch('/api/signalements/9999/', {'valide': True})
+    assert response.status_code == 404
+
+    response = api_client.delete('/api/signalements/9999/')
+    assert response.status_code == 404

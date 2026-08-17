@@ -302,3 +302,81 @@ def test_ecoute_mqtt_unknown_capteur():
         # Aucune mesure créée car le capteur ID 999 n'existe pas en base
         assert Mesure.objects.count() == 0
 
+
+@pytest.mark.django_db
+def test_capteurs_mesures_unauthorized(api_client):
+    # Capteurs list & detail -> 401
+    response = api_client.get('/api/capteurs/')
+    assert response.status_code == 401
+    response = api_client.get('/api/capteurs/1/')
+    assert response.status_code == 401
+
+    # Mesures list & detail -> 401
+    response = api_client.get('/api/mesures/')
+    assert response.status_code == 401
+    response = api_client.get('/api/mesures/1/')
+    assert response.status_code == 401
+    response = api_client.get('/api/mesures/recentes/')
+    assert response.status_code == 401
+
+@pytest.mark.django_db
+def test_capteurs_mesures_not_found(auth_client):
+    # Capteur not found
+    assert auth_client.get('/api/capteurs/9999/').status_code == 404
+    assert auth_client.patch('/api/capteurs/9999/', {'nom': 'New'}).status_code == 404
+    assert auth_client.delete('/api/capteurs/9999/').status_code == 404
+
+    # Mesure not found
+    assert auth_client.get('/api/mesures/9999/').status_code == 404
+    assert auth_client.patch('/api/mesures/9999/', {'valeur': 12.0}).status_code == 404
+    assert auth_client.delete('/api/mesures/9999/').status_code == 404
+
+@pytest.mark.django_db
+def test_capteurs_mesures_bad_request(auth_client, db):
+    # Capteur bad request (missing type)
+    post_data = {
+        "type": "Feature",
+        "geometry": {"type": "Point", "coordinates": [-17.38, 14.75]},
+        "properties": {"nom": "Capteur Sans Type"}
+    }
+    response = auth_client.post('/api/capteurs/', post_data, format='json')
+    assert response.status_code == 400
+    assert 'type' in response.data or 'properties' in response.data
+
+    # Mesure bad request (missing capteur)
+    post_data_mesure = {
+        "valeur": 12.5,
+        "unite": "m",
+        "timestamp": timezone.now().isoformat()
+    }
+    response = auth_client.post('/api/mesures/', post_data_mesure, format='json')
+    assert response.status_code == 400
+    assert 'capteur' in response.data
+
+@pytest.mark.django_db
+def test_capteurs_mesures_delete_success(auth_client):
+    capteur = Capteur.objects.create(
+        nom="Capteur à supprimer",
+        type="eau",
+        localisation="POINT(-17.38 14.75)",
+        actif=True,
+        date_installation="2026-08-17"
+    )
+    mesure = Mesure.objects.create(
+        capteur=capteur,
+        valeur=1.2,
+        unite="m",
+        timestamp=timezone.now()
+    )
+
+    # Delete mesure -> 204
+    response = auth_client.delete(f'/api/mesures/{mesure.id}/')
+    assert response.status_code == 204
+    assert not Mesure.objects.filter(id=mesure.id).exists()
+
+    # Delete capteur -> 204
+    response = auth_client.delete(f'/api/capteurs/{capteur.id}/')
+    assert response.status_code == 204
+    assert not Capteur.objects.filter(id=capteur.id).exists()
+
+

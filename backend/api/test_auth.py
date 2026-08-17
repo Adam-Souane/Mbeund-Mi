@@ -158,3 +158,41 @@ def test_alerts_write_access_admin(api_client, user_admin, zone_risque, alerte_i
         'niveau': 'jaune'
     })
     assert response.status_code == 200
+
+@pytest.mark.django_db
+def test_alerts_not_found(api_client, user_autorite):
+    api_client.force_authenticate(user=user_autorite)
+    
+    # Detail not found
+    response = api_client.get('/api/alertes/9999/')
+    assert response.status_code == 404
+
+    # Update not found
+    response = api_client.patch('/api/alertes/9999/', {'niveau': 'jaune'})
+    assert response.status_code == 404
+
+    # Delete not found
+    response = api_client.delete('/api/alertes/9999/')
+    assert response.status_code == 404
+
+@pytest.mark.django_db
+def test_alerts_bad_request(api_client, user_autorite, zone_risque):
+    api_client.force_authenticate(user=user_autorite)
+
+    # Missing zone
+    response = api_client.post('/api/alertes/', {
+        'niveau': 'jaune',
+        'timestamp': timezone.now().isoformat()
+    })
+    assert response.status_code == 400
+    assert 'zone' in response.data
+
+    # Invalid niveau
+    response = api_client.post('/api/alertes/', {
+        'niveau': 'bleu',  # Invalid
+        'zone': zone_risque.id,
+        'timestamp': timezone.now().isoformat()
+    })
+    assert response.status_code == 400
+    assert 'niveau' in response.data
+

@@ -193,4 +193,33 @@ def test_websocket_alerte_broadcast():
 
     asyncio.run(run_test())
 
+@pytest.mark.django_db
+def test_statut_transition_unauthorized(api_client, test_zone):
+    alerte = Alerte.objects.create(niveau="orange", zone=test_zone, timestamp=timezone.now(), statut="en_attente")
+    url = f'/api/alertes/{alerte.id}/statut/'
+    response = api_client.patch(url, {"statut": "envoyee"}, format='json')
+    assert response.status_code == 401
+
+@pytest.mark.django_db
+def test_statut_transition_not_found(auth_client):
+    url = '/api/alertes/9999/statut/'
+    response = auth_client.patch(url, {"statut": "envoyee"}, format='json')
+    assert response.status_code == 404
+
+@pytest.mark.django_db
+def test_statut_transition_bad_requests(auth_client, test_zone):
+    alerte = Alerte.objects.create(niveau="orange", zone=test_zone, timestamp=timezone.now(), statut="en_attente")
+    url = f'/api/alertes/{alerte.id}/statut/'
+
+    # 1. Missing statut key
+    response = auth_client.patch(url, {}, format='json')
+    assert response.status_code == 400
+    assert 'statut' in response.data
+
+    # 2. Invalid choice
+    response = auth_client.patch(url, {"statut": "invalid_choice"}, format='json')
+    assert response.status_code == 400
+    assert 'statut' in response.data
+
+
 

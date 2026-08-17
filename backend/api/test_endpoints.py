@@ -122,3 +122,59 @@ def test_inondations_geojson_endpoint(auth_client):
         [[[2.0, 2.0], [2.0, 3.0], [3.0, 3.0], [3.0, 2.0], [2.0, 2.0]]]
     ]
     assert feature['properties']['surface_ha'] == 15.5
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("url", [
+    "/api/zones/",
+    "/api/predictions/",
+    "/api/inondations/",
+])
+def test_endpoints_unauthorized(api_client, url):
+    response = api_client.get(url)
+    assert response.status_code == 401
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("url", [
+    "/api/zones/9999/",
+    "/api/predictions/9999/",
+    "/api/inondations/9999/",
+])
+def test_endpoints_not_found(auth_client, url):
+    response = auth_client.get(url)
+    assert response.status_code == 404
+
+@pytest.mark.django_db
+def test_detail_endpoints_success(auth_client):
+    zone = ZoneRisque.objects.create(
+        geom="POLYGON((0 0, 0 1, 1 1, 1 0, 0 0))",
+        quartier="TestZone",
+        niveau_risque="vert"
+    )
+    prediction = PredictionIA.objects.create(
+        zone=zone,
+        probabilite=0.5,
+        horizon_h=12,
+        confiance=0.9,
+        timestamp=timezone.now()
+    )
+    inondation = EpisodeInondation.objects.create(
+        geom="MULTIPOLYGON(((0 0, 0 1, 1 1, 1 0, 0 0)))",
+        date_debut=timezone.now(),
+        surface_ha=10.0
+    )
+
+    # Zone detail
+    res_zone = auth_client.get(f"/api/zones/{zone.id}/")
+    assert res_zone.status_code == 200
+    assert res_zone.data["id"] == zone.id
+
+    # Prediction detail
+    res_pred = auth_client.get(f"/api/predictions/{prediction.id}/")
+    assert res_pred.status_code == 200
+    assert res_pred.data["id"] == prediction.id
+
+    # Inondation detail
+    res_inond = auth_client.get(f"/api/inondations/{inondation.id}/")
+    assert res_inond.status_code == 200
+    assert res_inond.data["id"] == inondation.id
+
