@@ -1,51 +1,161 @@
+# =============================================================================
+# Mbeund-Mi – Docker Compose Stack complète
+# Services : postgres (PostGIS), redis, django (gunicorn), celery-worker,
+#            celery-beat, mosquitto, nginx
+# =============================================================================
+
 services:
+
+  # ---------------------------------------------------------------------------
+  # Base de données PostgreSQL avec extension PostGIS
+  # ---------------------------------------------------------------------------
   db:
     image: postgis/postgis:16-3.4
     container_name: mbeund_mi_db
-    restart: always
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: mbeund_mi_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-mbeund_mi_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-mbeund_mi_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
+  # ---------------------------------------------------------------------------
+  # Redis – Cache, Channel Layer et Broker Celery
+  # ---------------------------------------------------------------------------
   redis:
     image: redis:7-alpine
     container_name: mbeund_mi_redis
-    restart: always
+    restart: unless-stopped
+    command: redis-server --appendonly yes
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
+  # ---------------------------------------------------------------------------
+  # Django – Gunicorn (WSGI HTTP Server)
+  # ---------------------------------------------------------------------------
   web:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: mbeund_mi_web
-    restart: always
-    command: python manage.py runserver 0.0.0.0:8000
+    restart: unless-stopped
+    command: /app/entrypoint.sh
     volumes:
       - ./backend:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    expose:
+      - "8000"
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/api/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ---------------------------------------------------------------------------
+  # Celery Worker – Traitement asynchrone des tâches
+  # ---------------------------------------------------------------------------
+  celery-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: mbeund_mi_celery_worker
+    restart: unless-stopped
+    command: celery -A mbeund_mi_backend worker --loglevel=info --concurrency=2
+    volumes:
+      - ./backend:/app
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # Celery Beat – Planificateur de tâches périodiques
+  # ---------------------------------------------------------------------------
+  celery-beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: mbeund_mi_celery_beat
+    restart: unless-stopped
+    command: celery -A mbeund_mi_backend beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    volumes:
+      - ./backend:/app
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      web:
+        condition: service_started
+
+  # ---------------------------------------------------------------------------
+  # Mosquitto – Broker MQTT (capteurs IoT)
+  # ---------------------------------------------------------------------------
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: mbeund_mi_mosquitto
+    restart: unless-stopped
     ports:
-      - "8000:8000"
-    env_file:
-      - ./backend/.env
-    depends_on:
-      - db
-      - redis
-
-  celery:
-    build: ./backend
-    container_name: mbeund_mi_celery
-    restart: always
-    command: celery -A mbeund_mi_backend worker --loglevel=info
+      - "1883:1883"
+      - "9001:9001"
     volumes:
-      - ./backend:/app
-    env_file:
-      - ./backend/.env
-    depends_on:
-      - db
-      - redis
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
 
+  # ---------------------------------------------------------------------------
+  # Nginx – Reverse Proxy (HTTP + fichiers statiques/médias)
+  # ---------------------------------------------------------------------------
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: mbeund_mi_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - static_volume:/app/staticfiles:ro
+      - media_volume:/app/media:ro
+    depends_on:
+      - web
+
+# =============================================================================
+# Volumes persistants
+# =============================================================================
 volumes:
   postgres_data:
+  redis_data:
+  static_volume:
+  media_volume:
+  mosquitto_data:
+  mosquitto_log:

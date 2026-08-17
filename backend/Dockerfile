@@ -1,4 +1,8 @@
-# Image de base Python 3.11 légère
+# =============================================================================
+# Dockerfile – Backend Django Mbeund-Mi (Gunicorn / WSGI)
+# Base : python:3.11-slim avec dépendances GeoDjango (GDAL, GEOS, PROJ)
+# =============================================================================
+
 FROM python:3.11-slim
 
 # Évite d'écrire des fichiers .pyc et configure le buffer de sortie Python
@@ -17,6 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     postgresql-client \
     build-essential \
     libpq-dev \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copie et installation des exigences Python
@@ -27,8 +32,11 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copie du reste du code du backend
 COPY . /app/
 
-# Port exposé pour Daphne/Django
+# Rendre le script entrypoint exécutable
+RUN chmod +x /app/entrypoint.sh
+
+# Port exposé pour Gunicorn
 EXPOSE 8000
 
-# Commande par défaut
-CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "mbeund_mi_backend.asgi:application"]
+# Point d'entrée : wait-for-db → migrate → collectstatic → gunicorn
+ENTRYPOINT ["/app/entrypoint.sh"]
