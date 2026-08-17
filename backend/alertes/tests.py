@@ -140,3 +140,57 @@ def test_statut_transitions_invalid(auth_client, test_zone):
     response = auth_client.patch(url, {"statut": "envoyee"}, format='json')
     assert response.status_code == 400
     assert 'detail' in response.data
+
+
+import asyncio
+from channels.testing import WebsocketCommunicator
+from channels.db import database_sync_to_async
+from mbeund_mi_backend.asgi import application
+
+@pytest.mark.django_db(transaction=True)
+def test_websocket_alerte_broadcast():
+    async def run_test():
+        # 1. Create ZoneRisque
+        @database_sync_to_async
+        def create_test_data():
+            return ZoneRisque.objects.create(
+                geom="POLYGON((0 0, 0 1, 1 1, 1 0, 0 0))",
+                quartier="Thiaroye",
+                niveau_risque="jaune"
+            )
+            
+        zone = await create_test_data()
+
+        # 2. Connect to the WebSocket
+        communicator = WebsocketCommunicator(application, "/ws/alertes/")
+        connected, subprotocol = await communicator.connect()
+        assert connected
+
+        # 3. Create Alerte to trigger the post_save signal
+        @database_sync_to_async
+        def create_alerte(zone_obj):
+            import django.utils.timezone as dj_timezone
+            return Alerte.objects.create(
+                niveau="rouge",
+                zone=zone_obj,
+                timestamp=dj_timezone.now(),
+                canaux="sms",
+                statut="en_attente"
+            )
+
+        alerte = await create_alerte(zone)
+
+        # 4. Assert receiving the broadcast message and the JSON content
+        response = await communicator.receive_json_from()
+        assert response["id"] == alerte.id
+        assert response["niveau"] == "rouge"
+        assert response["zone"]["id"] == zone.id
+        assert response["zone"]["quartier"] == "Thiaroye"
+        assert response["statut"] == "en_attente"
+
+        # 5. Clean up
+        await communicator.disconnect()
+
+    asyncio.run(run_test())
+
+

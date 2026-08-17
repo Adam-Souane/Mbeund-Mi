@@ -25,8 +25,22 @@ else:
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
-    CHANNEL_LAYERS = {
-        'default': {
-            'BACKEND': 'channels.layers.InMemoryChannelLayer',
-        },
-    }
+    import redis
+    redis_url = env('REDIS_URL', default='redis://127.0.0.1:6379/0')
+    try:
+        r = redis.Redis.from_url(redis_url, socket_timeout=1.0)
+        r.ping()
+        CHANNEL_LAYERS = {
+            'default': {
+                'BACKEND': 'channels_redis.core.RedisChannelLayer',
+                'CONFIG': {
+                    "hosts": [redis_url],
+                },
+            },
+        }
+    except Exception:
+        CHANNEL_LAYERS = {
+            'default': {
+                'BACKEND': 'channels.layers.InMemoryChannelLayer',
+            },
+        }
