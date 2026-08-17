@@ -10,7 +10,8 @@ from api.views import (
     AlerteViewSet,
     ZoneRisqueViewSet,
     PredictionIAViewSet,
-    EpisodeInondationViewSet
+    EpisodeInondationViewSet,
+    SignalementCitoyenViewSet
 )
 
 router = DefaultRouter()
@@ -20,6 +21,8 @@ router.register(r'alertes', AlerteViewSet, basename='alerte')
 router.register(r'zones', ZoneRisqueViewSet, basename='zone')
 router.register(r'predictions', PredictionIAViewSet, basename='prediction')
 router.register(r'inondations', EpisodeInondationViewSet, basename='inondation')
+router.register(r'signalements', SignalementCitoyenViewSet, basename='signalement')
+
 
 urlpatterns = [
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),

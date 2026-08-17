@@ -5,17 +5,20 @@ from rest_framework.response import Response
 from django.utils import timezone
 from datetime import timedelta
 
+from rest_framework import permissions
 from capteurs.models import Capteur, Mesure
-from alertes.models import Alerte, ZoneRisque, PredictionIA, EpisodeInondation
+from alertes.models import Alerte, ZoneRisque, PredictionIA, EpisodeInondation, SignalementCitoyen
 from api.serializers import (
     CapteurSerializer,
     MesureSerializer,
     AlerteSerializer,
     ZoneRisqueGeoSerializer,
     PredictionIASerializer,
-    EpisodeInondationSerializer
+    EpisodeInondationSerializer,
+    SignalementCitoyenSerializer
 )
 from api.permissions import IsAutoriteOrAdmin
+
 
 class CapteurViewSet(viewsets.ModelViewSet):
     """
@@ -145,4 +148,14 @@ class PredictionIAViewSet(viewsets.ReadOnlyModelViewSet):
 class EpisodeInondationViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = EpisodeInondation.objects.all()
     serializer_class = EpisodeInondationSerializer
+
+
+class SignalementCitoyenViewSet(viewsets.ModelViewSet):
+    queryset = SignalementCitoyen.objects.all()
+    serializer_class = SignalementCitoyenSerializer
+
+    def get_permissions(self):
+        if self.action == 'create':
+            return [permissions.AllowAny()]
+        return [IsAutoriteOrAdmin()]
 

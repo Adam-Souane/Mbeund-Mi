@@ -1,7 +1,12 @@
+import math
+import json
+from io import BytesIO
+from PIL import Image
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.conf import settings
 from rest_framework import serializers
 from capteurs.models import Capteur, Mesure
-from alertes.models import ZoneRisque, Alerte, PredictionIA, EpisodeInondation
+from alertes.models import ZoneRisque, Alerte, PredictionIA, EpisodeInondation, SignalementCitoyen
 
 def wkt_to_geojson(wkt_str):
     if not isinstance(wkt_str, str):
@@ -304,3 +309,161 @@ class AlerteSerializer(serializers.ModelSerializer):
         ret = super().to_representation(instance)
         ret['zone'] = ZoneRisqueSerializer(instance.zone).data
         return ret
+
+
+# Helper functions for geofencing and image compression
+
+def parse_lon_lat(localisation):
+    if not localisation:
+        return None
+    # 1. GEOSGeometry check
+    if hasattr(localisation, 'x') and hasattr(localisation, 'y'):
+        return float(localisation.x), float(localisation.y)
+    if hasattr(localisation, 'coords'):
+        return float(localisation.coords[0]), float(localisation.coords[1])
+    
+    # 2. String check (WKT or similar)
+    if isinstance(localisation, str):
+        localisation_upper = localisation.strip().upper()
+        if localisation_upper.startswith("POINT"):
+            inner = localisation_upper[len("POINT"):].strip()
+            inner = inner.lstrip("(").rstrip(")")
+            parts = inner.split()
+            if len(parts) >= 2:
+                try:
+                    return float(parts[0]), float(parts[1])
+                except ValueError:
+                    pass
+        # Fallback if it's "lon,lat"
+        elif "," in localisation:
+            try:
+                parts = [float(x.strip()) for x in localisation.split(',')]
+                if len(parts) >= 2:
+                    return parts[0], parts[1]
+            except ValueError:
+                pass
+                
+    # 3. List check
+    if isinstance(localisation, list) and len(localisation) >= 2:
+        try:
+            return float(localisation[0]), float(localisation[1])
+        except ValueError:
+            pass
+            
+    # 4. Dict check (GeoJSON)
+    if isinstance(localisation, dict):
+        coords = localisation.get('coordinates')
+        if isinstance(coords, list) and len(coords) >= 2:
+            try:
+                return float(coords[0]), float(coords[1])
+            except ValueError:
+                pass
+                
+    return None
+
+
+def haversine_distance(lon1, lat1, lon2, lat2):
+    R = 6371.0  # Earth's radius in km
+    
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    
+    delta_phi = math.radians(lat2 - lat1)
+    delta_lambda = math.radians(lon2 - lon1)
+    
+    a = math.sin(delta_phi / 2.0)**2 + \
+        math.cos(phi1) * math.cos(phi2) * \
+        math.sin(delta_lambda / 2.0)**2
+        
+    c = 2.0 * math.atan2(math.sqrt(a), math.sqrt(1.0 - a))
+    return R * c
+
+
+def compress_image(uploaded_image):
+    if not uploaded_image:
+        return None
+        
+    # Open image using Pillow
+    img = Image.open(uploaded_image)
+    
+    # Convert image format/mode to RGB (necessary for JPEG)
+    if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
+        # Create a white background for transparent images
+        background = Image.new('RGB', img.size, (255, 255, 255))
+        background.paste(img, mask=img.convert('RGBA').split()[3]) # 3 is the alpha channel
+        img = background
+    elif img.mode != 'RGB':
+        img = img.convert('RGB')
+        
+    # Resize keeping aspect ratio (max 800x800)
+    img.thumbnail((800, 800), Image.Resampling.LANCZOS)
+    
+    # Save the compressed image back to a memory buffer
+    output_io = BytesIO()
+    img.save(output_io, format='JPEG', quality=70, optimize=True)
+    output_io.seek(0)
+    
+    # Create a new InMemoryUploadedFile to replace the original
+    new_file = InMemoryUploadedFile(
+        output_io,
+        'FileField',
+        f"{uploaded_image.name.split('.')[0]}.jpg",
+        'image/jpeg',
+        output_io.getbuffer().nbytes,
+        None
+    )
+    return new_file
+
+
+class SignalementCitoyenSerializer(HybridGeoFeatureModelSerializer):
+    class Meta:
+        model = SignalementCitoyen
+        geo_field = 'localisation'
+        fields = ('id', 'localisation', 'description', 'photo', 'valide', 'date_creation', 'categorie')
+        read_only_fields = ('id', 'valide', 'date_creation')
+
+    def to_internal_value(self, data):
+        # Make a mutable copy of data if it is a QueryDict
+        if hasattr(data, 'dict'):
+            data = data.dict()
+        else:
+            data = dict(data)
+            
+        localisation = data.get('localisation')
+        if isinstance(localisation, str):
+            localisation = localisation.strip()
+            # Try parsing as JSON first (which could be a list or a geojson dict)
+            try:
+                parsed = json.loads(localisation)
+                data['localisation'] = parsed
+            except json.JSONDecodeError:
+                # If not JSON, check if it's "longitude,latitude"
+                if ',' in localisation:
+                    try:
+                        parts = [float(x.strip()) for x in localisation.split(',')]
+                        if len(parts) == 2:
+                            data['localisation'] = parts
+                    except ValueError:
+                        pass
+        return super().to_internal_value(data)
+
+    def validate_localisation(self, value):
+        coords = parse_lon_lat(value)
+        if not coords:
+            raise serializers.ValidationError("Format de géolocalisation invalide.")
+        
+        lon, lat = coords
+        # Center of Thiaroye Sur Mer: lat=14.75, lon=-17.38
+        dist = haversine_distance(lon, lat, -17.38, 14.75)
+        if dist > 4.0:
+            raise serializers.ValidationError(
+                f"Le signalement doit être à moins de 4 km du centre de Thiaroye Sur Mer. Distance calculée : {dist:.2f} km."
+            )
+        return value
+
+    def validate_photo(self, value):
+        if value:
+            # Automatic photo compression
+            value = compress_image(value)
+        return value
+
