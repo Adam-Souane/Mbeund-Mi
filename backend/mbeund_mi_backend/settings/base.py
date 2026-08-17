@@ -159,3 +159,10 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
+
+CELERY_BEAT_SCHEDULE = {
+    'analyse-gee-periodique': {
+        'task': 'alertes.tasks.analyse_gee_periodique',
+        'schedule': timedelta(hours=12),
+    },
+}

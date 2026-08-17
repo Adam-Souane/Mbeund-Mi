@@ -25,6 +25,11 @@ else:
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
+    import os
+    os.environ['CELERY_BROKER_URL'] = 'redis://127.0.0.1:6379/1'
+    os.environ['CELERY_RESULT_BACKEND'] = 'redis://127.0.0.1:6379/1'
+    CELERY_BROKER_URL = 'redis://127.0.0.1:6379/1'
+    CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/1'
     import redis
     redis_url = env('REDIS_URL', default='redis://127.0.0.1:6379/0')
     try:
