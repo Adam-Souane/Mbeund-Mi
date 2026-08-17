@@ -11,4 +11,4 @@ djangorestframework-simplejwt
 djangorestframework-gis==0.18
 pytest==8.0.0
 pytest-django==4.8.0
-
+paho-mqtt==2.1.0

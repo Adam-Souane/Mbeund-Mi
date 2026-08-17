@@ -159,3 +159,146 @@ def test_mesures_recentes(auth_client):
     cap2_measures = grouped_data["Cap2"]["mesures"]
     assert len(cap2_measures) == 1
     assert cap2_measures[0]["valeur"] == 30.0
+
+
+@pytest.mark.django_db
+def test_ecoute_mqtt_success():
+    import json
+    from unittest.mock import MagicMock, patch
+    from django.core.management import call_command
+    from capteurs.models import Capteur, Mesure
+
+    # Création du capteur de test
+    capteur = Capteur.objects.create(
+        nom="Capteur MQTT Test",
+        type="eau",
+        localisation="POINT(-17.38 14.75)",
+        actif=True,
+        date_installation="2026-08-17"
+    )
+
+    with patch('paho.mqtt.client.Client') as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.loop_forever.side_effect = KeyboardInterrupt()
+
+        # Appel de la commande
+        call_command('ecoute_mqtt', host='localhost', port=1883)
+
+        # Vérification de l'initialisation du client et de la connexion
+        mock_client.connect_async.assert_called_once_with('localhost', 1883, keepalive=60)
+        mock_client.loop_forever.assert_called_once()
+
+        # Simulation de la réception d'un message valide
+        on_message_callback = mock_client.on_message
+        assert on_message_callback is not None
+
+        msg = MagicMock()
+        msg.topic = "capteurs/1/mesures"
+        msg.payload = json.dumps({
+            "capteur_id": capteur.id,
+            "valeur": 14.5,
+            "unite": "m",
+            "timestamp": "2026-08-17T18:00:00Z"
+        }).encode('utf-8')
+
+        on_message_callback(mock_client, None, msg)
+
+        # Vérification de la création de la mesure
+        assert Mesure.objects.filter(capteur=capteur).count() == 1
+        mesure = Mesure.objects.filter(capteur=capteur).first()
+        assert mesure.valeur == 14.5
+        assert mesure.unite == "m"
+
+
+@pytest.mark.django_db
+def test_ecoute_mqtt_malformed_json():
+    from unittest.mock import MagicMock, patch
+    from django.core.management import call_command
+    from capteurs.models import Mesure
+
+    with patch('paho.mqtt.client.Client') as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.loop_forever.side_effect = KeyboardInterrupt()
+
+        call_command('ecoute_mqtt')
+
+        on_message_callback = mock_client.on_message
+        msg = MagicMock()
+        msg.topic = "capteurs/1/mesures"
+        msg.payload = b"invalid-non-json-content"
+
+        on_message_callback(mock_client, None, msg)
+
+        # Aucune mesure ne doit être créée
+        assert Mesure.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_ecoute_mqtt_missing_fields():
+    import json
+    from unittest.mock import MagicMock, patch
+    from django.core.management import call_command
+    from capteurs.models import Capteur, Mesure
+
+    capteur = Capteur.objects.create(
+        nom="Capteur MQTT Test",
+        type="eau",
+        localisation="POINT(-17.38 14.75)",
+        actif=True,
+        date_installation="2026-08-17"
+    )
+
+    with patch('paho.mqtt.client.Client') as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.loop_forever.side_effect = KeyboardInterrupt()
+
+        call_command('ecoute_mqtt')
+
+        on_message_callback = mock_client.on_message
+        msg = MagicMock()
+        msg.topic = "capteurs/1/mesures"
+        # Manque le champ 'timestamp'
+        msg.payload = json.dumps({
+            "capteur_id": capteur.id,
+            "valeur": 12.3,
+            "unite": "m"
+        }).encode('utf-8')
+
+        on_message_callback(mock_client, None, msg)
+
+        # Aucune mesure créée
+        assert Mesure.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_ecoute_mqtt_unknown_capteur():
+    import json
+    from unittest.mock import MagicMock, patch
+    from django.core.management import call_command
+    from capteurs.models import Mesure
+
+    with patch('paho.mqtt.client.Client') as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.loop_forever.side_effect = KeyboardInterrupt()
+
+        call_command('ecoute_mqtt')
+
+        on_message_callback = mock_client.on_message
+        msg = MagicMock()
+        msg.topic = "capteurs/999/mesures"
+        msg.payload = json.dumps({
+            "capteur_id": 999,
+            "valeur": 12.3,
+            "unite": "m",
+            "timestamp": "2026-08-17T18:00:00Z"
+        }).encode('utf-8')
+
+        on_message_callback(mock_client, None, msg)
+
+        # Aucune mesure créée car le capteur ID 999 n'existe pas en base
+        assert Mesure.objects.count() == 0
+
