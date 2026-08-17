@@ -170,3 +170,19 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': timedelta(hours=12),
     },
 }
+
+# Twilio Configuration (SMS Alerting – tout provient du .env)
+TWILIO_ACCOUNT_SID = env('TWILIO_ACCOUNT_SID', default='')
+TWILIO_AUTH_TOKEN = env('TWILIO_AUTH_TOKEN', default='')
+TWILIO_PHONE_NUMBER = env('TWILIO_PHONE_NUMBER', default='')
+TWILIO_MESSAGING_SERVICE_SID = env('TWILIO_MESSAGING_SERVICE_SID', default='')
+
+# Firebase Configuration (Push Notifications – tout provient du .env)
+FIREBASE_CREDENTIALS_PATH = env('FIREBASE_CREDENTIALS_PATH', default=str(BASE_DIR / 'firebase_credentials.json'))
+
+# Mosquitto MQTT Configuration (IoT – tout provient du .env)
+MOSQUITTO_HOST = env('MOSQUITTO_HOST', default='localhost')
+MOSQUITTO_PORT = env.int('MOSQUITTO_PORT', default=1883)
+MQTT_USERNAME = env('MQTT_USERNAME', default='')
+MQTT_PASSWORD = env('MQTT_PASSWORD', default='')
+

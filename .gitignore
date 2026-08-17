@@ -1,6 +1,14 @@
+# =============================================================================
+# .gitignore – Mbeund-Mi Project
+# =============================================================================
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
+*/__pycache__/
 *.py[cod]
+*.pyc
+*.pyo
+*.pyd
 *$py.class
 
 # C extensions
@@ -25,29 +33,67 @@ share/python-wheels/
 .installed.cfg
 *.egg
 
-# Virtual Environment
+# Virtual Environments
 env/
+*/env/
 venv/
+*/venv/
 ENV/
+*/ENV/
 .env/
+*/.env/
+.venv/
+*/.venv/
 
-# IDEs
-.vscode/
-.idea/
-
-# Project-specific secrets and DBs
+# Environment variables & secrets (ne jamais committer !)
 .env
-.env.production
-db.sqlite3
-db.sqlite3-journal
+*.env
+.env.*
+!.env.example
+!.env.production.example
+!backend/.env.example
 firebase_credentials.json
+*firebase_credentials*.json
+secrets/
+*.pem
+*.key
+*.cert
 
-# Déploiement production — ne jamais committer
+# Database & SQLite files
+db.sqlite3
+*/db.sqlite3
+*.sqlite3
+db.sqlite3-journal
+*/db.sqlite3-journal
+*.sqlite3-journal
+
+# Fichiers statiques et médias générés
+staticfiles/
+*/staticfiles/
+media/
+*/media/
+
+# Tests & Code Coverage
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+*/.pytest_cache/
+nosetests.xml
+coverage.xml
+*.cover
+
+# Déploiement production — certificats SSL et sauvegardes
 certbot/conf/
+certbot/www/
 backups/
 
-# Fichiers statiques générés (collectstatic)
-backend/staticfiles/
+# IDEs & Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
 # OS-specific
 Thumbs.db
