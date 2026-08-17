@@ -4,11 +4,12 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
-from api.views import CapteurViewSet, MesureViewSet
+from api.views import CapteurViewSet, MesureViewSet, AlerteViewSet
 
 router = DefaultRouter()
 router.register(r'capteurs', CapteurViewSet, basename='capteur')
 router.register(r'mesures', MesureViewSet, basename='mesure')
+router.register(r'alertes', AlerteViewSet, basename='alerte')
 
 urlpatterns = [
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),

@@ -5,7 +5,8 @@ from django.utils import timezone
 from datetime import timedelta
 
 from capteurs.models import Capteur, Mesure
-from api.serializers import CapteurSerializer, MesureSerializer
+from alertes.models import Alerte
+from api.serializers import CapteurSerializer, MesureSerializer, AlerteSerializer
 
 class CapteurViewSet(viewsets.ModelViewSet):
     """
@@ -55,3 +56,58 @@ class MesureViewSet(viewsets.ModelViewSet):
             })
             
         return Response(list(grouped.values()))
+
+
+class AlerteViewSet(viewsets.ModelViewSet):
+    queryset = Alerte.objects.all().select_related('zone')
+    serializer_class = AlerteSerializer
+
+    def get_queryset(self):
+        queryset = self.queryset
+        zone = self.request.query_params.get('zone')
+        niveau = self.request.query_params.get('niveau')
+        if zone:
+            queryset = queryset.filter(zone_id=zone)
+        if niveau:
+            queryset = queryset.filter(niveau=niveau)
+        return queryset
+
+    @action(detail=True, methods=['patch'], url_path='statut')
+    def statut(self, request, pk=None):
+        instance = self.get_object()
+        new_statut = request.data.get('statut')
+
+        if not new_statut:
+            return Response({"statut": ["Ce champ est obligatoire."]}, status=400)
+
+        allowed_statuts = [choice[0] for choice in Alerte.STATUT_CHOICES]
+        if new_statut not in allowed_statuts:
+            return Response(
+                {"statut": [f"'{new_statut}' n'est pas un statut valide. Choix valides : {', '.join(allowed_statuts)}."]},
+                status=400
+            )
+
+        current_statut = instance.statut
+
+        if current_statut != new_statut:
+            if current_statut == 'en_attente' and new_statut != 'envoyee':
+                return Response(
+                    {"detail": f"Transition invalide de '{current_statut}' vers '{new_statut}'. La transition doit être 'en_attente' -> 'envoyee'."},
+                    status=400
+                )
+            elif current_statut == 'envoyee' and new_statut != 'resolue':
+                return Response(
+                    {"detail": f"Transition invalide de '{current_statut}' vers '{new_statut}'. La transition doit être 'envoyee' -> 'resolue'."},
+                    status=400
+                )
+            elif current_statut == 'resolue':
+                return Response(
+                    {"detail": f"Impossible de modifier le statut d'une alerte déjà résolue ('{current_statut}' -> '{new_statut}')."},
+                    status=400
+                )
+
+        instance.statut = new_statut
+        instance.save()
+
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)

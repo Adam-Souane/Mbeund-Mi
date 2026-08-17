@@ -1,6 +1,7 @@
 from django.conf import settings
 from rest_framework import serializers
 from capteurs.models import Capteur, Mesure
+from alertes.models import ZoneRisque, Alerte
 
 if getattr(settings, 'USE_GIS', False):
     from rest_framework_gis.serializers import GeoFeatureModelSerializer
@@ -96,4 +97,31 @@ class MesureSerializer(serializers.ModelSerializer):
         ret = super().to_representation(instance)
         # Nest the Capteur's GeoJSON representation in the output
         ret['capteur'] = CapteurSerializer(instance.capteur).data
+        return ret
+
+
+class ZoneRisqueSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ZoneRisque
+        fields = ('id', 'quartier', 'niveau_risque')
+
+
+class AlerteSerializer(serializers.ModelSerializer):
+    zone = serializers.PrimaryKeyRelatedField(queryset=ZoneRisque.objects.all())
+
+    class Meta:
+        model = Alerte
+        fields = ('id', 'niveau', 'zone', 'timestamp', 'canaux', 'statut')
+
+    def validate_niveau(self, value):
+        valid_niveaux = ['vert', 'jaune', 'orange', 'rouge']
+        if value not in valid_niveaux:
+            raise serializers.ValidationError(
+                f"Le niveau doit être l'un des suivants : {', '.join(valid_niveaux)}."
+            )
+        return value
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        ret['zone'] = ZoneRisqueSerializer(instance.zone).data
         return ret
