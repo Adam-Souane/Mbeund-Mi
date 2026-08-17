@@ -31,4 +31,4 @@ COPY . /app/
 EXPOSE 8000
 
 # Commande par défaut
-CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "config.asgi:application"]
+CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "mbeund_mi_backend.asgi:application"]
