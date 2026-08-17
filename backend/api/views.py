@@ -1,3 +1,4 @@
+from django.db.models import Subquery, OuterRef
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -5,8 +6,15 @@ from django.utils import timezone
 from datetime import timedelta
 
 from capteurs.models import Capteur, Mesure
-from alertes.models import Alerte
-from api.serializers import CapteurSerializer, MesureSerializer, AlerteSerializer
+from alertes.models import Alerte, ZoneRisque, PredictionIA, EpisodeInondation
+from api.serializers import (
+    CapteurSerializer,
+    MesureSerializer,
+    AlerteSerializer,
+    ZoneRisqueGeoSerializer,
+    PredictionIASerializer,
+    EpisodeInondationSerializer
+)
 
 class CapteurViewSet(viewsets.ModelViewSet):
     """
@@ -111,3 +119,28 @@ class AlerteViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
+
+
+class ZoneRisqueViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = ZoneRisque.objects.all()
+    serializer_class = ZoneRisqueGeoSerializer
+
+
+class PredictionIAViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = PredictionIA.objects.all()
+    serializer_class = PredictionIASerializer
+
+    def get_queryset(self):
+        latest_predictions = PredictionIA.objects.filter(
+            zone=OuterRef('zone_id')
+        ).order_by('-timestamp')
+        
+        return PredictionIA.objects.filter(
+            id=Subquery(latest_predictions.values('id')[:1])
+        ).select_related('zone').order_by('-timestamp')
+
+
+class EpisodeInondationViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = EpisodeInondation.objects.all()
+    serializer_class = EpisodeInondationSerializer
+

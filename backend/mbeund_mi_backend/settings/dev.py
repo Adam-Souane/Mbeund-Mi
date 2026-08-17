@@ -6,6 +6,7 @@ DEBUG = True
 # Database configuration (PostGIS if USE_GIS=True, otherwise SQLite)
 if USE_GIS:
     INSTALLED_APPS.append('django.contrib.gis')
+    INSTALLED_APPS.append('rest_framework_gis')
     DATABASES = {
         'default': env.db('DATABASE_URL', default='postgis://postgres:postgres@db:5432/mbeund_mi_db')
     }

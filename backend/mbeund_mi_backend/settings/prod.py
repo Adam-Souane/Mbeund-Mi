@@ -8,6 +8,7 @@ ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
 
 # PostGIS is mandatory in production
 INSTALLED_APPS.append('django.contrib.gis')
+INSTALLED_APPS.append('rest_framework_gis')
 
 DATABASES = {
     'default': env.db('DATABASE_URL')

@@ -50,10 +50,14 @@ def test_capteurs_list_and_create(auth_client):
     # 2. Test GET /api/capteurs/ (List)
     response_list = auth_client.get('/api/capteurs/')
     assert response_list.status_code == 200
-    assert isinstance(response_list.data, list)
-    assert len(response_list.data) >= 1
+    if isinstance(response_list.data, dict) and response_list.data.get('type') == 'FeatureCollection':
+        features = response_list.data['features']
+    else:
+        features = response_list.data
+    assert isinstance(features, list)
+    assert len(features) >= 1
     
-    feature = response_list.data[0]
+    feature = features[0]
     assert feature['type'] == 'Feature'
     assert feature['geometry']['type'] == 'Point'
     assert feature['properties']['nom'] == "Capteur Test POST"
