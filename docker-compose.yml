@@ -85,7 +85,8 @@ services:
       dockerfile: Dockerfile
     container_name: mbeund_mi_celery_worker
     restart: unless-stopped
-    command: celery -A mbeund_mi_backend worker --loglevel=info --concurrency=2
+    entrypoint: []
+    command: bash -c "celery -A mbeund_mi_backend worker --loglevel=info --concurrency=2"
     volumes:
       - ./backend:/app
     env_file:
@@ -105,7 +106,8 @@ services:
       dockerfile: Dockerfile
     container_name: mbeund_mi_celery_beat
     restart: unless-stopped
-    command: celery -A mbeund_mi_backend beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    entrypoint: []
+    command: bash -c "celery -A mbeund_mi_backend beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler"
     volumes:
       - ./backend:/app
     env_file:
