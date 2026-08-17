@@ -17,8 +17,10 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-mbeund_mi_db}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-    ports:
-      - "5432:5432"
+    # SÉCURITÉ : port 5432 non exposé au host en production
+    # Accessible uniquement via le réseau Docker interne
+    # ports:
+    #   - "5432:5432"  # Décommenter UNIQUEMENT en développement local
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -36,8 +38,10 @@ services:
     container_name: mbeund_mi_redis
     restart: unless-stopped
     command: redis-server --appendonly yes
-    ports:
-      - "6379:6379"
+    # SÉCURITÉ : port 6379 non exposé au host en production
+    # Accessible uniquement via le réseau Docker interne
+    # ports:
+    #   - "6379:6379"  # Décommenter UNIQUEMENT en développement local
     volumes:
       - redis_data:/data
     healthcheck:
@@ -144,10 +148,14 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
+      - "443:443"   # HTTPS production (Let's Encrypt / Certbot)
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - static_volume:/app/staticfiles:ro
       - media_volume:/app/media:ro
+      # Certificats SSL Let's Encrypt (générés par Certbot sur le VPS)
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
     depends_on:
       - web
 
@@ -161,3 +169,5 @@ volumes:
   media_volume:
   mosquitto_data:
   mosquitto_log:
+  # Note : les certificats Certbot sont montés depuis ./certbot/ (bind mount)
+  # et non pas des volumes Docker, pour faciliter le renouvellement.

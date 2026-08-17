@@ -37,9 +37,17 @@ ENV/
 
 # Project-specific secrets and DBs
 .env
+.env.production
 db.sqlite3
 db.sqlite3-journal
 firebase_credentials.json
+
+# Déploiement production — ne jamais committer
+certbot/conf/
+backups/
+
+# Fichiers statiques générés (collectstatic)
+backend/staticfiles/
 
 # OS-specific
 Thumbs.db
