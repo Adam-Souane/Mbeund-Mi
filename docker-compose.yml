@@ -26,6 +26,21 @@ services:
     volumes:
       - redis_data:/data
 
+  backend:
+    build: ./backend
+    container_name: mbeund_mi_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-mbeund_mi}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-mbeund_mi_password}
+    depends_on:
+      - db
+
 volumes:
   postgres_data:
   redis_data:
