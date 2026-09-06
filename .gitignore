@@ -1,0 +1,9 @@
+# Variables d'environnement locales (mots de passe, clés secrets)
+.env
+
+# Fichiers temporaires système & IDE
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/
