@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mbeund-Mi — Démonstrateur Cartographique PostGIS (Thiaroye-sur-Mer)</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; height: 100vh; background: #0f172a; color: #f8fafc; }
+        header { background: #1e293b; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #334155; }
+        header h1 { font-size: 1.4rem; color: #38bdf8; display: flex; align-items: center; gap: 10px; }
+        header p { font-size: 0.9rem; color: #94a3b8; }
+        #main-container { display: flex; flex: 1; height: calc(100vh - 70px); }
+        #map { flex: 1; height: 100%; z-index: 1; }
+        #sidebar { width: 340px; background: #1e293b; padding: 20px; border-left: 2px solid #334155; overflow-y: auto; }
+        .card { background: #0f172a; padding: 16px; border-radius: 8px; margin-bottom: 16px; border: 1px solid #334155; }
+        .card h3 { font-size: 1rem; color: #f1f5f9; margin-bottom: 8px; }
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; text-transform: uppercase; }
+        .badge-red { background: #ef4444; color: #fff; }
+        .badge-orange { background: #f97316; color: #fff; }
+        .badge-green { background: #22c55e; color: #fff; }
+        .stat-val { font-size: 1.8rem; font-weight: bold; color: #38bdf8; }
+    </style>
+</head>
+<body>
+    <header>
+        <div>
+            <h1>🌊 Mbeund-Mi — Plateforme de Prévention des Inondations</h1>
+            <p>Cartographie géospatiale PostGIS / WGS 84 (Thiaroye-sur-Mer, Dakar, Sénégal)</p>
+        </div>
+        <div>
+            <span class="badge badge-orange">Zone Pilote Active</span>
+        </div>
+    </header>
+
+    <div id="main-container">
+        <div id="map"></div>
+        <div id="sidebar">
+            <div class="card">
+                <h3>📊 Quartiers sous surveillance</h3>
+                <p style="margin-top:5px; font-size:0.9rem; color:#cbd5e1;">Thiaroye Gare, Ndakhane, Thiaroye-sur-Mer</p>
+                <div style="margin-top:12px;">
+                    <div style="font-size:0.85rem; color:#94a3b8;">Score de Risque Moyen</div>
+                    <div class="stat-val">6.50 / 10</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>🚨 Alertes Actives</h3>
+                <div style="margin-top:8px;">
+                    <span class="badge badge-orange">ORANGE</span>
+                    <p style="font-size:0.85rem; margin-top:6px; color:#e2e8f0;">Risque fort d'inondation à Ndakhane (48mm de pluie attendus).</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>📡 Capteurs IoT & Télémesure</h3>
+                <ul style="font-size:0.85rem; color:#cbd5e1; list-style:none; padding-left:0;">
+                    <li style="margin-bottom:8px;">🟢 <strong>LIMNO-NDAKHANE-01</strong> (Niveau d'eau)</li>
+                    <li>🟢 <strong>PLUVIO-GARE-01</strong> (Pluviomètre)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Initialiser la carte Leaflet centrée sur Thiaroye-sur-Mer, Dakar
+        const map = L.map('map').setView([14.738, -17.380], 14);
+
+        // Fond de carte sombre OpenStreetMap (CartoDB DarkMatter)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap &copy; CARTO',
+            maxZoom: 19
+        }).addTo(map);
+
+        // 1. Polygones des Zones Pilotes
+        const zoneNdakhane = L.polygon([
+            [14.735, -17.380], [14.735, -17.370], [14.745, -17.370], [14.745, -17.380]
+        ], { color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.35, weight: 2 }).addTo(map);
+        zoneNdakhane.bindPopup("<b>Zone: Ndakhane</b><br>Score de risque: <b>7.20/10 (Élevé)</b><br>Sensible aux cuvettes topographiques.");
+
+        const zoneGare = L.polygon([
+            [14.745, -17.385], [14.745, -17.375], [14.755, -17.375], [14.755, -17.385]
+        ], { color: '#f97316', fillColor: '#f97316', fillOpacity: 0.3, weight: 2 }).addTo(map);
+        zoneGare.bindPopup("<b>Zone: Thiaroye Gare</b><br>Score de risque: <b>6.50/10 (Moyen)</b><br>Zone commerciale urbanisée.");
+
+        const zoneMer = L.polygon([
+            [14.725, -17.395], [14.725, -17.380], [14.735, -17.380], [14.735, -17.395]
+        ], { color: '#eab308', fillColor: '#eab308', fillOpacity: 0.25, weight: 2 }).addTo(map);
+        zoneMer.bindPopup("<b>Zone: Thiaroye-sur-Mer</b><br>Score de risque: <b>5.80/10</b><br>Zone côtière.");
+
+        // 2. Lignes de Drainage (Segments de Rue)
+        const caniveauNdakhane = L.polyline([
+            [14.738, -17.378], [14.741, -17.374], [14.743, -17.372]
+        ], { color: '#ef4444', weight: 4, dashArray: '6, 6' }).addTo(map);
+        caniveauNdakhane.bindPopup("<b>Caniveau Collecteur de Ndakhane</b><br>État: <b>Obstrué (80%)</b><br>Risque: 8.50/10");
+
+        // 3. Marqueurs d'Observations Terrain
+        const obs1 = L.circleMarker([14.747, -17.382], { radius: 8, color: '#38bdf8', fillColor: '#0284c7', fillOpacity: 0.8 }).addTo(map);
+        obs1.bindPopup("💧 <b>Accumulation d'eau</b><br>Hauteur: 35 cm<br>Auteur: Amadou Diop (Agent)");
+
+        const obs2 = L.circleMarker([14.740, -17.376], { radius: 8, color: '#ef4444', fillColor: '#dc2626', fillOpacity: 0.9 }).addTo(map);
+        obs2.bindPopup("⚠️ <b>Obstruction canalisation</b><br>Caniveau rempli d'ordures<br>Auteur: Fatimata Diallo");
+
+        // 4. Capteur IoT
+        const capteur1 = L.marker([14.739, -17.375]).addTo(map);
+        capteur1.bindPopup("📡 <b>Capteur IoT : LIMNO-NDAKHANE-01</b><br>Type: Limnimètre sonar<br>Statut: ACTIF (Dernier relevé: il y a 10 min)");
+    </script>
+</body>
+</html>
