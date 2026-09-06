@@ -101,7 +101,7 @@ erDiagram
     ZONE_PILOTE ||--o{ ALERTE : "concerne"
     ZONE_PILOTE ||--o{ CAPTEUR_IOT : "abrite"
     UTILISATEUR ||--o{ OBSERVATION_TERRAIN : "signale"
-    ZONE_PILOTE ..o{ OBSERVATION_TERRAIN : "recouvre géographiquement (ST_Contains)"
+    ZONE_PILOTE ||--o{ OBSERVATION_TERRAIN : "recouvre géographiquement (ST_Contains)"
 ```
 
 ---

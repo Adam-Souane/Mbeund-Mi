@@ -159,7 +159,7 @@ classDiagram
     ZonePilote "1" -- "0..*" SegmentRue : contient >
     ZonePilote "1" -- "0..*" CapteurIoT : est équippée de >
     ZonePilote "1" -- "0..*" Alerte : fait l'objet de >
-    ZonePilote "1" .. "0..*" ObservationTerrain : recouvre (Spatial ST_Contains)
+    ZonePilote "1" --> "0..*" ObservationTerrain : recouvre (Spatial ST_Contains)
 ```
 
 ---
