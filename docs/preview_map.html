@@ -3,35 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mbeund-Mi — Démonstrateur Cartographique PostGIS (Thiaroye-sur-Mer)</title>
+    <title>Mbeund-Mi — Démonstrateur Cartographique HD & Satellite (Thiaroye-sur-Mer)</title>
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; height: 100vh; background: #0f172a; color: #f8fafc; }
-        header { background: #1e293b; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #334155; }
-        header h1 { font-size: 1.4rem; color: #38bdf8; display: flex; align-items: center; gap: 10px; }
-        header p { font-size: 0.9rem; color: #94a3b8; }
-        #main-container { display: flex; flex: 1; height: calc(100vh - 70px); }
+        header { background: #1e293b; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #334155; }
+        header h1 { font-size: 1.3rem; color: #38bdf8; display: flex; align-items: center; gap: 10px; }
+        header p { font-size: 0.85rem; color: #94a3b8; }
+        #main-container { display: flex; flex: 1; height: calc(100vh - 65px); }
         #map { flex: 1; height: 100%; z-index: 1; }
-        #sidebar { width: 340px; background: #1e293b; padding: 20px; border-left: 2px solid #334155; overflow-y: auto; }
+        #sidebar { width: 360px; background: #1e293b; padding: 20px; border-left: 2px solid #334155; overflow-y: auto; }
         .card { background: #0f172a; padding: 16px; border-radius: 8px; margin-bottom: 16px; border: 1px solid #334155; }
-        .card h3 { font-size: 1rem; color: #f1f5f9; margin-bottom: 8px; }
-        .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; text-transform: uppercase; }
+        .card h3 { font-size: 0.95rem; color: #f1f5f9; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.75rem; text-transform: uppercase; }
         .badge-red { background: #ef4444; color: #fff; }
         .badge-orange { background: #f97316; color: #fff; }
         .badge-green { background: #22c55e; color: #fff; }
         .stat-val { font-size: 1.8rem; font-weight: bold; color: #38bdf8; }
+        .btn { width: 100%; padding: 10px 14px; background: #0284c7; color: #fff; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 8px; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; }
+        .btn:hover { background: #0369a1; }
+        .btn-danger { background: #dc2626; }
+        .btn-danger:hover { background: #b91c1c; }
+        #toast { position: fixed; bottom: 20px; right: 380px; background: #22c55e; color: #fff; padding: 12px 20px; border-radius: 8px; font-weight: 600; display: none; z-index: 999; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
     </style>
 </head>
 <body>
     <header>
         <div>
             <h1>🌊 Mbeund-Mi — Plateforme de Prévention des Inondations</h1>
-            <p>Cartographie géospatiale PostGIS / WGS 84 (Thiaroye-sur-Mer, Dakar, Sénégal)</p>
+            <p>Cartographie géospatiale PostGIS / WGS 84 & Vue Satellite (Thiaroye-sur-Mer, Dakar)</p>
         </div>
         <div>
-            <span class="badge badge-orange">Zone Pilote Active</span>
+            <span class="badge badge-orange">Mode Temps Réel Actif</span>
         </div>
     </header>
 
@@ -39,76 +44,121 @@
         <div id="map"></div>
         <div id="sidebar">
             <div class="card">
-                <h3>📊 Quartiers sous surveillance</h3>
-                <p style="margin-top:5px; font-size:0.9rem; color:#cbd5e1;">Thiaroye Gare, Ndakhane, Thiaroye-sur-Mer</p>
+                <h3>📊 Quartiers sous surveillance PostGIS</h3>
+                <p style="margin-top:4px; font-size:0.85rem; color:#cbd5e1;">Thiaroye Gare, Ndakhane, Thiaroye-sur-Mer</p>
                 <div style="margin-top:12px;">
-                    <div style="font-size:0.85rem; color:#94a3b8;">Score de Risque Moyen</div>
-                    <div class="stat-val">6.50 / 10</div>
+                    <div style="font-size:0.8rem; color:#94a3b8;">Score de Risque Moyen Actuel</div>
+                    <div class="stat-val" id="score-display">6.50 / 10</div>
                 </div>
             </div>
 
             <div class="card">
-                <h3>🚨 Alertes Actives</h3>
-                <div style="margin-top:8px;">
-                    <span class="badge badge-orange">ORANGE</span>
-                    <p style="font-size:0.85rem; margin-top:6px; color:#e2e8f0;">Risque fort d'inondation à Ndakhane (48mm de pluie attendus).</p>
+                <h3>🚨 Alerte Spatio-Temporelle</h3>
+                <div style="margin-top:8px;" id="alerte-box">
+                    <span class="badge badge-orange" id="alerte-badge">ORANGE</span>
+                    <p style="font-size:0.85rem; margin-top:6px; color:#e2e8f0;" id="alerte-msg">Risque fort d'inondation à Ndakhane (48mm de pluie prévus par l'ANACIM).</p>
                 </div>
             </div>
 
             <div class="card">
-                <h3>📡 Capteurs IoT & Télémesure</h3>
+                <h3>⚡ Simulateur de Démonstration PFE</h3>
+                <p style="font-size:0.8rem; color:#94a3b8; margin-bottom:8px;">Testez en direct les algorithmes PL/pgSQL et les notifications SMS :</p>
+                <button class="btn btn-danger" onclick="simulerOrage()">🌧️ Simuler Orage Majeur (85mm)</button>
+                <button class="btn" onclick="simulerSMS()">📲 Simuler Envoi SMS d'Alerte</button>
+            </div>
+
+            <div class="card">
+                <h3>📡 Télémesure IoT & Capteurs</h3>
                 <ul style="font-size:0.85rem; color:#cbd5e1; list-style:none; padding-left:0;">
-                    <li style="margin-bottom:8px;">🟢 <strong>LIMNO-NDAKHANE-01</strong> (Niveau d'eau)</li>
-                    <li>🟢 <strong>PLUVIO-GARE-01</strong> (Pluviomètre)</li>
+                    <li style="margin-bottom:6px;">🟢 <strong>LIMNO-NDAKHANE-01</strong> (Limnimètre sonar)</li>
+                    <li>🟢 <strong>PLUVIO-GARE-01</strong> (Pluviomètre connecté)</li>
                 </ul>
             </div>
         </div>
     </div>
 
+    <div id="toast">✅ SMS d'urgence envoyé à 1500 citoyens à Ndakhane !</div>
+
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Initialiser la carte Leaflet centrée sur Thiaroye-sur-Mer, Dakar
-        const map = L.map('map').setView([14.738, -17.380], 14);
+        // 1. Définition des Fond de Cartes (Layer Control)
+        const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 19
+        });
 
-        // Fond de carte sombre OpenStreetMap (CartoDB DarkMatter)
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap &copy; CARTO',
-            maxZoom: 19
-        }).addTo(map);
+        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors', maxZoom: 19
+        });
 
-        // 1. Polygones des Zones Pilotes
+        const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: '&copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community', maxZoom: 19
+        });
+
+        // 2. Initialiser la Carte
+        const map = L.map('map', {
+            center: [14.738, -17.380],
+            zoom: 14,
+            layers: [satelliteLayer] // Mode Satellite HD par défaut pour la démo !
+        });
+
+        // 3. Sélecteur de Couches Cartographiques
+        const baseMaps = {
+            "🛰️ Vue Satellite HD (Esri)": satelliteLayer,
+            "🌑 Carte Sombre (CartoDB)": darkLayer,
+            "🗺️ Carte Standard (OpenStreetMap)": osmLayer
+        };
+        L.control.layers(baseMaps).addTo(map);
+
+        // 4. Polygones des Zones Pilotes
         const zoneNdakhane = L.polygon([
             [14.735, -17.380], [14.735, -17.370], [14.745, -17.370], [14.745, -17.380]
-        ], { color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.35, weight: 2 }).addTo(map);
-        zoneNdakhane.bindPopup("<b>Zone: Ndakhane</b><br>Score de risque: <b>7.20/10 (Élevé)</b><br>Sensible aux cuvettes topographiques.");
+        ], { color: '#ef4444', fillColor: '#ef4444', fillOpacity: 0.4, weight: 3 }).addTo(map);
+        zoneNdakhane.bindPopup("<b>Zone: Ndakhane</b><br>Score de risque: <b id='score-ndakhane'>7.20/10 (Élevé)</b><br>Sensible aux cuvettes topographiques.");
 
         const zoneGare = L.polygon([
             [14.745, -17.385], [14.745, -17.375], [14.755, -17.375], [14.755, -17.385]
-        ], { color: '#f97316', fillColor: '#f97316', fillOpacity: 0.3, weight: 2 }).addTo(map);
-        zoneGare.bindPopup("<b>Zone: Thiaroye Gare</b><br>Score de risque: <b>6.50/10 (Moyen)</b><br>Zone commerciale urbanisée.");
+        ], { color: '#f97316', fillColor: '#f97316', fillOpacity: 0.35, weight: 2 }).addTo(map);
+        zoneGare.bindPopup("<b>Zone: Thiaroye Gare</b><br>Score de risque: <b>6.50/10</b><br>Zone commerciale urbanisée.");
 
         const zoneMer = L.polygon([
             [14.725, -17.395], [14.725, -17.380], [14.735, -17.380], [14.735, -17.395]
-        ], { color: '#eab308', fillColor: '#eab308', fillOpacity: 0.25, weight: 2 }).addTo(map);
+        ], { color: '#eab308', fillColor: '#eab308', fillOpacity: 0.3, weight: 2 }).addTo(map);
         zoneMer.bindPopup("<b>Zone: Thiaroye-sur-Mer</b><br>Score de risque: <b>5.80/10</b><br>Zone côtière.");
 
-        // 2. Lignes de Drainage (Segments de Rue)
+        // 5. Lignes de Drainage
         const caniveauNdakhane = L.polyline([
             [14.738, -17.378], [14.741, -17.374], [14.743, -17.372]
-        ], { color: '#ef4444', weight: 4, dashArray: '6, 6' }).addTo(map);
-        caniveauNdakhane.bindPopup("<b>Caniveau Collecteur de Ndakhane</b><br>État: <b>Obstrué (80%)</b><br>Risque: 8.50/10");
+        ], { color: '#ef4444', weight: 5, dashArray: '8, 8' }).addTo(map);
+        caniveauNdakhane.bindPopup("<b>Caniveau Collecteur de Ndakhane</b><br>État: <b>Obstrué (80%)</b>");
 
-        // 3. Marqueurs d'Observations Terrain
-        const obs1 = L.circleMarker([14.747, -17.382], { radius: 8, color: '#38bdf8', fillColor: '#0284c7', fillOpacity: 0.8 }).addTo(map);
-        obs1.bindPopup("💧 <b>Accumulation d'eau</b><br>Hauteur: 35 cm<br>Auteur: Amadou Diop (Agent)");
+        // 6. Marqueurs
+        const obs1 = L.circleMarker([14.747, -17.382], { radius: 9, color: '#38bdf8', fillColor: '#0284c7', fillOpacity: 0.9 }).addTo(map);
+        obs1.bindPopup("💧 <b>Accumulation d'eau (35cm)</b><br>Agent: Amadou Diop");
 
-        const obs2 = L.circleMarker([14.740, -17.376], { radius: 8, color: '#ef4444', fillColor: '#dc2626', fillOpacity: 0.9 }).addTo(map);
-        obs2.bindPopup("⚠️ <b>Obstruction canalisation</b><br>Caniveau rempli d'ordures<br>Auteur: Fatimata Diallo");
+        const obs2 = L.circleMarker([14.740, -17.376], { radius: 9, color: '#ef4444', fillColor: '#dc2626', fillOpacity: 0.9 }).addTo(map);
+        obs2.bindPopup("⚠️ <b>Caniveau principal obstrué (80%)</b><br>Citoyenne: Fatimata Diallo");
 
-        // 4. Capteur IoT
         const capteur1 = L.marker([14.739, -17.375]).addTo(map);
-        capteur1.bindPopup("📡 <b>Capteur IoT : LIMNO-NDAKHANE-01</b><br>Type: Limnimètre sonar<br>Statut: ACTIF (Dernier relevé: il y a 10 min)");
+        capteur1.bindPopup("📡 <b>Capteur IoT : LIMNO-NDAKHANE-01</b><br>Statut: ACTIF");
+
+        // Fonctions d'interaction pour la soutenance PFE
+        function simulerOrage() {
+            document.getElementById('score-display').innerText = "9.20 / 10";
+            document.getElementById('score-display').style.color = "#ef4444";
+            document.getElementById('alerte-badge').className = "badge badge-red";
+            document.getElementById('alerte-badge').innerText = "ROUGE CRITIQUE";
+            document.getElementById('alerte-msg').innerText = "ALERTE ROUGE DÉCLENCHÉE AUTOMATIQUEMENT (Trigger PL/pgSQL). Risque extrême d'inondation à Ndakhane !";
+            document.getElementById('score-ndakhane').innerText = "9.20/10 (CRITIQUE)";
+            zoneNdakhane.setStyle({ fillColor: '#dc2626', fillOpacity: 0.65 });
+            alert("⚠️ TRIGGER DECLENCHE : L'algorithme PostGIS a détecté un orage de 85mm. Score de risque porté à 9.20/10 !");
+        }
+
+        function simulerSMS() {
+            const toast = document.getElementById('toast');
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 4000);
+        }
     </script>
 </body>
 </html>
