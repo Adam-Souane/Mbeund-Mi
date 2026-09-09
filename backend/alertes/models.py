@@ -1,5 +1,5 @@
 from django.db import models
-from api.fields import SpatialPointField, SpatialPolygonField, SpatialMultiPolygonField
+from api.fields import SpatialPointField, SpatialPolygonField, SpatialMultiPolygonField, SpatialLineStringField
 
 class ZoneRisque(models.Model):
     NIVEAU_RISQUE_CHOICES = [
@@ -11,6 +11,8 @@ class ZoneRisque(models.Model):
     geom = SpatialPolygonField(srid=4326)
     quartier = models.CharField(max_length=100)
     niveau_risque = models.CharField(max_length=20, choices=NIVEAU_RISQUE_CHOICES)
+    description = models.TextField(blank=True)
+    score_risque_moyen = models.DecimalField(max_digits=4, decimal_places=2, default=0)
 
     class Meta:
         verbose_name = "Zone de risque"
@@ -34,7 +36,9 @@ class Alerte(models.Model):
     ]
     niveau = models.CharField(max_length=20, choices=NIVEAU_CHOICES)
     zone = models.ForeignKey(ZoneRisque, on_delete=models.CASCADE, related_name='alertes')
+    message = models.TextField(blank=True)
     timestamp = models.DateTimeField()
+    date_expiration = models.DateTimeField(null=True, blank=True)
     canaux = models.CharField(max_length=100, blank=True)
     statut = models.CharField(max_length=20, choices=STATUT_CHOICES, default='en_attente')
 
@@ -90,6 +94,9 @@ class SignalementCitoyen(models.Model):
     valide = models.BooleanField(default=False)
     date_creation = models.DateTimeField(auto_now_add=True)
     categorie = models.CharField(max_length=20, choices=CATEGORIE_CHOICES, default='autre')
+    signale_par = models.ForeignKey(
+        'auth.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='signalements'
+    )
 
     class Meta:
         verbose_name = "Signalement citoyen"
@@ -98,3 +105,66 @@ class SignalementCitoyen(models.Model):
 
     def __str__(self):
         return f"Signalement {self.get_categorie_display()} - {self.date_creation}"
+
+
+class SegmentRue(models.Model):
+    ETAT_DRAINAGE_CHOICES = [
+        ('bon', 'Bon'),
+        ('moyen', 'Moyen'),
+        ('obstrue', 'Obstrué'),
+        ('inexistant', 'Inexistant'),
+    ]
+    nom = models.CharField(max_length=150, blank=True)
+    geom = SpatialLineStringField(srid=4326)
+    zone = models.ForeignKey(ZoneRisque, on_delete=models.SET_NULL, null=True, blank=True, related_name='segments')
+    altitude_moyenne = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    pente = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
+    etat_drainage = models.CharField(max_length=20, choices=ETAT_DRAINAGE_CHOICES, default='bon')
+    score_risque_actuel = models.DecimalField(max_digits=4, decimal_places=2, default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Segment de rue"
+        verbose_name_plural = "Segments de rue"
+
+    def __str__(self):
+        return self.nom or f"Segment #{self.pk}"
+
+
+class PrevisionMeteo(models.Model):
+    date_prevision = models.DateTimeField()
+    temperature = models.DecimalField(max_digits=4, decimal_places=1, null=True, blank=True)
+    precipitation = models.DecimalField(max_digits=5, decimal_places=2)
+    vitesse_vent = models.DecimalField(max_digits=4, decimal_places=1, null=True, blank=True)
+    # Source des données : open-source (OpenWeatherMap, Open-Meteo) en attendant une
+    # réponse de l'ANACIM sur l'accès aux historiques de pluie officiels.
+    source = models.CharField(max_length=100, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Prévision météo"
+        verbose_name_plural = "Prévisions météo"
+        ordering = ['-date_prevision']
+
+    def __str__(self):
+        return f"Prévision {self.date_prevision.strftime('%Y-%m-%d %H:%M')} : {self.precipitation}mm"
+
+
+class HistoriqueRisque(models.Model):
+    TYPE_CIBLE_CHOICES = [
+        ('zone', 'Zone de risque'),
+        ('segment', 'Segment de rue'),
+    ]
+    type_cible = models.CharField(max_length=20, choices=TYPE_CIBLE_CHOICES)
+    cible_id = models.PositiveIntegerField()
+    score_risque = models.DecimalField(max_digits=4, decimal_places=2)
+    date_calcul = models.DateTimeField(auto_now_add=True)
+    details = models.JSONField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Historique de risque"
+        verbose_name_plural = "Historiques de risque"
+        ordering = ['-date_calcul']
+
+    def __str__(self):
+        return f"{self.get_type_cible_display()} #{self.cible_id} - score {self.score_risque}"

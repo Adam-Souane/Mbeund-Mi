@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     # Third-party applications
+    'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt',
     'channels',
@@ -56,6 +57,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -185,4 +187,9 @@ MOSQUITTO_HOST = env('MOSQUITTO_HOST', default='localhost')
 MOSQUITTO_PORT = env.int('MOSQUITTO_PORT', default=1883)
 MQTT_USERNAME = env('MQTT_USERNAME', default='')
 MQTT_PASSWORD = env('MQTT_PASSWORD', default='')
+
+# CORS Configuration (Frontend React — NGODEV)
+CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=[
+    'http://localhost:3000', 'http://127.0.0.1:3000',
+])
 

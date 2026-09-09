@@ -7,7 +7,10 @@ from datetime import timedelta
 
 from rest_framework import permissions
 from capteurs.models import Capteur, Mesure
-from alertes.models import Alerte, ZoneRisque, PredictionIA, EpisodeInondation, SignalementCitoyen
+from alertes.models import (
+    Alerte, ZoneRisque, PredictionIA, EpisodeInondation, SignalementCitoyen,
+    SegmentRue, PrevisionMeteo, HistoriqueRisque,
+)
 from api.serializers import (
     CapteurSerializer,
     MesureSerializer,
@@ -15,7 +18,10 @@ from api.serializers import (
     ZoneRisqueGeoSerializer,
     PredictionIASerializer,
     EpisodeInondationSerializer,
-    SignalementCitoyenSerializer
+    SignalementCitoyenSerializer,
+    SegmentRueSerializer,
+    PrevisionMeteoSerializer,
+    HistoriqueRisqueSerializer,
 )
 from api.permissions import IsAutoriteOrAdmin
 
@@ -158,3 +164,18 @@ class SignalementCitoyenViewSet(viewsets.ModelViewSet):
         if self.action == 'create':
             return [permissions.AllowAny()]
         return [IsAutoriteOrAdmin()]
+
+
+class SegmentRueViewSet(viewsets.ModelViewSet):
+    queryset = SegmentRue.objects.all()
+    serializer_class = SegmentRueSerializer
+
+
+class PrevisionMeteoViewSet(viewsets.ModelViewSet):
+    queryset = PrevisionMeteo.objects.all()
+    serializer_class = PrevisionMeteoSerializer
+
+
+class HistoriqueRisqueViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = HistoriqueRisque.objects.all()
+    serializer_class = HistoriqueRisqueSerializer

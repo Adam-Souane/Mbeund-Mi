@@ -6,10 +6,21 @@ class Capteur(models.Model):
         ('eau', 'Eau'),
         ('pluviometre', 'Pluviomètre'),
     ]
+    STATUT_CHOICES = [
+        ('actif', 'Actif'),
+        ('inactif', 'Inactif'),
+        ('maintenance', 'En maintenance'),
+    ]
     nom = models.CharField(max_length=100)
     type = models.CharField(max_length=20, choices=TYPE_CHOICES)
     localisation = SpatialPointField(srid=4326)
+    code_identifiant = models.CharField(max_length=50, unique=True, null=True, blank=True)
+    zone = models.ForeignKey(
+        'alertes.ZoneRisque', on_delete=models.SET_NULL, null=True, blank=True, related_name='capteurs'
+    )
     actif = models.BooleanField(default=True)
+    statut = models.CharField(max_length=20, choices=STATUT_CHOICES, default='actif')
+    dernier_releve = models.DateTimeField(null=True, blank=True)
     date_installation = models.DateField()
 
     class Meta:

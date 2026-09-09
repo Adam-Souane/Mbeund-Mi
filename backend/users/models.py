@@ -7,10 +7,12 @@ class Profile(models.Model):
     ROLE_CHOICES = [
         ('admin', 'Admin'),
         ('autorite', 'Autorité'),
+        ('agent', 'Agent terrain'),
         ('citoyen', 'Citoyen'),
     ]
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='citoyen')
+    telephone = models.CharField(max_length=20, blank=True)
 
     class Meta:
         verbose_name = "Profil"

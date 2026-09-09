@@ -11,7 +11,10 @@ from api.views import (
     ZoneRisqueViewSet,
     PredictionIAViewSet,
     EpisodeInondationViewSet,
-    SignalementCitoyenViewSet
+    SignalementCitoyenViewSet,
+    SegmentRueViewSet,
+    PrevisionMeteoViewSet,
+    HistoriqueRisqueViewSet,
 )
 
 router = DefaultRouter()
@@ -19,8 +22,11 @@ router.register(r'capteurs', CapteurViewSet, basename='capteur')
 router.register(r'mesures', MesureViewSet, basename='mesure')
 router.register(r'alertes', AlerteViewSet, basename='alerte')
 router.register(r'zones', ZoneRisqueViewSet, basename='zone')
+router.register(r'segments', SegmentRueViewSet, basename='segment')
 router.register(r'predictions', PredictionIAViewSet, basename='prediction')
+router.register(r'previsions', PrevisionMeteoViewSet, basename='prevision')
 router.register(r'inondations', EpisodeInondationViewSet, basename='inondation')
+router.register(r'historique-risque', HistoriqueRisqueViewSet, basename='historique-risque')
 router.register(r'signalements', SignalementCitoyenViewSet, basename='signalement')
 
 

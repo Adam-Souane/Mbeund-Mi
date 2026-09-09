@@ -1,7 +1,7 @@
 # Mbeund-Mi - Plateforme de Prévention des Inondations (Thiaroye Sur Mer)
 
-**Projet de Fin de Formation (PFF) - 2026**
-Ce dépôt contient le Backend (Django) et le module d'Intelligence Artificielle de la plateforme Mbeund-Mi.
+**Projet de Fin de Formation (PFE) - 2026**
+Ce dépôt contient le Backend (Django/DRF + PostGIS), le module d'Intelligence Artificielle et le Frontend (React) de la plateforme Mbeund-Mi.
 
 ## 🚀 Démarrage Rapide (Pour l'équipe)
 
@@ -28,33 +28,41 @@ python demo/demo_scenarii.py
 
 ---
 
+## 🗄️ Base de données (PostgreSQL + PostGIS)
+
+- **Base de données principale** : PostgreSQL 16 + PostGIS 3.4
+- **Cache / File d'attente / Broker Celery** : Redis 7 (Alpine)
+- **Système de coordonnées géographique** : WGS 84 (SRID 4326), compatible avec GeoDjango et les bibliothèques cartographiques frontend (Leaflet, Mapbox, OpenLayers)
+
+Le schéma est géré par les migrations Django (source de vérité). Pour la conception et la documentation du modèle de données :
+- [Diagramme MCD/ERD](diagrams/schema_mcd.md)
+- [Diagrammes UML](diagrams/uml_diagrams.md)
+- [Dictionnaire des données](docs/db_schema.md)
+
+Les scripts `sql/init.sql`, `sql/triggers_and_functions.sql` et `seeds/seed_data.sql` documentent la conception initiale de la base ; ils servent de référence et ne sont pas exécutés automatiquement — le schéma réel est généré par `python manage.py migrate`.
+
+---
+
 ## 📡 Documentation API (Pour Ngoné - Frontend)
 
-Le Backend est configuré avec `CORS_ALLOW_ALL_ORIGINS = True` pour te permettre de faire tes requêtes depuis React/React Native sans blocage.
+Le Backend est configuré avec CORS pour te permettre de faire tes requêtes depuis React sans blocage (origines autorisées via `CORS_ALLOWED_ORIGINS` dans `.env`).
 
 ### Points d'accès (Endpoints) :
 URL de base : `http://localhost:8000/api/`
 
-- **GET `/api/zones/`** : Récupérer toutes les zones de Thiaroye (lat, lng, nom, seuil alerte).
-- **GET `/api/mesures/`** : Récupérer l'historique des niveaux d'eau et de pluie.
-- **GET `/api/alertes/`** : Récupérer les alertes générées par l'IA (Vert, Jaune, Orange, Rouge).
-- **POST `/api/signalements/`** : Permet aux citoyens de signaler un problème.
-  - *Payload attendu (JSON ou FormData)* :
-    ```json
-    {
-      "type_probleme": "inondation",
-      "description": "L'eau rentre dans la maison.",
-      "latitude": 14.743,
-      "longitude": -17.405,
-      "photo": "[FICHIER IMAGE]"
-    }
-    ```
-  - *Note sur le Geofencing* : Si les coordonnées envoyées sont à plus de 4 km de Thiaroye Sur Mer, l'API renverra une erreur 400 (Validation Error) pour bloquer le signalement. Les photos sont automatiquement compressées par le serveur.
+- **GET `/api/zones/`** : Zones à risque (géométrie, quartier, niveau de risque).
+- **GET `/api/capteurs/`** / **GET `/api/mesures/`** : Capteurs IoT et leurs relevés (niveau d'eau, pluviométrie).
+- **GET `/api/alertes/`** : Alertes générées (Vert, Jaune, Orange, Rouge).
+- **GET `/api/predictions/`** : Prédictions IA de risque par zone.
+- **GET `/api/inondations/`** : Épisodes d'inondation historiques.
+- **POST `/api/signalements/`** : Permet aux citoyens de signaler un problème (géolocalisation, description, photo).
+  - *Note sur le Geofencing* : Si les coordonnées envoyées sont à plus de 4 km de Thiaroye Sur Mer, l'API renverra une erreur 400 (Validation Error). Les photos sont automatiquement compressées par le serveur.
+- **POST `/api/token/`** / **POST `/api/token/refresh/`** : Authentification JWT.
 
 ---
 
 ## 🔒 Sécurité & Production
-Avant de déployer le projet sur un serveur final (ex: Heroku, AWS, Render) :
+Avant de déployer le projet sur un serveur final :
 1. Les clés secrètes (Twilio, Firebase, Django) sont protégées par le fichier `.env`. **Ne jamais l'envoyer sur GitHub.** Le fichier `.gitignore` est déjà configuré pour l'ignorer.
-2. Dans `backend/mbeund_mi_backend/settings.py`, passez `DEBUG = False`.
-3. Assurez-vous que le fichier `firebase_credentials.json` n'est pas envoyé sur des dépôts publics.
+2. Dans `backend/mbeund_mi_backend/settings/prod.py`, `DEBUG` doit rester à `False`.
+3. Assurez-vous que `firebase_credentials.json` n'est jamais envoyé sur un dépôt public.

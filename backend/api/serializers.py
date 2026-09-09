@@ -6,7 +6,10 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.conf import settings
 from rest_framework import serializers
 from capteurs.models import Capteur, Mesure
-from alertes.models import ZoneRisque, Alerte, PredictionIA, EpisodeInondation, SignalementCitoyen
+from alertes.models import (
+    ZoneRisque, Alerte, PredictionIA, EpisodeInondation, SignalementCitoyen,
+    SegmentRue, PrevisionMeteo, HistoriqueRisque,
+)
 
 def wkt_to_geojson(wkt_str):
     if not isinstance(wkt_str, str):
@@ -65,6 +68,21 @@ def wkt_to_geojson(wkt_str):
             return {
                 "type": "Polygon",
                 "coordinates": coords
+            }
+    elif wkt_str.startswith("LINESTRING"):
+        inner = wkt_str[len("LINESTRING"):].strip()
+        inner = inner.lstrip("(").rstrip(")")
+        points = []
+        for pt in inner.split(","):
+            pt = pt.strip()
+            if pt:
+                parts = pt.split()
+                if len(parts) >= 2:
+                    points.append([float(parts[0]), float(parts[1])])
+        if points:
+            return {
+                "type": "LineString",
+                "coordinates": points
             }
     return None
 
@@ -132,6 +150,9 @@ def geojson_to_wkt(geom):
                 rings.append(f"({pts})")
             polys.append(f"({', '.join(rings)})")
         return f"MULTIPOLYGON({', '.join(polys)})"
+    elif g_type == 'LINESTRING':
+        pts = ", ".join(f"{pt[0]} {pt[1]}" for pt in coords)
+        return f"LINESTRING({pts})"
     return None
 
 
@@ -245,7 +266,10 @@ class CapteurSerializer(HybridGeoFeatureModelSerializer):
     class Meta:
         model = Capteur
         geo_field = 'localisation'
-        fields = ('id', 'nom', 'type', 'actif', 'date_installation', 'localisation')
+        fields = (
+            'id', 'nom', 'type', 'code_identifiant', 'zone', 'actif', 'statut',
+            'dernier_releve', 'date_installation', 'localisation',
+        )
 
 
 class MesureSerializer(serializers.ModelSerializer):
@@ -265,14 +289,14 @@ class MesureSerializer(serializers.ModelSerializer):
 class ZoneRisqueSerializer(serializers.ModelSerializer):
     class Meta:
         model = ZoneRisque
-        fields = ('id', 'quartier', 'niveau_risque')
+        fields = ('id', 'quartier', 'niveau_risque', 'description', 'score_risque_moyen')
 
 
 class ZoneRisqueGeoSerializer(HybridGeoFeatureModelSerializer):
     class Meta:
         model = ZoneRisque
         geo_field = 'geom'
-        fields = ('id', 'quartier', 'niveau_risque', 'geom')
+        fields = ('id', 'quartier', 'niveau_risque', 'description', 'score_risque_moyen', 'geom')
 
 
 class PredictionIASerializer(serializers.ModelSerializer):
@@ -295,7 +319,7 @@ class AlerteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Alerte
-        fields = ('id', 'niveau', 'zone', 'timestamp', 'canaux', 'statut')
+        fields = ('id', 'niveau', 'zone', 'message', 'timestamp', 'date_expiration', 'canaux', 'statut')
 
     def validate_niveau(self, value):
         valid_niveaux = ['vert', 'jaune', 'orange', 'rouge']
@@ -466,3 +490,25 @@ class SignalementCitoyenSerializer(HybridGeoFeatureModelSerializer):
             # Automatic photo compression
             value = compress_image(value)
         return value
+
+
+class SegmentRueSerializer(HybridGeoFeatureModelSerializer):
+    class Meta:
+        model = SegmentRue
+        geo_field = 'geom'
+        fields = (
+            'id', 'nom', 'geom', 'zone', 'altitude_moyenne', 'pente',
+            'etat_drainage', 'score_risque_actuel', 'created_at',
+        )
+
+
+class PrevisionMeteoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PrevisionMeteo
+        fields = ('id', 'date_prevision', 'temperature', 'precipitation', 'vitesse_vent', 'source', 'created_at')
+
+
+class HistoriqueRisqueSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HistoriqueRisque
+        fields = ('id', 'type_cible', 'cible_id', 'score_risque', 'date_calcul', 'details')

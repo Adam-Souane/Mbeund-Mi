@@ -3,6 +3,7 @@ from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.utils import timezone
 from alertes.models import ZoneRisque, Alerte, PredictionIA, EpisodeInondation
+from api.services.sms_service import send_alert_sms
 
 logger = get_task_logger(__name__)
 
@@ -78,27 +79,35 @@ def envoyer_sms_alerte(self, alerte_id):
         logger.error(f"[SMS Task] L'alerte avec l'ID {alerte_id} n'existe pas.")
         raise e
 
-    # TODO [Intégration Twilio / SMS API] :
-    # 1. Récupérer les contacts/résidents de la zone concernée (ex: alerte.zone.quartier).
-    # 2. Initialiser le client Twilio avec les credentials du .env :
-    #    account_sid = settings.TWILIO_ACCOUNT_SID
-    #    auth_token = settings.TWILIO_AUTH_TOKEN
-    # 3. Construire le message selon le niveau de risque (alerte.niveau).
-    # 4. Envoyer les SMS via twilio.rest Client.
-    # 5. Enregistrer les rapports de livraison.
-    
-    logger.info(f"[SMS Task] Simulation de l'envoi de SMS pour l'alerte ID {alerte.id} (Niveau : {alerte.niveau}) dans la zone {alerte.zone.quartier}...")
-    time.sleep(1)  # Simulation d'un délai d'envoi réseau
-    
+    # NOTE : il n'existe pas encore de registre des résidents/citoyens par zone.
+    # En attendant, le SMS est envoyé aux profils (agents/autorités) ayant un
+    # numéro de téléphone renseigné. À étendre lorsqu'un registre de contacts
+    # par zone sera disponible.
+    from users.models import Profile
+    message = alerte.message or f"Risque {alerte.niveau} détecté dans la zone {alerte.zone.quartier}. Prudence."
+    destinataires = Profile.objects.filter(
+        role__in=['agent', 'autorite', 'admin'],
+    ).exclude(telephone='')
+
+    nb_envoyes = 0
+    for profil in destinataires:
+        if send_alert_sms(profil.telephone, message):
+            nb_envoyes += 1
+
+    logger.info(
+        f"[SMS Task] SMS envoyé à {nb_envoyes}/{destinataires.count()} destinataire(s) "
+        f"pour l'alerte {alerte.id} (Niveau : {alerte.niveau}, zone {alerte.zone.quartier})."
+    )
+
     # Mise à jour du statut de l'alerte
     alerte.statut = 'envoyee'
     alerte.save()
-    
-    logger.info(f"[SMS Task] SMS envoyé avec succès et statut de l'alerte mis à jour à 'envoyee'.")
+
     return {
         "status": "sent",
         "alerte_id": alerte.id,
-        "statut": alerte.statut
+        "statut": alerte.statut,
+        "nb_destinataires": nb_envoyes,
     }
 
 

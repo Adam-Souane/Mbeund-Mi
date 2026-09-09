@@ -17,3 +17,6 @@ pytest-cov==7.1.0
 paho-mqtt==2.1.0
 Pillow==12.3.0
 firebase-admin==6.5.0
+django-cors-headers==4.4.0
+requests==2.32.3
+twilio==9.3.2
