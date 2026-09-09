@@ -158,4 +158,3 @@ class SignalementCitoyenViewSet(viewsets.ModelViewSet):
         if self.action == 'create':
             return [permissions.AllowAny()]
         return [IsAutoriteOrAdmin()]
-

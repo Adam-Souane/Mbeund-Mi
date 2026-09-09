@@ -1,0 +1,10 @@
+paho-mqtt==1.6.1
+numpy
+pandas
+requests
+scikit-learn
+tensorflow
+earthengine-api
+geemap
+schedule
+twilio>=9.0.0

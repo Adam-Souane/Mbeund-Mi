@@ -1,0 +1,59 @@
+# =============================================================================
+# .claudeignore — MBEUND MI (React + Django/DRF + PostGIS)
+# =============================================================================
+
+# --- Dépendances et environnements virtuels ---
+node_modules/
+venv/
+env/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# --- Builds et artefacts générés ---
+build/
+dist/
+.next/
+staticfiles/
+media/
+*.egg-info/
+*.egg
+htmlcov/
+
+# --- Fichiers sensibles / secrets ---
+.env
+.env.*
+!.env.example
+!.env.production.example
+*.pem
+*.key
+*.crt
+*.cert
+secrets/
+credentials/
+
+# --- Bases de données locales ---
+*.sqlite3
+db.sqlite3
+
+# --- Logs et caches ---
+*.log
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- IDE / système ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Médias volumineux non essentiels au code ---
+*.mp4
+*.mov
+*.zip
+*.tar.gz
+*.pdf
+*.psd

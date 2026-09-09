@@ -24,6 +24,6 @@ urlpatterns = [
     path('api/', include('api.urls')),
 ]
 
+# Permet à Django de servir les images uploadées en environnement de développement
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-

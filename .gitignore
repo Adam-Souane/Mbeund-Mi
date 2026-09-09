@@ -19,7 +19,6 @@ lerna-debug.log*
 __pycache__/
 */__pycache__/
 *.py[cod]
-*.pyc
 *.pyo
 *.pyd
 *$py.class
@@ -57,6 +56,7 @@ ENV/
 
 # --- Environment variables & secrets (ne jamais committer !) ---
 .env
+.env.local
 *.env
 .env.*
 !.env.example
@@ -120,3 +120,12 @@ desktop.ini
 temp.zip
 docx_out
 temp_docx
+
+# --- Modèles IA / ML entraînés (mbeund_mi_ia) ---
+*.pkl
+*.npy
+*.h5
+
+# --- Logs spécifiques ---
+alertes.log
+anomalies.log

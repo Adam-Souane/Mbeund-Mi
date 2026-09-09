@@ -466,4 +466,3 @@ class SignalementCitoyenSerializer(HybridGeoFeatureModelSerializer):
             # Automatic photo compression
             value = compress_image(value)
         return value
-
