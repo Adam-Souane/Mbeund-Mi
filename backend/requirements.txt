@@ -21,3 +21,18 @@ django-cors-headers==4.4.0
 requests==2.32.3
 twilio==9.3.2
 drf-spectacular==0.27.1
+
+# Service de prédiction IA (mbeund_mi_ia/ia/service_prediction.py), importé
+# directement par alertes/tasks.py:appel_modele_ia. TensorFlow volontairement
+# omis : le modèle LSTM n'est pas utilisé dans la classification de risque
+# actuelle (seul RandomForest l'est), et son import plante ici sur un conflit
+# de version protobuf — service_prediction.py dégrade proprement sans lui.
+numpy==2.2.6
+pandas==2.3.3
+scikit-learn==1.7.2
+
+# Détection satellite d'inondation (mbeund_mi_ia/gee/detection_inondation.py),
+# importée par alertes/tasks.py:analyse_gee_periodique. Nécessite en plus une
+# authentification manuelle une fois par machine (`earthengine authenticate`)
+# et GEE_PROJECT_ID dans .env — voir mbeund_mi_ia/gee/config_gee.py.
+earthengine-api==1.7.29

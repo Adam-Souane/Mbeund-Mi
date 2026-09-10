@@ -157,3 +157,15 @@ class Command(BaseCommand):
         except Exception as e:
             self.stderr.write(self.style.ERROR(f"Erreur lors de l'enregistrement de la mesure : {e}"))
             logger.exception("Failed to save Mesure to DB")
+            return
+
+        # Déclenche l'analyse de risque IA pour la zone du capteur (si rattaché à une zone).
+        # Erreur isolée de l'enregistrement ci-dessus : la mesure est déjà sauvegardée,
+        # un souci de dispatch Celery (ex: broker indisponible) ne doit pas le masquer.
+        if capteur.zone_id:
+            try:
+                from alertes.tasks import appel_modele_ia
+                appel_modele_ia.delay(capteur.zone_id)
+            except Exception as e:
+                self.stderr.write(self.style.ERROR(f"Erreur lors du déclenchement de l'analyse IA : {e}"))
+                logger.exception("Failed to dispatch appel_modele_ia task")

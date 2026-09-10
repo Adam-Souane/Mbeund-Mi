@@ -1,7 +1,13 @@
 import ee
 import json
 import os
-from config_gee import init_gee, get_thiaroye_geometry, get_sentinel2_image, calculer_ndwi
+
+# Import relatif (utilisé quand importé comme gee.detection_inondation depuis
+# Django) avec repli en import absolu (exécution directe : python detection_inondation.py)
+try:
+    from .config_gee import init_gee, get_thiaroye_geometry, get_sentinel2_image, calculer_ndwi
+except ImportError:
+    from config_gee import init_gee, get_thiaroye_geometry, get_sentinel2_image, calculer_ndwi
 
 def detecter_zones_inondees(date_reference_debut, date_reference_fin, date_recente_debut, date_recente_fin):
     """

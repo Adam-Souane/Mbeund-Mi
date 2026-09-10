@@ -9,12 +9,17 @@ import logging
 
 logger_pred = logging.getLogger('mbeund_mi_prediction')
 
-# Import conditionnel de TensorFlow pour éviter que ça plante si TF n'est pas encore installé
+# Import conditionnel de TensorFlow : on capture Exception (pas seulement
+# ImportError) car un conflit de version protobuf entre paquets fait planter
+# l'import avec une VersionError, pas une ImportError. Le modèle LSTM chargé
+# ici n'est de toute façon pas encore utilisé dans analyser_risque() (seul
+# RandomForest l'est) — pas de perte fonctionnelle si TF est indisponible.
 try:
     import tensorflow as tf
     TF_AVAILABLE = True
-except ImportError:
+except Exception as e:
     TF_AVAILABLE = False
+    logging.getLogger('mbeund_mi_prediction').warning(f"TensorFlow indisponible ({e}) — modèle LSTM désactivé, RandomForest reste actif.")
 
 class PredictionService:
     def __init__(self):

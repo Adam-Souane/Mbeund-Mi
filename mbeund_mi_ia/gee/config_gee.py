@@ -1,15 +1,28 @@
 import ee
 import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+try:
+    from ia.config import GEE_PROJECT_ID
+except ImportError:
+    GEE_PROJECT_ID = os.getenv('GEE_PROJECT_ID', '')
+
 
 def init_gee():
     """Initialise l'API Google Earth Engine"""
     try:
-        ee.Initialize()
+        if GEE_PROJECT_ID:
+            ee.Initialize(project=GEE_PROJECT_ID)
+        else:
+            ee.Initialize()
         print("[SUCCES] Google Earth Engine initialisé avec succès.")
         return True
     except Exception as e:
         print("[ERREUR] Erreur d'initialisation GEE. Avez-vous authentifié ?")
         print("Pour authentifier, tapez dans le terminal : earthengine authenticate")
+        if not GEE_PROJECT_ID:
+            print("Et vérifiez que GEE_PROJECT_ID est renseigné dans .env (obligatoire depuis les versions récentes de l'API Earth Engine).")
         print(f"Détail de l'erreur : {e}")
         return False
 

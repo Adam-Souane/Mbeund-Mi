@@ -3,7 +3,7 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
-from alertes.models import ZoneRisque, Alerte, SegmentRue, PrevisionMeteo, HistoriqueRisque
+from alertes.models import ZoneRisque, Alerte, SegmentRue, PrevisionMeteo, HistoriqueRisque, PredictionIA
 
 User = get_user_model()
 
@@ -338,3 +338,146 @@ def test_historique_risque_contrainte_bdd(test_zone):
     # La contrainte CheckConstraint protège aussi les créations hors API (ex: tâche Celery future)
     with pytest.raises(IntegrityError):
         HistoriqueRisque.objects.create(score_risque=1.0)
+
+
+# --- appel_modele_ia (intégration réelle avec le service IA de Maïmouna) ---
+
+@pytest.mark.django_db
+def test_appel_modele_ia_cree_prediction_et_alerte_si_risque_eleve(test_zone):
+    from capteurs.models import Capteur, Mesure
+    from alertes.tasks import appel_modele_ia
+
+    capteur_eau = Capteur.objects.create(
+        nom="Capteur eau zone test", type="eau", localisation="POINT(-17.38 14.75)",
+        zone=test_zone, date_installation="2026-08-17",
+    )
+    capteur_pluie = Capteur.objects.create(
+        nom="Capteur pluie zone test", type="pluviometre", localisation="POINT(-17.38 14.75)",
+        zone=test_zone, date_installation="2026-08-17",
+    )
+    # Valeurs volontairement hautes pour déclencher un risque élevé (comme testé
+    # manuellement avec le vrai service : niveau 85cm + pluie 65mm -> "rouge")
+    Mesure.objects.create(capteur=capteur_eau, valeur=85.0, unite="cm", timestamp=timezone.now())
+    Mesure.objects.create(capteur=capteur_pluie, valeur=65.0, unite="mm", timestamp=timezone.now())
+
+    resultat = appel_modele_ia(test_zone.id)
+
+    assert resultat["status"] == "success"
+    prediction = PredictionIA.objects.get(id=resultat["prediction_id"])
+    assert prediction.zone_id == test_zone.id
+    assert 0 <= prediction.probabilite <= 1
+
+    # Avec ces valeurs, le vrai modèle RandomForest classe en risque élevé,
+    # ce qui doit créer une Alerte automatiquement.
+    if resultat["risque"] in ("orange", "rouge"):
+        assert resultat["alerte_id"] is not None
+        alerte = Alerte.objects.get(id=resultat["alerte_id"])
+        assert alerte.zone_id == test_zone.id
+        assert alerte.niveau == resultat["risque"]
+        assert alerte.message  # la recommandation FR du modèle
+
+
+@pytest.mark.django_db
+def test_appel_modele_ia_sans_mesures(test_zone):
+    from alertes.tasks import appel_modele_ia
+
+    resultat = appel_modele_ia(test_zone.id)
+    assert resultat["status"] == "skipped"
+    assert PredictionIA.objects.filter(zone=test_zone).count() == 0
+
+
+@pytest.mark.django_db
+def test_ecoute_mqtt_declenche_analyse_ia_si_capteur_zone(test_zone):
+    import json
+    from unittest.mock import MagicMock, patch
+    from django.core.management import call_command
+    from capteurs.models import Capteur
+
+    capteur = Capteur.objects.create(
+        nom="Capteur avec zone", type="eau", localisation="POINT(-17.38 14.75)",
+        zone=test_zone, date_installation="2026-08-17",
+    )
+
+    with patch('paho.mqtt.client.Client') as mock_client_class, \
+         patch('alertes.tasks.appel_modele_ia.delay') as mock_delay:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+        mock_client.loop_forever.side_effect = KeyboardInterrupt()
+
+        call_command('ecoute_mqtt')
+
+        on_message_callback = mock_client.on_message
+        msg = MagicMock()
+        msg.topic = f"capteurs/{capteur.id}/mesures"
+        msg.payload = json.dumps({
+            "capteur_id": capteur.id, "valeur": 12.0, "unite": "cm",
+            "timestamp": "2026-08-17T18:00:00Z",
+        }).encode('utf-8')
+
+        on_message_callback(mock_client, None, msg)
+
+        mock_delay.assert_called_once_with(test_zone.id)
+
+
+# --- analyse_gee_periodique (intégration réelle GEE, avec repli propre si non authentifié) ---
+
+@pytest.mark.django_db
+def test_analyse_gee_periodique_sans_authentification():
+    from alertes.tasks import analyse_gee_periodique
+
+    # Sans `earthengine authenticate` sur la machine, la tâche doit se terminer
+    # proprement (pas de crash, pas de retry infini) plutôt que planter.
+    resultat = analyse_gee_periodique()
+    assert resultat["status"] == "skipped"
+    assert resultat["reason"] == "gee_unavailable"
+
+
+@pytest.mark.django_db
+def test_analyse_gee_periodique_cree_episode_si_inondation_detectee():
+    from unittest.mock import patch
+    from alertes.tasks import analyse_gee_periodique
+    from alertes.models import EpisodeInondation
+
+    faux_resultat_gee = {
+        "metadata": {"surface_inondee_ha": 12.3, "date_analyse": "2026-09-10", "crs": "EPSG:4326"},
+        "geojson": {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[[-17.39, 14.74], [-17.39, 14.75], [-17.38, 14.75], [-17.38, 14.74], [-17.39, 14.74]]],
+                    },
+                    "properties": {},
+                }
+            ],
+        },
+    }
+
+    with patch('gee.detection_inondation.detecter_zones_inondees', return_value=faux_resultat_gee):
+        resultat = analyse_gee_periodique()
+
+    assert resultat["status"] == "success"
+    assert resultat["surface_ha"] == 12.3
+    episode = EpisodeInondation.objects.get(id=resultat["episode_id"])
+    assert episode.surface_ha == 12.3
+
+
+@pytest.mark.django_db
+def test_analyse_gee_periodique_aucune_inondation():
+    from unittest.mock import patch
+    from alertes.tasks import analyse_gee_periodique
+    from alertes.models import EpisodeInondation
+
+    faux_resultat_sans_eau = {
+        "metadata": {"surface_inondee_ha": 0, "date_analyse": "2026-09-10", "crs": "EPSG:4326"},
+        "geojson": {"type": "FeatureCollection", "features": []},
+    }
+
+    with patch('gee.detection_inondation.detecter_zones_inondees', return_value=faux_resultat_sans_eau):
+        resultat = analyse_gee_periodique()
+
+    assert resultat["status"] == "success"
+    assert resultat["surface_ha"] == 0
+    assert EpisodeInondation.objects.count() == 0

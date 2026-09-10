@@ -12,11 +12,11 @@ def broadcast_alerte(sender, instance, created, **kwargs):
     if created:
         try:
             from api.serializers import AlerteSerializer
-            
+
             # Serialize the new alert
             serializer = AlerteSerializer(instance)
             data = serializer.data
-            
+
             # Get the channel layer
             channel_layer = get_channel_layer()
             if channel_layer is not None:
@@ -33,3 +33,15 @@ def broadcast_alerte(sender, instance, created, **kwargs):
                 logger.warning("Channel layer is not configured. Failed to broadcast Alerte.")
         except Exception as e:
             logger.error(f"Error broadcasting new Alerte (ID: {instance.id}): {e}", exc_info=True)
+
+
+@receiver(post_save, sender=Alerte)
+def envoyer_sms_si_risque_eleve(sender, instance, created, **kwargs):
+    # SMS uniquement pour les niveaux orange/rouge — évite de spammer pour
+    # une alerte verte/jaune (cohérent avec la logique de mbeund_mi_ia).
+    if created and instance.niveau in ('orange', 'rouge'):
+        try:
+            from alertes.tasks import envoyer_sms_alerte
+            envoyer_sms_alerte.delay(instance.id)
+        except Exception as e:
+            logger.error(f"Error dispatching SMS task for Alerte (ID: {instance.id}): {e}", exc_info=True)

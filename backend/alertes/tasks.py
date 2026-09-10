@@ -1,11 +1,35 @@
+import json
+import os
+import sys
 import time
+from datetime import timedelta
 from celery import shared_task
 from celery.utils.log import get_task_logger
+from django.conf import settings
 from django.utils import timezone
 from alertes.models import ZoneRisque, Alerte, PredictionIA, EpisodeInondation
+from capteurs.models import Capteur, Mesure
 from api.services.sms_service import send_alert_sms
 
 logger = get_task_logger(__name__)
+
+# mbeund_mi_ia est un module frère de backend/ (pas un paquet pip installé) —
+# on l'ajoute au path pour réutiliser le vrai service de prédiction de Maïmouna
+# (RandomForest + LSTM) au lieu de dupliquer sa logique dans Django.
+_MBEUND_MI_IA_PATH = os.path.join(os.path.dirname(settings.BASE_DIR), 'mbeund_mi_ia')
+if _MBEUND_MI_IA_PATH not in sys.path:
+    sys.path.insert(0, _MBEUND_MI_IA_PATH)
+
+_prediction_service = None
+
+
+def _get_prediction_service():
+    """Charge le service IA (modèles RandomForest/LSTM) une seule fois par worker."""
+    global _prediction_service
+    if _prediction_service is None:
+        from ia.service_prediction import PredictionService
+        _prediction_service = PredictionService()
+    return _prediction_service
 
 @shared_task(
     bind=True,
@@ -28,34 +52,70 @@ def appel_modele_ia(self, zone_id):
         # Pas de retry si la zone n'existe pas (erreur irrécupérable)
         raise e
 
-    # TODO [Intégration Maïmouna] :
-    # 1. Récupérer les données météo récentes (GEE / météo externe).
-    # 2. Récupérer les dernières mesures des capteurs de la zone (niveaux d'eau, humidité, etc.).
-    # 3. Envoyer ces données au service IA de Maïmouna ou charger son modèle sérialisé.
-    # 4. Pour l'instant, on simule l'appel de modèle avec des valeurs mockées réalistes.
-    
-    logger.info(f"[IA Task] Simulation de l'appel du modèle IA pour {zone.quartier}...")
-    time.sleep(1)  # Simulation d'un délai réseau ou de calcul
-    
-    # Génération d'une prédiction simulée
-    probabilite_mock = 0.75  # 75% de chance d'inondation
-    horizon_h_mock = 6       # Horizon de 6 heures
-    confiance_mock = 0.88    # 88% de confiance
-    
+    # Dernière mesure de chaque type de capteur dans la zone (eau + pluviométrie).
+    # Le service IA attend un relevé combiné {niveau_eau_cm, pluie_mm} par "instant" ;
+    # nos capteurs eau/pluviomètre sont physiquement séparés, donc on combine leurs
+    # dernières valeurs respectives en un seul relevé représentant l'état actuel de la zone.
+    capteurs_zone = Capteur.objects.filter(zone_id=zone_id)
+    derniere_eau = Mesure.objects.filter(capteur__in=capteurs_zone, capteur__type='eau').order_by('-timestamp').first()
+    derniere_pluie = Mesure.objects.filter(capteur__in=capteurs_zone, capteur__type='pluviometre').order_by('-timestamp').first()
+
+    if not derniere_eau and not derniere_pluie:
+        logger.warning(f"[IA Task] Aucune mesure disponible pour la zone {zone.quartier} — prédiction ignorée.")
+        return {"status": "skipped", "reason": "no_measurements", "quartier": zone.quartier}
+
+    mesures_recentes = [{
+        "capteur_id": zone_id,
+        "niveau_eau_cm": derniere_eau.valeur if derniere_eau else 0,
+        "pluie_mm": derniere_pluie.valeur if derniere_pluie else 0,
+    }]
+
+    service = _get_prediction_service()
+    resultat = service.analyser_risque(zone_id, mesures_recentes)
+
+    if "erreur" in resultat:
+        logger.error(f"[IA Task] Le service IA a renvoyé une erreur pour {zone.quartier} : {resultat['erreur']}")
+        raise ValueError(resultat['erreur'])
+
+    risque = resultat["risque_global"]
+    confiance_pct = resultat["confiance"]
+
     prediction = PredictionIA.objects.create(
         zone=zone,
-        probabilite=probabilite_mock,
-        horizon_h=horizon_h_mock,
-        confiance=confiance_mock,
+        # Le service classe un niveau de risque (vert/jaune/orange/rouge) avec une
+        # confiance en %, pas une probabilité brute d'inondation — on dérive
+        # `probabilite` (0-1) de cette confiance, `confiance` garde l'échelle % d'origine.
+        probabilite=confiance_pct / 100,
+        horizon_h=24,
+        confiance=confiance_pct,
         timestamp=timezone.now()
     )
-    
-    logger.info(f"[IA Task] Prédiction enregistrée avec succès pour la zone {zone.quartier}. ID Prédiction : {prediction.id}")
+
+    logger.info(
+        f"[IA Task] Prédiction enregistrée pour {zone.quartier} : risque={risque}, "
+        f"confiance={confiance_pct}% (ID Prédiction {prediction.id})"
+    )
+
+    alerte_id = None
+    if risque in ('orange', 'rouge'):
+        alerte = Alerte.objects.create(
+            niveau=risque,
+            zone=zone,
+            message=resultat.get('recommandation_fr', ''),
+            timestamp=timezone.now(),
+            canaux='sms,web',
+            statut='en_attente',
+        )
+        alerte_id = alerte.id
+        logger.warning(f"[IA Task] Risque {risque} détecté pour {zone.quartier} — Alerte {alerte.id} créée.")
+
     return {
         "status": "success",
         "prediction_id": prediction.id,
         "quartier": zone.quartier,
-        "probabilite": probabilite_mock
+        "risque": risque,
+        "confiance": confiance_pct,
+        "alerte_id": alerte_id,
     }
 
 
@@ -121,32 +181,72 @@ def envoyer_sms_alerte(self, alerte_id):
 )
 def analyse_gee_periodique(self):
     """
-    Tâche périodique simulant l'analyse d'images satellites Google Earth Engine (GEE).
+    Tâche périodique de détection d'inondation par imagerie satellite (Google Earth Engine).
+
+    Compare l'indice d'eau (NDWI, Sentinel-2) entre une période de référence en
+    saison sèche et les 15 derniers jours, pour détecter les zones nouvellement
+    inondées autour de Thiaroye-sur-Mer.
+
+    Nécessite une authentification GEE préalable sur la machine qui exécute le
+    worker Celery (commande `earthengine authenticate`, une fois, interactive)
+    et GEE_PROJECT_ID renseigné dans .env — voir mbeund_mi_ia/gee/config_gee.py.
+    Sans ça, la tâche se termine proprement en "skipped", elle ne plante pas.
     """
     logger.info(f"[GEE Task] Démarrage de l'analyse GEE périodique (Essai {self.request.retries + 1}/5)")
-    
-    # TODO [Intégration Google Earth Engine] :
-    # 1. S'authentifier auprès de l'API GEE (ee.Initialize).
-    # 2. Récupérer les dernières images Sentinel-1 (radar) ou Sentinel-2 (optique) pour la région de Thiaroye.
-    # 3. Appliquer l'algorithme de détection d'eau/inondation (ex: NDWI ou rétrodiffusion radar).
-    # 4. Calculer la surface inondée en hectares (surface_ha).
-    # 5. Si une nouvelle inondation est détectée, créer un enregistrement EpisodeInondation.
-    
-    logger.info("[GEE Task] Simulation de la récupération et du traitement de l'image satellite...")
-    time.sleep(2)  # Simulation du temps de traitement d'images lourdes
-    
-    # Exemple de création d'un épisode simulé si nécessaire
-    surface_detectee = 15.4  # hectares
-    
-    episode = EpisodeInondation.objects.create(
-        geom="MULTIPOLYGON (((-17.39 14.74, -17.39 14.75, -17.38 14.75, -17.38 14.74, -17.39 14.74)))",
-        date_debut=timezone.now(),
-        surface_ha=surface_detectee
+
+    from gee.detection_inondation import detecter_zones_inondees
+
+    maintenant = timezone.now()
+    annee_courante = maintenant.year
+    date_reference_debut = f"{annee_courante}-01-01"
+    date_reference_fin = f"{annee_courante}-01-31"
+    date_recente_fin = maintenant.strftime('%Y-%m-%d')
+    date_recente_debut = (maintenant - timedelta(days=15)).strftime('%Y-%m-%d')
+
+    resultat = detecter_zones_inondees(
+        date_reference_debut, date_reference_fin, date_recente_debut, date_recente_fin
     )
-    
-    logger.info(f"[GEE Task] Analyse GEE terminée. Épisode d'inondation enregistré : ID {episode.id}, surface : {surface_detectee} ha")
+
+    if resultat is None:
+        logger.warning(
+            "[GEE Task] Analyse GEE indisponible (authentification manquante ou erreur GEE) — tâche ignorée."
+        )
+        return {"status": "skipped", "reason": "gee_unavailable"}
+
+    surface_ha = resultat['metadata']['surface_inondee_ha']
+
+    if surface_ha <= 0:
+        logger.info("[GEE Task] Aucune nouvelle zone inondée détectée par satellite.")
+        return {"status": "success", "surface_ha": 0, "episode_id": None}
+
+    # Fusionne les polygones détectés (un par zone d'eau isolée) en un seul MultiPolygon.
+    # django.contrib.gis.geos (GEOS/GDAL) n'est importé que si USE_GIS=True : le
+    # module plante à l'import si GEOS n'est pas installé, même sans s'en servir.
+    features_polygones = [
+        f for f in resultat['geojson'].get('features', []) if f['geometry']['type'] == 'Polygon'
+    ]
+    if not features_polygones:
+        logger.warning("[GEE Task] Surface détectée mais aucun polygone exploitable — épisode non créé.")
+        return {"status": "success", "surface_ha": surface_ha, "episode_id": None}
+
+    if settings.USE_GIS:
+        from django.contrib.gis.geos import GEOSGeometry, MultiPolygon
+        polygones = [GEOSGeometry(json.dumps(f['geometry'])) for f in features_polygones]
+        geom_value = MultiPolygon(polygones)
+    else:
+        from api.serializers import geojson_to_wkt
+        coords_multipolygon = [f['geometry']['coordinates'] for f in features_polygones]
+        geom_value = geojson_to_wkt({"type": "MultiPolygon", "coordinates": coords_multipolygon})
+
+    episode = EpisodeInondation.objects.create(
+        geom=geom_value,
+        date_debut=timezone.now(),
+        surface_ha=surface_ha,
+    )
+
+    logger.info(f"[GEE Task] Analyse GEE terminée. Épisode d'inondation enregistré : ID {episode.id}, surface : {surface_ha} ha")
     return {
-        "status": "completed",
+        "status": "success",
         "episode_id": episode.id,
-        "surface_ha": surface_detectee
+        "surface_ha": surface_ha,
     }
