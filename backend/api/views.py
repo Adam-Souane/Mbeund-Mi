@@ -32,6 +32,7 @@ class CapteurViewSet(viewsets.ModelViewSet):
     """
     queryset = Capteur.objects.all()
     serializer_class = CapteurSerializer
+    permission_classes = [IsAutoriteOrAdmin]
 
 
 class MesureViewSet(viewsets.ModelViewSet):
@@ -41,6 +42,7 @@ class MesureViewSet(viewsets.ModelViewSet):
     """
     queryset = Mesure.objects.all()
     serializer_class = MesureSerializer
+    permission_classes = [IsAutoriteOrAdmin]
 
     @action(detail=False, methods=['get'], url_path='recentes')
     def recentes(self, request):
@@ -169,11 +171,13 @@ class SignalementCitoyenViewSet(viewsets.ModelViewSet):
 class SegmentRueViewSet(viewsets.ModelViewSet):
     queryset = SegmentRue.objects.all()
     serializer_class = SegmentRueSerializer
+    permission_classes = [IsAutoriteOrAdmin]
 
 
 class PrevisionMeteoViewSet(viewsets.ModelViewSet):
     queryset = PrevisionMeteo.objects.all()
     serializer_class = PrevisionMeteoSerializer
+    permission_classes = [IsAutoriteOrAdmin]
 
 
 class HistoriqueRisqueViewSet(viewsets.ReadOnlyModelViewSet):

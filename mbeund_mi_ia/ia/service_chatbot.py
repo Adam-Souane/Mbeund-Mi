@@ -11,7 +11,7 @@ Ton nom NDAM signifie "le triomphe" en wolof — tu incarnes
 la protection et la vigilance au service des habitants.
 
 ## Ton rôle
-Tu es propulsé par Groq (modèle llama-3.3-70b-versatile).
+Tu es propulsé par Groq (modèle openai/gpt-oss-120b).
 Tu assistes deux types d'utilisateurs :
 - Les habitants de Thiaroye-sur-Mer : comprendre les risques, 
   savoir quoi faire, signaler des zones dangereuses
@@ -86,7 +86,7 @@ class MbeundMiChatbot:
             )
             
             completion = self.client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
+                model="openai/gpt-oss-120b",
                 messages=[
                     {"role": "system", "content": prompt_contextualise},
                     {"role": "user", "content": question}

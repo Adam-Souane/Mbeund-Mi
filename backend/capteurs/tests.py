@@ -13,7 +13,19 @@ def api_client():
 
 @pytest.fixture
 def auth_client(api_client, db):
+    # Capteurs/Mesures sont protégés par IsAutoriteOrAdmin (écriture réservée
+    # aux rôles autorite/admin) — ce fixture représente un utilisateur autorisé.
     user = User.objects.create_user(username='testuser', password='password123')
+    user.profile.role = 'autorite'
+    user.profile.save()
+    api_client.force_authenticate(user=user)
+    return api_client
+
+@pytest.fixture
+def citoyen_client(api_client, db):
+    user = User.objects.create_user(username='citoyen_test', password='password123')
+    user.profile.role = 'citoyen'
+    user.profile.save()
     api_client.force_authenticate(user=user)
     return api_client
 
@@ -352,6 +364,32 @@ def test_capteurs_mesures_bad_request(auth_client, db):
     response = auth_client.post('/api/mesures/', post_data_mesure, format='json')
     assert response.status_code == 400
     assert 'capteur' in response.data
+
+@pytest.mark.django_db
+def test_capteurs_mesures_forbidden_for_citoyen(citoyen_client):
+    # Un citoyen authentifié peut lire, mais pas écrire (régression sécurité :
+    # ces endpoints n'avaient auparavant aucune restriction de rôle).
+    capteur = Capteur.objects.create(
+        nom="Capteur Test Role",
+        type="eau",
+        localisation="POINT(-17.38 14.75)",
+        actif=True,
+        date_installation="2026-08-17"
+    )
+
+    assert citoyen_client.get('/api/capteurs/').status_code == 200
+
+    post_data = {
+        "type": "Feature",
+        "geometry": {"type": "Point", "coordinates": [-17.38, 14.75]},
+        "properties": {"nom": "Capteur Citoyen", "type": "eau", "actif": True, "date_installation": "2026-08-17"}
+    }
+    assert citoyen_client.post('/api/capteurs/', post_data, format='json').status_code == 403
+    assert citoyen_client.delete(f'/api/capteurs/{capteur.id}/').status_code == 403
+
+    mesure_data = {"capteur": capteur.id, "valeur": 1.0, "unite": "m", "timestamp": timezone.now().isoformat()}
+    assert citoyen_client.post('/api/mesures/', mesure_data, format='json').status_code == 403
+
 
 @pytest.mark.django_db
 def test_capteurs_mesures_delete_success(auth_client):

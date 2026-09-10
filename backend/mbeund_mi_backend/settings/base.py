@@ -19,7 +19,9 @@ if os.path.exists(env_file):
     environ.Env.read_env(env_file)
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env('SECRET_KEY', default='django-insecure-x+b6t)159zwx27+27870m_hk-titf*h8se$)yw77cu#g*@mvga')
+# Pas de valeur par défaut : SECRET_KEY signe aussi les JWT (voir SIMPLE_JWT plus bas),
+# une valeur codée en dur dans un dépôt public serait un secret compromis d'avance.
+SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG')
@@ -28,6 +30,12 @@ ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1'])
 
 # Déterminer si on charge les fonctionnalités GIS (GeoDjango / PostGIS)
 USE_GIS = env('USE_GIS')
+
+# Chemins vers les DLL GDAL/GEOS sous Windows (ex: installation OSGeo4W).
+# Sans effet sur Linux/Mac où ces bibliothèques sont trouvées automatiquement.
+if USE_GIS:
+    GDAL_LIBRARY_PATH = env('GDAL_LIBRARY_PATH', default=None)
+    GEOS_LIBRARY_PATH = env('GEOS_LIBRARY_PATH', default=None)
 
 
 # Application definition

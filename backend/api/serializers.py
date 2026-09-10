@@ -459,16 +459,21 @@ class SignalementCitoyenSerializer(HybridGeoFeatureModelSerializer):
             # Try parsing as JSON first (which could be a list or a geojson dict)
             try:
                 parsed = json.loads(localisation)
-                data['localisation'] = parsed
             except json.JSONDecodeError:
+                parsed = None
                 # If not JSON, check if it's "longitude,latitude"
                 if ',' in localisation:
                     try:
                         parts = [float(x.strip()) for x in localisation.split(',')]
                         if len(parts) == 2:
-                            data['localisation'] = parts
+                            parsed = parts
                     except ValueError:
                         pass
+            if isinstance(parsed, list) and len(parsed) == 2:
+                # GeometryField (mode PostGIS) attend un GeoJSON, pas une liste brute
+                data['localisation'] = {"type": "Point", "coordinates": parsed}
+            elif parsed is not None:
+                data['localisation'] = parsed
         return super().to_internal_value(data)
 
     def validate_localisation(self, value):

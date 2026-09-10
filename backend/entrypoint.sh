@@ -56,18 +56,15 @@ python manage.py collectstatic --noinput --clear
 echo "[entrypoint] Fichiers statiques collectés."
 
 # ---------------------------------------------------------------------------
-# 4. Créer un superutilisateur par défaut si aucun n'existe (optionnel)
+# 4. Créer un superutilisateur si aucun n'existe ET que ses identifiants sont
+#    fournis explicitement via l'environnement (jamais de mot de passe en dur).
 # ---------------------------------------------------------------------------
-echo "[entrypoint] Vérification du superutilisateur..."
-python manage.py shell -c "
-from django.contrib.auth import get_user_model
-User = get_user_model()
-if not User.objects.filter(is_superuser=True).exists():
-    User.objects.create_superuser('admin', 'admin@mbeundmi.sn', 'admin1234')
-    print('[entrypoint] Superutilisateur admin créé (mot de passe: admin1234)')
-else:
-    print('[entrypoint] Un superutilisateur existe déjà.')
-" 2>/dev/null || true
+if [ -n "$DJANGO_SUPERUSER_PASSWORD" ] && [ -n "$DJANGO_SUPERUSER_USERNAME" ] && [ -n "$DJANGO_SUPERUSER_EMAIL" ]; then
+    echo "[entrypoint] Vérification du superutilisateur..."
+    python manage.py createsuperuser --noinput || echo "[entrypoint] Superutilisateur déjà existant ou création ignorée."
+else
+    echo "[entrypoint] DJANGO_SUPERUSER_USERNAME/EMAIL/PASSWORD non fournis : aucun superutilisateur créé automatiquement."
+fi
 
 # ---------------------------------------------------------------------------
 # 5. Lancer Gunicorn

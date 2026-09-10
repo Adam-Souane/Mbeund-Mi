@@ -1,5 +1,6 @@
 import json
 import logging
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
@@ -9,36 +10,50 @@ import paho.mqtt.client as mqtt
 logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
-    help = "Écoute le broker MQTT Mosquitto et enregistre les mesures reçues en base de données."
+    help = "Écoute le broker MQTT (HiveMQ Cloud / Mosquitto) et enregistre les mesures reçues en base de données."
 
     def add_arguments(self, parser):
         parser.add_argument(
             '--host',
-            default='localhost',
-            help='Adresse du broker MQTT (par défaut: localhost)'
+            default=None,
+            help="Adresse du broker MQTT (par défaut : MOSQUITTO_HOST dans .env)"
         )
         parser.add_argument(
             '--port',
             type=int,
-            default=1883,
-            help='Port du broker MQTT (par défaut: 1883)'
+            default=None,
+            help="Port du broker MQTT (par défaut : MOSQUITTO_PORT dans .env)"
         )
         parser.add_argument(
             '--topic',
             default='capteurs/+/mesures',
             help='Topic MQTT à écouter (par défaut: capteurs/+/mesures)'
         )
+        parser.add_argument(
+            '--no-tls',
+            action='store_true',
+            help="Désactive TLS (broker local non chiffré uniquement, ex: Mosquitto en développement)"
+        )
 
     def handle(self, *args, **options):
-        host = options['host']
-        port = options['port']
+        host = options['host'] or settings.MOSQUITTO_HOST
+        port = options['port'] or settings.MOSQUITTO_PORT
         topic = options['topic']
+        use_tls = not options['no_tls']
 
         # Configuration du client MQTT avec compatibilité API v1 pour paho-mqtt v2.x et v1.x
         try:
             client = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION1)
         except AttributeError:
             client = mqtt.Client()
+
+        # Authentification (requise par les brokers cloud comme HiveMQ Cloud)
+        if settings.MQTT_USERNAME:
+            client.username_pw_set(settings.MQTT_USERNAME, settings.MQTT_PASSWORD)
+
+        # TLS (port 8883 standard pour les brokers cloud chiffrés)
+        if use_tls:
+            client.tls_set()
 
         # Enregistrement des callbacks
         client.on_connect = self.on_connect
@@ -48,8 +63,10 @@ class Command(BaseCommand):
         # Stockage du topic pour s'y abonner lors de la connexion
         client.topic_to_subscribe = topic
 
-        self.stdout.write(self.style.SUCCESS(f"Connexion au broker MQTT {host}:{port}..."))
-        
+        self.stdout.write(self.style.SUCCESS(
+            f"Connexion au broker MQTT {host}:{port} ({'TLS' if use_tls else 'non chiffré'})..."
+        ))
+
         try:
             # Utilisation de la connexion asynchrone pour permettre au client de tenter
             # de se reconnecter périodiquement même si le broker n'est pas disponible au démarrage.
