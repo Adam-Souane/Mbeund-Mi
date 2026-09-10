@@ -188,3 +188,25 @@ class HistoriqueRisque(models.Model):
     @property
     def type_cible(self) -> str:
         return 'zone' if self.zone_id else 'segment'
+
+
+class ContactAlerte(models.Model):
+    """
+    Registre des citoyens souhaitant recevoir un SMS lors d'une alerte dans
+    leur zone — distinct des Profile (agent/autorite/admin) qui sont déjà
+    notifiés systématiquement. Inscription libre (sans compte utilisateur),
+    à l'image du signalement citoyen.
+    """
+    telephone = models.CharField(max_length=20)
+    zone = models.ForeignKey(ZoneRisque, on_delete=models.CASCADE, related_name='contacts_alerte')
+    nom = models.CharField(max_length=100, blank=True)
+    actif = models.BooleanField(default=True)
+    date_inscription = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Contact d'alerte"
+        verbose_name_plural = "Contacts d'alerte"
+        ordering = ['-date_inscription']
+
+    def __str__(self):
+        return f"{self.telephone} ({self.zone.quartier})"

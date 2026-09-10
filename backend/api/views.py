@@ -10,7 +10,7 @@ from rest_framework import permissions
 from capteurs.models import Capteur, Mesure
 from alertes.models import (
     Alerte, ZoneRisque, PredictionIA, EpisodeInondation, SignalementCitoyen,
-    SegmentRue, PrevisionMeteo, HistoriqueRisque,
+    SegmentRue, PrevisionMeteo, HistoriqueRisque, ContactAlerte,
 )
 from api.serializers import (
     CapteurSerializer,
@@ -23,8 +23,9 @@ from api.serializers import (
     SegmentRueSerializer,
     PrevisionMeteoSerializer,
     HistoriqueRisqueSerializer,
+    ContactAlerteSerializer,
 )
-from api.permissions import IsAutoriteOrAdmin
+from api.permissions import IsAutoriteOrAdmin, EstAdminOuAutorite
 
 
 class CapteurViewSet(viewsets.ModelViewSet):
@@ -189,3 +190,19 @@ class HistoriqueRisqueViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = HistoriqueRisque.objects.all()
     serializer_class = HistoriqueRisqueSerializer
     pagination_class = PageNumberPagination
+
+
+class ContactAlerteViewSet(viewsets.ModelViewSet):
+    """
+    Registre des citoyens souhaitant recevoir un SMS d'alerte dans leur zone.
+    Inscription libre (comme pour les signalements) ; consultation/gestion
+    réservées aux autorités/admin car ce sont des numéros de téléphone (PII).
+    """
+    queryset = ContactAlerte.objects.all()
+    serializer_class = ContactAlerteSerializer
+    pagination_class = PageNumberPagination
+
+    def get_permissions(self):
+        if self.action == 'create':
+            return [permissions.AllowAny()]
+        return [EstAdminOuAutorite()]

@@ -8,7 +8,7 @@ from rest_framework import serializers
 from capteurs.models import Capteur, Mesure
 from alertes.models import (
     ZoneRisque, Alerte, PredictionIA, EpisodeInondation, SignalementCitoyen,
-    SegmentRue, PrevisionMeteo, HistoriqueRisque,
+    SegmentRue, PrevisionMeteo, HistoriqueRisque, ContactAlerte,
 )
 
 def wkt_to_geojson(wkt_str):
@@ -526,3 +526,10 @@ class HistoriqueRisqueSerializer(serializers.ModelSerializer):
         if bool(zone) == bool(segment):
             raise serializers.ValidationError("Renseignez exactement une cible : zone OU segment, pas les deux.")
         return data
+
+
+class ContactAlerteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContactAlerte
+        fields = ('id', 'telephone', 'zone', 'nom', 'actif', 'date_inscription')
+        read_only_fields = ('id', 'date_inscription')

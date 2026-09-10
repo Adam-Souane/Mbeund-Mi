@@ -15,6 +15,7 @@ from api.views import (
     SegmentRueViewSet,
     PrevisionMeteoViewSet,
     HistoriqueRisqueViewSet,
+    ContactAlerteViewSet,
 )
 
 router = DefaultRouter()
@@ -28,6 +29,7 @@ router.register(r'previsions', PrevisionMeteoViewSet, basename='prevision')
 router.register(r'inondations', EpisodeInondationViewSet, basename='inondation')
 router.register(r'historique-risque', HistoriqueRisqueViewSet, basename='historique-risque')
 router.register(r'signalements', SignalementCitoyenViewSet, basename='signalement')
+router.register(r'contacts-alerte', ContactAlerteViewSet, basename='contact-alerte')
 
 
 urlpatterns = [

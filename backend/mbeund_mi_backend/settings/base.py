@@ -192,6 +192,20 @@ SIMPLE_JWT = {
     'USER_ID_CLAIM': 'user_id',
 }
 
+# Cache partagé (Redis/Upstash) — nécessaire pour que le rate limiting (throttling
+# DRF) soit cohérent entre plusieurs workers Gunicorn en production. Sans ça,
+# chaque worker aurait son propre compteur en mémoire locale, multipliant la
+# limite réelle par le nombre de workers. Repli sur le cache mémoire local si
+# REDIS_URL n'est pas configuré (ex: environnement de test isolé).
+_redis_url = env('REDIS_URL', default=None)
+if _redis_url:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': _redis_url,
+        }
+    }
+
 # Celery Configuration
 CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://redis:6379/1')
 CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default='redis://redis:6379/1')

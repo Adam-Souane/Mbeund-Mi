@@ -7,7 +7,7 @@ from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.utils import timezone
-from alertes.models import ZoneRisque, Alerte, PredictionIA, EpisodeInondation
+from alertes.models import ZoneRisque, Alerte, PredictionIA, EpisodeInondation, ContactAlerte
 from capteurs.models import Capteur, Mesure
 from api.services.sms_service import send_alert_sms
 
@@ -139,23 +139,28 @@ def envoyer_sms_alerte(self, alerte_id):
         logger.error(f"[SMS Task] L'alerte avec l'ID {alerte_id} n'existe pas.")
         raise e
 
-    # NOTE : il n'existe pas encore de registre des résidents/citoyens par zone.
-    # En attendant, le SMS est envoyé aux profils (agents/autorités) ayant un
-    # numéro de téléphone renseigné. À étendre lorsqu'un registre de contacts
-    # par zone sera disponible.
     from users.models import Profile
     message = alerte.message or f"Risque {alerte.niveau} détecté dans la zone {alerte.zone.quartier}. Prudence."
-    destinataires = Profile.objects.filter(
-        role__in=['agent', 'autorite', 'admin'],
-    ).exclude(telephone='')
+
+    # Deux sources de destinataires : le staff (agents/autorités/admin, notifiés
+    # pour toute zone) et le registre des citoyens inscrits spécifiquement à
+    # cette zone (ContactAlerte, inscription libre via /api/contacts-alerte/).
+    numeros_staff = set(
+        Profile.objects.filter(role__in=['agent', 'autorite', 'admin']).exclude(telephone='').values_list('telephone', flat=True)
+    )
+    numeros_citoyens = set(
+        ContactAlerte.objects.filter(zone=alerte.zone, actif=True).exclude(telephone='').values_list('telephone', flat=True)
+    )
+    numeros = numeros_staff | numeros_citoyens
 
     nb_envoyes = 0
-    for profil in destinataires:
-        if send_alert_sms(profil.telephone, message):
+    for numero in numeros:
+        if send_alert_sms(numero, message):
             nb_envoyes += 1
 
     logger.info(
-        f"[SMS Task] SMS envoyé à {nb_envoyes}/{destinataires.count()} destinataire(s) "
+        f"[SMS Task] SMS envoyé à {nb_envoyes}/{len(numeros)} destinataire(s) "
+        f"({len(numeros_staff)} staff + {len(numeros_citoyens)} citoyens inscrits) "
         f"pour l'alerte {alerte.id} (Niveau : {alerte.niveau}, zone {alerte.zone.quartier})."
     )
 

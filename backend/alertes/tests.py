@@ -481,3 +481,70 @@ def test_analyse_gee_periodique_aucune_inondation():
     assert resultat["status"] == "success"
     assert resultat["surface_ha"] == 0
     assert EpisodeInondation.objects.count() == 0
+
+
+# --- ContactAlerte (registre citoyen pour SMS d'alerte) ---
+
+@pytest.mark.django_db
+def test_contact_alerte_inscription_libre(api_client, test_zone):
+    payload = {"telephone": "+221770000001", "zone": test_zone.id, "nom": "Fatou"}
+    response = api_client.post('/api/contacts-alerte/', payload, format='json')
+    assert response.status_code == 201, response.data
+    assert response.data['actif'] is True
+
+    # Mais la consultation reste réservée (numéros de téléphone = PII)
+    assert api_client.get('/api/contacts-alerte/').status_code == 401
+
+
+@pytest.mark.django_db
+def test_contact_alerte_liste_reservee_autorite(test_zone, db):
+    from alertes.models import ContactAlerte
+    ContactAlerte.objects.create(telephone="+221770000002", zone=test_zone)
+
+    # Deux clients indépendants (auth_client/citoyen_client partagent le même
+    # APIClient sous-jacent s'ils sont demandés ensemble — instances séparées ici).
+    citoyen = User.objects.create_user(username='citoyen_reg', password='x')
+    citoyen.profile.role = 'citoyen'
+    citoyen.profile.save()
+    client_citoyen = APIClient()
+    client_citoyen.force_authenticate(user=citoyen)
+    assert client_citoyen.get('/api/contacts-alerte/').status_code == 403
+
+    autorite = User.objects.create_user(username='autorite_reg', password='x')
+    autorite.profile.role = 'autorite'
+    autorite.profile.save()
+    client_autorite = APIClient()
+    client_autorite.force_authenticate(user=autorite)
+    response = client_autorite.get('/api/contacts-alerte/')
+    assert response.status_code == 200
+    assert response.data['count'] == 1
+
+
+@pytest.mark.django_db
+def test_envoyer_sms_alerte_notifie_contacts_de_la_zone(test_zone, monkeypatch):
+    from alertes.models import ContactAlerte
+    from alertes.tasks import envoyer_sms_alerte
+
+    autre_zone = ZoneRisque.objects.create(
+        geom="POLYGON((5 5, 5 6, 6 6, 6 5, 5 5))", quartier="Ailleurs", niveau_risque="vert"
+    )
+    ContactAlerte.objects.create(telephone="+221770000003", zone=test_zone, actif=True)
+    ContactAlerte.objects.create(telephone="+221770000004", zone=test_zone, actif=False)  # désinscrit
+    ContactAlerte.objects.create(telephone="+221770000005", zone=autre_zone, actif=True)  # autre zone
+
+    alerte = Alerte.objects.create(
+        niveau="rouge", zone=test_zone, timestamp=timezone.now(), statut="en_attente",
+        message="Test SMS zone",
+    )
+
+    numeros_appeles = []
+    monkeypatch.setattr(
+        'alertes.tasks.send_alert_sms',
+        lambda numero, message: numeros_appeles.append(numero) or True,
+    )
+
+    resultat = envoyer_sms_alerte(alerte.id)
+
+    assert resultat["status"] == "sent"
+    # Seul le contact actif de la bonne zone doit être notifié
+    assert numeros_appeles == ["+221770000003"]

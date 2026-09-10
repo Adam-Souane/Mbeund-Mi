@@ -61,6 +61,7 @@ URL de base : `http://localhost:8000/api/`
 - **POST `/api/signalements/`** : Permet aux citoyens de signaler un problème (géolocalisation, description, photo) — liste **paginée**.
   - *Note sur le Geofencing* : Si les coordonnées envoyées sont à plus de 4 km de Thiaroye Sur Mer, l'API renverra une erreur 400 (Validation Error). Les photos sont automatiquement compressées par le serveur.
   - *Note anti-spam* : la création est limitée à 20 requêtes/heure par IP anonyme (au-delà : `429 Too Many Requests`).
+- **POST `/api/contacts-alerte/`** : Permet à un citoyen de s'inscrire pour recevoir un SMS lors d'une alerte dans sa zone (`telephone`, `zone`, `nom` optionnel) — inscription libre, mais la liste des inscrits (`GET`) est réservée aux autorités/admin (numéros de téléphone = données personnelles) — **paginé**.
 - **POST `/api/token/`** / **POST `/api/token/refresh/`** : Authentification JWT.
 
 > **Pagination** : les endpoints marqués "paginé" renvoient `{"count", "next", "previous", "results"}` au lieu d'une liste brute (`results` contient la liste, ou le GeoJSON `FeatureCollection` pour les signalements). Page par défaut : 50 éléments (`?page=2` pour la suivante).

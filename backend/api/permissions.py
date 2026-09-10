@@ -26,3 +26,20 @@ class IsAutoriteOrAdmin(BasePermission):
             return True
 
         return False
+
+
+class EstAdminOuAutorite(BasePermission):
+    """
+    Réservé aux administrateurs/autorités pour TOUTE méthode, y compris la
+    lecture — contrairement à IsAutoriteOrAdmin qui autorise GET/HEAD/OPTIONS
+    à n'importe quel utilisateur authentifié. À utiliser quand les données
+    elles-mêmes sont sensibles (ex: numéros de téléphone), pas seulement leur
+    modification.
+    """
+    def has_permission(self, request, view):
+        if not (request.user and request.user.is_authenticated):
+            return False
+        if request.user.is_staff or request.user.is_superuser:
+            return True
+        profile = getattr(request.user, 'profile', None)
+        return bool(profile and profile.role in ['admin', 'autorite'])
