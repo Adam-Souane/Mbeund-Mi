@@ -51,13 +51,19 @@ Le Backend est configuré avec CORS pour te permettre de faire tes requêtes dep
 URL de base : `http://localhost:8000/api/`
 
 - **GET `/api/zones/`** : Zones à risque (géométrie, quartier, niveau de risque).
-- **GET `/api/capteurs/`** / **GET `/api/mesures/`** : Capteurs IoT et leurs relevés (niveau d'eau, pluviométrie).
-- **GET `/api/alertes/`** : Alertes générées (Vert, Jaune, Orange, Rouge).
+- **GET `/api/capteurs/`** : Capteurs IoT (non paginé, liste bornée).
+- **GET `/api/mesures/`** : Relevés capteurs (niveau d'eau, pluviométrie) — **paginé**.
+- **GET `/api/alertes/`** : Alertes générées (Vert, Jaune, Orange, Rouge) — **paginé**.
 - **GET `/api/predictions/`** : Prédictions IA de risque par zone.
 - **GET `/api/inondations/`** : Épisodes d'inondation historiques.
-- **POST `/api/signalements/`** : Permet aux citoyens de signaler un problème (géolocalisation, description, photo).
+- **GET `/api/previsions/`** : Prévisions météo — **paginé**.
+- **GET `/api/historique-risque/`** : Historique des scores de risque — **paginé**.
+- **POST `/api/signalements/`** : Permet aux citoyens de signaler un problème (géolocalisation, description, photo) — liste **paginée**.
   - *Note sur le Geofencing* : Si les coordonnées envoyées sont à plus de 4 km de Thiaroye Sur Mer, l'API renverra une erreur 400 (Validation Error). Les photos sont automatiquement compressées par le serveur.
+  - *Note anti-spam* : la création est limitée à 20 requêtes/heure par IP anonyme (au-delà : `429 Too Many Requests`).
 - **POST `/api/token/`** / **POST `/api/token/refresh/`** : Authentification JWT.
+
+> **Pagination** : les endpoints marqués "paginé" renvoient `{"count", "next", "previous", "results"}` au lieu d'une liste brute (`results` contient la liste, ou le GeoJSON `FeatureCollection` pour les signalements). Page par défaut : 50 éléments (`?page=2` pour la suivante).
 
 ---
 

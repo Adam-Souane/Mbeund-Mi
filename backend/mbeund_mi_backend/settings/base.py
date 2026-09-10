@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'channels',
     'django_celery_beat',
 
@@ -150,6 +151,21 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+    # Limite le débit des requêtes anonymes (surtout /api/signalements/, seul
+    # endpoint ouvert sans authentification) et des utilisateurs authentifiés.
+    'DEFAULT_THROTTLE_CLASSES': (
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ),
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '20/hour',
+        'user': '1000/hour',
+    },
+    # Pas de pagination par défaut : appliquée au cas par cas (voir api/views.py)
+    # uniquement sur les modèles qui grossissent en continu (mesures, alertes,
+    # signalements, prévisions, historique) — pas sur les données bornées
+    # (zones, capteurs, segments) pour ne pas casser leur contrat GeoJSON.
+    'PAGE_SIZE': 50,
 }
 
 # SimpleJWT configuration

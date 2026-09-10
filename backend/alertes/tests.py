@@ -68,30 +68,30 @@ def test_list_and_filter_alertes(auth_client, test_zone):
     a2 = Alerte.objects.create(niveau="rouge", zone=test_zone, timestamp=timezone.now(), statut="envoyee")
     a3 = Alerte.objects.create(niveau="jaune", zone=zone2, timestamp=timezone.now(), statut="resolue")
 
-    # List all
+    # List all (paginé : /api/alertes/ grossit en continu)
     response = auth_client.get('/api/alertes/')
     assert response.status_code == 200
-    assert len(response.data) == 3
+    assert response.data['count'] == 3
 
     # Filter by zone
     response = auth_client.get(f'/api/alertes/?zone={test_zone.id}')
     assert response.status_code == 200
-    assert len(response.data) == 2
-    for item in response.data:
+    assert response.data['count'] == 2
+    for item in response.data['results']:
         assert item['zone']['id'] == test_zone.id
 
     # Filter by level
     response = auth_client.get('/api/alertes/?niveau=jaune')
     assert response.status_code == 200
-    assert len(response.data) == 2
-    for item in response.data:
+    assert response.data['count'] == 2
+    for item in response.data['results']:
         assert item['niveau'] == 'jaune'
 
     # Filter by both
     response = auth_client.get(f'/api/alertes/?zone={test_zone.id}&niveau=jaune')
     assert response.status_code == 200
-    assert len(response.data) == 1
-    assert response.data[0]['id'] == a1.id
+    assert response.data['count'] == 1
+    assert response.data['results'][0]['id'] == a1.id
 
 @pytest.mark.django_db
 def test_statut_transitions_valid(auth_client, test_zone):

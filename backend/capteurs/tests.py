@@ -107,13 +107,13 @@ def test_mesures_list_and_create(auth_client):
     assert res_data['capteur']['properties']['nom'] == "Capteur Test Mesure"
     assert res_data['capteur']['geometry']['coordinates'] == [-17.40, 14.80]
 
-    # 2. Test GET /api/mesures/ (List)
+    # 2. Test GET /api/mesures/ (List, paginé : grossit en continu)
     response_list = auth_client.get('/api/mesures/')
     assert response_list.status_code == 200
-    assert isinstance(response_list.data, list)
-    assert len(response_list.data) >= 1
-    
-    item = response_list.data[0]
+    assert isinstance(response_list.data['results'], list)
+    assert response_list.data['count'] >= 1
+
+    item = response_list.data['results'][0]
     assert item['valeur'] == 25.5
     assert item['capteur']['properties']['nom'] == "Capteur Test Mesure"
 

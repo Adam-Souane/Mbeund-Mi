@@ -163,10 +163,10 @@ def test_signalements_citoyen_forbidden(api_client, user_citoyen, signalement_in
 def test_signalements_autorite_allowed(api_client, user_autorite, signalement_instance):
     api_client.force_authenticate(user=user_autorite)
 
-    # GET list -> 200
+    # GET list -> 200 (paginé : /api/signalements/ grossit en continu)
     response = api_client.get('/api/signalements/')
     assert response.status_code == 200
-    assert len(response.data.get('features', [])) == 1
+    assert len(response.data['results'].get('features', [])) == 1
 
     # GET detail -> 200
     response = api_client.get(f'/api/signalements/{signalement_instance.id}/')

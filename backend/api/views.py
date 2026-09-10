@@ -1,6 +1,7 @@
 from django.db.models import Subquery, OuterRef
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from django.utils import timezone
 from datetime import timedelta
@@ -43,6 +44,7 @@ class MesureViewSet(viewsets.ModelViewSet):
     queryset = Mesure.objects.all()
     serializer_class = MesureSerializer
     permission_classes = [IsAutoriteOrAdmin]
+    pagination_class = PageNumberPagination
 
     @action(detail=False, methods=['get'], url_path='recentes')
     def recentes(self, request):
@@ -82,6 +84,7 @@ class AlerteViewSet(viewsets.ModelViewSet):
     queryset = Alerte.objects.all().select_related('zone')
     serializer_class = AlerteSerializer
     permission_classes = [IsAutoriteOrAdmin]
+    pagination_class = PageNumberPagination
 
     def get_queryset(self):
         queryset = self.queryset
@@ -161,6 +164,7 @@ class EpisodeInondationViewSet(viewsets.ReadOnlyModelViewSet):
 class SignalementCitoyenViewSet(viewsets.ModelViewSet):
     queryset = SignalementCitoyen.objects.all()
     serializer_class = SignalementCitoyenSerializer
+    pagination_class = PageNumberPagination
 
     def get_permissions(self):
         if self.action == 'create':
@@ -178,8 +182,10 @@ class PrevisionMeteoViewSet(viewsets.ModelViewSet):
     queryset = PrevisionMeteo.objects.all()
     serializer_class = PrevisionMeteoSerializer
     permission_classes = [IsAutoriteOrAdmin]
+    pagination_class = PageNumberPagination
 
 
 class HistoriqueRisqueViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = HistoriqueRisque.objects.all()
     serializer_class = HistoriqueRisqueSerializer
+    pagination_class = PageNumberPagination
