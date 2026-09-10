@@ -151,12 +151,15 @@ class PrevisionMeteo(models.Model):
 
 
 class HistoriqueRisque(models.Model):
-    TYPE_CIBLE_CHOICES = [
-        ('zone', 'Zone de risque'),
-        ('segment', 'Segment de rue'),
-    ]
-    type_cible = models.CharField(max_length=20, choices=TYPE_CIBLE_CHOICES)
-    cible_id = models.PositiveIntegerField()
+    # FK réelles plutôt qu'un couple (type_cible, cible_id) libre : garantit
+    # l'intégrité référentielle (impossible de viser une zone/segment inexistant
+    # ou supprimé) au lieu d'un entier sans contrainte.
+    zone = models.ForeignKey(
+        ZoneRisque, on_delete=models.CASCADE, null=True, blank=True, related_name='historique_risque'
+    )
+    segment = models.ForeignKey(
+        SegmentRue, on_delete=models.CASCADE, null=True, blank=True, related_name='historique_risque'
+    )
     score_risque = models.DecimalField(max_digits=4, decimal_places=2)
     date_calcul = models.DateTimeField(auto_now_add=True)
     details = models.JSONField(null=True, blank=True)
@@ -165,6 +168,23 @@ class HistoriqueRisque(models.Model):
         verbose_name = "Historique de risque"
         verbose_name_plural = "Historiques de risque"
         ordering = ['-date_calcul']
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    models.Q(zone__isnull=False, segment__isnull=True) |
+                    models.Q(zone__isnull=True, segment__isnull=False)
+                ),
+                name='historique_risque_une_seule_cible',
+            )
+        ]
 
     def __str__(self):
-        return f"{self.get_type_cible_display()} #{self.cible_id} - score {self.score_risque}"
+        return f"{self.cible} - score {self.score_risque}"
+
+    @property
+    def cible(self):
+        return self.zone or self.segment
+
+    @property
+    def type_cible(self) -> str:
+        return 'zone' if self.zone_id else 'segment'

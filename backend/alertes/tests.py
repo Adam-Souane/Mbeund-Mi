@@ -2,7 +2,8 @@ import pytest
 from django.utils import timezone
 from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
-from alertes.models import ZoneRisque, Alerte
+from django.db import IntegrityError
+from alertes.models import ZoneRisque, Alerte, SegmentRue, PrevisionMeteo, HistoriqueRisque
 
 User = get_user_model()
 
@@ -14,6 +15,14 @@ def api_client():
 def auth_client(api_client, db):
     user = User.objects.create_user(username='testuser', password='password123')
     user.profile.role = 'autorite'
+    user.profile.save()
+    api_client.force_authenticate(user=user)
+    return api_client
+
+@pytest.fixture
+def citoyen_client(api_client, db):
+    user = User.objects.create_user(username='citoyen_alertes', password='password123')
+    user.profile.role = 'citoyen'
     user.profile.save()
     api_client.force_authenticate(user=user)
     return api_client
@@ -223,3 +232,109 @@ def test_statut_transition_bad_requests(auth_client, test_zone):
 
 
 
+
+
+# --- SegmentRue ---
+
+@pytest.mark.django_db
+def test_segment_rue_crud(auth_client, test_zone):
+    payload = {
+        "nom": "Rue Test",
+        "geom": {"type": "LineString", "coordinates": [[-17.38, 14.75], [-17.37, 14.76]]},
+        "zone": test_zone.id,
+        "etat_drainage": "obstrue",
+        "score_risque_actuel": 3.5,
+    }
+    response = auth_client.post('/api/segments/', payload, format='json')
+    assert response.status_code == 201, response.data
+
+    response_list = auth_client.get('/api/segments/')
+    assert response_list.status_code == 200
+    assert len(response_list.data['features']) == 1
+
+
+@pytest.mark.django_db
+def test_segment_rue_forbidden_for_citoyen(citoyen_client):
+    payload = {
+        "nom": "Rue Test",
+        "geom": {"type": "LineString", "coordinates": [[-17.38, 14.75], [-17.37, 14.76]]},
+    }
+    assert citoyen_client.post('/api/segments/', payload, format='json').status_code == 403
+    assert citoyen_client.get('/api/segments/').status_code == 200
+
+
+# --- PrevisionMeteo ---
+
+@pytest.mark.django_db
+def test_prevision_meteo_crud(auth_client):
+    payload = {
+        "date_prevision": timezone.now().isoformat(),
+        "precipitation": 12.5,
+        "temperature": 27.3,
+        "vitesse_vent": 15.0,
+        "source": "Open-Meteo",
+    }
+    response = auth_client.post('/api/previsions/', payload, format='json')
+    assert response.status_code == 201, response.data
+
+    response_list = auth_client.get('/api/previsions/')
+    assert response_list.status_code == 200
+    assert response_list.data['count'] == 1
+    assert response_list.data['results'][0]['source'] == "Open-Meteo"
+
+
+@pytest.mark.django_db
+def test_prevision_meteo_forbidden_for_citoyen(citoyen_client):
+    payload = {"date_prevision": timezone.now().isoformat(), "precipitation": 5.0}
+    assert citoyen_client.post('/api/previsions/', payload, format='json').status_code == 403
+
+
+# --- HistoriqueRisque ---
+
+@pytest.mark.django_db
+def test_historique_risque_readonly_api(auth_client, test_zone):
+    # En lecture seule côté API : alimenté par une tâche système (calcul de
+    # risque), pas par un POST direct d'un utilisateur.
+    HistoriqueRisque.objects.create(zone=test_zone, score_risque=2.5)
+
+    response_list = auth_client.get('/api/historique-risque/')
+    assert response_list.status_code == 200
+    assert response_list.data['count'] == 1
+    assert response_list.data['results'][0]['type_cible'] == 'zone'
+
+    response_post = auth_client.post('/api/historique-risque/', {"zone": test_zone.id, "score_risque": 1.0})
+    assert response_post.status_code == 405
+
+
+@pytest.mark.django_db
+def test_historique_risque_serializer_validate_zone_ou_segment(test_zone):
+    from api.serializers import HistoriqueRisqueSerializer
+
+    segment = SegmentRue.objects.create(
+        nom="Segment Test",
+        geom="LINESTRING(-17.38 14.75, -17.37 14.76)",
+        zone=test_zone,
+    )
+
+    # Zone seule : OK
+    s1 = HistoriqueRisqueSerializer(data={"zone": test_zone.id, "score_risque": 2.5})
+    assert s1.is_valid(), s1.errors
+
+    # Segment seul : OK
+    s2 = HistoriqueRisqueSerializer(data={"segment": segment.id, "score_risque": 1.0})
+    assert s2.is_valid(), s2.errors
+
+    # Aucune cible : rejeté
+    s3 = HistoriqueRisqueSerializer(data={"score_risque": 1.0})
+    assert not s3.is_valid()
+
+    # Les deux à la fois : rejeté
+    s4 = HistoriqueRisqueSerializer(data={"zone": test_zone.id, "segment": segment.id, "score_risque": 1.0})
+    assert not s4.is_valid()
+
+
+@pytest.mark.django_db
+def test_historique_risque_contrainte_bdd(test_zone):
+    # La contrainte CheckConstraint protège aussi les créations hors API (ex: tâche Celery future)
+    with pytest.raises(IntegrityError):
+        HistoriqueRisque.objects.create(score_risque=1.0)

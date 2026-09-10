@@ -514,6 +514,15 @@ class PrevisionMeteoSerializer(serializers.ModelSerializer):
 
 
 class HistoriqueRisqueSerializer(serializers.ModelSerializer):
+    type_cible = serializers.ReadOnlyField()
+
     class Meta:
         model = HistoriqueRisque
-        fields = ('id', 'type_cible', 'cible_id', 'score_risque', 'date_calcul', 'details')
+        fields = ('id', 'type_cible', 'zone', 'segment', 'score_risque', 'date_calcul', 'details')
+
+    def validate(self, data):
+        zone = data.get('zone')
+        segment = data.get('segment')
+        if bool(zone) == bool(segment):
+            raise serializers.ValidationError("Renseignez exactement une cible : zone OU segment, pas les deux.")
+        return data

@@ -82,7 +82,6 @@ def test_mesures_list_and_create(auth_client):
         nom="Capteur Test Mesure",
         type="pluviometre",
         localisation="POINT(-17.40 14.80)",
-        actif=True,
         date_installation="2026-08-17"
     )
     
@@ -125,14 +124,12 @@ def test_mesures_recentes(auth_client):
         nom="Cap1",
         type="eau",
         localisation="POINT(-17.1 14.1)",
-        actif=True,
         date_installation="2026-08-17"
     )
     cap2 = Capteur.objects.create(
         nom="Cap2",
         type="pluviometre",
         localisation="POINT(-17.2 14.2)",
-        actif=True,
         date_installation="2026-08-17"
     )
     
@@ -185,7 +182,6 @@ def test_ecoute_mqtt_success():
         nom="Capteur MQTT Test",
         type="eau",
         localisation="POINT(-17.38 14.75)",
-        actif=True,
         date_installation="2026-08-17"
     )
 
@@ -258,7 +254,6 @@ def test_ecoute_mqtt_missing_fields():
         nom="Capteur MQTT Test",
         type="eau",
         localisation="POINT(-17.38 14.75)",
-        actif=True,
         date_installation="2026-08-17"
     )
 
@@ -373,7 +368,6 @@ def test_capteurs_mesures_forbidden_for_citoyen(citoyen_client):
         nom="Capteur Test Role",
         type="eau",
         localisation="POINT(-17.38 14.75)",
-        actif=True,
         date_installation="2026-08-17"
     )
 
@@ -397,7 +391,6 @@ def test_capteurs_mesures_delete_success(auth_client):
         nom="Capteur à supprimer",
         type="eau",
         localisation="POINT(-17.38 14.75)",
-        actif=True,
         date_installation="2026-08-17"
     )
     mesure = Mesure.objects.create(

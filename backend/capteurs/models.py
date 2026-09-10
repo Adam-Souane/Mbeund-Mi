@@ -18,7 +18,6 @@ class Capteur(models.Model):
     zone = models.ForeignKey(
         'alertes.ZoneRisque', on_delete=models.SET_NULL, null=True, blank=True, related_name='capteurs'
     )
-    actif = models.BooleanField(default=True)
     statut = models.CharField(max_length=20, choices=STATUT_CHOICES, default='actif')
     dernier_releve = models.DateTimeField(null=True, blank=True)
     date_installation = models.DateField()
@@ -29,6 +28,11 @@ class Capteur(models.Model):
 
     def __str__(self):
         return f"{self.nom} ({self.get_type_display()})"
+
+    @property
+    def actif(self) -> bool:
+        """Dérivé de `statut` — évite la désynchronisation entre deux champs concurrents."""
+        return self.statut == 'actif'
 
 
 class Mesure(models.Model):

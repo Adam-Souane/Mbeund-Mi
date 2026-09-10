@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
+    'drf_spectacular',
     'channels',
     'django_celery_beat',
 
@@ -166,6 +167,15 @@ REST_FRAMEWORK = {
     # signalements, prévisions, historique) — pas sur les données bornées
     # (zones, capteurs, segments) pour ne pas casser leur contrat GeoJSON.
     'PAGE_SIZE': 50,
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+# Documentation API générée automatiquement (Swagger/Redoc) — voir mbeund_mi_backend/urls.py
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'MBEUND MI — API',
+    'DESCRIPTION': "API de la plateforme de prévention des inondations de Thiaroye-sur-Mer.",
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
 }
 
 # SimpleJWT configuration
@@ -216,4 +226,9 @@ MQTT_PASSWORD = env('MQTT_PASSWORD', default='')
 CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=[
     'http://localhost:3000', 'http://127.0.0.1:3000',
 ])
+
+# PAGE_SIZE est volontairement global tandis que pagination_class est défini
+# par vue (voir api/views.py) — seuls les modèles qui grossissent en continu
+# sont paginés. rest_framework.W001 est donc un faux positif attendu.
+SILENCED_SYSTEM_CHECKS = ['rest_framework.W001']
 
