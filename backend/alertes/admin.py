@@ -1,6 +1,9 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import ZoneRisque, Alerte, EpisodeInondation, PredictionIA, SignalementCitoyen
+from .models import (
+    ZoneRisque, Alerte, EpisodeInondation, PredictionIA, SignalementCitoyen,
+    SegmentRue, PrevisionMeteo, HistoriqueRisque, ContactAlerte,
+)
 
 @admin.register(ZoneRisque)
 class ZoneRisqueAdmin(admin.ModelAdmin):
@@ -73,7 +76,7 @@ class EpisodeInondationAdmin(admin.ModelAdmin):
 
 @admin.register(PredictionIA)
 class PredictionIAAdmin(admin.ModelAdmin):
-    list_display = ('zone', 'probabilite', 'horizon_h', 'confiance', 'timestamp')
+    list_display = ('zone', 'probabilite', 'horizon_h', 'confiance', 'niveau_eau_predit_cm', 'timestamp')
     list_filter = ('zone', 'timestamp')
 
 @admin.register(SignalementCitoyen)
@@ -81,3 +84,25 @@ class SignalementCitoyenAdmin(admin.ModelAdmin):
     list_display = ('categorie', 'valide', 'date_creation', 'localisation')
     list_filter = ('categorie', 'valide', 'date_creation')
     search_fields = ('description',)
+
+@admin.register(SegmentRue)
+class SegmentRueAdmin(admin.ModelAdmin):
+    list_display = ('nom', 'zone', 'etat_drainage', 'score_risque_actuel', 'created_at')
+    list_filter = ('etat_drainage', 'zone')
+    search_fields = ('nom',)
+
+@admin.register(PrevisionMeteo)
+class PrevisionMeteoAdmin(admin.ModelAdmin):
+    list_display = ('date_prevision', 'temperature', 'precipitation', 'vitesse_vent', 'source')
+    list_filter = ('source', 'date_prevision')
+
+@admin.register(HistoriqueRisque)
+class HistoriqueRisqueAdmin(admin.ModelAdmin):
+    list_display = ('type_cible', 'cible', 'score_risque', 'date_calcul')
+    list_filter = ('date_calcul',)
+
+@admin.register(ContactAlerte)
+class ContactAlerteAdmin(admin.ModelAdmin):
+    list_display = ('telephone', 'zone', 'nom', 'actif', 'date_inscription')
+    list_filter = ('actif', 'zone')
+    search_fields = ('telephone', 'nom')
