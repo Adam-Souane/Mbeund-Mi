@@ -30,7 +30,7 @@ def test_poser_question_groq(MockGroq):
     mock_client.chat.completions.create.assert_called_once()
     
     call_args = mock_client.chat.completions.create.call_args[1]
-    assert call_args['model'] == "llama-3.3-70b-versatile"
+    assert call_args['model'] == "openai/gpt-oss-120b"
     assert call_args['temperature'] == 0.3
     
     messages = call_args['messages']

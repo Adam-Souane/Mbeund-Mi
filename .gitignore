@@ -121,6 +121,9 @@ temp.zip
 docx_out
 temp_docx
 
+# --- État local Celery Beat (scheduler par défaut, régénéré à chaque lancement) ---
+celerybeat-schedule*
+
 # --- Modèles IA / ML entraînés (mbeund_mi_ia) ---
 *.pkl
 *.npy

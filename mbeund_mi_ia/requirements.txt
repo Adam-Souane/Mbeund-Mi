@@ -8,3 +8,5 @@ earthengine-api
 geemap
 schedule
 twilio>=9.0.0
+python-dotenv
+groq

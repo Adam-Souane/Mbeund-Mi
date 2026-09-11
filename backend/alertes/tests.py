@@ -105,7 +105,10 @@ def test_list_and_filter_alertes(auth_client, test_zone):
 
 @pytest.mark.django_db
 def test_statut_transitions_valid(auth_client, test_zone):
-    alerte = Alerte.objects.create(niveau="orange", zone=test_zone, timestamp=timezone.now(), statut="en_attente")
+    # niveau="jaune" (pas orange/rouge) : ce test vérifie la machine à états du
+    # statut en isolation, pas le pipeline SMS automatique (qui passerait lui-même
+    # le statut à 'envoyee' dès la création pour orange/rouge — voir signals.py).
+    alerte = Alerte.objects.create(niveau="jaune", zone=test_zone, timestamp=timezone.now(), statut="en_attente")
     url = f'/api/alertes/{alerte.id}/statut/'
 
     # 1. transition en_attente -> envoyee
@@ -125,7 +128,8 @@ def test_statut_transitions_valid(auth_client, test_zone):
 
 @pytest.mark.django_db
 def test_statut_transitions_invalid(auth_client, test_zone):
-    alerte = Alerte.objects.create(niveau="orange", zone=test_zone, timestamp=timezone.now(), statut="en_attente")
+    # niveau="jaune" : voir commentaire de test_statut_transitions_valid ci-dessus.
+    alerte = Alerte.objects.create(niveau="jaune", zone=test_zone, timestamp=timezone.now(), statut="en_attente")
     url = f'/api/alertes/{alerte.id}/statut/'
 
     # Transition direct en_attente -> resolue is invalid
@@ -150,6 +154,25 @@ def test_statut_transitions_invalid(auth_client, test_zone):
     response = auth_client.patch(url, {"statut": "envoyee"}, format='json')
     assert response.status_code == 400
     assert 'detail' in response.data
+
+
+@pytest.mark.django_db
+def test_alerte_orange_rouge_declenche_sms_et_passe_envoyee(test_zone):
+    # Comportement intentionnel (Étape 4) : une alerte orange/rouge notifie
+    # automatiquement par SMS dès sa création, ce qui la fait passer directement
+    # à 'envoyee' — sans transition manuelle via /statut/. C'est ce qui a cassé
+    # test_statut_transitions_valid/invalid quand Celery est passé en mode eager
+    # pour les tests (avant, la tâche restait simplement en file, jamais exécutée).
+    alerte = Alerte.objects.create(niveau="rouge", zone=test_zone, timestamp=timezone.now(), statut="en_attente")
+    alerte.refresh_from_db()
+    assert alerte.statut == "envoyee"
+
+
+@pytest.mark.django_db
+def test_alerte_jaune_ne_declenche_pas_sms(test_zone):
+    alerte = Alerte.objects.create(niveau="jaune", zone=test_zone, timestamp=timezone.now(), statut="en_attente")
+    alerte.refresh_from_db()
+    assert alerte.statut == "en_attente"
 
 
 import asyncio
