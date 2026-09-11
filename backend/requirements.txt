@@ -23,15 +23,18 @@ twilio==9.3.2
 drf-spectacular==0.27.1
 
 # Service de prédiction IA (mbeund_mi_ia/ia/service_prediction.py), importé
-# directement par alertes/tasks.py:appel_modele_ia. Seul RandomForest est
-# utilisé dans la classification de risque actuelle (LSTM/TensorFlow non
-# appelé) — TensorFlow reste donc optionnel pour Django ; s'il est installé,
-# protobuf>=6.31.1 est requis (TensorFlow récent est généré avec ce gencode,
-# une version de protobuf plus ancienne plante l'import avec une VersionError).
+# directement par alertes/tasks.py:appel_modele_ia :
+# - RandomForest classe le risque (vert/jaune/orange/rouge) à partir d'un relevé instantané
+# - LSTM (TensorFlow) prédit le niveau d'eau du lendemain à partir de 24 jours
+#   d'historique (PredictionIA.niveau_eau_predit_cm, null tant que l'historique
+#   est insuffisant pour une zone)
+# protobuf>=6.31.1 est requis : TensorFlow récent est généré avec ce gencode,
+# une version de protobuf plus ancienne plante l'import avec une VersionError.
 numpy==2.2.6
 pandas==2.3.3
 scikit-learn==1.7.2
 protobuf==6.31.1
+tensorflow==2.21.0
 
 # Détection satellite d'inondation (mbeund_mi_ia/gee/detection_inondation.py),
 # importée par alertes/tasks.py:analyse_gee_periodique. Nécessite en plus une

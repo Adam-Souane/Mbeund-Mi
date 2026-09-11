@@ -1,4 +1,5 @@
 import pytest
+from datetime import timedelta
 from django.utils import timezone
 from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
@@ -366,6 +367,8 @@ def test_appel_modele_ia_cree_prediction_et_alerte_si_risque_eleve(test_zone):
     prediction = PredictionIA.objects.get(id=resultat["prediction_id"])
     assert prediction.zone_id == test_zone.id
     assert 0 <= prediction.probabilite <= 1
+    # Un seul relevé disponible : pas assez d'historique pour le LSTM (24 jours requis)
+    assert prediction.niveau_eau_predit_cm is None
 
     # Avec ces valeurs, le vrai modèle RandomForest classe en risque élevé,
     # ce qui doit créer une Alerte automatiquement.
@@ -548,3 +551,83 @@ def test_envoyer_sms_alerte_notifie_contacts_de_la_zone(test_zone, monkeypatch):
     assert resultat["status"] == "sent"
     # Seul le contact actif de la bonne zone doit être notifié
     assert numeros_appeles == ["+221770000003"]
+
+
+# --- LSTM (prédiction du niveau d'eau à 24h, complémentaire de RandomForest) ---
+
+@pytest.mark.django_db
+def test_appel_modele_ia_avec_historique_24_jours_predit_niveau_eau(test_zone):
+    from capteurs.models import Capteur, Mesure
+    from alertes.tasks import appel_modele_ia
+
+    capteur_eau = Capteur.objects.create(
+        nom="Capteur eau", type="eau", localisation="POINT(-17.38 14.75)",
+        zone=test_zone, date_installation="2026-01-01",
+    )
+    capteur_pluie = Capteur.objects.create(
+        nom="Capteur pluie", type="pluviometre", localisation="POINT(-17.38 14.75)",
+        zone=test_zone, date_installation="2026-01-01",
+    )
+
+    # 24 jours consécutifs de relevés (aujourd'hui inclus), un par jour
+    aujourdhui = timezone.now()
+    for i in range(24):
+        jour = aujourdhui - timedelta(days=i)
+        Mesure.objects.create(capteur=capteur_eau, valeur=20.0 + i, unite="cm", timestamp=jour)
+        Mesure.objects.create(capteur=capteur_pluie, valeur=5.0 + i, unite="mm", timestamp=jour)
+
+    resultat = appel_modele_ia(test_zone.id)
+
+    assert resultat["status"] == "success"
+    prediction = PredictionIA.objects.get(id=resultat["prediction_id"])
+    # 24 jours d'historique continu réunis : le LSTM doit produire une valeur réelle
+    assert prediction.niveau_eau_predit_cm is not None
+    assert prediction.niveau_eau_predit_cm >= 0
+    # Le modèle ne doit jamais renvoyer une valeur extravagante (voir bug de
+    # double-dénormalisation corrigé pendant le développement : ~570cm au lieu
+    # d'une valeur cohérente avec l'échelle d'entraînement, max ~127cm).
+    assert prediction.niveau_eau_predit_cm < 200
+
+
+@pytest.mark.django_db
+def test_historique_journalier_zone_incomplet_retourne_vide(test_zone):
+    from capteurs.models import Capteur, Mesure
+    from alertes.tasks import _historique_journalier_zone
+
+    capteur_eau = Capteur.objects.create(
+        nom="Capteur eau", type="eau", localisation="POINT(-17.38 14.75)",
+        zone=test_zone, date_installation="2026-01-01",
+    )
+    # Seulement 5 jours de données, pas 24
+    for i in range(5):
+        Mesure.objects.create(
+            capteur=capteur_eau, valeur=20.0 + i, unite="cm",
+            timestamp=timezone.now() - timedelta(days=i),
+        )
+
+    assert _historique_journalier_zone(test_zone.id) == []
+
+
+def test_predire_niveau_eau_lstm_rejette_historique_incomplet():
+    import sys, os
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'mbeund_mi_ia'))
+    from ia.service_prediction import PredictionService
+
+    service = PredictionService()
+    historique_incomplet = [{"pluie_mm": 5.0, "niveau_eau_cm": 20.0}] * 10
+    assert service.predire_niveau_eau_lstm(historique_incomplet) is None
+
+
+def test_predire_niveau_eau_lstm_valeur_coherente_avec_echelle_entrainement():
+    import sys, os
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'mbeund_mi_ia'))
+    from ia.service_prediction import PredictionService
+
+    service = PredictionService()
+    historique = [{"pluie_mm": 5.0 + i * 2, "niveau_eau_cm": 20.0 + i * 3} for i in range(24)]
+    prediction = service.predire_niveau_eau_lstm(historique)
+
+    assert prediction is not None
+    # Le scaler a été entraîné avec niveau_eau_cm max ~127cm ; une régression du
+    # bug de double-dénormalisation renverrait une valeur ~127x trop grande.
+    assert 0 <= prediction < 200

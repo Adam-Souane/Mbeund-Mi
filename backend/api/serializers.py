@@ -304,7 +304,7 @@ class PredictionIASerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PredictionIA
-        fields = ('id', 'zone', 'probabilite', 'horizon_h', 'confiance', 'timestamp')
+        fields = ('id', 'zone', 'probabilite', 'horizon_h', 'confiance', 'niveau_eau_predit_cm', 'timestamp')
 
 
 class EpisodeInondationSerializer(HybridGeoFeatureModelSerializer):

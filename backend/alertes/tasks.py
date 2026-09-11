@@ -31,6 +31,47 @@ def _get_prediction_service():
         _prediction_service = PredictionService()
     return _prediction_service
 
+
+def _historique_journalier_zone(zone_id, jours=24):
+    """
+    Construit l'historique journalier {pluie_mm, niveau_eau_cm} des `jours`
+    derniers jours pour une zone, attendu par PredictionService.predire_niveau_eau_lstm.
+    Pluie = somme des relevés du jour (cumul journalier) ; niveau d'eau = maximum
+    du jour (niveau le plus défavorable atteint) — les deux capteurs eau/pluviomètre
+    étant physiquement séparés. Retourne [] si un seul jour de la fenêtre manque de
+    données (le modèle a besoin d'une séquence continue de 24 jours).
+    """
+    from django.db.models import Sum, Max
+    from django.db.models.functions import TruncDate
+
+    capteurs_zone = Capteur.objects.filter(zone_id=zone_id)
+    aujourdhui = timezone.now().date()
+    date_debut = aujourdhui - timedelta(days=jours - 1)
+
+    pluie_par_jour = {
+        row['jour']: row['total'] for row in (
+            Mesure.objects.filter(capteur__in=capteurs_zone, capteur__type='pluviometre', timestamp__date__gte=date_debut)
+            .annotate(jour=TruncDate('timestamp')).values('jour').annotate(total=Sum('valeur'))
+        )
+    }
+    eau_par_jour = {
+        row['jour']: row['maximum'] for row in (
+            Mesure.objects.filter(capteur__in=capteurs_zone, capteur__type='eau', timestamp__date__gte=date_debut)
+            .annotate(jour=TruncDate('timestamp')).values('jour').annotate(maximum=Max('valeur'))
+        )
+    }
+
+    historique = []
+    for i in range(jours):
+        jour = date_debut + timedelta(days=i)
+        if jour not in pluie_par_jour and jour not in eau_par_jour:
+            return []  # jour manquant dans la séquence : fenêtre incomplète
+        historique.append({
+            "pluie_mm": pluie_par_jour.get(jour, 0.0),
+            "niveau_eau_cm": eau_par_jour.get(jour, 0.0),
+        })
+    return historique
+
 @shared_task(
     bind=True,
     max_retries=5,
@@ -80,6 +121,13 @@ def appel_modele_ia(self, zone_id):
     risque = resultat["risque_global"]
     confiance_pct = resultat["confiance"]
 
+    # Prédiction complémentaire du niveau d'eau du lendemain (LSTM, régression
+    # sur 24 jours d'historique) — indépendante de la classification RandomForest
+    # ci-dessus. None tant que 24 jours d'historique continu ne sont pas réunis
+    # pour la zone (cas normal en début de vie de l'application).
+    historique = _historique_journalier_zone(zone_id)
+    niveau_eau_predit = service.predire_niveau_eau_lstm(historique) if historique else None
+
     prediction = PredictionIA.objects.create(
         zone=zone,
         # Le service classe un niveau de risque (vert/jaune/orange/rouge) avec une
@@ -88,12 +136,14 @@ def appel_modele_ia(self, zone_id):
         probabilite=confiance_pct / 100,
         horizon_h=24,
         confiance=confiance_pct,
+        niveau_eau_predit_cm=niveau_eau_predit,
         timestamp=timezone.now()
     )
 
     logger.info(
         f"[IA Task] Prédiction enregistrée pour {zone.quartier} : risque={risque}, "
-        f"confiance={confiance_pct}% (ID Prédiction {prediction.id})"
+        f"confiance={confiance_pct}%, niveau_eau_predit={niveau_eau_predit} "
+        f"(ID Prédiction {prediction.id})"
     )
 
     alerte_id = None

@@ -144,8 +144,49 @@ class PredictionService:
         if alerte_fiabilite:
             resultat["alerte_fiabilite"] = True
             resultat["message_fiabilite"] = message_fiabilite
-            
+
         return resultat
+
+    def predire_niveau_eau_lstm(self, historique_journalier):
+        """
+        Prédit le niveau d'eau (cm) du jour suivant à partir des 24 derniers
+        jours d'historique pluie/niveau — modèle entraîné pour une fenêtre
+        glissante de 24 pas de temps journaliers (voir ia/modele_lstm.py et
+        ia/preparation_donnees.py).
+
+        historique_journalier : liste ordonnée du plus ancien au plus récent,
+        exactement 24 éléments, chacun {"pluie_mm": float, "niveau_eau_cm": float}
+        représentant un jour. Retourne None si le modèle ou le scaler ne sont
+        pas chargés, ou si l'historique fourni ne contient pas exactement 24 jours
+        (pas assez de données pour remplir la fenêtre glissante du modèle).
+        """
+        if not (self.lstm_model and self.scaler):
+            return None
+        if len(historique_journalier) != 24:
+            return None
+
+        # Reproduit exactement les features de ia/preparation_donnees.py :
+        # pluie_cumul_24h = pluie_mm du jour (rolling(1) est un no-op) ;
+        # pluie_cumul_72h = somme glissante des 3 derniers jours.
+        pluies = [j["pluie_mm"] for j in historique_journalier]
+        lignes = []
+        for i, jour in enumerate(historique_journalier):
+            pluie_cumul_24h = pluies[i]
+            fenetre_72h = pluies[max(0, i - 2):i + 1]
+            pluie_cumul_72h = sum(fenetre_72h)
+            lignes.append([jour["pluie_mm"], pluie_cumul_24h, pluie_cumul_72h, jour["niveau_eau_cm"]])
+
+        # Seules les features d'ENTRÉE (X) sont normalisées à l'entraînement
+        # (ia/preparation_donnees.py) ; la cible (y = niveau_eau_cm) est restée
+        # en échelle réelle. La sortie du modèle est donc déjà en cm, aucune
+        # dénormalisation supplémentaire à appliquer.
+        sequence = pd.DataFrame(lignes, columns=['pluie_mm', 'pluie_cumul_24h', 'pluie_cumul_72h', 'niveau_eau_cm'])
+        sequence_normalisee = self.scaler.transform(sequence)
+        entree = sequence_normalisee.reshape(1, 24, 4)
+
+        niveau_predit = float(self.lstm_model.predict(entree, verbose=0)[0][0])
+
+        return max(0.0, round(niveau_predit, 1))
 
 if __name__ == "__main__":
     service = PredictionService()

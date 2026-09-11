@@ -71,6 +71,11 @@ class PredictionIA(models.Model):
     probabilite = models.FloatField()
     horizon_h = models.IntegerField()
     confiance = models.FloatField()
+    # Niveau d'eau (cm) prédit pour le lendemain par le modèle LSTM (régression
+    # sur 24 jours d'historique pluie/niveau) — distinct de la classification
+    # de risque (RandomForest, ci-dessus). Null si moins de 24 jours d'historique
+    # de mesures ne sont disponibles pour la zone.
+    niveau_eau_predit_cm = models.FloatField(null=True, blank=True)
     timestamp = models.DateTimeField()
 
     class Meta:
