@@ -1,6 +1,5 @@
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Moon, LogOut, ShieldCheck } from 'lucide-react';
-import Logo from '../../shared/components/Logo';
+import { Moon, LogOut, ShieldCheck } from 'lucide-react';
+import CitizenShell from '../shared/CitizenShell';
 import { useAuth } from '../../auth/AuthContext';
 import { useTheme } from '../../theme/ThemeContext';
 
@@ -11,22 +10,14 @@ const ROLE_LABELS = {
 };
 
 export default function ProfilPageBody() {
-  const navigate = useNavigate();
   const { username, role, logout } = useAuth();
   const { darkMode, toggleTheme } = useTheme();
 
   const initial = username?.[0]?.toUpperCase() ?? '?';
 
   return (
-    <div className="min-h-screen bg-navy-50 dark:bg-navy-950 text-navy dark:text-navy-50">
-      <div className="flex items-center gap-3 px-6 py-4 bg-white dark:bg-navy">
-        <button onClick={() => navigate('/citoyen/accueil')} className="p-1">
-          <ArrowLeft size={18} />
-        </button>
-        <Logo size="sm" />
-      </div>
-
-      <div className="max-w-lg mx-auto px-6 py-6 flex flex-col gap-5">
+    <CitizenShell>
+      <div className="max-w-lg w-full mx-auto flex flex-col gap-5">
         <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5 flex items-center gap-4">
           <div className="w-14 h-14 rounded-full bg-navy dark:bg-navy-800 text-white flex items-center justify-center text-xl font-extrabold flex-shrink-0">
             {initial}
@@ -72,6 +63,6 @@ export default function ProfilPageBody() {
           Se déconnecter
         </button>
       </div>
-    </div>
+    </CitizenShell>
   );
 }

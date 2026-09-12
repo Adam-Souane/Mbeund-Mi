@@ -1,9 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import { ArrowLeft, Waves, Send } from 'lucide-react';
-import Logo from '../../shared/components/Logo';
-import ThemeToggle from '../../theme/ThemeToggle';
+import { Waves, Send } from 'lucide-react';
+import CitizenShell from '../shared/CitizenShell';
 import { askNdam } from '../../api/endpoints/chat';
 
 const SUGGESTIONS = [
@@ -27,7 +25,6 @@ function NdamAvatar() {
 }
 
 export default function ChatPageBody() {
-  const navigate = useNavigate();
   const [messages, setMessages] = useState([GREETING]);
   const [input, setInput] = useState('');
   const bottomRef = useRef(null);
@@ -58,18 +55,8 @@ export default function ChatPageBody() {
   };
 
   return (
-    <div className="min-h-screen bg-navy-50 dark:bg-navy-950 text-navy dark:text-navy-50 flex flex-col">
-      <div className="flex items-center justify-between px-6 py-4 bg-white dark:bg-navy flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate('/citoyen/accueil')} className="p-1">
-            <ArrowLeft size={18} />
-          </button>
-          <Logo size="sm" />
-        </div>
-        <ThemeToggle />
-      </div>
-
-      <div className="max-w-2xl w-full mx-auto flex-1 flex flex-col px-6 py-5 gap-4 min-h-0">
+    <CitizenShell>
+      <div className="max-w-2xl w-full mx-auto flex flex-col gap-4">
         <div>
           <h1 className="text-lg font-extrabold flex items-center gap-2">
             <Waves size={17} className="text-red" />
@@ -78,7 +65,7 @@ export default function ChatPageBody() {
           <p className="text-xs text-navy-400 mt-0.5">Réponses basées sur la météo et le risque en temps réel</p>
         </div>
 
-        <div className="flex-1 overflow-y-auto flex flex-col gap-3 min-h-0">
+        <div className="h-[55vh] lg:h-[60vh] overflow-y-auto flex flex-col gap-3 pr-1">
           {messages.map((m, i) => (
             <div key={i} className={`flex items-end gap-2 ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
               {m.role === 'assistant' && <NdamAvatar />}
@@ -149,6 +136,6 @@ export default function ChatPageBody() {
           </button>
         </form>
       </div>
-    </div>
+    </CitizenShell>
   );
 }

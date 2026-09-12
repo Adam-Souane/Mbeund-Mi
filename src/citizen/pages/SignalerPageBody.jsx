@@ -3,9 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { MapContainer, TileLayer, CircleMarker } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import { ArrowLeft, Camera, MapPin, LocateFixed, CheckCircle2, Loader2 } from 'lucide-react';
-import Logo from '../../shared/components/Logo';
-import ThemeToggle from '../../theme/ThemeToggle';
+import { Camera, MapPin, LocateFixed, CheckCircle2, Loader2 } from 'lucide-react';
+import CitizenShell from '../shared/CitizenShell';
 import { createSignalement } from '../../api/endpoints/signalements';
 import { flattenApiErrors } from '../../shared/utils/apiErrors';
 
@@ -100,18 +99,8 @@ export default function SignalerPageBody() {
   const point = position ?? THIAROYE_CENTER;
 
   return (
-    <div className="min-h-screen bg-navy-50 dark:bg-navy-950 text-navy dark:text-navy-50">
-      <div className="flex items-center justify-between px-6 py-4 bg-white dark:bg-navy">
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate('/citoyen/accueil')} className="p-1">
-            <ArrowLeft size={18} />
-          </button>
-          <Logo size="sm" />
-        </div>
-        <ThemeToggle />
-      </div>
-
-      <div className="max-w-lg mx-auto px-6 py-6 flex flex-col gap-4">
+    <CitizenShell>
+      <div className="max-w-lg w-full mx-auto flex flex-col gap-4">
         <div>
           <h1 className="text-xl font-extrabold">Nouveau signalement</h1>
           <p className="text-sm text-navy-600 dark:text-navy-200 mt-0.5">
@@ -235,6 +224,6 @@ export default function SignalerPageBody() {
           </button>
         </form>
       </div>
-    </div>
+    </CitizenShell>
   );
 }
