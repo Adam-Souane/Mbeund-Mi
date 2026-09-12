@@ -193,3 +193,74 @@ def test_signalements_not_found(api_client, user_autorite):
 
     response = api_client.delete('/api/signalements/9999/')
     assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_signalement_valide_is_read_only_via_plain_update(api_client, user_autorite, signalement_instance):
+    """
+    `valide` est en lecture seule sur le serializer pour TOUTES les opérations
+    (pas seulement la création) : un PATCH classique ne doit pas le modifier,
+    même pour une autorité. C'est exactement pour ça que l'action /valider/
+    dédiée existe.
+    """
+    api_client.force_authenticate(user=user_autorite)
+    assert signalement_instance.valide is False
+
+    response = api_client.patch(f'/api/signalements/{signalement_instance.id}/', {'valide': True})
+    assert response.status_code == 200
+
+    signalement_instance.refresh_from_db()
+    assert signalement_instance.valide is False
+
+
+@pytest.mark.django_db
+def test_signalement_valider_action_requires_autorite(api_client, user_citoyen, signalement_instance):
+    api_client.force_authenticate(user=user_citoyen)
+    response = api_client.patch(f'/api/signalements/{signalement_instance.id}/valider/', {'valide': True})
+    assert response.status_code == 403
+
+    signalement_instance.refresh_from_db()
+    assert signalement_instance.valide is False
+
+
+@pytest.mark.django_db
+def test_signalement_valider_action_sets_valide_true(api_client, user_autorite, signalement_instance):
+    api_client.force_authenticate(user=user_autorite)
+    response = api_client.patch(f'/api/signalements/{signalement_instance.id}/valider/', {'valide': True}, format='json')
+    assert response.status_code == 200
+    assert response.data['properties']['valide'] is True
+
+    signalement_instance.refresh_from_db()
+    assert signalement_instance.valide is True
+
+
+@pytest.mark.django_db
+def test_signalement_valider_action_can_reject(api_client, user_autorite, db):
+    signalement = SignalementCitoyen.objects.create(
+        localisation="POINT(-17.38 14.76)",
+        description="Faux signalement",
+        categorie="autre",
+        valide=True,
+    )
+    api_client.force_authenticate(user=user_autorite)
+    response = api_client.patch(f'/api/signalements/{signalement.id}/valider/', {'valide': False}, format='json')
+    assert response.status_code == 200
+
+    signalement.refresh_from_db()
+    assert signalement.valide is False
+
+
+@pytest.mark.django_db
+def test_signalement_valider_action_missing_field(api_client, user_autorite, signalement_instance):
+    api_client.force_authenticate(user=user_autorite)
+    response = api_client.patch(f'/api/signalements/{signalement_instance.id}/valider/', {})
+    assert response.status_code == 400
+    assert 'valide' in response.data
+
+
+@pytest.mark.django_db
+def test_signalement_valider_action_non_boolean(api_client, user_autorite, signalement_instance):
+    api_client.force_authenticate(user=user_autorite)
+    response = api_client.patch(f'/api/signalements/{signalement_instance.id}/valider/', {'valide': 'oui'})
+    assert response.status_code == 400
+    assert 'valide' in response.data

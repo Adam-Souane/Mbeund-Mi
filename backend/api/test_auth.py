@@ -59,7 +59,7 @@ def test_jwt_obtain_pair_and_refresh(api_client, user_citoyen):
     assert response.status_code == 200
     assert 'access' in response.data
     assert 'refresh' in response.data
-    
+
     access_token = response.data['access']
     refresh_token = response.data['refresh']
 
@@ -69,6 +69,52 @@ def test_jwt_obtain_pair_and_refresh(api_client, user_citoyen):
     })
     assert response_refresh.status_code == 200
     assert 'access' in response_refresh.data
+
+
+@pytest.mark.django_db
+def test_jwt_carries_role_claim(api_client, user_citoyen, user_autorite, user_admin):
+    """
+    Le frontend décide de l'espace (citoyen/autorité) affiché après connexion
+    d'après ce claim, pas d'après l'onglet cliqué sur l'écran de connexion.
+    """
+    import base64
+    import json
+
+    def decode_role(access_token):
+        payload_b64 = access_token.split('.')[1]
+        padded = payload_b64 + '=' * (-len(payload_b64) % 4)
+        return json.loads(base64.urlsafe_b64decode(padded))['role']
+
+    for username, expected_role in [
+        ('citoyen', 'citoyen'),
+        ('autorite', 'autorite'),
+        ('admin', 'admin'),
+    ]:
+        response = api_client.post('/api/token/', {
+            'username': username,
+            'password': 'password123'
+        })
+        assert response.status_code == 200
+        assert decode_role(response.data['access']) == expected_role
+
+
+@pytest.mark.django_db
+def test_jwt_role_claim_defaults_to_citoyen_without_profile(api_client, db):
+    # Un utilisateur sans profil (cas limite) ne doit pas faire planter la connexion.
+    user = User.objects.create_user(username='sans_profil', password='password123')
+    user.profile.delete()
+
+    response = api_client.post('/api/token/', {
+        'username': 'sans_profil',
+        'password': 'password123'
+    })
+    assert response.status_code == 200
+
+    import base64
+    import json
+    payload_b64 = response.data['access'].split('.')[1]
+    padded = payload_b64 + '=' * (-len(payload_b64) % 4)
+    assert json.loads(base64.urlsafe_b64decode(padded))['role'] == 'citoyen'
 
 @pytest.mark.django_db
 def test_alerts_read_access(api_client, user_citoyen, alerte_instance):

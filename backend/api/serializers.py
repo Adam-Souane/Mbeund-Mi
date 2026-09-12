@@ -5,11 +5,26 @@ from PIL import Image
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.conf import settings
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from capteurs.models import Capteur, Mesure
 from alertes.models import (
     ZoneRisque, Alerte, PredictionIA, EpisodeInondation, SignalementCitoyen,
     SegmentRue, PrevisionMeteo, HistoriqueRisque, ContactAlerte,
 )
+
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """
+    Ajoute le rôle du profil (admin/autorite/agent/citoyen) comme claim
+    personnalisé dans le JWT, pour que le frontend puisse savoir quel
+    espace afficher après connexion sans appel supplémentaire.
+    """
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        profile = getattr(user, 'profile', None)
+        token['role'] = profile.role if profile else 'citoyen'
+        return token
 
 def wkt_to_geojson(wkt_str):
     if not isinstance(wkt_str, str):

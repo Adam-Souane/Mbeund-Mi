@@ -43,3 +43,7 @@ tensorflow==2.21.0
 # --project=<GEE_PROJECT_ID>`) et GEE_PROJECT_ID dans .env — voir
 # mbeund_mi_ia/gee/config_gee.py.
 earthengine-api==1.7.29
+
+# Chatbot NDAM (mbeund_mi_ia/ia/service_chatbot.py), importé directement par
+# api/views.py:ChatView. Nécessite GROQ_API_KEY dans .env.
+groq==1.4.0

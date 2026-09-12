@@ -1,8 +1,13 @@
+import os
+import sys
+from django.conf import settings
 from django.db.models import Subquery, OuterRef
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.views import TokenObtainPairView
 from django.utils import timezone
 from datetime import timedelta
 
@@ -24,8 +29,87 @@ from api.serializers import (
     PrevisionMeteoSerializer,
     HistoriqueRisqueSerializer,
     ContactAlerteSerializer,
+    CustomTokenObtainPairSerializer,
 )
 from api.permissions import IsAutoriteOrAdmin, EstAdminOuAutorite
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    """Identique à TokenObtainPairView, mais émet un JWT portant le claim `role`."""
+    serializer_class = CustomTokenObtainPairSerializer
+
+
+# mbeund_mi_ia est un module frère de backend/ (pas un paquet pip installé) —
+# on l'ajoute au path pour réutiliser le vrai service chatbot de Maïmouna
+# (Groq) au lieu de dupliquer sa logique dans Django. Même pattern que
+# alertes/tasks.py pour le service de prédiction.
+_MBEUND_MI_IA_PATH = os.path.join(os.path.dirname(settings.BASE_DIR), 'mbeund_mi_ia')
+if _MBEUND_MI_IA_PATH not in sys.path:
+    sys.path.insert(0, _MBEUND_MI_IA_PATH)
+
+_chatbot_service = None
+
+
+def _get_chatbot_service():
+    """Charge le service NDAM (client Groq) une seule fois par worker."""
+    global _chatbot_service
+    if _chatbot_service is None:
+        from ia.service_chatbot import MbeundMiChatbot
+        _chatbot_service = MbeundMiChatbot()
+    return _chatbot_service
+
+
+class ChatView(APIView):
+    """
+    POST /api/chat/ — relaie une question à l'assistant NDAM.
+
+    Django rassemble ici le contexte (risque, météo, signalements validés)
+    sous forme de simples chaînes de caractères avant d'appeler le service
+    chatbot : NDAM lui-même ne reçoit jamais un accès direct à la base de
+    données, conformément à la contrainte du projet (éviter fuites de
+    données et hallucinations).
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    _RISQUE_LABELS = {
+        'vert': 'FAIBLE',
+        'jaune': 'MODÉRÉ',
+        'orange': 'ÉLEVÉ',
+        'rouge': 'CRITIQUE',
+    }
+
+    def post(self, request):
+        question = (request.data.get('question') or '').strip()
+        if not question:
+            return Response({"question": ["Ce champ est obligatoire."]}, status=400)
+
+        zone_risque = ZoneRisque.objects.order_by('-score_risque_moyen').first()
+        niveau_risque = self._RISQUE_LABELS.get(
+            getattr(zone_risque, 'niveau_risque', None), 'FAIBLE'
+        )
+
+        prevision = PrevisionMeteo.objects.order_by('-date_prevision').first()
+        if prevision:
+            meteo_context = (
+                f"Température {prevision.temperature}°C, "
+                f"précipitations {prevision.precipitation} mm, "
+                f"vent {prevision.vitesse_vent} km/h"
+            )
+        else:
+            meteo_context = "Non disponible"
+
+        signalements = SignalementCitoyen.objects.filter(valide=True).order_by('-date_creation')[:3]
+        descriptions = [s.description[:120] for s in signalements if s.description]
+        signalements_context = " ; ".join(descriptions) if descriptions else "Aucun récent"
+
+        chatbot = _get_chatbot_service()
+        reply = chatbot.poser_question(
+            question,
+            meteo_context=meteo_context,
+            signalements_context=signalements_context,
+            niveau_risque=niveau_risque,
+        )
+        return Response({"reply": reply})
 
 
 class CapteurViewSet(viewsets.ModelViewSet):
@@ -171,6 +255,28 @@ class SignalementCitoyenViewSet(viewsets.ModelViewSet):
         if self.action == 'create':
             return [permissions.AllowAny()]
         return [IsAutoriteOrAdmin()]
+
+    @action(detail=True, methods=['patch'], url_path='valider')
+    def valider(self, request, pk=None):
+        """
+        PATCH /api/signalements/{id}/valider/  body: {"valide": true|false}
+        `valide` est en lecture seule sur le serializer (pour empêcher un
+        citoyen de l'auto-valider à la création) ; cette action dédiée est
+        le seul moyen pour une autorité/admin de le faire basculer.
+        """
+        instance = self.get_object()
+        valide = request.data.get('valide')
+
+        if valide is None:
+            return Response({"valide": ["Ce champ est obligatoire."]}, status=400)
+        if not isinstance(valide, bool):
+            return Response({"valide": ["Ce champ doit être un booléen (true ou false)."]}, status=400)
+
+        instance.valide = valide
+        instance.save()
+
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
 
 
 class SegmentRueViewSet(viewsets.ModelViewSet):
