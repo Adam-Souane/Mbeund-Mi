@@ -56,7 +56,7 @@ export default function ChatPageBody() {
 
   return (
     <CitizenShell>
-      <div className="max-w-2xl w-full mx-auto flex flex-col gap-4">
+      <div className="max-w-2xl lg:max-w-3xl w-full mx-auto flex flex-col gap-4">
         <div>
           <h1 className="text-lg font-extrabold flex items-center gap-2">
             <Waves size={17} className="text-red" />
@@ -65,7 +65,8 @@ export default function ChatPageBody() {
           <p className="text-xs text-navy-400 mt-0.5">Réponses basées sur la météo et le risque en temps réel</p>
         </div>
 
-        <div className="h-[55vh] lg:h-[60vh] overflow-y-auto flex flex-col gap-3 pr-1">
+        <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-4 lg:p-5 flex flex-col gap-4">
+        <div className="h-[50vh] lg:h-[420px] overflow-y-auto flex flex-col gap-3 pr-1">
           {messages.map((m, i) => (
             <div key={i} className={`flex items-end gap-2 ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
               {m.role === 'assistant' && <NdamAvatar />}
@@ -135,6 +136,7 @@ export default function ChatPageBody() {
             <Send size={16} />
           </button>
         </form>
+        </div>
       </div>
     </CitizenShell>
   );
