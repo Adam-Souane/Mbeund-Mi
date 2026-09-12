@@ -1,6 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import SplashScreen from './shared/layout/SplashScreen';
-import PlaceholderPage from './shared/layout/PlaceholderPage';
 import LoginPage from './auth-pages/LoginPage';
 import SignupPage from './auth-pages/SignupPage';
 import RequireAuth from './auth/RequireAuth';
@@ -9,6 +8,7 @@ import CartePageBody from './citizen/pages/CartePageBody';
 import AlertesPrevisionsPageBody from './citizen/pages/AlertesPrevisionsPageBody';
 import SignalerPageBody from './citizen/pages/SignalerPageBody';
 import ProfilPageBody from './citizen/pages/ProfilPageBody';
+import ChatPageBody from './citizen/pages/ChatPageBody';
 import TableauDeBordPage from './autorite/pages/TableauDeBordPage';
 import CarteInteractivePage from './autorite/pages/CarteInteractivePage';
 import PrevisionsAlertesPage from './autorite/pages/PrevisionsAlertesPage';
@@ -39,14 +39,7 @@ export default function AppRoutes() {
       <Route path="/citoyen/alertes" element={<Citoyen><AlertesPrevisionsPageBody /></Citoyen>} />
       <Route path="/citoyen/signaler" element={<Citoyen><SignalerPageBody /></Citoyen>} />
       <Route path="/citoyen/profil" element={<Citoyen><ProfilPageBody /></Citoyen>} />
-      <Route
-        path="/citoyen/chat"
-        element={
-          <Citoyen>
-            <PlaceholderPage title="NDAM · Assistant" backTo="/citoyen/accueil" />
-          </Citoyen>
-        }
-      />
+      <Route path="/citoyen/chat" element={<Citoyen><ChatPageBody /></Citoyen>} />
 
       {/* Autorité */}
       <Route path="/autorite/dashboard" element={<Autorite><TableauDeBordPage /></Autorite>} />

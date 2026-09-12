@@ -2,6 +2,8 @@ import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './auth/AuthContext';
 import { ThemeProvider } from './theme/ThemeContext';
+import { ToastProvider } from './shared/toast/ToastContext';
+import { useAlertesSocket } from './realtime/useAlertesSocket';
 import AppRoutes from './routes';
 
 const queryClient = new QueryClient({
@@ -13,14 +15,22 @@ const queryClient = new QueryClient({
   },
 });
 
+function RealtimeAlertes() {
+  useAlertesSocket();
+  return null;
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ThemeProvider>
-          <BrowserRouter>
-            <AppRoutes />
-          </BrowserRouter>
+          <ToastProvider>
+            <BrowserRouter>
+              <RealtimeAlertes />
+              <AppRoutes />
+            </BrowserRouter>
+          </ToastProvider>
         </ThemeProvider>
       </AuthProvider>
     </QueryClientProvider>
