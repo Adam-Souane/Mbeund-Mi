@@ -59,13 +59,13 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center px-6 py-12 bg-navy-50 dark:bg-navy-950 relative">
       <ThemeToggle className="absolute top-7 right-8" />
 
-      <div className="w-full max-w-[420px]">
-        <div className="flex flex-col items-center mb-7">
-          <Logo size="lg" withSlogan />
+      <div className="w-full max-w-[420px] lg:max-w-[480px]">
+        <div className="flex flex-col items-center mb-7 lg:mb-9">
+          <Logo size="lg" className="lg:scale-125 lg:mb-2" withSlogan />
         </div>
 
-        <div className="bg-white dark:bg-navy rounded-xl border border-navy-50 dark:border-navy-800 shadow-lg p-7">
-          <div className="flex bg-navy-50 dark:bg-navy-800 rounded-md p-1 mb-5">
+        <div className="bg-white dark:bg-navy rounded-xl border border-navy-50 dark:border-navy-800 shadow-lg p-7 lg:p-9">
+          <div className="flex bg-navy-50 dark:bg-navy-800 rounded-md p-1 mb-5 lg:mb-6">
             {ROLES.map((r) => (
               <button
                 key={r.id}
@@ -82,9 +82,9 @@ export default function LoginPage() {
             ))}
           </div>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4 lg:gap-5">
             <label className="block">
-              <span className="block text-xs font-semibold text-navy dark:text-navy-50 mb-1.5">
+              <span className="block text-xs lg:text-sm font-semibold text-navy dark:text-navy-50 mb-1.5">
                 {activeRole.fieldLabel}
               </span>
               <input
@@ -93,19 +93,19 @@ export default function LoginPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder={activeRole.placeholder}
-                className="w-full px-3.5 py-2.5 rounded-md border-[1.5px] border-navy-200 dark:border-navy-800 bg-white dark:bg-navy text-navy dark:text-navy-50 placeholder:text-navy-400 text-sm focus:outline-none focus:border-navy dark:focus:border-navy-50"
+                className="w-full px-3.5 py-2.5 lg:py-3 rounded-md border-[1.5px] border-navy-200 dark:border-navy-800 bg-white dark:bg-navy text-navy dark:text-navy-50 placeholder:text-navy-400 text-sm lg:text-base focus:outline-none focus:border-navy dark:focus:border-navy-50"
               />
             </label>
 
             <label className="block">
-              <span className="block text-xs font-semibold text-navy dark:text-navy-50 mb-1.5">Mot de passe</span>
+              <span className="block text-xs lg:text-sm font-semibold text-navy dark:text-navy-50 mb-1.5">Mot de passe</span>
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full px-3.5 py-2.5 rounded-md border-[1.5px] border-navy-200 dark:border-navy-800 bg-white dark:bg-navy text-navy dark:text-navy-50 text-sm focus:outline-none focus:border-navy dark:focus:border-navy-50"
+                className="w-full px-3.5 py-2.5 lg:py-3 rounded-md border-[1.5px] border-navy-200 dark:border-navy-800 bg-white dark:bg-navy text-navy dark:text-navy-50 text-sm lg:text-base focus:outline-none focus:border-navy dark:focus:border-navy-50"
               />
             </label>
 
@@ -127,7 +127,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-3 rounded-md bg-navy dark:bg-navy-800 text-white text-sm font-bold disabled:opacity-60"
+              className="w-full py-3 lg:py-3.5 rounded-md bg-navy dark:bg-navy-800 text-white text-sm lg:text-base font-bold disabled:opacity-60"
             >
               {isSubmitting ? 'Connexion…' : 'Se connecter'}
             </button>

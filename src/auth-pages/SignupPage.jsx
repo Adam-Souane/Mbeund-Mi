@@ -9,12 +9,12 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen flex items-center justify-center px-6 py-12 bg-navy-50 dark:bg-navy-950 relative">
       <ThemeToggle className="absolute top-7 right-8" />
-      <div className="w-full max-w-[420px]">
-        <div className="flex flex-col items-center mb-7">
-          <Logo size="lg" withSlogan />
+      <div className="w-full max-w-[420px] lg:max-w-[480px]">
+        <div className="flex flex-col items-center mb-7 lg:mb-9">
+          <Logo size="lg" className="lg:scale-125 lg:mb-2" withSlogan />
         </div>
 
-        <div className="bg-white dark:bg-navy rounded-xl border border-navy-50 dark:border-navy-800 shadow-lg p-7">
+        <div className="bg-white dark:bg-navy rounded-xl border border-navy-50 dark:border-navy-800 shadow-lg p-7 lg:p-9">
           <h1 className="text-base font-extrabold text-navy dark:text-navy-50 mb-4">Créer un compte citoyen</h1>
 
           <div className="px-3.5 py-3 rounded-md bg-navy-50 dark:bg-navy-800 text-navy-600 dark:text-navy-200 text-xs mb-5">

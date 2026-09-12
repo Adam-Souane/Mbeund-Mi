@@ -11,6 +11,12 @@ import SignalerPageBody from './citizen/pages/SignalerPageBody';
 import ProfilPageBody from './citizen/pages/ProfilPageBody';
 import TableauDeBordPage from './autorite/pages/TableauDeBordPage';
 import CarteInteractivePage from './autorite/pages/CarteInteractivePage';
+import PrevisionsAlertesPage from './autorite/pages/PrevisionsAlertesPage';
+import SignalementsTerrainPage from './autorite/pages/SignalementsTerrainPage';
+import StatistiquesPage from './autorite/pages/StatistiquesPage';
+import GestionDeCrisePage from './autorite/pages/GestionDeCrisePage';
+import AdminCapteursPage from './autorite/pages/AdminCapteursPage';
+import ContactUrgencePage from './autorite/pages/ContactUrgencePage';
 
 function Citoyen({ children }) {
   return <RequireAuth space="citoyen">{children}</RequireAuth>;
@@ -45,38 +51,12 @@ export default function AppRoutes() {
       {/* Autorité */}
       <Route path="/autorite/dashboard" element={<Autorite><TableauDeBordPage /></Autorite>} />
       <Route path="/autorite/carte" element={<Autorite><CarteInteractivePage /></Autorite>} />
-      <Route
-        path="/autorite/crise"
-        element={
-          <Autorite>
-            <PlaceholderPage title="Gestion de Crise" backTo="/autorite/dashboard" />
-          </Autorite>
-        }
-      />
-      <Route
-        path="/autorite/statistiques"
-        element={
-          <Autorite>
-            <PlaceholderPage title="Statistiques" backTo="/autorite/dashboard" />
-          </Autorite>
-        }
-      />
-      <Route
-        path="/autorite/capteurs"
-        element={
-          <Autorite>
-            <PlaceholderPage title="Admin & Capteurs" backTo="/autorite/dashboard" />
-          </Autorite>
-        }
-      />
-      <Route
-        path="/autorite/contact"
-        element={
-          <Autorite>
-            <PlaceholderPage title="Contact & Urgence" backTo="/autorite/dashboard" />
-          </Autorite>
-        }
-      />
+      <Route path="/autorite/previsions" element={<Autorite><PrevisionsAlertesPage /></Autorite>} />
+      <Route path="/autorite/signalements" element={<Autorite><SignalementsTerrainPage /></Autorite>} />
+      <Route path="/autorite/statistiques" element={<Autorite><StatistiquesPage /></Autorite>} />
+      <Route path="/autorite/crise" element={<Autorite><GestionDeCrisePage /></Autorite>} />
+      <Route path="/autorite/capteurs" element={<Autorite><AdminCapteursPage /></Autorite>} />
+      <Route path="/autorite/contact" element={<Autorite><ContactUrgencePage /></Autorite>} />
 
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>

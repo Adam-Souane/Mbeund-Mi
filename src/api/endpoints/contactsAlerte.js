@@ -9,3 +9,8 @@ export function getContactsAlerte({ page } = {}) {
 export function createContactAlerte({ telephone, zone, nom }) {
   return client.post('/contacts-alerte/', { telephone, zone, nom }).then((r) => r.data);
 }
+
+// DELETE /api/contacts-alerte/{id}/ — EstAdminOuAutorite.
+export function deleteContactAlerte(id) {
+  return client.delete(`/contacts-alerte/${id}/`);
+}

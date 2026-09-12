@@ -1,10 +1,8 @@
 import { useNavigate, Link } from 'react-router-dom';
 import { ShieldAlert, Droplet, BarChart3, Send } from 'lucide-react';
-import Logo from '../../shared/components/Logo';
-import ThemeToggle from '../../theme/ThemeToggle';
+import AutoriteShell from '../desktop/AutoriteShell';
 import GaugeRisk from '../../shared/components/GaugeRisk';
 import RiskBadge from '../../shared/components/RiskBadge';
-import { useAuth } from '../../auth/AuthContext';
 import { useZones } from '../../shared/hooks/useZones';
 import { usePredictions } from '../../shared/hooks/usePredictions';
 import { useAlertesRecentes } from '../../shared/hooks/useAlertes';
@@ -43,7 +41,6 @@ function KpiCard({ icon: Icon, label, value, caption, tone = 'navy' }) {
 }
 
 export default function TableauDeBordPage() {
-  const { logout } = useAuth();
   const navigate = useNavigate();
 
   const { data: zonesData } = useZones();
@@ -67,22 +64,11 @@ export default function TableauDeBordPage() {
   const signalementsEnAttente = signalementsFeatures.filter((f) => !f.properties.valide);
 
   return (
-    <div className="min-h-screen bg-navy-50 dark:bg-navy-950 text-navy dark:text-navy-50">
-      <div className="flex items-center justify-between px-7 py-4 bg-white dark:bg-navy">
-        <Logo size="sm" />
-        <div className="flex items-center gap-3">
-          <ThemeToggle />
-          <button onClick={logout} className="text-sm font-semibold text-red border-[1.5px] border-red rounded-md px-4 py-2">
-            Se déconnecter
-          </button>
-        </div>
+    <AutoriteShell>
+      <div>
+        <h1 className="text-2xl font-extrabold">Tableau de bord</h1>
+        <p className="text-sm text-navy-600 dark:text-navy-200 mt-0.5">Thiaroye-sur-Mer · Supervision temps réel</p>
       </div>
-
-      <div className="max-w-6xl mx-auto px-7 py-6 flex flex-col gap-5">
-        <div>
-          <h1 className="text-2xl font-extrabold">Tableau de bord</h1>
-          <p className="text-sm text-navy-600 dark:text-navy-200 mt-0.5">Thiaroye-sur-Mer · Supervision temps réel</p>
-        </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <KpiCard icon={ShieldAlert} label="Zones à risque élevé" value={zonesARisqueEleve} tone="red" />
@@ -147,7 +133,6 @@ export default function TableauDeBordPage() {
             </div>
           )}
         </div>
-      </div>
-    </div>
+    </AutoriteShell>
   );
 }
