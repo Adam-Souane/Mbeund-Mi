@@ -27,7 +27,7 @@ export default function AutoriteShell({ children }) {
   return (
     <div className="min-h-screen bg-navy-50 dark:bg-navy-950 text-navy dark:text-navy-50 flex flex-col">
       <div className="bg-white dark:bg-navy border-b border-navy-50 dark:border-navy-800 flex-shrink-0">
-        <div className="max-w-7xl mx-auto flex items-center justify-between px-7 py-4">
+        <div className="max-w-[1600px] mx-auto flex items-center justify-between px-7 py-4">
           <Logo size="sm" />
           <div className="flex items-center gap-3">
             <ThemeToggle />
@@ -38,7 +38,7 @@ export default function AutoriteShell({ children }) {
         </div>
       </div>
 
-      <div className="flex-1 max-w-7xl w-full mx-auto flex gap-6 px-7 py-6 items-start">
+      <div className="flex-1 max-w-[1600px] w-full mx-auto flex gap-6 px-7 py-6 items-start">
         <nav className="w-60 flex-shrink-0 flex flex-col gap-1 sticky top-6">
           {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
             <NavLink
