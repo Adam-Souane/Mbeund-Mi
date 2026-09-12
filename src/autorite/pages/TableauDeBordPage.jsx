@@ -32,9 +32,9 @@ function KpiCard({ icon: Icon, label, value, caption, tone = 'navy' }) {
         <Icon size={18} />
       </div>
       <div className="min-w-0">
-        <div className="text-[11px] font-semibold uppercase text-navy-400 truncate">{label}</div>
-        <div className="text-xl font-extrabold text-navy dark:text-navy-50">{value}</div>
-        {caption && <div className="text-[11px] text-navy-400">{caption}</div>}
+        <div className="text-xs font-semibold uppercase text-navy-400 truncate">{label}</div>
+        <div className="text-2xl font-extrabold text-navy dark:text-navy-50">{value}</div>
+        {caption && <div className="text-xs text-navy-400">{caption}</div>}
       </div>
     </div>
   );
@@ -66,8 +66,8 @@ export default function TableauDeBordPage() {
   return (
     <AutoriteShell>
       <div>
-        <h1 className="text-2xl font-extrabold">Tableau de bord</h1>
-        <p className="text-sm text-navy-600 dark:text-navy-200 mt-0.5">Thiaroye-sur-Mer · Supervision temps réel</p>
+        <h1 className="text-3xl font-extrabold">Tableau de bord</h1>
+        <p className="text-base text-navy-600 dark:text-navy-200 mt-0.5">Thiaroye-sur-Mer · Supervision temps réel</p>
       </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -87,21 +87,21 @@ export default function TableauDeBordPage() {
 
           <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-bold">Alertes récentes</h3>
-              <Link to="/autorite/crise" className="text-xs font-bold text-red">
+              <h3 className="text-base font-bold">Alertes récentes</h3>
+              <Link to="/autorite/crise" className="text-sm font-bold text-red">
                 Gérer
               </Link>
             </div>
             {recentAlertes.length === 0 ? (
-              <p className="text-xs text-navy-400">Aucune alerte pour l’instant.</p>
+              <p className="text-sm text-navy-400">Aucune alerte pour l’instant.</p>
             ) : (
               <div className="flex flex-col gap-3">
                 {recentAlertes.map((a) => (
                   <div key={a.id} className="flex items-start gap-3 pb-3 border-b border-navy-50 dark:border-navy-800 last:border-0 last:pb-0">
                     <RiskBadge niveau={a.niveau} className="mt-0.5 flex-shrink-0" />
                     <div className="min-w-0">
-                      <div className="text-sm font-semibold truncate">{a.zone?.quartier}</div>
-                      <p className="text-xs text-navy-600 dark:text-navy-200 line-clamp-2">{a.message}</p>
+                      <div className="text-base font-semibold truncate">{a.zone?.quartier}</div>
+                      <p className="text-sm text-navy-600 dark:text-navy-200 line-clamp-2">{a.message}</p>
                     </div>
                   </div>
                 ))}
@@ -113,21 +113,21 @@ export default function TableauDeBordPage() {
         <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <h3 className="text-sm font-bold">Signalements citoyens à valider</h3>
-              <p className="text-xs text-navy-400">Observations transmises par les riverains</p>
+              <h3 className="text-base font-bold">Signalements citoyens à valider</h3>
+              <p className="text-sm text-navy-400">Observations transmises par les riverains</p>
             </div>
-            <span className="text-xs font-bold text-navy-600 dark:text-navy-200">{signalementsEnAttente.length} en attente</span>
+            <span className="text-sm font-bold text-navy-600 dark:text-navy-200">{signalementsEnAttente.length} en attente</span>
           </div>
           {signalementsEnAttente.length === 0 ? (
-            <p className="text-xs text-navy-400">Rien à valider pour l’instant.</p>
+            <p className="text-sm text-navy-400">Rien à valider pour l’instant.</p>
           ) : (
             <div className="flex flex-col gap-2">
               {signalementsEnAttente.slice(0, 4).map((f) => (
                 <div key={f.id} className="flex items-center gap-3 p-3 border border-navy-50 dark:border-navy-800 rounded-md">
-                  <span className="text-[10px] font-bold uppercase px-2.5 py-1 rounded-pill bg-navy-50 dark:bg-navy-800 flex-shrink-0">
+                  <span className="text-[11px] font-bold uppercase px-2.5 py-1 rounded-pill bg-navy-50 dark:bg-navy-800 flex-shrink-0">
                     {f.properties.categorie}
                   </span>
-                  <p className="text-xs text-navy-600 dark:text-navy-200 truncate flex-1">{f.properties.description}</p>
+                  <p className="text-sm text-navy-600 dark:text-navy-200 truncate flex-1">{f.properties.description}</p>
                 </div>
               ))}
             </div>

@@ -27,24 +27,24 @@ export default function PrevisionsAlertesPage() {
   return (
     <AutoriteShell>
       <div>
-        <h1 className="text-2xl font-extrabold">Prévisions & alertes</h1>
-        <p className="text-sm text-navy-600 dark:text-navy-200 mt-0.5">Thiaroye-sur-Mer · Suivi météo et vigilance</p>
+        <h1 className="text-3xl font-extrabold">Prévisions & alertes</h1>
+        <p className="text-base text-navy-600 dark:text-navy-200 mt-0.5">Thiaroye-sur-Mer · Suivi météo et vigilance</p>
       </div>
 
       <WeatherWidget previsions={previsions} />
 
       <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5">
-        <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
+        <h3 className="text-base font-bold mb-3 flex items-center gap-2">
           <CloudRain size={15} />
           Toutes les prévisions
         </h3>
         {previsionsLoading ? (
-          <p className="text-xs text-navy-400">Chargement…</p>
+          <p className="text-sm text-navy-400">Chargement…</p>
         ) : previsions.length === 0 ? (
-          <p className="text-xs text-navy-400">Aucune prévision météo enregistrée pour l’instant.</p>
+          <p className="text-sm text-navy-400">Aucune prévision météo enregistrée pour l’instant.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+            <table className="w-full text-left text-sm">
               <thead className="text-navy-400 uppercase border-b border-navy-50 dark:border-navy-800">
                 <tr>
                   <th className="py-2 pr-3 font-semibold">Date</th>
@@ -76,15 +76,15 @@ export default function PrevisionsAlertesPage() {
 
       <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-bold">Alertes récentes</h3>
-          <Link to="/autorite/crise" className="text-xs font-bold text-red">
+          <h3 className="text-base font-bold">Alertes récentes</h3>
+          <Link to="/autorite/crise" className="text-sm font-bold text-red">
             Gérer les alertes
           </Link>
         </div>
         {alertesLoading ? (
-          <p className="text-xs text-navy-400">Chargement…</p>
+          <p className="text-sm text-navy-400">Chargement…</p>
         ) : alertes.length === 0 ? (
-          <p className="text-xs text-navy-400">Aucune alerte pour l’instant.</p>
+          <p className="text-sm text-navy-400">Aucune alerte pour l’instant.</p>
         ) : (
           <div className="flex flex-col gap-3">
             {alertes.map((a) => (
@@ -92,11 +92,11 @@ export default function PrevisionsAlertesPage() {
                 <RiskBadge niveau={a.niveau} className="mt-0.5 flex-shrink-0" />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-semibold truncate">{a.zone?.quartier}</span>
-                    <span className="text-[10px] text-navy-400 flex-shrink-0">{formatDateTime(a.timestamp)}</span>
+                    <span className="text-base font-semibold truncate">{a.zone?.quartier}</span>
+                    <span className="text-[11px] text-navy-400 flex-shrink-0">{formatDateTime(a.timestamp)}</span>
                   </div>
-                  <p className="text-xs text-navy-600 dark:text-navy-200 mt-0.5">{a.message}</p>
-                  <span className="inline-block mt-1 text-[10px] font-bold uppercase text-navy-400">
+                  <p className="text-sm text-navy-600 dark:text-navy-200 mt-0.5">{a.message}</p>
+                  <span className="inline-block mt-1 text-[11px] font-bold uppercase text-navy-400">
                     {STATUT_LABELS[a.statut] ?? a.statut}
                   </span>
                 </div>

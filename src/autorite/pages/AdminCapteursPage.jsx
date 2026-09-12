@@ -38,8 +38,8 @@ export default function AdminCapteursPage() {
   return (
     <AutoriteShell>
       <div>
-        <h1 className="text-2xl font-extrabold">Admin & capteurs</h1>
-        <p className="text-sm text-navy-600 dark:text-navy-200 mt-0.5">
+        <h1 className="text-3xl font-extrabold">Admin & capteurs</h1>
+        <p className="text-base text-navy-600 dark:text-navy-200 mt-0.5">
           {capteurs.length} capteur{capteurs.length > 1 ? 's' : ''} enregistré{capteurs.length > 1 ? 's' : ''} ·{' '}
           {actifs} actif{actifs > 1 ? 's' : ''}
         </p>
@@ -47,9 +47,9 @@ export default function AdminCapteursPage() {
 
       <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5 flex flex-col gap-3">
         {isLoading ? (
-          <p className="text-xs text-navy-400">Chargement…</p>
+          <p className="text-sm text-navy-400">Chargement…</p>
         ) : capteurs.length === 0 ? (
-          <p className="text-xs text-navy-400">Aucun capteur enregistré pour l’instant.</p>
+          <p className="text-sm text-navy-400">Aucun capteur enregistré pour l’instant.</p>
         ) : (
           capteurs.map((f) => (
             <div key={f.id} className="flex items-center gap-3 p-3.5 border border-navy-50 dark:border-navy-800 rounded-lg">
@@ -60,9 +60,9 @@ export default function AdminCapteursPage() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <span className={`w-2 h-2 rounded-full flex-shrink-0 ${STATUT_DOT[f.properties.statut] ?? 'bg-navy-400'}`} />
-                  <span className="text-sm font-semibold truncate">{f.properties.nom}</span>
+                  <span className="text-base font-semibold truncate">{f.properties.nom}</span>
                 </div>
-                <p className="text-xs text-navy-400 mt-0.5">
+                <p className="text-sm text-navy-400 mt-0.5">
                   {TYPE_LABELS[f.properties.type] ?? f.properties.type} ·{' '}
                   {zoneNameById.get(f.properties.zone) ?? 'Zone non assignée'} · Dernier relevé :{' '}
                   {formatDateTime(f.properties.dernier_releve)}
@@ -74,7 +74,7 @@ export default function AdminCapteursPage() {
                 value={f.properties.statut}
                 onChange={(e) => updateCapteur.mutate({ id: f.id, payload: { statut: e.target.value } })}
                 disabled={updateCapteur.isPending}
-                className="text-xs font-semibold px-2.5 py-2 rounded-md border-[1.5px] border-navy-200 dark:border-navy-800 bg-white dark:bg-navy flex-shrink-0"
+                className="text-sm font-semibold px-2.5 py-2 rounded-md border-[1.5px] border-navy-200 dark:border-navy-800 bg-white dark:bg-navy flex-shrink-0"
               >
                 {STATUTS.map((s) => (
                   <option key={s.value} value={s.value}>
@@ -88,16 +88,16 @@ export default function AdminCapteursPage() {
       </div>
 
       <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5">
-        <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
+        <h3 className="text-base font-bold mb-3 flex items-center gap-2">
           <Gauge size={15} />
           Relevés des dernières 24h
         </h3>
         {!mesuresRecentes || mesuresRecentes.length === 0 ? (
-          <p className="text-xs text-navy-400">Aucun relevé enregistré sur les dernières 24h.</p>
+          <p className="text-sm text-navy-400">Aucun relevé enregistré sur les dernières 24h.</p>
         ) : (
           <div className="flex flex-col gap-2">
             {mesuresRecentes.map((g) => (
-              <div key={g.capteur.id} className="flex items-center justify-between text-xs border-b border-navy-50 dark:border-navy-800 pb-2 last:border-0 last:pb-0">
+              <div key={g.capteur.id} className="flex items-center justify-between text-sm border-b border-navy-50 dark:border-navy-800 pb-2 last:border-0 last:pb-0">
                 <span className="font-semibold">{g.capteur.properties.nom}</span>
                 <span className="text-navy-400">
                   {g.mesures.length} mesure{g.mesures.length > 1 ? 's' : ''} · dernière :{' '}

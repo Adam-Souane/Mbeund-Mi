@@ -55,17 +55,17 @@ export default function StatistiquesPage() {
   return (
     <AutoriteShell>
       <div>
-        <h1 className="text-2xl font-extrabold">Statistiques</h1>
-        <p className="text-sm text-navy-600 dark:text-navy-200 mt-0.5">Thiaroye-sur-Mer · Vue d’ensemble des indicateurs de risque</p>
+        <h1 className="text-3xl font-extrabold">Statistiques</h1>
+        <p className="text-base text-navy-600 dark:text-navy-200 mt-0.5">Thiaroye-sur-Mer · Vue d’ensemble des indicateurs de risque</p>
       </div>
 
       <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5">
-        <h3 className="text-sm font-bold mb-4 flex items-center gap-2">
+        <h3 className="text-base font-bold mb-4 flex items-center gap-2">
           <BarChart3 size={15} />
           Score de risque moyen par zone
         </h3>
         {zonesChartData.length === 0 ? (
-          <p className="text-xs text-navy-400">Aucune zone enregistrée pour l’instant.</p>
+          <p className="text-sm text-navy-400">Aucune zone enregistrée pour l’instant.</p>
         ) : (
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -87,7 +87,7 @@ export default function StatistiquesPage() {
 
       <div className="grid lg:grid-cols-2 gap-5">
         <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5">
-          <h3 className="text-sm font-bold mb-4">Alertes par niveau</h3>
+          <h3 className="text-base font-bold mb-4">Alertes par niveau</h3>
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={alertesParNiveau} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
@@ -106,9 +106,9 @@ export default function StatistiquesPage() {
         </div>
 
         <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5">
-          <h3 className="text-sm font-bold mb-4">Historique du score de risque</h3>
+          <h3 className="text-base font-bold mb-4">Historique du score de risque</h3>
           {historiqueChartData.length === 0 ? (
-            <p className="text-xs text-navy-400">Aucun historique enregistré pour l’instant.</p>
+            <p className="text-sm text-navy-400">Aucun historique enregistré pour l’instant.</p>
           ) : (
             <div className="h-56">
               <ResponsiveContainer width="100%" height="100%">

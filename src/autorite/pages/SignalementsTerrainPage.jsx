@@ -37,16 +37,16 @@ function SignalementCard({ feature }) {
 
       <div className="min-w-0 flex-1 flex flex-col gap-1.5">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-[10px] font-bold uppercase px-2.5 py-1 rounded-pill bg-navy-50 dark:bg-navy-800 flex-shrink-0">
+          <span className="text-[11px] font-bold uppercase px-2.5 py-1 rounded-pill bg-navy-50 dark:bg-navy-800 flex-shrink-0">
             {CATEGORIE_LABELS[properties.categorie] ?? properties.categorie}
           </span>
-          <span className="text-[11px] text-navy-400 flex-shrink-0">{formatDateTime(properties.date_creation)}</span>
+          <span className="text-xs text-navy-400 flex-shrink-0">{formatDateTime(properties.date_creation)}</span>
         </div>
-        <p className="text-sm text-navy-600 dark:text-navy-200">{properties.description || 'Sans description.'}</p>
+        <p className="text-base text-navy-600 dark:text-navy-200">{properties.description || 'Sans description.'}</p>
 
         <div className="flex items-center gap-2 mt-1">
           <span
-            className={`text-[10px] font-bold uppercase ${
+            className={`text-[11px] font-bold uppercase ${
               properties.valide ? 'text-risk-vert' : 'text-navy-400'
             }`}
           >
@@ -59,7 +59,7 @@ function SignalementCard({ feature }) {
             <button
               onClick={() => mutation.mutate({ id: feature.id, valide: true })}
               disabled={mutation.isPending}
-              className="flex items-center gap-1.5 text-xs font-bold text-white bg-risk-vert px-3 py-1.5 rounded-md disabled:opacity-60"
+              className="flex items-center gap-1.5 text-sm font-bold text-white bg-risk-vert px-3 py-1.5 rounded-md disabled:opacity-60"
             >
               <CheckCircle2 size={13} />
               Valider
@@ -68,7 +68,7 @@ function SignalementCard({ feature }) {
             <button
               onClick={() => mutation.mutate({ id: feature.id, valide: false })}
               disabled={mutation.isPending}
-              className="flex items-center gap-1.5 text-xs font-bold text-navy-600 dark:text-navy-200 border border-navy-200 dark:border-navy-800 px-3 py-1.5 rounded-md disabled:opacity-60"
+              className="flex items-center gap-1.5 text-sm font-bold text-navy-600 dark:text-navy-200 border border-navy-200 dark:border-navy-800 px-3 py-1.5 rounded-md disabled:opacity-60"
             >
               <XCircle size={13} />
               Invalider
@@ -77,7 +77,7 @@ function SignalementCard({ feature }) {
         </div>
 
         {mutation.isError && (
-          <p className="text-[11px] text-red mt-1">{flattenApiErrors(mutation.error)[0]}</p>
+          <p className="text-xs text-red mt-1">{flattenApiErrors(mutation.error)[0]}</p>
         )}
       </div>
     </div>
@@ -99,8 +99,8 @@ export default function SignalementsTerrainPage() {
   return (
     <AutoriteShell>
       <div>
-        <h1 className="text-2xl font-extrabold">Signalements terrain</h1>
-        <p className="text-sm text-navy-600 dark:text-navy-200 mt-0.5">
+        <h1 className="text-3xl font-extrabold">Signalements terrain</h1>
+        <p className="text-base text-navy-600 dark:text-navy-200 mt-0.5">
           Observations transmises par les riverains · {data?.count ?? 0} au total
         </p>
       </div>
@@ -110,7 +110,7 @@ export default function SignalementsTerrainPage() {
           <button
             key={f.value}
             onClick={() => setFilter(f.value)}
-            className={`text-xs font-bold px-3.5 py-2 rounded-md border-[1.5px] transition-colors ${
+            className={`text-sm font-bold px-3.5 py-2 rounded-md border-[1.5px] transition-colors ${
               filter === f.value
                 ? 'bg-navy dark:bg-navy-800 text-white border-navy dark:border-navy-800'
                 : 'border-navy-200 dark:border-navy-800 text-navy dark:text-navy-50'
@@ -123,9 +123,9 @@ export default function SignalementsTerrainPage() {
 
       <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5 flex flex-col gap-3">
         {isLoading ? (
-          <p className="text-xs text-navy-400">Chargement…</p>
+          <p className="text-sm text-navy-400">Chargement…</p>
         ) : filtered.length === 0 ? (
-          <p className="text-xs text-navy-400">Aucun signalement dans cette catégorie.</p>
+          <p className="text-sm text-navy-400">Aucun signalement dans cette catégorie.</p>
         ) : (
           filtered.map((feature) => <SignalementCard key={feature.id} feature={feature} />)
         )}
@@ -136,16 +136,16 @@ export default function SignalementsTerrainPage() {
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={!data?.previous}
-            className="flex items-center gap-1 text-xs font-bold text-navy-600 dark:text-navy-200 disabled:opacity-40"
+            className="flex items-center gap-1 text-sm font-bold text-navy-600 dark:text-navy-200 disabled:opacity-40"
           >
             <ChevronLeft size={14} />
             Précédent
           </button>
-          <span className="text-xs text-navy-400">Page {page}</span>
+          <span className="text-sm text-navy-400">Page {page}</span>
           <button
             onClick={() => setPage((p) => p + 1)}
             disabled={!data?.next}
-            className="flex items-center gap-1 text-xs font-bold text-navy-600 dark:text-navy-200 disabled:opacity-40"
+            className="flex items-center gap-1 text-sm font-bold text-navy-600 dark:text-navy-200 disabled:opacity-40"
           >
             Suivant
             <ChevronRight size={14} />

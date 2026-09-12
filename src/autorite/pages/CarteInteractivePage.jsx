@@ -18,14 +18,14 @@ export default function CarteInteractivePage() {
   return (
     <AutoriteShell>
       <div>
-        <h1 className="text-2xl font-extrabold">Carte interactive (SIG)</h1>
-        <p className="text-sm text-navy-600 dark:text-navy-200 mt-0.5">
+        <h1 className="text-3xl font-extrabold">Carte interactive (SIG)</h1>
+        <p className="text-base text-navy-600 dark:text-navy-200 mt-0.5">
           Thiaroye-sur-Mer · Zones, capteurs, drainage, inondations et signalements
         </p>
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-navy-400">Chargement de la carte…</p>
+        <p className="text-base text-navy-400">Chargement de la carte…</p>
       ) : (
         <InteractiveMap
           data={{

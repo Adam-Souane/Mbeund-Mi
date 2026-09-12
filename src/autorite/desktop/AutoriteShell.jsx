@@ -31,7 +31,7 @@ export default function AutoriteShell({ children }) {
           <Logo size="sm" />
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <button onClick={logout} className="text-sm font-semibold text-red border-[1.5px] border-red rounded-md px-4 py-2">
+            <button onClick={logout} className="text-base font-semibold text-red border-[1.5px] border-red rounded-md px-4 py-2">
               Se déconnecter
             </button>
           </div>
@@ -45,7 +45,7 @@ export default function AutoriteShell({ children }) {
               key={to}
               to={to}
               className={({ isActive }) =>
-                `flex items-center gap-2.5 px-3.5 py-2.5 rounded-md text-sm font-semibold transition-colors ${
+                `flex items-center gap-2.5 px-3.5 py-2.5 rounded-md text-base font-semibold transition-colors ${
                   isActive
                     ? 'bg-navy dark:bg-navy-800 text-white'
                     : 'text-navy-600 dark:text-navy-200 hover:bg-navy-50 dark:hover:bg-navy-800'

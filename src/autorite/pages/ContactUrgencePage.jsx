@@ -31,14 +31,14 @@ export default function ContactUrgencePage() {
   return (
     <AutoriteShell>
       <div>
-        <h1 className="text-2xl font-extrabold">Contact & urgence</h1>
-        <p className="text-sm text-navy-600 dark:text-navy-200 mt-0.5">
+        <h1 className="text-3xl font-extrabold">Contact & urgence</h1>
+        <p className="text-base text-navy-600 dark:text-navy-200 mt-0.5">
           Registre des contacts inscrits aux alertes SMS · {data?.count ?? 0} inscrit{(data?.count ?? 0) > 1 ? 's' : ''}
         </p>
       </div>
 
       <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5">
-        <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
+        <h3 className="text-base font-bold mb-3 flex items-center gap-2">
           <ShieldAlert size={15} />
           Numéros d’urgence
         </h3>
@@ -49,8 +49,8 @@ export default function ContactUrgencePage() {
               href={`tel:${n.numero}`}
               className="flex items-center justify-between gap-2 p-3.5 rounded-lg border border-navy-50 dark:border-navy-800 hover:bg-navy-50 dark:hover:bg-navy-800 transition-colors"
             >
-              <span className="text-sm font-semibold">{n.label}</span>
-              <span className="flex items-center gap-1.5 text-red font-extrabold text-sm">
+              <span className="text-base font-semibold">{n.label}</span>
+              <span className="flex items-center gap-1.5 text-red font-extrabold text-base">
                 <PhoneCall size={14} />
                 {n.numero}
               </span>
@@ -60,20 +60,20 @@ export default function ContactUrgencePage() {
       </div>
 
       <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5 flex flex-col gap-2">
-        <h3 className="text-sm font-bold mb-1">Registre des contacts SMS</h3>
+        <h3 className="text-base font-bold mb-1">Registre des contacts SMS</h3>
         {isLoading ? (
-          <p className="text-xs text-navy-400">Chargement…</p>
+          <p className="text-sm text-navy-400">Chargement…</p>
         ) : contacts.length === 0 ? (
-          <p className="text-xs text-navy-400">Aucun contact inscrit pour l’instant.</p>
+          <p className="text-sm text-navy-400">Aucun contact inscrit pour l’instant.</p>
         ) : (
           contacts.map((c) => (
             <div key={c.id} className="flex items-center gap-3 p-3 border border-navy-50 dark:border-navy-800 rounded-md">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold">{c.telephone}</span>
-                  {!c.actif && <span className="text-[10px] font-bold uppercase text-navy-400">Inactif</span>}
+                  <span className="text-base font-semibold">{c.telephone}</span>
+                  {!c.actif && <span className="text-[11px] font-bold uppercase text-navy-400">Inactif</span>}
                 </div>
-                <p className="text-xs text-navy-400 mt-0.5">
+                <p className="text-sm text-navy-400 mt-0.5">
                   {c.nom || 'Sans nom'} · {zoneNameById.get(c.zone) ?? 'Zone inconnue'} · inscrit le {formatDate(c.date_inscription)}
                 </p>
               </div>
