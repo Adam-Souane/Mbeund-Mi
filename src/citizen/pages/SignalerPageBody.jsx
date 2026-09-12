@@ -100,7 +100,7 @@ export default function SignalerPageBody() {
 
   return (
     <CitizenShell>
-      <div className="max-w-lg w-full mx-auto flex flex-col gap-4">
+      <div className="max-w-lg lg:max-w-2xl w-full mx-auto flex flex-col gap-4">
         <div>
           <h1 className="text-xl font-extrabold">Nouveau signalement</h1>
           <p className="text-sm text-navy-600 dark:text-navy-200 mt-0.5">

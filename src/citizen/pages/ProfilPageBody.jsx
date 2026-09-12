@@ -17,7 +17,7 @@ export default function ProfilPageBody() {
 
   return (
     <CitizenShell>
-      <div className="max-w-lg w-full mx-auto flex flex-col gap-5">
+      <div className="max-w-lg lg:max-w-2xl w-full mx-auto flex flex-col gap-5">
         <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5 flex items-center gap-4">
           <div className="w-14 h-14 rounded-full bg-navy dark:bg-navy-800 text-white flex items-center justify-center text-xl font-extrabold flex-shrink-0">
             {initial}

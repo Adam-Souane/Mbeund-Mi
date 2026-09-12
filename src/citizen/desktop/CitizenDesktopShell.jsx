@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, Map, CloudRain, Camera, Waves, User } from 'lucide-react';
+import { Home, Map, CloudRain, Camera, MessageCircle, User } from 'lucide-react';
 import Logo from '../../shared/components/Logo';
 import ThemeToggle from '../../theme/ThemeToggle';
 import { useAuth } from '../../auth/AuthContext';
@@ -9,7 +9,10 @@ const NAV_ITEMS = [
   { to: '/citoyen/carte', label: 'Carte interactive', icon: Map },
   { to: '/citoyen/alertes', label: 'Prévisions & alertes', icon: CloudRain },
   { to: '/citoyen/signaler', label: 'Signaler', icon: Camera },
-  { to: '/citoyen/chat', label: 'NDAM · Assistant', icon: Waves },
+  // MessageCircle (et non l'icône "vague" de la marque NDAM) — doit se lire
+  // au premier coup d'œil comme "ouvre une conversation", pas comme une
+  // simple icône décorative liée à l'eau.
+  { to: '/citoyen/chat', label: 'NDAM · Assistant', icon: MessageCircle },
   { to: '/citoyen/profil', label: 'Profil', icon: User },
 ];
 
