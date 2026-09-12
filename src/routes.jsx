@@ -5,7 +5,9 @@ import LoginPage from './auth-pages/LoginPage';
 import SignupPage from './auth-pages/SignupPage';
 import RequireAuth from './auth/RequireAuth';
 import AccueilPageBody from './citizen/pages/AccueilPageBody';
+import CartePageBody from './citizen/pages/CartePageBody';
 import TableauDeBordPage from './autorite/pages/TableauDeBordPage';
+import CarteInteractivePage from './autorite/pages/CarteInteractivePage';
 
 function Citoyen({ children }) {
   return <RequireAuth space="citoyen">{children}</RequireAuth>;
@@ -24,14 +26,7 @@ export default function AppRoutes() {
 
       {/* Citoyen */}
       <Route path="/citoyen/accueil" element={<Citoyen><AccueilPageBody /></Citoyen>} />
-      <Route
-        path="/citoyen/carte"
-        element={
-          <Citoyen>
-            <PlaceholderPage title="Carte" backTo="/citoyen/accueil" />
-          </Citoyen>
-        }
-      />
+      <Route path="/citoyen/carte" element={<Citoyen><CartePageBody /></Citoyen>} />
       <Route
         path="/citoyen/alertes"
         element={
@@ -67,14 +62,7 @@ export default function AppRoutes() {
 
       {/* Autorité */}
       <Route path="/autorite/dashboard" element={<Autorite><TableauDeBordPage /></Autorite>} />
-      <Route
-        path="/autorite/carte"
-        element={
-          <Autorite>
-            <PlaceholderPage title="Carte Interactive" backTo="/autorite/dashboard" />
-          </Autorite>
-        }
-      />
+      <Route path="/autorite/carte" element={<Autorite><CarteInteractivePage /></Autorite>} />
       <Route
         path="/autorite/crise"
         element={
