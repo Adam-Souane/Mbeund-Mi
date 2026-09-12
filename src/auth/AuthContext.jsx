@@ -1,13 +1,14 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { obtainToken } from '../api/endpoints/auth';
 import { decodeJwt } from './jwt';
-import { getAccessToken, getRefreshToken, setTokens, clearTokens } from './tokenStorage';
+import { getAccessToken, getRefreshToken, getUsername, setTokens, clearTokens } from './tokenStorage';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [accessToken, setAccessToken] = useState(null);
   const [role, setRole] = useState(null);
+  const [username, setUsername] = useState(null);
   const [isReady, setIsReady] = useState(false);
 
   // Au montage : reprend la session depuis localStorage si un token y est
@@ -18,16 +19,18 @@ export function AuthProvider({ children }) {
       const payload = decodeJwt(token);
       setAccessToken(token);
       setRole(payload?.role ?? null);
+      setUsername(getUsername());
     }
     setIsReady(true);
   }, []);
 
   const login = useCallback(async ({ username, password }) => {
     const data = await obtainToken({ username, password });
-    setTokens({ access: data.access, refresh: data.refresh });
+    setTokens({ access: data.access, refresh: data.refresh, username });
     const payload = decodeJwt(data.access);
     setAccessToken(data.access);
     setRole(payload?.role ?? 'citoyen');
+    setUsername(username);
     return payload?.role ?? 'citoyen';
   }, []);
 
@@ -35,11 +38,13 @@ export function AuthProvider({ children }) {
     clearTokens();
     setAccessToken(null);
     setRole(null);
+    setUsername(null);
   }, []);
 
   const value = {
     accessToken,
     role,
+    username,
     isAuthenticated: !!accessToken,
     isReady,
     login,

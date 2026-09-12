@@ -6,6 +6,9 @@ import SignupPage from './auth-pages/SignupPage';
 import RequireAuth from './auth/RequireAuth';
 import AccueilPageBody from './citizen/pages/AccueilPageBody';
 import CartePageBody from './citizen/pages/CartePageBody';
+import AlertesPrevisionsPageBody from './citizen/pages/AlertesPrevisionsPageBody';
+import SignalerPageBody from './citizen/pages/SignalerPageBody';
+import ProfilPageBody from './citizen/pages/ProfilPageBody';
 import TableauDeBordPage from './autorite/pages/TableauDeBordPage';
 import CarteInteractivePage from './autorite/pages/CarteInteractivePage';
 
@@ -27,30 +30,9 @@ export default function AppRoutes() {
       {/* Citoyen */}
       <Route path="/citoyen/accueil" element={<Citoyen><AccueilPageBody /></Citoyen>} />
       <Route path="/citoyen/carte" element={<Citoyen><CartePageBody /></Citoyen>} />
-      <Route
-        path="/citoyen/alertes"
-        element={
-          <Citoyen>
-            <PlaceholderPage title="Alertes & Prévisions" backTo="/citoyen/accueil" />
-          </Citoyen>
-        }
-      />
-      <Route
-        path="/citoyen/signaler"
-        element={
-          <Citoyen>
-            <PlaceholderPage title="Nouveau signalement" backTo="/citoyen/accueil" />
-          </Citoyen>
-        }
-      />
-      <Route
-        path="/citoyen/profil"
-        element={
-          <Citoyen>
-            <PlaceholderPage title="Profil" backTo="/citoyen/accueil" />
-          </Citoyen>
-        }
-      />
+      <Route path="/citoyen/alertes" element={<Citoyen><AlertesPrevisionsPageBody /></Citoyen>} />
+      <Route path="/citoyen/signaler" element={<Citoyen><SignalerPageBody /></Citoyen>} />
+      <Route path="/citoyen/profil" element={<Citoyen><ProfilPageBody /></Citoyen>} />
       <Route
         path="/citoyen/chat"
         element={
