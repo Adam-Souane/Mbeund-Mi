@@ -6,6 +6,12 @@
       "runtimeExecutable": "python",
       "runtimeArgs": ["backend/manage.py", "runserver", "0.0.0.0:8000"],
       "port": 8000
+    },
+    {
+      "name": "frontend-vite",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 3000
     }
   ]
 }
