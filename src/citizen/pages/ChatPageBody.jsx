@@ -77,20 +77,19 @@ export default function ChatPageBody() {
 
   return (
     <CitizenShell>
-      {/* Desktop : conversation + panneau de contexte sur toute la largeur
-          disponible (comme la page Carte), plus de colonne plafonnée qui
-          laissait un vide de chaque côté. */}
-      <div className="w-full flex flex-col gap-4 lg:grid lg:grid-cols-[1.4fr_1fr] lg:gap-5 lg:items-start">
-        <div className="flex flex-col gap-4">
-          <div>
-            <h1 className="text-lg font-extrabold flex items-center gap-2">
-              <Waves size={17} className="text-red" />
-              NDAM · Assistant
-            </h1>
-            <p className="text-xs text-navy-400 mt-0.5">Réponses basées sur la météo et le risque en temps réel</p>
-          </div>
+      <div>
+        <h1 className="text-lg font-extrabold flex items-center gap-2">
+          <Waves size={17} className="text-red" />
+          NDAM · Assistant
+        </h1>
+        <p className="text-xs text-navy-400 mt-0.5">Réponses basées sur la météo et le risque en temps réel</p>
+      </div>
 
-          <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-4 lg:p-5 flex flex-col gap-4">
+      {/* Desktop : conversation + panneau de contexte sur toute la largeur
+          disponible (comme la page Carte), tous deux alignés juste sous le
+          titre commun — plus de colonne plafonnée ni de décalage vertical. */}
+      <div className="w-full flex flex-col gap-4 lg:grid lg:grid-cols-[1.4fr_1fr] lg:gap-5 lg:items-start">
+        <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-4 lg:p-5 flex flex-col gap-4">
             <div className="h-[50vh] lg:h-[420px] overflow-y-auto flex flex-col gap-3 pr-1">
               {messages.map((m, i) => (
                 <div key={i} className={`flex items-end gap-2 ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
@@ -161,7 +160,6 @@ export default function ChatPageBody() {
                 <Send size={16} />
               </button>
             </form>
-          </div>
         </div>
 
         <div className="hidden lg:flex flex-col gap-3 sticky top-6">

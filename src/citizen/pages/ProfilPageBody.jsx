@@ -18,9 +18,10 @@ export default function ProfilPageBody() {
   return (
     <CitizenShell>
       {/* Desktop : identité et préférences côte à côte sur toute la largeur
-          disponible (comme la page Carte) plutôt qu'empilées dans une
-          colonne plafonnée qui laissait un grand vide de chaque côté. */}
-      <div className="w-full flex flex-col gap-5 lg:grid lg:grid-cols-2 lg:gap-5 lg:items-start lg:content-center lg:min-h-[65vh]">
+          disponible (comme la page Carte), ancrées en haut comme les autres
+          pages — plus de colonne plafonnée ni de centrage vertical qui
+          laissait un vide au-dessus. */}
+      <div className="w-full flex flex-col gap-5 lg:grid lg:grid-cols-2 lg:gap-5 lg:items-start">
         <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5 flex items-center gap-4">
           <div className="w-14 h-14 rounded-full bg-navy dark:bg-navy-800 text-white flex items-center justify-center text-xl font-extrabold flex-shrink-0">
             {initial}
