@@ -32,6 +32,10 @@ export default function AlertesPrevisionsPageBody() {
 
       <WeatherWidget previsions={previsions} />
 
+      {/* Desktop : tableau + liste côte à côte plutôt qu'empilés pleine
+          largeur (un tableau à 4 colonnes étiré sur 1100px laisse d'énormes
+          vides entre les valeurs). Mobile : empilement inchangé. */}
+      <div className="flex flex-col gap-5 lg:grid lg:grid-cols-2 lg:items-start">
       <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5">
         <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
           <CloudRain size={15} />
@@ -98,6 +102,7 @@ export default function AlertesPrevisionsPageBody() {
             ))}
           </div>
         )}
+      </div>
       </div>
     </CitizenShell>
   );

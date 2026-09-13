@@ -100,8 +100,12 @@ export default function SignalerPageBody() {
 
   return (
     <CitizenShell>
-      <div className="max-w-lg lg:max-w-2xl w-full mx-auto flex flex-col gap-4">
-        <div>
+      {/* Desktop : formulaire à gauche, aperçu carte plus grand à droite,
+          sur toute la largeur disponible (comme la page Carte) — plus de
+          colonne plafonnée qui laissait un vide de chaque côté. Mobile :
+          empilement classique. */}
+      <div className="w-full flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
+        <div className="lg:col-span-2">
           <h1 className="text-xl font-extrabold">Nouveau signalement</h1>
           <p className="text-sm text-navy-600 dark:text-navy-200 mt-0.5">
             Décrivez ce que vous observez — une autorité le validera avant publication.
@@ -160,53 +164,6 @@ export default function SignalerPageBody() {
             </label>
           </div>
 
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="block text-xs font-semibold">Position</span>
-              <button
-                type="button"
-                onClick={locate}
-                className="flex items-center gap-1.5 text-xs font-bold text-red"
-              >
-                {geoStatus === 'loading' ? <Loader2 size={13} className="animate-spin" /> : <LocateFixed size={13} />}
-                Me localiser
-              </button>
-            </div>
-
-            <div className="rounded-md overflow-hidden border-[1.5px] border-navy-200 dark:border-navy-800" style={{ height: 180 }}>
-              <MapContainer
-                center={[point.lat, point.lon]}
-                zoom={position ? 16 : 13}
-                dragging={false}
-                scrollWheelZoom={false}
-                zoomControl={false}
-                style={{ width: '100%', height: '100%' }}
-                key={`${point.lat}-${point.lon}`}
-              >
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-                <CircleMarker
-                  center={[point.lat, point.lon]}
-                  radius={9}
-                  pathOptions={{ color: '#fff', weight: 2, fillColor: '#C0182A', fillOpacity: 1 }}
-                />
-              </MapContainer>
-            </div>
-
-            {position ? (
-              <p className="flex items-center gap-1.5 text-[11px] text-navy-400 mt-1.5">
-                <MapPin size={11} />
-                Position détectée ({position.lat.toFixed(4)}, {position.lon.toFixed(4)})
-              </p>
-            ) : (
-              <p className="text-[11px] text-navy-400 mt-1.5">
-                {geoStatus === 'error' ? geoError : 'Position par défaut (Thiaroye-sur-Mer) — localisez-vous pour plus de précision.'}
-              </p>
-            )}
-          </div>
-
           {mutation.isError && (
             <div className="px-3 py-2.5 rounded-md bg-red-50 dark:bg-red/15 text-red-900 dark:text-red-200 text-xs space-y-1">
               {flattenApiErrors(mutation.error).map((msg, i) => (
@@ -218,11 +175,58 @@ export default function SignalerPageBody() {
           <button
             type="submit"
             disabled={mutation.isPending}
-            className="w-full bg-red text-white font-bold text-sm py-3 rounded-md disabled:opacity-60"
+            className="w-full bg-red text-white font-bold text-sm py-3 rounded-md disabled:opacity-60 lg:mt-auto"
           >
             {mutation.isPending ? 'Envoi en cours…' : 'Envoyer le signalement'}
           </button>
         </form>
+
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center justify-between">
+            <span className="block text-xs font-semibold">Position</span>
+            <button
+              type="button"
+              onClick={locate}
+              className="flex items-center gap-1.5 text-xs font-bold text-red"
+            >
+              {geoStatus === 'loading' ? <Loader2 size={13} className="animate-spin" /> : <LocateFixed size={13} />}
+              Me localiser
+            </button>
+          </div>
+
+          <div className="rounded-md overflow-hidden border-[1.5px] border-navy-200 dark:border-navy-800 h-[180px] lg:h-[460px]">
+            <MapContainer
+              center={[point.lat, point.lon]}
+              zoom={position ? 16 : 13}
+              dragging={false}
+              scrollWheelZoom={false}
+              zoomControl={false}
+              style={{ width: '100%', height: '100%' }}
+              key={`${point.lat}-${point.lon}`}
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              <CircleMarker
+                center={[point.lat, point.lon]}
+                radius={9}
+                pathOptions={{ color: '#fff', weight: 2, fillColor: '#C0182A', fillOpacity: 1 }}
+              />
+            </MapContainer>
+          </div>
+
+          {position ? (
+            <p className="flex items-center gap-1.5 text-[11px] text-navy-400 mt-1">
+              <MapPin size={11} />
+              Position détectée ({position.lat.toFixed(4)}, {position.lon.toFixed(4)})
+            </p>
+          ) : (
+            <p className="text-[11px] text-navy-400 mt-1">
+              {geoStatus === 'error' ? geoError : 'Position par défaut (Thiaroye-sur-Mer) — localisez-vous pour plus de précision.'}
+            </p>
+          )}
+        </div>
       </div>
     </CitizenShell>
   );

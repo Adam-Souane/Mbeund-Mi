@@ -93,33 +93,42 @@ export default function AccueilPageBody() {
         </a>
       </div>
 
-      <div className="grid sm:grid-cols-2 gap-4">
-        <GaugeRisk zone={topZone} prediction={zonePrediction} onExploreMap={() => navigate('/citoyen/carte')} />
-        <WeatherWidget previsions={previsionsData?.results ?? []} />
-      </div>
-
-      <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-bold">Alertes récentes</h3>
-          <Link to="/citoyen/alertes" className="text-xs font-bold text-red">
-            Voir tout
-          </Link>
+      {/* Desktop : Gauge + Alertes côte à côte (comme le tableau de bord
+          autorité), Météo pleine largeur en dessous pour que sa bande de
+          prévisions à venir ait la place de s'étaler. Mobile : ordre inchangé
+          (Gauge, Météo, Alertes) — géré par `order-*` sans déplacer le DOM. */}
+      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[1.4fr_1fr] lg:gap-5 lg:items-start">
+        <div className="order-1 lg:order-1">
+          <GaugeRisk zone={topZone} prediction={zonePrediction} onExploreMap={() => navigate('/citoyen/carte')} />
         </div>
-        {recentAlertes.length === 0 ? (
-          <p className="text-xs text-navy-400">Aucune alerte pour l’instant.</p>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {recentAlertes.map((a) => (
-              <div key={a.id} className="flex items-start gap-3 pb-3 border-b border-navy-50 dark:border-navy-800 last:border-0 last:pb-0">
-                <RiskBadge niveau={a.niveau} className="mt-0.5 flex-shrink-0" />
-                <div className="min-w-0">
-                  <div className="text-sm font-semibold truncate">{a.zone?.quartier}</div>
-                  <p className="text-xs text-navy-600 dark:text-navy-200 line-clamp-2">{a.message}</p>
-                </div>
-              </div>
-            ))}
+
+        <div className="order-3 lg:order-2 bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-bold">Alertes récentes</h3>
+            <Link to="/citoyen/alertes" className="text-xs font-bold text-red">
+              Voir tout
+            </Link>
           </div>
-        )}
+          {recentAlertes.length === 0 ? (
+            <p className="text-xs text-navy-400">Aucune alerte pour l’instant.</p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {recentAlertes.map((a) => (
+                <div key={a.id} className="flex items-start gap-3 pb-3 border-b border-navy-50 dark:border-navy-800 last:border-0 last:pb-0">
+                  <RiskBadge niveau={a.niveau} className="mt-0.5 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold truncate">{a.zone?.quartier}</div>
+                    <p className="text-xs text-navy-600 dark:text-navy-200 line-clamp-2">{a.message}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="order-2 lg:order-3 lg:col-span-2">
+          <WeatherWidget previsions={previsionsData?.results ?? []} />
+        </div>
       </div>
     </CitizenShell>
   );

@@ -17,7 +17,10 @@ export default function ProfilPageBody() {
 
   return (
     <CitizenShell>
-      <div className="max-w-lg lg:max-w-2xl w-full mx-auto flex flex-col gap-5 lg:justify-center lg:min-h-[65vh]">
+      {/* Desktop : identité et préférences côte à côte sur toute la largeur
+          disponible (comme la page Carte) plutôt qu'empilées dans une
+          colonne plafonnée qui laissait un grand vide de chaque côté. */}
+      <div className="w-full flex flex-col gap-5 lg:grid lg:grid-cols-2 lg:gap-5 lg:items-start lg:content-center lg:min-h-[65vh]">
         <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5 flex items-center gap-4">
           <div className="w-14 h-14 rounded-full bg-navy dark:bg-navy-800 text-white flex items-center justify-center text-xl font-extrabold flex-shrink-0">
             {initial}
@@ -57,7 +60,7 @@ export default function ProfilPageBody() {
 
         <button
           onClick={logout}
-          className="flex items-center justify-center gap-2 text-sm font-bold text-red border-[1.5px] border-red rounded-md px-4 py-3"
+          className="lg:col-span-2 flex items-center justify-center gap-2 text-sm font-bold text-red border-[1.5px] border-red rounded-md px-4 py-3"
         >
           <LogOut size={16} />
           Se déconnecter
