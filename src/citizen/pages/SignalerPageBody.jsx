@@ -104,7 +104,7 @@ export default function SignalerPageBody() {
           sur toute la largeur disponible (comme la page Carte) — plus de
           colonne plafonnée qui laissait un vide de chaque côté. Mobile :
           empilement classique. */}
-      <div className="w-full flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
+      <div className="w-full flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:gap-6 lg:items-stretch">
         <div className="lg:col-span-2">
           <h1 className="text-xl font-extrabold">Nouveau signalement</h1>
           <p className="text-sm text-navy-600 dark:text-navy-200 mt-0.5">
@@ -112,7 +112,7 @@ export default function SignalerPageBody() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4 lg:h-full">
           <div>
             <span className="block text-xs font-semibold mb-1.5">Catégorie</span>
             <div className="grid grid-cols-3 gap-2">
@@ -133,7 +133,7 @@ export default function SignalerPageBody() {
             </div>
           </div>
 
-          <label className="block">
+          <label className="block lg:flex-1 lg:flex lg:flex-col lg:min-h-0">
             <span className="block text-xs font-semibold mb-1.5">Description</span>
             <textarea
               rows={3}
@@ -141,7 +141,7 @@ export default function SignalerPageBody() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Ex : Eau stagnante devant l’école primaire, environ 30 cm."
-              className="w-full px-3.5 py-2.5 rounded-md border-[1.5px] border-navy-200 dark:border-navy-800 bg-white dark:bg-navy text-sm placeholder:text-navy-400 focus:outline-none focus:border-navy dark:focus:border-navy-50"
+              className="w-full px-3.5 py-2.5 rounded-md border-[1.5px] border-navy-200 dark:border-navy-800 bg-white dark:bg-navy text-sm placeholder:text-navy-400 focus:outline-none focus:border-navy dark:focus:border-navy-50 lg:flex-1 lg:resize-none"
             />
           </label>
 
@@ -175,7 +175,7 @@ export default function SignalerPageBody() {
           <button
             type="submit"
             disabled={mutation.isPending}
-            className="w-full bg-red text-white font-bold text-sm py-3 rounded-md disabled:opacity-60 lg:mt-auto"
+            className="w-full bg-red text-white font-bold text-sm py-3 rounded-md disabled:opacity-60"
           >
             {mutation.isPending ? 'Envoi en cours…' : 'Envoyer le signalement'}
           </button>
