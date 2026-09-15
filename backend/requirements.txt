@@ -8,7 +8,7 @@ redis==5.0.8
 celery==5.3.6
 django-celery-beat==2.6.0
 django-environ==0.11.2
-djangorestframework-simplejwt
+djangorestframework-simplejwt==5.5.1
 djangorestframework-gis==0.18
 gunicorn==21.2.0
 pytest==8.0.0
@@ -22,6 +22,11 @@ django-cors-headers==4.4.0
 requests==2.32.3
 twilio==9.3.2
 drf-spectacular==0.27.1
+
+# Itinéraire d'évacuation sûr (api/services/routing_service.py) : construit
+# un graphe à partir des SegmentRue et calcule un plus court chemin pondéré
+# par le risque via Dijkstra (networkx.single_source_dijkstra).
+networkx==3.4.2
 
 # Service de prédiction IA (mbeund_mi_ia/ia/service_prediction.py), importé
 # directement par alertes/tasks.py:appel_modele_ia :

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { MapContainer, TileLayer, Polygon, Polyline, CircleMarker, Popup } from 'react-leaflet';
+import { useEffect, useState } from 'react';
+import { MapContainer, TileLayer, Polygon, Polyline, CircleMarker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Layers, X } from 'lucide-react';
 import { riskInfo } from '../RiskBadge';
@@ -29,6 +29,21 @@ function segmentColor(score) {
   return '#4A6480';
 }
 
+// Recentre/zoome automatiquement sur l'itinéraire dès qu'il apparaît (ou
+// change) — sans ça il pourrait se retrouver hors du cadrage initial de la
+// carte, centré sur Thiaroye-sur-Mer.
+function FitRoute({ coordinates }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!coordinates?.length) return;
+    map.fitBounds(
+      coordinates.map(([lon, lat]) => [lat, lon]),
+      { padding: [48, 48] }
+    );
+  }, [coordinates, map]);
+  return null;
+}
+
 /**
  * Carte SIG partagée citoyen/autorité. Chaque couche n'apparaît (et n'est
  * proposée dans le sélecteur) que si la donnée correspondante est fournie —
@@ -36,8 +51,9 @@ function segmentColor(score) {
  * pendant que l'autorité obtient la vue complète avec capteurs et segments.
  *
  * @param {object} data — { zones, inondations, segments, capteurs } en FeatureCollection GeoJSON, signalements en tableau de Feature.
+ * @param {object} [route] — itinéraire à superposer, au format { type: 'LineString', coordinates: [[lon, lat], ...] } (voir useItineraireSecurise).
  */
-export default function InteractiveMap({ data = {}, height = 560 }) {
+export default function InteractiveMap({ data = {}, height = 560, route }) {
   const { zones, inondations, segments, capteurs, signalements } = data;
 
   const availableLayers = Object.keys(LAYER_LABELS).filter((key) => {
@@ -208,6 +224,34 @@ export default function InteractiveMap({ data = {}, height = 560 }) {
               </CircleMarker>
             );
           })}
+
+        {route?.coordinates?.length > 0 && (
+          <>
+            <Polyline
+              positions={route.coordinates.map(([lon, lat]) => [lat, lon])}
+              pathOptions={{ color: '#0D9488', weight: 7, opacity: 0.3 }}
+            />
+            <Polyline
+              positions={route.coordinates.map(([lon, lat]) => [lat, lon])}
+              pathOptions={{ color: '#0D9488', weight: 4, dashArray: '2,10', lineCap: 'round' }}
+            />
+            <CircleMarker
+              center={[route.coordinates[0][1], route.coordinates[0][0]]}
+              radius={7}
+              pathOptions={{ color: '#fff', weight: 2, fillColor: '#1B2A40', fillOpacity: 1 }}
+            >
+              <Popup>Départ</Popup>
+            </CircleMarker>
+            <CircleMarker
+              center={[route.coordinates.at(-1)[1], route.coordinates.at(-1)[0]]}
+              radius={8}
+              pathOptions={{ color: '#fff', weight: 2, fillColor: '#0D9488', fillOpacity: 1 }}
+            >
+              <Popup>Point sûr le plus proche</Popup>
+            </CircleMarker>
+            <FitRoute coordinates={route.coordinates} />
+          </>
+        )}
       </MapContainer>
     </div>
   );

@@ -7,6 +7,7 @@ import { Camera, MapPin, LocateFixed, CheckCircle2, Loader2 } from 'lucide-react
 import CitizenShell from '../shared/CitizenShell';
 import { createSignalement } from '../../api/endpoints/signalements';
 import { flattenApiErrors } from '../../shared/utils/apiErrors';
+import { useGeolocation } from '../../shared/hooks/useGeolocation';
 
 const CATEGORIES = [
   { value: 'inondation', label: 'Inondation' },
@@ -17,35 +18,6 @@ const CATEGORIES = [
 // Même centre que le geofencing backend (SignalementCitoyenSerializer) —
 // sert de position de repli tant que la géolocalisation n'a pas répondu.
 const THIAROYE_CENTER = { lat: 14.75, lon: -17.38 };
-
-function useGeolocation() {
-  const [position, setPosition] = useState(null);
-  const [status, setStatus] = useState('idle'); // idle | loading | success | error
-  const [error, setError] = useState(null);
-
-  const locate = () => {
-    if (!navigator.geolocation) {
-      setStatus('error');
-      setError("Ce navigateur ne permet pas la géolocalisation.");
-      return;
-    }
-    setStatus('loading');
-    setError(null);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setPosition({ lat: pos.coords.latitude, lon: pos.coords.longitude });
-        setStatus('success');
-      },
-      () => {
-        setStatus('error');
-        setError("Position refusée ou indisponible — activez la géolocalisation puis réessayez.");
-      },
-      { enableHighAccuracy: true, timeout: 10_000 }
-    );
-  };
-
-  return { position, status, error, locate };
-}
 
 export default function SignalerPageBody() {
   const navigate = useNavigate();

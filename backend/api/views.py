@@ -312,3 +312,34 @@ class ContactAlerteViewSet(viewsets.ModelViewSet):
         if self.action == 'create':
             return [permissions.AllowAny()]
         return [EstAdminOuAutorite()]
+
+
+class ItineraireSecuriseView(APIView):
+    """
+    GET /api/itineraire-securise/?lat=..&lon=..
+
+    Calcule, à partir des SegmentRue enregistrés, un itinéraire à pied
+    évitant autant que possible les tronçons à risque élevé jusqu'à la
+    zone à faible risque la plus proche du réseau connu (voir
+    api/services/routing_service.py — Dijkstra pondéré par le risque).
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        try:
+            lat = float(request.query_params.get('lat'))
+            lon = float(request.query_params.get('lon'))
+        except (TypeError, ValueError):
+            return Response(
+                {"detail": "Paramètres 'lat' et 'lon' requis (nombres décimaux)."},
+                status=400,
+            )
+
+        from api.services.routing_service import find_safe_route
+        result = find_safe_route(lat, lon)
+        if result is None:
+            return Response(
+                {"detail": "Aucun itinéraire disponible pour l’instant depuis cette position."},
+                status=404,
+            )
+        return Response(result)

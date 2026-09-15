@@ -15,6 +15,7 @@ from api.views import (
     ContactAlerteViewSet,
     CustomTokenObtainPairView,
     ChatView,
+    ItineraireSecuriseView,
 )
 
 router = DefaultRouter()
@@ -35,5 +36,6 @@ urlpatterns = [
     path('token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('chat/', ChatView.as_view(), name='chat'),
+    path('itineraire-securise/', ItineraireSecuriseView.as_view(), name='itineraire-securise'),
     path('', include(router.urls)),
 ]
