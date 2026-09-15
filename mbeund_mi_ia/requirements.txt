@@ -1,12 +1,20 @@
 paho-mqtt==1.6.1
-numpy
-pandas
-requests
-scikit-learn
-tensorflow
-earthengine-api
+# Versions alignees sur backend/requirements.txt : les .pkl/.h5 de data/
+# sont charges par pickle/keras, un ecart de version scikit-learn/numpy/
+# tensorflow entre entrainement et service peut rendre la deserialisation
+# incompatible ou silencieusement incorrecte.
+numpy==2.2.6
+pandas==2.3.3
+requests==2.32.3
+scikit-learn==1.7.2
+tensorflow==2.21.0
+earthengine-api==1.7.29
 geemap
 schedule
-twilio>=9.0.0
+twilio==9.3.2
 python-dotenv
 groq
+
+# Dependances de test (voir mbeund_mi_ia/tests/) :
+pytest==8.0.0
+pytest-mock==3.14.0

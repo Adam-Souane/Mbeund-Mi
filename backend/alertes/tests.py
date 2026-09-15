@@ -178,24 +178,31 @@ def test_alerte_jaune_ne_declenche_pas_sms(test_zone):
 import asyncio
 from channels.testing import WebsocketCommunicator
 from channels.db import database_sync_to_async
+from rest_framework_simplejwt.tokens import AccessToken
 from mbeund_mi_backend.asgi import application
 
 @pytest.mark.django_db(transaction=True)
 def test_websocket_alerte_broadcast():
     async def run_test():
-        # 1. Create ZoneRisque
+        # 1. Create ZoneRisque + un utilisateur authentifie : le consumer
+        # exige desormais un JWT valide en query string (cf.
+        # alertes/consumers.py), meme niveau d'exigence que GET
+        # /api/alertes/ (IsAutoriteOrAdmin : lecture ouverte a tout
+        # utilisateur authentifie).
         @database_sync_to_async
         def create_test_data():
-            return ZoneRisque.objects.create(
+            zone = ZoneRisque.objects.create(
                 geom="POLYGON((0 0, 0 1, 1 1, 1 0, 0 0))",
                 quartier="Thiaroye",
                 niveau_risque="jaune"
             )
-            
-        zone = await create_test_data()
+            user = User.objects.create_user(username='ws_user', password='password123')
+            return zone, str(AccessToken.for_user(user))
+
+        zone, access_token = await create_test_data()
 
         # 2. Connect to the WebSocket
-        communicator = WebsocketCommunicator(application, "/ws/alertes/")
+        communicator = WebsocketCommunicator(application, f"/ws/alertes/?token={access_token}")
         connected, subprotocol = await communicator.connect()
         assert connected
 
@@ -222,6 +229,20 @@ def test_websocket_alerte_broadcast():
         assert response["statut"] == "en_attente"
 
         # 5. Clean up
+        await communicator.disconnect()
+
+    asyncio.run(run_test())
+
+
+@pytest.mark.django_db(transaction=True)
+def test_websocket_alerte_rejette_connexion_sans_token():
+    """Regression test pour la correction de securite : une connexion WS
+    anonyme (sans ?token=... valide) doit etre rejetee, comme GET
+    /api/alertes/ le fait pour un utilisateur non authentifie."""
+    async def run_test():
+        communicator = WebsocketCommunicator(application, "/ws/alertes/")
+        connected, subprotocol = await communicator.connect()
+        assert not connected
         await communicator.disconnect()
 
     asyncio.run(run_test())

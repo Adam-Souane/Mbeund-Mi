@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../auth/AuthContext';
+import { getAccessToken } from '../auth/tokenStorage';
 import { useToast } from '../shared/toast/ToastContext';
 import { riskInfo } from '../shared/components/RiskBadge';
 
@@ -21,9 +22,16 @@ export function useAlertesSocket() {
     const wsUrl = import.meta.env.VITE_WS_URL;
     if (!wsUrl) return undefined;
 
+    // Le consumer côté backend rejette désormais les connexions anonymes
+    // (même exigence que GET /api/alertes/ : utilisateur authentifié) — on
+    // transmet le token d'accès en query string, seul moyen disponible
+    // puisqu'un WebSocket natif ne permet pas d'en-tête Authorization.
+    const accessToken = getAccessToken();
+    if (!accessToken) return undefined;
+
     let socket;
     try {
-      socket = new WebSocket(wsUrl);
+      socket = new WebSocket(`${wsUrl}?token=${encodeURIComponent(accessToken)}`);
     } catch {
       return undefined;
     }

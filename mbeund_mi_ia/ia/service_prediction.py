@@ -122,7 +122,7 @@ class PredictionService:
         risque_final = self.risque_labels.get(risque_code, "vert")
         reco = generer_recommandation(zone_id, risque_final, round(niveau_actuel, 1), 12)
         
-        return {
+        resultat = {
             "zone_id": zone_id,
             "timestamp": datetime.now().isoformat(),
             "niveau_actuel_cm": round(niveau_actuel, 1),
@@ -140,7 +140,7 @@ class PredictionService:
             "nb_capteurs_valides": nb_valides,
             "capteurs_exclus": capteurs_exclus
         }
-        
+
         if alerte_fiabilite:
             resultat["alerte_fiabilite"] = True
             resultat["message_fiabilite"] = message_fiabilite

@@ -1,7 +1,7 @@
 import math
 import json
 from io import BytesIO
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.conf import settings
 from rest_framework import serializers
@@ -421,10 +421,17 @@ def haversine_distance(lon1, lat1, lon2, lat2):
 def compress_image(uploaded_image):
     if not uploaded_image:
         return None
-        
-    # Open image using Pillow
-    img = Image.open(uploaded_image)
-    
+
+    # Open image using Pillow. Un fichier non-image (ou corrompu/tronque) envoye
+    # sur cet endpoint public (POST /api/signalements/, AllowAny) leve sinon une
+    # UnidentifiedImageError/OSError non geree -> 500. On la convertit ici en
+    # ValueError propre, remontee par validate_photo() en 400 cote client.
+    try:
+        img = Image.open(uploaded_image)
+        img.load()
+    except (UnidentifiedImageError, OSError, Image.DecompressionBombError) as exc:
+        raise ValueError("Fichier image invalide, corrompu ou illisible.") from exc
+
     # Convert image format/mode to RGB (necessary for JPEG)
     if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
         # Create a white background for transparent images
@@ -508,7 +515,10 @@ class SignalementCitoyenSerializer(HybridGeoFeatureModelSerializer):
     def validate_photo(self, value):
         if value:
             # Automatic photo compression
-            value = compress_image(value)
+            try:
+                value = compress_image(value)
+            except ValueError as exc:
+                raise serializers.ValidationError(str(exc))
         return value
 
 
