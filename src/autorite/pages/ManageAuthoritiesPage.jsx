@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Copy, Check, Lock } from 'lucide-react';
+import { Eye, EyeOff, Copy, Check, Lock, Trash2, RefreshCw } from 'lucide-react';
 import AutoriteShell from '../desktop/AutoriteShell';
 import { useTheme } from '../../theme/ThemeContext';
 import { useAuth } from '../../auth/AuthContext';
@@ -39,6 +39,9 @@ function ManageAuthoritiesPageContent() {
   const [authorities, setAuthorities] = useState([]);
   const [visiblePasswords, setVisiblePasswords] = useState({});
   const [copiedField, setCopiedField] = useState(null);
+  const [deleteModal, setDeleteModal] = useState(null);
+  const [regenerateModal, setRegenerateModal] = useState(null);
+  const [newPassword, setNewPassword] = useState(null);
 
   const [formData, setFormData] = useState({
     first_name: '',
@@ -105,6 +108,27 @@ function ManageAuthoritiesPageContent() {
 
   const togglePasswordVisibility = (id) => {
     setVisiblePasswords((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const handleRegeneratePassword = async (username) => {
+    try {
+      const response = await client.post('/users/regenerate-authority-password/', { username });
+      setNewPassword(response.data);
+      showToast('Mot de passe régénéré avec succès !', 'success');
+    } catch (error) {
+      showToast('Erreur lors de la régénération du mot de passe', 'error');
+    }
+  };
+
+  const handleDeleteAuthority = async (username) => {
+    try {
+      await client.post('/users/delete-authority/', { username });
+      setAuthorities(authorities.filter((a) => a.username !== username));
+      setDeleteModal(null);
+      showToast('Autorité supprimée avec succès !', 'success');
+    } catch (error) {
+      showToast('Erreur lors de la suppression', 'error');
+    }
   };
 
   // Charger les autorités créées aujourd'hui au montage
@@ -206,6 +230,7 @@ function ManageAuthoritiesPageContent() {
                   <th className="px-6 py-3 text-left font-semibold text-navy-700 dark:text-navy-200">Nom</th>
                   <th className="px-6 py-3 text-left font-semibold text-navy-700 dark:text-navy-200">Identifiant</th>
                   <th className="px-6 py-3 text-left font-semibold text-navy-700 dark:text-navy-200">Mot de passe</th>
+                  <th className="px-6 py-3 text-center font-semibold text-navy-700 dark:text-navy-200">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -247,10 +272,109 @@ function ManageAuthoritiesPageContent() {
                         </button>
                       </div>
                     </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => setRegenerateModal(auth.username)}
+                          className="text-navy-600 dark:text-navy-300 hover:text-navy-900 dark:hover:text-white transition"
+                          title="Régénérer le mot de passe"
+                        >
+                          <RefreshCw size={16} />
+                        </button>
+                        <button
+                          onClick={() => setDeleteModal(auth.username)}
+                          className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 transition"
+                          title="Supprimer"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Régénérer mot de passe */}
+      {regenerateModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-navy rounded-xl p-6 max-w-md w-full">
+            <h3 className="text-lg font-bold text-navy dark:text-white mb-4">
+              Nouveau mot de passe généré
+            </h3>
+
+            {newPassword ? (
+              <div className="space-y-4">
+                <div className="bg-navy-50 dark:bg-navy-800 p-3 rounded-lg">
+                  <p className="text-xs font-medium text-navy-600 dark:text-navy-300 mb-1">Utilisateur</p>
+                  <p className="font-mono text-navy dark:text-white">{newPassword.username}</p>
+                </div>
+
+                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700/30 p-3 rounded-lg">
+                  <p className="text-xs font-medium text-green-700 dark:text-green-300 mb-1">Nouveau mot de passe</p>
+                  <div className="flex items-center gap-2">
+                    <code className="font-mono text-green-900 dark:text-green-100 flex-1 break-all">{newPassword.password}</code>
+                    <button
+                      onClick={() => copyToClipboard(newPassword.password, 'newpass')}
+                      className="text-green-700 dark:text-green-300 hover:text-green-900 dark:hover:text-green-100"
+                    >
+                      {copiedField === 'newpass' ? <Check size={16} /> : <Copy size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                <p className="text-xs text-navy-600 dark:text-navy-300">
+                  Partagez ce mot de passe avec l'autorité en personne.
+                </p>
+              </div>
+            ) : (
+              <p className="text-navy-600 dark:text-navy-300 mb-4">Régénération en cours...</p>
+            )}
+
+            <button
+              onClick={() => {
+                setRegenerateModal(null);
+                setNewPassword(null);
+              }}
+              className="w-full mt-4 bg-navy dark:bg-navy-800 text-white px-4 py-2 rounded-lg font-semibold hover:bg-navy-700 dark:hover:bg-navy-700 transition"
+            >
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Supprimer */}
+      {deleteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-navy rounded-xl p-6 max-w-md w-full">
+            <h3 className="text-lg font-bold text-red-600 dark:text-red-400 mb-2">
+              Confirmer la suppression
+            </h3>
+            <p className="text-navy-600 dark:text-navy-300 mb-6">
+              Êtes-vous sûr de vouloir supprimer l'autorité <strong>{deleteModal}</strong> ?
+              Cette action est irréversible.
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteModal(null)}
+                className="flex-1 bg-navy-100 dark:bg-navy-800 text-navy dark:text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-navy-200 dark:hover:bg-navy-700 transition"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => {
+                  handleDeleteAuthority(deleteModal);
+                }}
+                className="flex-1 bg-red text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-red-600 transition"
+              >
+                Supprimer
+              </button>
+            </div>
           </div>
         </div>
       )}

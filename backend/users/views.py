@@ -355,6 +355,98 @@ class UserViewSet(viewsets.ModelViewSet):
             status=status.HTTP_200_OK
         )
 
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated], url_path='regenerate-authority-password')
+    def regenerate_authority_password(self, request):
+        """
+        POST /api/users/regenerate-authority-password/
+        Régénère le mot de passe d'une autorité (admin seulement).
+
+        Body:
+        {
+            "username": "..."
+        }
+        """
+        if request.user.profile.role != 'admin':
+            return Response(
+                {'detail': 'Accès réservé aux administrateurs'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        username = request.data.get('username')
+        if not username:
+            return Response(
+                {'detail': 'Username requis'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            user = User.objects.get(username=username)
+
+            # Générer un nouveau mot de passe
+            new_password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
+            user.set_password(new_password)
+            user.save()
+
+            return Response(
+                {
+                    'detail': 'Mot de passe régénéré avec succès',
+                    'username': username,
+                    'password': new_password,
+                },
+                status=status.HTTP_200_OK
+            )
+        except User.DoesNotExist:
+            return Response(
+                {'detail': 'Utilisateur non trouvé'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated], url_path='delete-authority')
+    def delete_authority(self, request):
+        """
+        POST /api/users/delete-authority/
+        Supprime une autorité (admin seulement).
+
+        Body:
+        {
+            "username": "..."
+        }
+        """
+        if request.user.profile.role != 'admin':
+            return Response(
+                {'detail': 'Accès réservé aux administrateurs'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        username = request.data.get('username')
+        if not username:
+            return Response(
+                {'detail': 'Username requis'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            user = User.objects.get(username=username)
+
+            # Vérifier que c'est une autorité
+            if user.profile.role != 'autorite':
+                return Response(
+                    {'detail': 'Seules les autorités peuvent être supprimées'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            user.delete()
+
+            return Response(
+                {'detail': f'Autorité {username} supprimée avec succès'},
+                status=status.HTTP_200_OK
+            )
+        except User.DoesNotExist:
+            return Response(
+                {'detail': 'Utilisateur non trouvé'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
     def _generate_otp(self):
         """Génère un code OTP de 6 chiffres"""
         return ''.join(random.choices(string.digits, k=6))
