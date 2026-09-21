@@ -168,14 +168,14 @@ export default function AutoriteShell({ children }) {
               key={to}
               to={to}
               className={({ isActive }) =>
-                `flex items-center gap-2.5 px-3.5 py-2.5 rounded-md text-base font-semibold transition-colors ${
+                `flex items-center gap-2.5 px-3.5 py-2.5 rounded-md text-lg font-semibold transition-colors ${
                   isActive
                     ? 'bg-navy dark:bg-navy-800 text-white'
                     : 'text-navy-600 dark:text-navy-200 hover:bg-navy-50 dark:hover:bg-navy-800'
                 }`
               }
             >
-              <Icon size={16} />
+              <Icon size={18} />
               {label}
             </NavLink>
           ))}
@@ -183,11 +183,11 @@ export default function AutoriteShell({ children }) {
           <div ref={moreRef} className="relative mt-2">
             <button
               onClick={() => setMoreOpen(!moreOpen)}
-              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-md text-sm font-semibold text-navy-600 dark:text-navy-200 hover:bg-navy-50 dark:hover:bg-navy-800 transition-colors"
+              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-md text-base font-semibold text-navy-600 dark:text-navy-200 hover:bg-navy-50 dark:hover:bg-navy-800 transition-colors"
             >
-              <MoreVertical size={16} />
+              <MoreVertical size={18} />
               Plus
-              <ChevronDown size={14} className={`ml-auto transition-transform ${moreOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown size={16} className={`ml-auto transition-transform ${moreOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {moreOpen && (
@@ -198,14 +198,14 @@ export default function AutoriteShell({ children }) {
                     to={to}
                     onClick={() => setMoreOpen(false)}
                     className={({ isActive }) =>
-                      `flex items-center gap-2.5 px-3.5 py-2.5 text-sm font-semibold transition-colors ${
+                      `flex items-center gap-2.5 px-3.5 py-2.5 text-base font-semibold transition-colors ${
                         isActive
                           ? 'bg-navy dark:bg-navy-800 text-white'
                           : 'text-navy-600 dark:text-navy-200 hover:bg-navy-50 dark:hover:bg-navy-800'
                       }`
                     }
                   >
-                    <Icon size={14} />
+                    <Icon size={16} />
                     {label}
                   </NavLink>
                 ))}
