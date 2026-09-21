@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Map, CloudRain, Camera, BarChart3, ShieldAlert, Settings, PhoneCall, Users2, TrendingUp, Activity, UserPlus, MoreVertical, ChevronDown } from 'lucide-react';
 import Logo from '../../shared/components/Logo';
 import ThemeToggle from '../../theme/ThemeToggle';
@@ -26,8 +26,18 @@ const MORE_ITEMS = [
 ];
 
 function DropdownMenu({ label, icon: Icon, items, children }) {
+  const location = useLocation();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
+
+  const hasActivePage = items?.some(item => location.pathname === item.to);
+  const initialOpen = hasActivePage;
+
+  useEffect(() => {
+    if (hasActivePage) {
+      setOpen(true);
+    }
+  }, [hasActivePage]);
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -43,7 +53,11 @@ function DropdownMenu({ label, icon: Icon, items, children }) {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 px-3.5 py-2 rounded-md text-sm font-semibold text-navy-600 dark:text-navy-200 hover:bg-navy-50 dark:hover:bg-navy-800 transition-colors"
+        className={`flex items-center gap-1.5 px-3.5 py-2 rounded-md text-sm font-semibold transition-colors ${
+          hasActivePage
+            ? 'bg-navy dark:bg-navy-800 text-white'
+            : 'text-navy-600 dark:text-navy-200 hover:bg-navy-50 dark:hover:bg-navy-800'
+        }`}
       >
         {Icon && <Icon size={16} />}
         {label}
@@ -56,14 +70,16 @@ function DropdownMenu({ label, icon: Icon, items, children }) {
             <NavLink
               key={to}
               to={to}
-              onClick={() => setOpen(false)}
-              className={({ isActive }) =>
-                `flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold transition-colors ${
+              className={({ isActive }) => {
+                if (isActive && !hasActivePage) {
+                  setOpen(false);
+                }
+                return `flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold transition-colors ${
                   isActive
                     ? 'bg-navy dark:bg-navy-800 text-white'
                     : 'text-navy-600 dark:text-navy-200 hover:bg-navy-50 dark:hover:bg-navy-800'
-                }`
-              }
+                }`;
+              }}
             >
               <ItemIcon size={14} />
               {label}
@@ -76,8 +92,17 @@ function DropdownMenu({ label, icon: Icon, items, children }) {
 }
 
 function ProfileMenu({ isAdmin, logout }) {
+  const location = useLocation();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
+
+  const isOnAdminPage = location.pathname === '/autorite/authorities';
+
+  useEffect(() => {
+    if (isOnAdminPage) {
+      setOpen(true);
+    }
+  }, [isOnAdminPage]);
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -93,7 +118,11 @@ function ProfileMenu({ isAdmin, logout }) {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="p-2 rounded-md text-navy-600 dark:text-navy-200 hover:bg-navy-50 dark:hover:bg-navy-800 transition-colors"
+        className={`p-2 rounded-md transition-colors ${
+          isOnAdminPage
+            ? 'bg-navy dark:bg-navy-800 text-white'
+            : 'text-navy-600 dark:text-navy-200 hover:bg-navy-50 dark:hover:bg-navy-800'
+        }`}
       >
         <Settings size={18} />
       </button>
@@ -103,7 +132,6 @@ function ProfileMenu({ isAdmin, logout }) {
           {isAdmin && (
             <NavLink
               to="/autorite/authorities"
-              onClick={() => setOpen(false)}
               className={({ isActive }) =>
                 `flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold transition-colors ${
                   isActive
@@ -133,10 +161,19 @@ function ProfileMenu({ isAdmin, logout }) {
 }
 
 export default function AutoriteShell({ children }) {
+  const location = useLocation();
   const { logout, role } = useAuth();
   const isAdmin = role === 'admin';
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef(null);
+
+  const moreHasActivePage = MORE_ITEMS.some(item => location.pathname === item.to);
+
+  useEffect(() => {
+    if (moreHasActivePage) {
+      setMoreOpen(true);
+    }
+  }, [moreHasActivePage]);
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -183,7 +220,11 @@ export default function AutoriteShell({ children }) {
           <div ref={moreRef} className="relative mt-2">
             <button
               onClick={() => setMoreOpen(!moreOpen)}
-              className="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-md text-sm font-semibold text-navy-600 dark:text-navy-200 hover:bg-navy-50 dark:hover:bg-navy-800 transition-colors"
+              className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-md text-sm font-semibold transition-colors ${
+                moreHasActivePage
+                  ? 'bg-navy dark:bg-navy-800 text-white'
+                  : 'text-navy-600 dark:text-navy-200 hover:bg-navy-50 dark:hover:bg-navy-800'
+              }`}
             >
               <MoreVertical size={16} />
               Plus
@@ -196,14 +237,16 @@ export default function AutoriteShell({ children }) {
                   <NavLink
                     key={to}
                     to={to}
-                    onClick={() => setMoreOpen(false)}
-                    className={({ isActive }) =>
-                      `flex items-center gap-2.5 px-3.5 py-2.5 text-sm font-semibold transition-colors ${
+                    className={({ isActive }) => {
+                      if (isActive && !moreHasActivePage) {
+                        setMoreOpen(false);
+                      }
+                      return `flex items-center gap-2.5 px-3.5 py-2.5 text-sm font-semibold transition-colors ${
                         isActive
                           ? 'bg-navy dark:bg-navy-800 text-white'
                           : 'text-navy-600 dark:text-navy-200 hover:bg-navy-50 dark:hover:bg-navy-800'
-                      }`
-                    }
+                      }`;
+                    }}
                   >
                     <Icon size={14} />
                     {label}
