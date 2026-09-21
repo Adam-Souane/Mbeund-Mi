@@ -349,20 +349,20 @@ function ManageAuthoritiesPageContent() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <code className="text-xs font-mono text-navy-600 dark:text-navy-300 bg-navy-50 dark:bg-navy-800 px-2 py-1 rounded">
-                          {visiblePasswords[idx] ? auth.password : '••••••••'}
+                          {visiblePasswords[auth.username] ? auth.password : '••••••••'}
                         </code>
                         <button
-                          onClick={() => togglePasswordVisibility(idx)}
+                          onClick={() => togglePasswordVisibility(auth.username)}
                           className="text-navy-600 dark:text-navy-300 hover:text-navy-900 dark:hover:text-white transition"
-                          title={visiblePasswords[idx] ? 'Masquer' : 'Afficher'}
+                          title={visiblePasswords[auth.username] ? 'Masquer' : 'Afficher'}
                         >
-                          {visiblePasswords[idx] ? <EyeOff size={16} /> : <Eye size={16} />}
+                          {visiblePasswords[auth.username] ? <EyeOff size={16} /> : <Eye size={16} />}
                         </button>
                         <button
-                          onClick={() => copyToClipboard(auth.password, `password-${idx}`)}
+                          onClick={() => copyToClipboard(auth.password, `password-${auth.username}`)}
                           className="text-navy-600 dark:text-navy-300 hover:text-navy-900 dark:hover:text-white transition"
                         >
-                          {copiedField === `password-${idx}` ? <Check size={16} /> : <Copy size={16} />}
+                          {copiedField === `password-${auth.username}` ? <Check size={16} /> : <Copy size={16} />}
                         </button>
                       </div>
                     </td>
