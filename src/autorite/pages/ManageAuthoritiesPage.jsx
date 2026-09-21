@@ -1,13 +1,38 @@
 import { useState } from 'react';
-import { Eye, EyeOff, Copy, Check } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Eye, EyeOff, Copy, Check, Lock } from 'lucide-react';
 import AutoriteShell from '../desktop/AutoriteShell';
 import { useTheme } from '../../theme/ThemeContext';
+import { useAuth } from '../../auth/AuthContext';
 import client from '../../api/client';
 import { useToast } from '../../shared/toast/ToastContext';
 
 function ManageAuthoritiesPageContent() {
   const { darkMode } = useTheme();
   const { showToast } = useToast();
+  const { role } = useAuth();
+  const navigate = useNavigate();
+
+  // Vérifier que l'utilisateur est admin
+  if (role !== 'admin') {
+    return (
+      <div className="space-y-6">
+        <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-12 text-center">
+          <Lock size={48} className="mx-auto mb-4 text-red-500" />
+          <h2 className="text-2xl font-bold text-navy dark:text-white mb-2">Accès réservé</h2>
+          <p className="text-navy-600 dark:text-navy-300 mb-6">
+            Cette page est réservée aux administrateurs.
+          </p>
+          <button
+            onClick={() => navigate('/autorite/dashboard')}
+            className="bg-navy dark:bg-navy-800 text-white px-6 py-2 rounded-lg font-semibold hover:bg-navy-700 dark:hover:bg-navy-700 transition"
+          >
+            Retour au dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
