@@ -2,8 +2,8 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import SplashScreen from './shared/layout/SplashScreen';
 import LoginPage from './auth-pages/LoginPage';
 import SignupPage from './auth-pages/SignupPageNew';
-import AdminRegisterPage from './auth-pages/AdminRegisterPage';
 import ForgotPasswordPage from './auth-pages/ForgotPasswordPage';
+import AdminRegisterPage from './auth-pages/AdminRegisterPage';
 import OTPVerificationPage from './auth-pages/OTPVerificationPage';
 import RequireAuth from './auth/RequireAuth';
 import AccueilPageBody from './citizen/pages/AccueilPageBody';
@@ -38,8 +38,8 @@ export default function AppRoutes() {
       <Route path="/" element={<SplashScreen />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
-      <Route path="/admin-register" element={<AdminRegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/admin-register" element={<AdminRegisterPage />} />
       <Route path="/otp-verify" element={<OTPVerificationPage />} />
 
       {/* Citoyen */}
