@@ -23,10 +23,25 @@ def temp_media_root(settings):
     yield
     shutil.rmtree(temp_dir, ignore_errors=True)
 
-def generate_test_image(size=(1200, 1200), format='PNG'):
+def generate_test_image(size=(1200, 1200), format='PNG', color='blue'):
     file_obj = BytesIO()
-    image = Image.new('RGB', size, 'blue')
+    image = Image.new('RGB', size, color)
     image.save(file_obj, format)
+    file_obj.seek(0)
+    return SimpleUploadedFile('test_image.png', file_obj.read(), content_type='image/png')
+
+
+def generate_bicolor_image(color_top, color_bottom, size=(400, 400)):
+    # Une image unie n'a aucune variance de pixel à pixel, donc son average
+    # hash est toujours 0 quelle que soit sa couleur — inutile pour un test
+    # de non-doublon. Un split haut/bas donne un hash qui varie vraiment
+    # selon les couleurs.
+    w, h = size
+    image = Image.new('RGB', size, color_top)
+    bas = Image.new('RGB', (w, h // 2), color_bottom)
+    image.paste(bas, (0, h // 2))
+    file_obj = BytesIO()
+    image.save(file_obj, 'PNG')
     file_obj.seek(0)
     return SimpleUploadedFile('test_image.png', file_obj.read(), content_type='image/png')
 
@@ -105,6 +120,55 @@ def test_create_signalement_compression(api_client):
     file_size = os.path.getsize(saved_path)
     # 200 KB is a safe bound for 800x533 JPEG at 70% quality, which is usually around 40-70 KB
     assert file_size < 200000
+
+@pytest.mark.django_db
+def test_create_signalement_computes_niveau_eau_estime(api_client):
+    photo = generate_test_image()
+    data = {
+        "localisation": "[-17.38, 14.75]",
+        "description": "Vérification analyse vision",
+        "categorie": "inondation",
+        "photo": photo,
+    }
+    response = api_client.post('/api/signalements/', data, format='multipart')
+    assert response.status_code == 201
+    assert response.data['properties']['niveau_eau_estime'] in ('indetermine', 'faible', 'modere', 'eleve')
+    assert response.data['properties']['score_eau_estime'] is not None
+    assert response.data['properties']['signalement_similaire'] is None
+
+
+@pytest.mark.django_db
+def test_create_signalement_flags_doublon_on_identical_photo(api_client):
+    data = lambda photo: {
+        "localisation": "[-17.38, 14.75]",
+        "description": "Doublon potentiel",
+        "categorie": "inondation",
+        "photo": photo,
+    }
+    first = api_client.post('/api/signalements/', data(generate_test_image(color='blue')), format='multipart')
+    assert first.status_code == 201
+    assert first.data['properties']['signalement_similaire'] is None
+
+    second = api_client.post('/api/signalements/', data(generate_test_image(color='blue')), format='multipart')
+    assert second.status_code == 201
+    assert second.data['properties']['signalement_similaire'] == first.data['id']
+
+
+@pytest.mark.django_db
+def test_create_signalement_no_doublon_for_different_photo(api_client):
+    data = lambda photo: {
+        "localisation": "[-17.38, 14.75]",
+        "description": "Photo différente",
+        "categorie": "inondation",
+        "photo": photo,
+    }
+    first = api_client.post('/api/signalements/', data(generate_bicolor_image('blue', 'white')), format='multipart')
+    assert first.status_code == 201
+
+    second = api_client.post('/api/signalements/', data(generate_bicolor_image('white', 'blue')), format='multipart')
+    assert second.status_code == 201
+    assert second.data['properties']['signalement_similaire'] is None
+
 
 @pytest.fixture
 def user_citoyen(db):

@@ -10,7 +10,9 @@ from capteurs.models import Capteur, Mesure
 from alertes.models import (
     ZoneRisque, Alerte, PredictionIA, EpisodeInondation, SignalementCitoyen,
     SegmentRue, PrevisionMeteo, HistoriqueRisque, ContactAlerte,
+    ProfilVulnerabilite, RelaisQuartier,
 )
+from api.services.vision_service import analyser_photo, trouve_signalement_similaire
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -465,8 +467,14 @@ class SignalementCitoyenSerializer(HybridGeoFeatureModelSerializer):
     class Meta:
         model = SignalementCitoyen
         geo_field = 'localisation'
-        fields = ('id', 'localisation', 'description', 'photo', 'valide', 'date_creation', 'categorie')
-        read_only_fields = ('id', 'valide', 'date_creation')
+        fields = (
+            'id', 'localisation', 'description', 'photo', 'valide', 'date_creation', 'categorie',
+            'niveau_eau_estime', 'score_eau_estime', 'signalement_similaire',
+        )
+        read_only_fields = (
+            'id', 'valide', 'date_creation',
+            'niveau_eau_estime', 'score_eau_estime', 'signalement_similaire',
+        )
 
     def to_internal_value(self, data):
         # Make a mutable copy of data if it is a QueryDict
@@ -519,7 +527,30 @@ class SignalementCitoyenSerializer(HybridGeoFeatureModelSerializer):
                 value = compress_image(value)
             except ValueError as exc:
                 raise serializers.ValidationError(str(exc))
+            # Analyse heuristique (niveau d'eau, hash perceptuel) sur la
+            # version compressée — stockée sur l'instance pour être exploitée
+            # dans create() une fois le signalement enregistré.
+            self._vision_result = analyser_photo(value)
         return value
+
+    def create(self, validated_data):
+        vision = getattr(self, '_vision_result', None)
+        if vision:
+            validated_data['niveau_eau_estime'] = vision['niveau_eau_estime']
+            validated_data['score_eau_estime'] = vision['score_eau_estime']
+            validated_data['photo_hash'] = vision['photo_hash']
+
+        instance = super().create(validated_data)
+
+        if vision and vision['photo_hash']:
+            similaire = trouve_signalement_similaire(
+                vision['photo_hash'], SignalementCitoyen.objects.all(), exclude_id=instance.id
+            )
+            if similaire:
+                instance.signalement_similaire = similaire
+                instance.save(update_fields=['signalement_similaire'])
+
+        return instance
 
 
 class SegmentRueSerializer(HybridGeoFeatureModelSerializer):
@@ -558,3 +589,26 @@ class ContactAlerteSerializer(serializers.ModelSerializer):
         model = ContactAlerte
         fields = ('id', 'telephone', 'zone', 'nom', 'actif', 'date_inscription')
         read_only_fields = ('id', 'date_inscription')
+
+
+class ProfilVulnerabiliteSerializer(serializers.ModelSerializer):
+    username = serializers.ReadOnlyField(source='user.username')
+    est_prioritaire = serializers.ReadOnlyField()
+
+    class Meta:
+        model = ProfilVulnerabilite
+        fields = (
+            'id', 'username', 'zone', 'personnes_agees', 'enfants_bas_age',
+            'personne_mobilite_reduite', 'femme_enceinte', 'notes',
+            'est_prioritaire', 'updated_at',
+        )
+        read_only_fields = ('id', 'updated_at')
+
+
+class RelaisQuartierSerializer(serializers.ModelSerializer):
+    username = serializers.ReadOnlyField(source='user.username')
+
+    class Meta:
+        model = RelaisQuartier
+        fields = ('id', 'username', 'zone', 'verifie', 'disponible', 'date_inscription')
+        read_only_fields = ('id', 'verifie', 'date_inscription')

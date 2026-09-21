@@ -3,6 +3,7 @@ from django.utils.html import format_html
 from .models import (
     ZoneRisque, Alerte, EpisodeInondation, PredictionIA, SignalementCitoyen,
     SegmentRue, PrevisionMeteo, HistoriqueRisque, ContactAlerte,
+    ProfilVulnerabilite, RelaisQuartier,
 )
 
 @admin.register(ZoneRisque)
@@ -81,8 +82,8 @@ class PredictionIAAdmin(admin.ModelAdmin):
 
 @admin.register(SignalementCitoyen)
 class SignalementCitoyenAdmin(admin.ModelAdmin):
-    list_display = ('categorie', 'valide', 'date_creation', 'localisation')
-    list_filter = ('categorie', 'valide', 'date_creation')
+    list_display = ('categorie', 'valide', 'niveau_eau_estime', 'signalement_similaire', 'date_creation', 'localisation')
+    list_filter = ('categorie', 'valide', 'niveau_eau_estime', 'date_creation')
     search_fields = ('description',)
 
 @admin.register(SegmentRue)
@@ -106,3 +107,15 @@ class ContactAlerteAdmin(admin.ModelAdmin):
     list_display = ('telephone', 'zone', 'nom', 'actif', 'date_inscription')
     list_filter = ('actif', 'zone')
     search_fields = ('telephone', 'nom')
+
+@admin.register(ProfilVulnerabilite)
+class ProfilVulnerabiliteAdmin(admin.ModelAdmin):
+    list_display = ('user', 'zone', 'est_prioritaire', 'personnes_agees', 'enfants_bas_age', 'personne_mobilite_reduite', 'femme_enceinte', 'updated_at')
+    list_filter = ('zone', 'personne_mobilite_reduite', 'femme_enceinte')
+    search_fields = ('user__username',)
+
+@admin.register(RelaisQuartier)
+class RelaisQuartierAdmin(admin.ModelAdmin):
+    list_display = ('user', 'zone', 'verifie', 'disponible', 'date_inscription')
+    list_filter = ('verifie', 'disponible', 'zone')
+    search_fields = ('user__username',)

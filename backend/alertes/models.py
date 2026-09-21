@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 from api.fields import SpatialPointField, SpatialPolygonField, SpatialMultiPolygonField, SpatialLineStringField
 
 class ZoneRisque(models.Model):
@@ -93,6 +94,12 @@ class SignalementCitoyen(models.Model):
         ('inondation', 'Inondation'),
         ('autre', 'Autre'),
     ]
+    NIVEAU_EAU_CHOICES = [
+        ('indetermine', 'Indéterminé'),
+        ('faible', 'Faible'),
+        ('modere', 'Modéré'),
+        ('eleve', 'Élevé'),
+    ]
     localisation = SpatialPointField(srid=4326)
     description = models.TextField(blank=True)
     photo = models.FileField(upload_to='signalements/', null=True, blank=True)
@@ -101,6 +108,15 @@ class SignalementCitoyen(models.Model):
     categorie = models.CharField(max_length=20, choices=CATEGORIE_CHOICES, default='autre')
     signale_par = models.ForeignKey(
         'auth.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='signalements'
+    )
+    # Renseignés automatiquement à la création si une photo est fournie —
+    # voir api/services/vision_service.py (analyse heuristique, pas un
+    # modèle entraîné : pas de dataset annoté disponible pour Thiaroye).
+    niveau_eau_estime = models.CharField(max_length=20, choices=NIVEAU_EAU_CHOICES, default='indetermine')
+    score_eau_estime = models.FloatField(null=True, blank=True)
+    photo_hash = models.CharField(max_length=16, blank=True)
+    signalement_similaire = models.ForeignKey(
+        'self', on_delete=models.SET_NULL, null=True, blank=True, related_name='doublons_potentiels'
     )
 
     class Meta:
@@ -215,3 +231,59 @@ class ContactAlerte(models.Model):
 
     def __str__(self):
         return f"{self.telephone} ({self.zone.quartier})"
+
+
+class ProfilVulnerabilite(models.Model):
+    """
+    Déclaration opt-in par un citoyen connecté des personnes vulnérables de
+    son foyer — sert à prioriser l'assistance à l'évacuation (autorité et
+    relais de quartier), jamais utilisée pour autre chose. Un citoyen ne
+    déclare que son propre foyer (voir MonProfilVulnerabiliteView).
+    """
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profil_vulnerabilite')
+    zone = models.ForeignKey(
+        ZoneRisque, on_delete=models.SET_NULL, null=True, blank=True, related_name='profils_vulnerabilite'
+    )
+    personnes_agees = models.PositiveSmallIntegerField(default=0)
+    enfants_bas_age = models.PositiveSmallIntegerField(default=0)
+    personne_mobilite_reduite = models.BooleanField(default=False)
+    femme_enceinte = models.BooleanField(default=False)
+    notes = models.TextField(blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Profil de vulnérabilité"
+        verbose_name_plural = "Profils de vulnérabilité"
+        ordering = ['-updated_at']
+
+    @property
+    def est_prioritaire(self):
+        return bool(
+            self.personnes_agees or self.enfants_bas_age
+            or self.personne_mobilite_reduite or self.femme_enceinte
+        )
+
+    def __str__(self):
+        return f"Vulnérabilité de {self.user.username}"
+
+
+class RelaisQuartier(models.Model):
+    """
+    Citoyen volontaire pour être notifié en priorité lors d'une alerte dans
+    sa zone et aider les foyers vulnérables (voir ProfilVulnerabilite) à
+    évacuer. Vérification par une autorité avant d'être considéré fiable
+    (`verifie`) — l'inscription seule ne suffit pas.
+    """
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='relais_quartier')
+    zone = models.ForeignKey(ZoneRisque, on_delete=models.CASCADE, related_name='relais')
+    verifie = models.BooleanField(default=False)
+    disponible = models.BooleanField(default=True)
+    date_inscription = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Relais de quartier"
+        verbose_name_plural = "Relais de quartier"
+        ordering = ['-date_inscription']
+
+    def __str__(self):
+        return f"{self.user.username} — relais {self.zone.quartier}"

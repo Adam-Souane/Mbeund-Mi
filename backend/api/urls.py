@@ -16,6 +16,9 @@ from api.views import (
     CustomTokenObtainPairView,
     ChatView,
     ItineraireSecuriseView,
+    MonProfilVulnerabiliteView,
+    ProfilVulnerabiliteViewSet,
+    RelaisQuartierViewSet,
 )
 
 router = DefaultRouter()
@@ -30,6 +33,8 @@ router.register(r'inondations', EpisodeInondationViewSet, basename='inondation')
 router.register(r'historique-risque', HistoriqueRisqueViewSet, basename='historique-risque')
 router.register(r'signalements', SignalementCitoyenViewSet, basename='signalement')
 router.register(r'contacts-alerte', ContactAlerteViewSet, basename='contact-alerte')
+router.register(r'profils-vulnerabilite', ProfilVulnerabiliteViewSet, basename='profil-vulnerabilite')
+router.register(r'relais-quartier', RelaisQuartierViewSet, basename='relais-quartier')
 
 
 urlpatterns = [
@@ -37,5 +42,6 @@ urlpatterns = [
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('chat/', ChatView.as_view(), name='chat'),
     path('itineraire-securise/', ItineraireSecuriseView.as_view(), name='itineraire-securise'),
+    path('mon-profil-vulnerabilite/', MonProfilVulnerabiliteView.as_view(), name='mon-profil-vulnerabilite'),
     path('', include(router.urls)),
 ]

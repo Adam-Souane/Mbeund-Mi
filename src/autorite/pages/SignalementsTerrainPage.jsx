@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle2, XCircle, ChevronLeft, ChevronRight, ImageOff } from 'lucide-react';
+import { CheckCircle2, XCircle, ChevronLeft, ChevronRight, ImageOff, Droplets, Copy } from 'lucide-react';
 import AutoriteShell from '../desktop/AutoriteShell';
 import { useSignalements, useValiderSignalement } from '../../shared/hooks/useSignalements';
 import { flattenApiErrors } from '../../shared/utils/apiErrors';
@@ -14,6 +14,14 @@ const CATEGORIE_LABELS = {
   egouts: 'Égouts',
   inondation: 'Inondation',
   autre: 'Autre',
+};
+
+// Analyse heuristique côté serveur (pas un modèle entraîné) sur la photo du
+// signalement — voir backend/api/services/vision_service.py.
+const NIVEAU_EAU_INFO = {
+  eleve: { label: 'Eau élevée', bg: 'bg-red-50 dark:bg-red/15', text: 'text-red' },
+  modere: { label: 'Eau modérée', bg: 'bg-risk-orange/15', text: 'text-risk-orange' },
+  faible: { label: 'Eau faible', bg: 'bg-risk-vert/15', text: 'text-risk-vert' },
 };
 
 function formatDateTime(iso) {
@@ -43,6 +51,25 @@ function SignalementCard({ feature }) {
           <span className="text-xs text-navy-400 flex-shrink-0">{formatDateTime(properties.date_creation)}</span>
         </div>
         <p className="text-base text-navy-600 dark:text-navy-200">{properties.description || 'Sans description.'}</p>
+
+        {(NIVEAU_EAU_INFO[properties.niveau_eau_estime] || properties.signalement_similaire) && (
+          <div className="flex items-center gap-2 flex-wrap">
+            {NIVEAU_EAU_INFO[properties.niveau_eau_estime] && (
+              <span
+                className={`flex items-center gap-1 text-[11px] font-bold uppercase px-2.5 py-1 rounded-pill ${NIVEAU_EAU_INFO[properties.niveau_eau_estime].bg} ${NIVEAU_EAU_INFO[properties.niveau_eau_estime].text}`}
+              >
+                <Droplets size={11} />
+                {NIVEAU_EAU_INFO[properties.niveau_eau_estime].label}
+              </span>
+            )}
+            {properties.signalement_similaire && (
+              <span className="flex items-center gap-1 text-[11px] font-bold uppercase px-2.5 py-1 rounded-pill bg-navy-50 dark:bg-navy-800 text-navy-400">
+                <Copy size={11} />
+                Doublon possible du #{properties.signalement_similaire}
+              </span>
+            )}
+          </div>
+        )}
 
         <div className="flex items-center gap-2 mt-1">
           <span

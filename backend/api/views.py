@@ -11,11 +11,12 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from django.utils import timezone
 from datetime import timedelta
 
-from rest_framework import permissions
+from rest_framework import permissions, serializers
 from capteurs.models import Capteur, Mesure
 from alertes.models import (
     Alerte, ZoneRisque, PredictionIA, EpisodeInondation, SignalementCitoyen,
     SegmentRue, PrevisionMeteo, HistoriqueRisque, ContactAlerte,
+    ProfilVulnerabilite, RelaisQuartier,
 )
 from api.serializers import (
     CapteurSerializer,
@@ -30,6 +31,8 @@ from api.serializers import (
     HistoriqueRisqueSerializer,
     ContactAlerteSerializer,
     CustomTokenObtainPairSerializer,
+    ProfilVulnerabiliteSerializer,
+    RelaisQuartierSerializer,
 )
 from api.permissions import IsAutoriteOrAdmin, EstAdminOuAutorite
 
@@ -343,3 +346,104 @@ class ItineraireSecuriseView(APIView):
                 status=404,
             )
         return Response(result)
+
+
+class MonProfilVulnerabiliteView(APIView):
+    """
+    GET/PUT /api/mon-profil-vulnerabilite/ — un citoyen connecté consulte ou
+    déclare/modifie le profil de vulnérabilité de son propre foyer (créé à la
+    première sauvegarde). Jamais consultable par un autre citoyen : côté
+    autorité, voir ProfilVulnerabiliteViewSet.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        profil = ProfilVulnerabilite.objects.filter(user=request.user).first()
+        if profil is None:
+            return Response(None)
+        return Response(ProfilVulnerabiliteSerializer(profil).data)
+
+    def put(self, request):
+        profil, _ = ProfilVulnerabilite.objects.get_or_create(user=request.user)
+        serializer = ProfilVulnerabiliteSerializer(profil, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+
+class ProfilVulnerabiliteViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Consultation par une autorité/admin des profils de vulnérabilité déclarés
+    par les citoyens, pour prioriser l'assistance à l'évacuation. Un citoyen
+    déclare le sien via MonProfilVulnerabiliteView, jamais via ce ViewSet.
+    """
+    queryset = ProfilVulnerabilite.objects.select_related('user', 'zone').all()
+    serializer_class = ProfilVulnerabiliteSerializer
+    permission_classes = [EstAdminOuAutorite]
+    pagination_class = PageNumberPagination
+
+    def get_queryset(self):
+        queryset = self.queryset
+        zone = self.request.query_params.get('zone')
+        if zone:
+            queryset = queryset.filter(zone_id=zone)
+        return queryset
+
+
+class RelaisQuartierViewSet(viewsets.ModelViewSet):
+    """
+    Citoyens volontaires pour relayer une alerte et aider à l'évacuation dans
+    leur zone. Chaque citoyen ne gère que sa propre inscription (OneToOne) ;
+    la liste complète et la vérification (`verifier`) sont réservées à
+    l'autorité/admin.
+    """
+    queryset = RelaisQuartier.objects.select_related('user', 'zone').all()
+    serializer_class = RelaisQuartierSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = PageNumberPagination
+
+    def get_permissions(self):
+        if self.action in ('list', 'verifier'):
+            return [EstAdminOuAutorite()]
+        return [permissions.IsAuthenticated()]
+
+    def get_queryset(self):
+        if self.action in ('list', 'verifier'):
+            return self.queryset
+        return self.queryset.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        if RelaisQuartier.objects.filter(user=self.request.user).exists():
+            raise serializers.ValidationError(
+                {"detail": "Vous êtes déjà inscrit comme relais de quartier."}
+            )
+        serializer.save(user=self.request.user)
+
+    @action(detail=False, methods=['get'], url_path='moi')
+    def moi(self, request):
+        """GET /api/relais-quartier/moi/ — retrouve sa propre inscription (ou null)."""
+        instance = RelaisQuartier.objects.filter(user=request.user).select_related('zone').first()
+        if instance is None:
+            return Response(None)
+        return Response(self.get_serializer(instance).data)
+
+    @action(detail=True, methods=['patch'], url_path='verifier')
+    def verifier(self, request, pk=None):
+        """
+        PATCH /api/relais-quartier/{id}/verifier/  body: {"verifie": true|false}
+        `verifie` est en lecture seule sur le serializer (empêche un citoyen
+        de s'auto-vérifier) ; seule une autorité/admin peut le faire basculer.
+        """
+        instance = self.get_object()
+        verifie = request.data.get('verifie')
+
+        if verifie is None:
+            return Response({"verifie": ["Ce champ est obligatoire."]}, status=400)
+        if not isinstance(verifie, bool):
+            return Response({"verifie": ["Ce champ doit être un booléen (true ou false)."]}, status=400)
+
+        instance.verifie = verifie
+        instance.save()
+
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
