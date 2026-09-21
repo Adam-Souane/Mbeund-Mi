@@ -233,15 +233,31 @@ class ZoneRisqueViewSet(viewsets.ReadOnlyModelViewSet):
 class PredictionIAViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = PredictionIA.objects.all()
     serializer_class = PredictionIASerializer
+    permission_classes = [IsAutoriteOrAdmin]
 
     def get_queryset(self):
         latest_predictions = PredictionIA.objects.filter(
             zone=OuterRef('zone_id')
         ).order_by('-timestamp')
-        
+
         return PredictionIA.objects.filter(
             id=Subquery(latest_predictions.values('id')[:1])
         ).select_related('zone').order_by('-timestamp')
+
+    @action(detail=False, methods=['get'], url_path='fiabilite')
+    def fiabilite(self, request):
+        """
+        GET /api/predictions/fiabilite/
+        Retourne les métriques de fiabilité du modèle Random Forest : Brier Score,
+        Log Loss, Accuracy, matrice de confusion, courbe de calibration.
+        """
+        from api.services.model_reliability_service import ModelReliabilityService
+        try:
+            service = ModelReliabilityService()
+            rapport = service.generer_rapport()
+            return Response(rapport)
+        except Exception as e:
+            return Response({"erreur": str(e)}, status=500)
 
 
 class EpisodeInondationViewSet(viewsets.ReadOnlyModelViewSet):

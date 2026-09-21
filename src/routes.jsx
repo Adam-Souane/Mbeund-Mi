@@ -18,6 +18,7 @@ import GestionDeCrisePage from './autorite/pages/GestionDeCrisePage';
 import AdminCapteursPage from './autorite/pages/AdminCapteursPage';
 import ContactUrgencePage from './autorite/pages/ContactUrgencePage';
 import RegistreCommunautairePage from './autorite/pages/RegistreCommunautairePage';
+import FiabiliteModelePage from './autorite/pages/FiabiliteModelePage';
 
 function Citoyen({ children }) {
   return <RequireAuth space="citoyen">{children}</RequireAuth>;
@@ -49,6 +50,7 @@ export default function AppRoutes() {
       <Route path="/autorite/signalements" element={<Autorite><SignalementsTerrainPage /></Autorite>} />
       <Route path="/autorite/registre" element={<Autorite><RegistreCommunautairePage /></Autorite>} />
       <Route path="/autorite/statistiques" element={<Autorite><StatistiquesPage /></Autorite>} />
+      <Route path="/autorite/fiabilite" element={<Autorite><FiabiliteModelePage /></Autorite>} />
       <Route path="/autorite/crise" element={<Autorite><GestionDeCrisePage /></Autorite>} />
       <Route path="/autorite/capteurs" element={<Autorite><AdminCapteursPage /></Autorite>} />
       <Route path="/autorite/contact" element={<Autorite><ContactUrgencePage /></Autorite>} />
