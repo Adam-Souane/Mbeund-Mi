@@ -1,7 +1,8 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import SplashScreen from './shared/layout/SplashScreen';
 import LoginPage from './auth-pages/LoginPage';
-import SignupPage from './auth-pages/SignupPage';
+import SignupPage from './auth-pages/SignupPageNew';
+import ForgotPasswordPage from './auth-pages/ForgotPasswordPage';
 import RequireAuth from './auth/RequireAuth';
 import AccueilPageBody from './citizen/pages/AccueilPageBody';
 import CartePageBody from './citizen/pages/CartePageBody';
@@ -35,6 +36,7 @@ export default function AppRoutes() {
       <Route path="/" element={<SplashScreen />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
       {/* Citoyen */}
       <Route path="/citoyen/accueil" element={<Citoyen><AccueilPageBody /></Citoyen>} />

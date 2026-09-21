@@ -1,6 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
+from users.views import UserViewSet
 from api.views import (
     CapteurViewSet,
     MesureViewSet,
@@ -22,6 +23,7 @@ from api.views import (
 )
 
 router = DefaultRouter()
+router.register(r'users', UserViewSet, basename='user')
 router.register(r'capteurs', CapteurViewSet, basename='capteur')
 router.register(r'mesures', MesureViewSet, basename='mesure')
 router.register(r'alertes', AlerteViewSet, basename='alerte')
