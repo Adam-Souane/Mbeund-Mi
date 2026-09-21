@@ -55,6 +55,73 @@ class PredictionService:
             with open(scaler_path, 'rb') as f:
                 self.scaler = pickle.load(f)  # nosec B301
 
+    def recuperer_historique_24j(self, zone_id):
+        """
+        Récupère les 24 derniers jours de mesures pour une zone.
+        Retourne une liste de 24 dict : [{"pluie_mm": X, "niveau_eau_cm": Y}, ...]
+        Retourne None si impossible d'avoir 24 jours complets.
+        """
+        try:
+            from django.utils import timezone
+            from django.db.models import F, Q
+            from datetime import timedelta
+            from capteurs.models import Mesure, Capteur
+
+            # Capteurs de la zone (pluie + eau)
+            capteurs = Capteur.objects.filter(zone_id=zone_id, statut='actif')
+            if not capteurs.exists():
+                logger_pred.warning(f"Aucun capteur actif pour la zone {zone_id}")
+                return None
+
+            # Les 24 derniers jours (midnight à midnight)
+            maintenant = timezone.now()
+            debut = (maintenant - timedelta(days=24)).replace(hour=0, minute=0, second=0, microsecond=0)
+            fin = maintenant.replace(hour=23, minute=59, second=59, microsecond=999999)
+
+            # Récupérer mesures pluie et niveau pour chaque jour
+            mesures = Mesure.objects.filter(
+                capteur__in=capteurs,
+                timestamp__range=[debut, fin]
+            ).order_by('timestamp')
+
+            if not mesures.exists():
+                logger_pred.warning(f"Aucune mesure trouvée pour la zone {zone_id} sur les 24 derniers jours")
+                return None
+
+            # Grouper par jour et moyenner pluie/niveau
+            historique_par_jour = {}
+            for mesure in mesures:
+                jour = mesure.timestamp.date()
+                if jour not in historique_par_jour:
+                    historique_par_jour[jour] = {"pluie_mm": [], "niveau_eau_cm": []}
+
+                if mesure.capteur.type == 'pluviometre':
+                    historique_par_jour[jour]["pluie_mm"].append(mesure.valeur)
+                elif mesure.capteur.type == 'eau':
+                    historique_par_jour[jour]["niveau_eau_cm"].append(mesure.valeur)
+
+            # Construire la liste 24 jours avec moyennes
+            historique_24j = []
+            for i in range(24):
+                jour = (debut.date() + timedelta(days=i))
+                if jour in historique_par_jour:
+                    pluie_values = historique_par_jour[jour]["pluie_mm"]
+                    niveau_values = historique_par_jour[jour]["niveau_eau_cm"]
+                    historique_24j.append({
+                        "pluie_mm": float(np.mean(pluie_values)) if pluie_values else 0.0,
+                        "niveau_eau_cm": float(np.mean(niveau_values)) if niveau_values else 0.0
+                    })
+                else:
+                    # Jour sans données = 0
+                    historique_24j.append({"pluie_mm": 0.0, "niveau_eau_cm": 0.0})
+
+            logger_pred.info(f"Historique 24j chargé pour zone {zone_id}: {len(historique_24j)} jours")
+            return historique_24j
+
+        except Exception as e:
+            logger_pred.error(f"Erreur chargement historique 24j zone {zone_id}: {e}")
+            return None
+
     def analyser_risque(self, zone_id, mesures_recentes):
         """
         Analyse le risque à partir des dernières mesures.
@@ -65,23 +132,23 @@ class PredictionService:
 
         # 1. Filtrage des anomalies
         mesures_valides, anomalies = self.detecteur.filtrer_mesures(mesures_recentes)
-        
+
         capteurs_exclus = [ano['capteur_id'] for ano in anomalies]
         nb_total = len(mesures_recentes)
         nb_valides = len(mesures_valides)
-        
+
         for ano in anomalies:
             logger_pred.warning(f"ANOMALIE détectée capteur {ano['capteur_id']}: valeur exclue du calcul ({ano['raison']})")
 
         alerte_fiabilite = False
         message_fiabilite = ""
         qualite_donnees = "BONNE"
-        
+
         if nb_valides < (nb_total / 2):
             alerte_fiabilite = True
             message_fiabilite = "Données insuffisantes - résultat peu fiable"
             qualite_donnees = "DEGRADEE"
-            
+
         # Si tout est exclu, on garde au moins la dernière pour éviter un crash (fallback extrême)
         if not mesures_valides:
             mesures_valides = mesures_recentes
@@ -89,12 +156,33 @@ class PredictionService:
         derniere_mesure = mesures_valides[-1]
         niveau_actuel = float(derniere_mesure.get('niveau_eau_cm', 0))
         pluie = float(derniere_mesure.get('pluie_mm', 0))
-        
-        # LSTM predict (simplifié pour l'API)
-        # Normalement on passe la fenêtre de 24h au lstm_model
-        niveau_pred_12h = niveau_actuel + (pluie * 0.2)
-        niveau_pred_24h = niveau_actuel + (pluie * 0.5)
-        niveau_pred_72h = niveau_actuel + (pluie * 0.8)
+
+        # ESSAYER D'UTILISER LE LSTM AVEC HISTORIQUE 24J
+        niveau_pred_12h = None
+        niveau_pred_24h = None
+        niveau_pred_72h = None
+        source_prediction = "empirique"
+
+        if self.lstm_model and zone_id:
+            historique_24j = self.recuperer_historique_24j(zone_id)
+            if historique_24j and len(historique_24j) == 24:
+                # Ajouter la mesure actuelle comme le 25e jour pour extrapoler
+                historique_complet = historique_24j + [{"pluie_mm": pluie, "niveau_eau_cm": niveau_actuel}]
+
+                # Appeler LSTM pour les 3 prochains jours
+                pred_demain = self.predire_niveau_eau_lstm(historique_24j)
+                if pred_demain is not None:
+                    niveau_pred_12h = round(pred_demain * 0.5, 1)  # Approx 12h
+                    niveau_pred_24h = round(pred_demain, 1)  # Approx 24h
+                    niveau_pred_72h = round(pred_demain * 1.5, 1)  # Approx 72h (extrapolation)
+                    source_prediction = "LSTM"
+                    logger_pred.info(f"Prédictions LSTM activées pour zone {zone_id}")
+
+        # FALLBACK : formule empirique si LSTM non dispo/incomplet
+        if niveau_pred_12h is None:
+            niveau_pred_12h = niveau_actuel + (pluie * 0.2)
+            niveau_pred_24h = niveau_actuel + (pluie * 0.5)
+            niveau_pred_72h = niveau_actuel + (pluie * 0.8)
         
         # RF classify
         confiance = 80.0
@@ -131,6 +219,7 @@ class PredictionService:
                 "24h": {"niveau_cm": round(niveau_pred_24h, 1)},
                 "72h": {"niveau_cm": round(niveau_pred_72h, 1)}
             },
+            "source_predictions": source_prediction,  # "LSTM" ou "empirique"
             "risque_global": risque_final,
             "confiance": round(confiance, 1),
             "recommandation_fr": reco['fr'],
