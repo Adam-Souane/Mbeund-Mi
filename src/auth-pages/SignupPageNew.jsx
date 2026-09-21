@@ -119,8 +119,13 @@ export default function SignupPage() {
             <input type="text" name="last_name" value={formData.last_name} onChange={handleChange} placeholder="Nom" className={`px-4 py-2 rounded-lg border ${darkMode ? 'border-navy-700 bg-navy-900 text-white' : 'border-navy-200 bg-white'}`} />
           </div>
 
-          <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="email@exemple.com" className={`w-full px-4 py-2 rounded-lg border ${darkMode ? 'border-navy-700 bg-navy-900 text-white' : 'border-navy-200 bg-white'}`} />
-          {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
+          <div>
+            <label className={`block text-sm font-medium ${darkMode ? 'text-navy-200' : 'text-navy-700'} mb-1`}>
+              Email <span className={`text-xs ${darkMode ? 'text-navy-400' : 'text-navy-500'}`}>(Facultatif)</span>
+            </label>
+            <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="email@exemple.com" className={`w-full px-4 py-2 rounded-lg border ${darkMode ? 'border-navy-700 bg-navy-900 text-white' : 'border-navy-200 bg-white'}`} />
+            {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
+          </div>
 
           <input type="tel" name="telephone" value={formData.telephone} onChange={handleChange} placeholder="+221 77 000 00 00" className={`w-full px-4 py-2 rounded-lg border ${darkMode ? 'border-navy-700 bg-navy-900 text-white' : 'border-navy-200 bg-white'}`} />
           {errors.telephone && <p className="text-xs text-red-500">{errors.telephone}</p>}
