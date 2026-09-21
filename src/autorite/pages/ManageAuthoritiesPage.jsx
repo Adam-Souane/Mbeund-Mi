@@ -9,10 +9,10 @@ function ManageAuthoritiesPageContent() {
   const { darkMode } = useTheme();
   const { showToast } = useToast();
 
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  const [createdAuthority, setCreatedAuthority] = useState(null);
+  const [authorities, setAuthorities] = useState([]);
+  const [visiblePasswords, setVisiblePasswords] = useState({});
   const [copiedField, setCopiedField] = useState(null);
 
   const [formData, setFormData] = useState({
@@ -57,7 +57,7 @@ function ManageAuthoritiesPageContent() {
         telephone: formData.telephone,
       });
 
-      setCreatedAuthority(response.data);
+      setAuthorities([...authorities, response.data]);
       setFormData({ first_name: '', last_name: '', email: '', telephone: '' });
       showToast('Autorité créée avec succès !', 'success');
     } catch (error) {
@@ -76,6 +76,10 @@ function ManageAuthoritiesPageContent() {
     navigator.clipboard.writeText(text);
     setCopiedField(field);
     setTimeout(() => setCopiedField(null), 2000);
+  };
+
+  const togglePasswordVisibility = (id) => {
+    setVisiblePasswords((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   return (
@@ -152,67 +156,64 @@ function ManageAuthoritiesPageContent() {
         </form>
       </div>
 
-      {createdAuthority && (
-        <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-6">
-          <h3 className="text-lg font-bold text-navy dark:text-white mb-4">✓ Autorité créée avec succès !</h3>
-
-          <div className="space-y-3">
-            <div className="bg-navy-50 dark:bg-navy-800 p-3 rounded-lg">
-              <p className="text-xs font-medium text-navy-600 dark:text-navy-300 mb-1">Nom complet</p>
-              <p className="text-sm font-mono text-navy dark:text-white">
-                {createdAuthority.first_name} {createdAuthority.last_name}
-              </p>
-            </div>
-
-            <div className="bg-navy-50 dark:bg-navy-800 p-3 rounded-lg">
-              <p className="text-xs font-medium text-navy-600 dark:text-navy-300 mb-1">Identifiant (username)</p>
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-mono text-navy dark:text-white">{createdAuthority.username}</p>
-                <button
-                  onClick={() => copyToClipboard(createdAuthority.username, 'username')}
-                  className="text-navy-600 dark:text-navy-300 hover:text-navy-900 dark:hover:text-white"
-                >
-                  {copiedField === 'username' ? <Check size={18} /> : <Copy size={18} />}
-                </button>
-              </div>
-            </div>
-
-            <div className="bg-navy-50 dark:bg-navy-800 p-3 rounded-lg">
-              <p className="text-xs font-medium text-navy-600 dark:text-navy-300 mb-1">Mot de passe temporaire</p>
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-mono text-navy dark:text-white flex-1 break-all">
-                  {showPassword ? createdAuthority.password : '••••••••'}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="text-navy-600 dark:text-navy-300 hover:text-navy-900 dark:hover:text-white flex-shrink-0"
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-                <button
-                  onClick={() => copyToClipboard(createdAuthority.password, 'password')}
-                  className="text-navy-600 dark:text-navy-300 hover:text-navy-900 dark:hover:text-white flex-shrink-0"
-                >
-                  {copiedField === 'password' ? <Check size={18} /> : <Copy size={18} />}
-                </button>
-              </div>
-            </div>
-
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/30 p-3 rounded-lg">
-              <p className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-2">À partager avec l'autorité</p>
-              <p className="text-xs text-blue-600 dark:text-blue-200">
-                Copiez l'identifiant et le mot de passe, puis partagez-les avec la personne en personne.
-              </p>
-            </div>
+      {authorities.length > 0 && (
+        <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl overflow-hidden">
+          <div className="px-6 py-4 border-b border-navy-50 dark:border-navy-800">
+            <h3 className="text-lg font-bold text-navy dark:text-white">Autorités créées ({authorities.length})</h3>
           </div>
-
-          <button
-            onClick={() => setCreatedAuthority(null)}
-            className="w-full mt-4 px-4 py-2 rounded-lg text-sm font-medium bg-navy-50 dark:bg-navy-800 text-navy dark:text-white hover:bg-navy-100 dark:hover:bg-navy-700 transition"
-          >
-            Créer une autre autorité
-          </button>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-navy-50 dark:border-navy-800 bg-navy-50 dark:bg-navy-800">
+                  <th className="px-6 py-3 text-left font-semibold text-navy-700 dark:text-navy-200">Nom</th>
+                  <th className="px-6 py-3 text-left font-semibold text-navy-700 dark:text-navy-200">Identifiant</th>
+                  <th className="px-6 py-3 text-left font-semibold text-navy-700 dark:text-navy-200">Mot de passe</th>
+                </tr>
+              </thead>
+              <tbody>
+                {authorities.map((auth, idx) => (
+                  <tr key={idx} className="border-b border-navy-50 dark:border-navy-800 hover:bg-navy-50 dark:hover:bg-navy-800/50 transition">
+                    <td className="px-6 py-4 text-navy dark:text-white font-medium">
+                      {auth.first_name} {auth.last_name}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <code className="text-xs font-mono text-navy-600 dark:text-navy-300 bg-navy-50 dark:bg-navy-800 px-2 py-1 rounded">
+                          {auth.username}
+                        </code>
+                        <button
+                          onClick={() => copyToClipboard(auth.username, `username-${idx}`)}
+                          className="text-navy-600 dark:text-navy-300 hover:text-navy-900 dark:hover:text-white transition"
+                        >
+                          {copiedField === `username-${idx}` ? <Check size={16} /> : <Copy size={16} />}
+                        </button>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <code className="text-xs font-mono text-navy-600 dark:text-navy-300 bg-navy-50 dark:bg-navy-800 px-2 py-1 rounded">
+                          {visiblePasswords[idx] ? auth.password : '••••••••'}
+                        </code>
+                        <button
+                          onClick={() => togglePasswordVisibility(idx)}
+                          className="text-navy-600 dark:text-navy-300 hover:text-navy-900 dark:hover:text-white transition"
+                          title={visiblePasswords[idx] ? 'Masquer' : 'Afficher'}
+                        >
+                          {visiblePasswords[idx] ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                        <button
+                          onClick={() => copyToClipboard(auth.password, `password-${idx}`)}
+                          className="text-navy-600 dark:text-navy-300 hover:text-navy-900 dark:hover:text-white transition"
+                        >
+                          {copiedField === `password-${idx}` ? <Check size={16} /> : <Copy size={16} />}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
