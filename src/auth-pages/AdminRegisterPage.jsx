@@ -216,7 +216,7 @@ export default function AdminRegisterPage() {
 
           <button
             type="submit"
-            disabled={loading || !code}
+            disabled={loading}
             className="w-full bg-navy dark:bg-navy-800 text-white py-3 rounded-lg font-semibold hover:bg-navy-700 dark:hover:bg-navy-900 transition disabled:opacity-50"
           >
             {loading ? 'Création...' : 'Créer un compte admin'}
