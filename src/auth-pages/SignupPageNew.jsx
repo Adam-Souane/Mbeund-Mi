@@ -27,6 +27,12 @@ export default function SignupPage() {
     last_name: '',
   });
 
+  const generateUsername = (firstName, lastName) => {
+    return `${firstName.toLowerCase()}${lastName.toLowerCase()}`.replace(/\s+/g, '');
+  };
+
+  const generatedUsername = generateUsername(formData.first_name, formData.last_name);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -124,6 +130,13 @@ export default function SignupPage() {
             <input type="text" name="first_name" value={formData.first_name} onChange={handleChange} placeholder="Prénom" className={`px-4 py-2 rounded-lg border ${darkMode ? 'border-navy-700 bg-navy-900 text-white' : 'border-navy-200 bg-white'}`} />
             <input type="text" name="last_name" value={formData.last_name} onChange={handleChange} placeholder="Nom" className={`px-4 py-2 rounded-lg border ${darkMode ? 'border-navy-700 bg-navy-900 text-white' : 'border-navy-200 bg-white'}`} />
           </div>
+
+          {generatedUsername && (
+            <div className={`px-4 py-2.5 rounded-lg text-sm ${darkMode ? 'bg-navy-800 border border-navy-700 text-navy-200' : 'bg-navy-50 border border-navy-200 text-navy-700'}`}>
+              <p className={`text-xs font-medium ${darkMode ? 'text-navy-400' : 'text-navy-600'}`}>Identifiant généré</p>
+              <p className="font-mono font-semibold">{generatedUsername}</p>
+            </div>
+          )}
 
           <div>
             <label className={`block text-sm font-medium ${darkMode ? 'text-navy-200' : 'text-navy-700'} mb-1`}>
