@@ -142,14 +142,6 @@ export default function LoginPage() {
                 </Link>
               </p>
             )}
-            {tab === 'autorite' && (
-              <p className="text-center text-xs text-navy-600 dark:text-navy-200">
-                Pas encore de compte ?{' '}
-                <Link to="/signup?role=autorite" className="font-bold text-red hover:underline">
-                  Créer un compte autorité
-                </Link>
-              </p>
-            )}
           </form>
         </div>
 
