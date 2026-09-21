@@ -328,8 +328,8 @@ function ManageAuthoritiesPageContent() {
               </thead>
               <tbody>
                 {filteredAuthorities.length > 0 ? (
-                  filteredAuthorities.map((auth, idx) => (
-                  <tr key={idx} className="border-b border-navy-50 dark:border-navy-800 hover:bg-navy-50 dark:hover:bg-navy-800/50 transition">
+                  filteredAuthorities.map((auth) => (
+                  <tr key={auth.username} className="border-b border-navy-50 dark:border-navy-800 hover:bg-navy-50 dark:hover:bg-navy-800/50 transition">
                     <td className="px-6 py-4 text-navy dark:text-white font-medium">
                       {auth.first_name} {auth.last_name}
                     </td>
@@ -339,10 +339,10 @@ function ManageAuthoritiesPageContent() {
                           {auth.username}
                         </code>
                         <button
-                          onClick={() => copyToClipboard(auth.username, `username-${idx}`)}
+                          onClick={() => copyToClipboard(auth.username, `username-${auth.username}`)}
                           className="text-navy-600 dark:text-navy-300 hover:text-navy-900 dark:hover:text-white transition"
                         >
-                          {copiedField === `username-${idx}` ? <Check size={16} /> : <Copy size={16} />}
+                          {copiedField === `username-${auth.username}` ? <Check size={16} /> : <Copy size={16} />}
                         </button>
                       </div>
                     </td>
