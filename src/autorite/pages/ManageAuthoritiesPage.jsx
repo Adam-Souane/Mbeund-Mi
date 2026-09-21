@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Copy, Check, Lock, Trash2, RefreshCw } from 'lucide-react';
+import { Eye, EyeOff, Copy, Check, Lock, Trash2, RefreshCw, Search } from 'lucide-react';
 import AutoriteShell from '../desktop/AutoriteShell';
 import { useTheme } from '../../theme/ThemeContext';
 import { useAuth } from '../../auth/AuthContext';
@@ -43,6 +43,18 @@ function ManageAuthoritiesPageContent() {
   const [regenerateConfirmModal, setRegenerateConfirmModal] = useState(null);
   const [regenerateResultModal, setRegenerateResultModal] = useState(null);
   const [newPassword, setNewPassword] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Filtrer les autorités selon la recherche
+  const filteredAuthorities = authorities.filter((auth) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      auth.first_name.toLowerCase().includes(query) ||
+      auth.last_name.toLowerCase().includes(query) ||
+      auth.username.toLowerCase().includes(query) ||
+      (auth.email && auth.email.toLowerCase().includes(query))
+    );
+  });
 
   const [formData, setFormData] = useState({
     first_name: '',
@@ -225,7 +237,22 @@ function ManageAuthoritiesPageContent() {
       {authorities.length > 0 && (
         <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl overflow-hidden">
           <div className="px-6 py-4 border-b border-navy-50 dark:border-navy-800">
-            <h3 className="text-lg font-bold text-navy dark:text-white">Autorités créées ({authorities.length})</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-navy dark:text-white">
+                Autorités créées ({filteredAuthorities.length} / {authorities.length})
+              </h3>
+            </div>
+
+            <div className="relative">
+              <Search className="absolute left-3 top-3 text-navy-400 dark:text-navy-500" size={18} />
+              <input
+                type="text"
+                placeholder="Rechercher par nom, prénom, email ou identifiant..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-navy-200 dark:border-navy-700 bg-white dark:bg-navy-800 text-navy dark:text-white text-sm"
+              />
+            </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -238,7 +265,8 @@ function ManageAuthoritiesPageContent() {
                 </tr>
               </thead>
               <tbody>
-                {authorities.map((auth, idx) => (
+                {filteredAuthorities.length > 0 ? (
+                  filteredAuthorities.map((auth, idx) => (
                   <tr key={idx} className="border-b border-navy-50 dark:border-navy-800 hover:bg-navy-50 dark:hover:bg-navy-800/50 transition">
                     <td className="px-6 py-4 text-navy dark:text-white font-medium">
                       {auth.first_name} {auth.last_name}
@@ -295,7 +323,14 @@ function ManageAuthoritiesPageContent() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="4" className="px-6 py-8 text-center text-navy-600 dark:text-navy-300">
+                      Aucune autorité ne correspond à votre recherche
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
