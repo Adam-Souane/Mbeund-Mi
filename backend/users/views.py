@@ -23,7 +23,6 @@ class UserViewSet(viewsets.ModelViewSet):
 
         Body:
         {
-            "username": "...",
             "email": "...",
             "password": "...",
             "first_name": "...",
@@ -32,7 +31,6 @@ class UserViewSet(viewsets.ModelViewSet):
             "role": "citoyen" ou "autorite"
         }
         """
-        username = request.data.get('username')
         email = request.data.get('email')
         password = request.data.get('password')
         first_name = request.data.get('first_name', '')
@@ -41,8 +39,6 @@ class UserViewSet(viewsets.ModelViewSet):
         role = request.data.get('role', 'citoyen')
 
         # Validation
-        if not username:
-            return Response({'username': 'Nom d\'utilisateur requis'}, status=status.HTTP_400_BAD_REQUEST)
         if not email:
             return Response({'email': 'Email requis'}, status=status.HTTP_400_BAD_REQUEST)
         if not password or len(password) < 8:
@@ -50,11 +46,17 @@ class UserViewSet(viewsets.ModelViewSet):
         if not telephone:
             return Response({'telephone': 'Numéro de téléphone requis'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Vérifier les doublons
-        if User.objects.filter(username=username).exists():
-            return Response({'username': 'Cet utilisateur existe déjà'}, status=status.HTTP_400_BAD_REQUEST)
+        # Vérifier que l'email n'existe pas
         if User.objects.filter(email=email).exists():
             return Response({'email': 'Cet email est déjà utilisé'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Générer un username unique depuis le prénom et nom
+        username_base = f"{first_name.lower()}{last_name.lower()}".replace(' ', '')
+        username = username_base
+        counter = 1
+        while User.objects.filter(username=username).exists():
+            username = f"{username_base}{counter}"
+            counter += 1
 
         # Créer l'utilisateur et le profil
         try:

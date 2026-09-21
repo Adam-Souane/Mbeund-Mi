@@ -19,7 +19,6 @@ export default function SignupPage() {
   const [errors, setErrors] = useState({});
 
   const [formData, setFormData] = useState({
-    username: '',
     email: '',
     telephone: '',
     password: '',
@@ -39,7 +38,6 @@ export default function SignupPage() {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.username.trim()) newErrors.username = 'Nom d\'utilisateur requis';
     if (!formData.email.trim()) newErrors.email = 'Email requis';
     if (!formData.email.includes('@')) newErrors.email = 'Email invalide';
     if (!formData.telephone.trim()) newErrors.telephone = 'Numéro de téléphone requis';
@@ -60,8 +58,10 @@ export default function SignupPage() {
 
     setLoading(true);
     try {
+      // Générer le username depuis le prénom et nom
+      const generatedUsername = `${formData.first_name.toLowerCase()}${formData.last_name.toLowerCase()}`.replace(/\s+/g, '');
+
       const response = await client.post('/users/register/', {
-        username: formData.username,
         email: formData.email,
         password: formData.password,
         first_name: formData.first_name,
@@ -76,7 +76,7 @@ export default function SignupPage() {
       if (response.data.requires_otp) {
         navigate('/otp-verify', {
           state: {
-            username: formData.username,
+            username: generatedUsername,
             email: formData.email,
             phoneNumber: formData.telephone,
             password: formData.password,
@@ -113,9 +113,6 @@ export default function SignupPage() {
             <input type="text" name="first_name" value={formData.first_name} onChange={handleChange} placeholder="Prénom" className={`px-4 py-2 rounded-lg border ${darkMode ? 'border-navy-700 bg-navy-900 text-white' : 'border-navy-200 bg-white'}`} />
             <input type="text" name="last_name" value={formData.last_name} onChange={handleChange} placeholder="Nom" className={`px-4 py-2 rounded-lg border ${darkMode ? 'border-navy-700 bg-navy-900 text-white' : 'border-navy-200 bg-white'}`} />
           </div>
-
-          <input type="text" name="username" value={formData.username} onChange={handleChange} placeholder="Nom d'utilisateur" className={`w-full px-4 py-2 rounded-lg border ${darkMode ? 'border-navy-700 bg-navy-900 text-white' : 'border-navy-200 bg-white'}`} />
-          {errors.username && <p className="text-xs text-red-500">{errors.username}</p>}
 
           <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="email@exemple.com" className={`w-full px-4 py-2 rounded-lg border ${darkMode ? 'border-navy-700 bg-navy-900 text-white' : 'border-navy-200 bg-white'}`} />
           {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
