@@ -43,6 +43,7 @@ function ManageAuthoritiesPageContent() {
   const [regenerateConfirmModal, setRegenerateConfirmModal] = useState(null);
   const [regenerateResultModal, setRegenerateResultModal] = useState(null);
   const [newPassword, setNewPassword] = useState(null);
+  const [creationResultModal, setCreationResultModal] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [usernameOptions, setUsernameOptions] = useState([]);
   const [loadingUsernames, setLoadingUsernames] = useState(false);
@@ -134,7 +135,9 @@ function ManageAuthoritiesPageContent() {
       });
 
       setAuthorities([...authorities, response.data]);
+      setCreationResultModal(response.data);
       setFormData({ first_name: '', last_name: '', email: '', telephone: '', username: '' });
+      setUsernameOptions([]);
       showToast('Autorité créée avec succès !', 'success');
     } catch (error) {
       const errorData = error.response?.data || {};
@@ -321,8 +324,8 @@ function ManageAuthoritiesPageContent() {
               <thead>
                 <tr className="border-b border-navy-50 dark:border-navy-800 bg-navy-50 dark:bg-navy-800">
                   <th className="px-6 py-3 text-left font-semibold text-navy-700 dark:text-navy-200">Nom</th>
+                  <th className="px-6 py-3 text-left font-semibold text-navy-700 dark:text-navy-200">Email</th>
                   <th className="px-6 py-3 text-left font-semibold text-navy-700 dark:text-navy-200">Identifiant</th>
-                  <th className="px-6 py-3 text-left font-semibold text-navy-700 dark:text-navy-200">Mot de passe</th>
                   <th className="px-6 py-3 text-center font-semibold text-navy-700 dark:text-navy-200">Actions</th>
                 </tr>
               </thead>
@@ -332,6 +335,9 @@ function ManageAuthoritiesPageContent() {
                   <tr key={auth.username} className="border-b border-navy-50 dark:border-navy-800 hover:bg-navy-50 dark:hover:bg-navy-800/50 transition">
                     <td className="px-6 py-4 text-navy dark:text-white font-medium">
                       {auth.first_name} {auth.last_name}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-navy-600 dark:text-navy-300">
+                      {auth.email || '—'}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
@@ -345,30 +351,6 @@ function ManageAuthoritiesPageContent() {
                           {copiedField === `username-${auth.username}` ? <Check size={16} /> : <Copy size={16} />}
                         </button>
                       </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {auth.password ? (
-                        <div className="flex items-center gap-2">
-                          <code className="text-xs font-mono text-navy-600 dark:text-navy-300 bg-navy-50 dark:bg-navy-800 px-2 py-1 rounded">
-                            {visiblePasswords[auth.username] ? auth.password : '••••••••'}
-                          </code>
-                          <button
-                            onClick={() => togglePasswordVisibility(auth.username)}
-                            className="text-navy-600 dark:text-navy-300 hover:text-navy-900 dark:hover:text-white transition"
-                            title={visiblePasswords[auth.username] ? 'Masquer' : 'Afficher'}
-                          >
-                            {visiblePasswords[auth.username] ? <EyeOff size={16} /> : <Eye size={16} />}
-                          </button>
-                          <button
-                            onClick={() => copyToClipboard(auth.password, `password-${auth.username}`)}
-                            className="text-navy-600 dark:text-navy-300 hover:text-navy-900 dark:hover:text-white transition"
-                          >
-                            {copiedField === `password-${auth.username}` ? <Check size={16} /> : <Copy size={16} />}
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-navy-400 italic">Non disponible après rechargement</span>
-                      )}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center gap-2">
@@ -399,6 +381,56 @@ function ManageAuthoritiesPageContent() {
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Résultat Création */}
+      {creationResultModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-navy rounded-xl p-6 max-w-md w-full">
+            <h3 className="text-lg font-bold text-green-600 dark:text-green-400 mb-2">
+              Autorité créée avec succès
+            </h3>
+            <p className="text-sm text-navy-600 dark:text-navy-300 mb-4">
+              Voici les identifiants d'accès pour <strong>{creationResultModal.first_name} {creationResultModal.last_name}</strong>.
+              <strong className="block mt-2">Copiez le mot de passe et partagez-le en personne.</strong>
+            </p>
+
+            <div className="space-y-3">
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/30 p-3 rounded-lg">
+                <p className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">Identifiant</p>
+                <div className="flex items-center gap-2">
+                  <code className="font-mono text-blue-900 dark:text-blue-100 flex-1">{creationResultModal.username}</code>
+                  <button
+                    onClick={() => copyToClipboard(creationResultModal.username, 'creation-username')}
+                    className="text-blue-700 dark:text-blue-300 hover:text-blue-900 dark:hover:text-blue-100"
+                  >
+                    {copiedField === 'creation-username' ? <Check size={16} /> : <Copy size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700/30 p-3 rounded-lg">
+                <p className="text-xs font-medium text-green-700 dark:text-green-300 mb-1">Mot de passe temporaire</p>
+                <div className="flex items-center gap-2">
+                  <code className="font-mono text-green-900 dark:text-green-100 flex-1 break-all">{creationResultModal.password}</code>
+                  <button
+                    onClick={() => copyToClipboard(creationResultModal.password, 'creation-password')}
+                    className="text-green-700 dark:text-green-300 hover:text-green-900 dark:hover:text-green-100"
+                  >
+                    {copiedField === 'creation-password' ? <Check size={16} /> : <Copy size={16} />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setCreationResultModal(null)}
+              className="w-full mt-4 bg-navy dark:bg-navy-800 text-white px-4 py-2 rounded-lg font-semibold hover:bg-navy-700 dark:hover:bg-navy-700 transition"
+            >
+              Fermer
+            </button>
           </div>
         </div>
       )}
