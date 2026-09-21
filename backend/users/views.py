@@ -5,9 +5,11 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.core.cache import cache
+from django.utils import timezone
+from datetime import timedelta
 import random
 import string
-from .models import Profile
+from .models import Profile, InviteCode
 from .serializers import UserSerializer, ProfileSerializer
 
 
@@ -241,3 +243,138 @@ class UserViewSet(viewsets.ModelViewSet):
             )
         except User.DoesNotExist:
             return Response({'detail': 'Utilisateur non trouvé'}, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny], url_path='admin-register')
+    def admin_register(self, request):
+        """
+        POST /api/users/admin-register/
+        Enregistre un nouvel admin avec un code d'invitation valide.
+
+        Body:
+        {
+            "invite_code": "...",
+            "email": "...",
+            "password": "...",
+            "first_name": "...",
+            "last_name": "...",
+            "telephone": "..."
+        }
+        """
+        invite_code = request.data.get('invite_code')
+        email = request.data.get('email')
+        password = request.data.get('password')
+        first_name = request.data.get('first_name', '')
+        last_name = request.data.get('last_name', '')
+        telephone = request.data.get('telephone', '')
+
+        # Valider le code d'invitation
+        if not invite_code:
+            return Response({'detail': 'Code d\'invitation requis'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            invite = InviteCode.objects.get(code=invite_code)
+        except InviteCode.DoesNotExist:
+            return Response({'detail': 'Code d\'invitation invalide'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Vérifier que le code n'a pas été utilisé
+        if invite.used_at is not None:
+            return Response({'detail': 'Ce code d\'invitation a déjà été utilisé'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Vérifier que le code n'a pas expiré
+        if timezone.now() > invite.expires_at:
+            return Response({'detail': 'Ce code d\'invitation a expiré'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validation
+        if not password or len(password) < 8:
+            return Response({'password': 'Mot de passe requis (min. 8 caractères)'}, status=status.HTTP_400_BAD_REQUEST)
+        if not email:
+            return Response({'email': 'Email requis'}, status=status.HTTP_400_BAD_REQUEST)
+        if User.objects.filter(email=email).exists():
+            return Response({'email': 'Cet email est déjà utilisé'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Générer un username unique
+        username_base = f"{first_name.lower()}{last_name.lower()}".replace(' ', '')
+        username = username_base
+        counter = 1
+        while User.objects.filter(username=username).exists():
+            username = f"{username_base}{counter}"
+            counter += 1
+
+        try:
+            with transaction.atomic():
+                # Créer l'utilisateur
+                user = User.objects.create_user(
+                    username=username,
+                    email=email,
+                    password=password,
+                    first_name=first_name,
+                    last_name=last_name,
+                )
+
+                # Mettre à jour le profil avec le rôle du code d'invitation
+                profile = user.profile
+                profile.role = invite.role
+                profile.telephone = telephone
+                profile.is_verified = True  # Les admins sont auto-vérifiés
+                profile.save()
+
+                # Marquer le code comme utilisé
+                invite.used_at = timezone.now()
+                invite.used_by = user
+                invite.save()
+
+            return Response(
+                {
+                    'detail': 'Compte admin créé avec succès',
+                    'user': UserSerializer(user).data,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+        except Exception as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated], url_path='generate-invite')
+    def generate_invite(self, request):
+        """
+        POST /api/users/generate-invite/
+        Génère un code d'invitation pour un nouvel admin/autorité.
+        Seuls les admins peuvent générer des codes.
+
+        Body:
+        {
+            "role": "admin" ou "autorite",
+            "expires_in_hours": 24  # Optionnel, défaut 48h
+        }
+        """
+        # Vérifier que l'utilisateur est admin
+        if request.user.profile.role != 'admin':
+            return Response(
+                {'detail': 'Seuls les admins peuvent générer des codes d\'invitation'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        role = request.data.get('role', 'autorite')
+        expires_in_hours = request.data.get('expires_in_hours', 48)
+
+        if role not in ['admin', 'autorite']:
+            return Response({'detail': 'Rôle invalide'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            invite = InviteCode.objects.create(
+                code=InviteCode.generate_code(),
+                expires_at=timezone.now() + timedelta(hours=expires_in_hours),
+                created_by=request.user,
+                role=role,
+            )
+
+            return Response(
+                {
+                    'code': invite.code,
+                    'role': invite.role,
+                    'expires_at': invite.expires_at,
+                    'detail': f'Code d\'invitation généré pour {role}',
+                },
+                status=status.HTTP_201_CREATED,
+            )
+        except Exception as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
