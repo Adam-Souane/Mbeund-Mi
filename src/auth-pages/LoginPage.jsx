@@ -109,11 +109,13 @@ export default function LoginPage() {
               />
             </label>
 
-            <div className="text-right -mt-2">
-              <Link to="/forgot-password" className="text-xs font-semibold text-red cursor-pointer hover:underline">
-                Mot de passe oublié ?
-              </Link>
-            </div>
+            {tab === 'citoyen' && (
+              <div className="text-right -mt-2">
+                <Link to="/forgot-password" className="text-xs font-semibold text-red cursor-pointer hover:underline">
+                  Mot de passe oublié ?
+                </Link>
+              </div>
+            )}
 
             {error && (
               <div className="px-3 py-2.5 rounded-md bg-red-50 dark:bg-red/15 text-red-900 dark:text-red-200 text-xs">
