@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Copy, Check, Lock, Trash2, RefreshCw, Search } from 'lucide-react';
+import { Eye, EyeOff, Copy, Check, Lock, Trash2, RefreshCw, Search, Loader2 } from 'lucide-react';
 import AutoriteShell from '../desktop/AutoriteShell';
 import { useTheme } from '../../theme/ThemeContext';
 import { useAuth } from '../../auth/AuthContext';
@@ -44,6 +44,8 @@ function ManageAuthoritiesPageContent() {
   const [regenerateResultModal, setRegenerateResultModal] = useState(null);
   const [newPassword, setNewPassword] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [usernameOptions, setUsernameOptions] = useState([]);
+  const [loadingUsernames, setLoadingUsernames] = useState(false);
 
   // Filtrer les autorités selon la recherche
   const filteredAuthorities = authorities.filter((auth) => {
@@ -61,7 +63,38 @@ function ManageAuthoritiesPageContent() {
     last_name: '',
     email: '',
     telephone: '',
+    username: '',
   });
+
+  // Charger les options d'identifiant quand prénom/nom changent
+  useEffect(() => {
+    if (formData.first_name.trim() && formData.last_name.trim()) {
+      const fetchUsernameOptions = async () => {
+        setLoadingUsernames(true);
+        try {
+          const response = await client.get('/users/check-username/', {
+            params: {
+              first_name: formData.first_name,
+              last_name: formData.last_name,
+            },
+          });
+          setUsernameOptions(response.data.options || []);
+          // Sélectionner la première option par défaut
+          if (!formData.username && response.data.options?.length > 0) {
+            setFormData((prev) => ({ ...prev, username: response.data.options[0] }));
+          }
+        } catch (error) {
+          console.error('Erreur lors du chargement des identifiants:', error);
+        } finally {
+          setLoadingUsernames(false);
+        }
+      };
+      fetchUsernameOptions();
+    } else {
+      setUsernameOptions([]);
+      setFormData((prev) => ({ ...prev, username: '' }));
+    }
+  }, [formData.first_name, formData.last_name]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -76,6 +109,7 @@ function ManageAuthoritiesPageContent() {
 
     if (!formData.first_name.trim()) newErrors.first_name = 'Prénom requis';
     if (!formData.last_name.trim()) newErrors.last_name = 'Nom requis';
+    if (!formData.username) newErrors.username = 'Identifiant requis';
     if (!formData.email.trim()) newErrors.email = 'Email requis';
     else if (!formData.email.includes('@')) newErrors.email = 'Email invalide';
     if (!formData.telephone.trim()) newErrors.telephone = 'Numéro de téléphone requis';
@@ -96,10 +130,11 @@ function ManageAuthoritiesPageContent() {
         last_name: formData.last_name,
         email: formData.email,
         telephone: formData.telephone,
+        username: formData.username,
       });
 
       setAuthorities([...authorities, response.data]);
-      setFormData({ first_name: '', last_name: '', email: '', telephone: '' });
+      setFormData({ first_name: '', last_name: '', email: '', telephone: '', username: '' });
       showToast('Autorité créée avec succès !', 'success');
     } catch (error) {
       const errorData = error.response?.data || {};
@@ -197,6 +232,33 @@ function ManageAuthoritiesPageContent() {
               {errors.last_name && <p className="text-xs text-red-500 mt-1">{errors.last_name}</p>}
             </div>
           </div>
+
+          {usernameOptions.length > 0 && (
+            <div className={`px-4 py-3 rounded-lg ${darkMode ? 'bg-navy-800 border border-navy-700' : 'bg-navy-50 border border-navy-200'}`}>
+              <div className="flex items-center gap-2 mb-2">
+                <p className={`text-xs font-medium ${darkMode ? 'text-navy-400' : 'text-navy-600'}`}>Choisissez l'identifiant</p>
+                {loadingUsernames && <Loader2 size={12} className="animate-spin" />}
+              </div>
+              <div className="space-y-2">
+                {usernameOptions.map((option) => (
+                  <label key={option} className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="username"
+                      value={option}
+                      checked={formData.username === option}
+                      onChange={handleChange}
+                      className="accent-red"
+                    />
+                    <code className={`font-mono text-sm font-semibold ${formData.username === option ? (darkMode ? 'text-white' : 'text-navy-900') : (darkMode ? 'text-navy-300' : 'text-navy-600')}`}>
+                      {option}
+                    </code>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+          {errors.username && <p className="text-xs text-red-500">{errors.username}</p>}
 
           <div>
             <label className="block text-sm font-medium text-navy-700 dark:text-navy-200 mb-1">Email</label>

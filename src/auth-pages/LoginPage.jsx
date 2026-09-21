@@ -6,8 +6,8 @@ import { useAuth } from '../auth/AuthContext';
 import { homeRouteForRole } from '../auth/RequireAuth';
 
 const ROLES = [
-  { id: 'citoyen', label: 'Citoyen', fieldLabel: 'Numéro de téléphone', placeholder: '+221 77 000 00 00' },
-  { id: 'autorite', label: 'Autorité', fieldLabel: 'Identifiant', placeholder: 'nom.prenom@thiaroye.sn' },
+  { id: 'citoyen', label: 'Citoyen', fieldLabel: 'Identifiant', placeholder: 'jeandupont' },
+  { id: 'autorite', label: 'Autorité', fieldLabel: 'Identifiant', placeholder: 'jeandupont' },
 ];
 
 export default function LoginPage() {

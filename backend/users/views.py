@@ -291,7 +291,8 @@ class UserViewSet(viewsets.ModelViewSet):
             "first_name": "...",
             "last_name": "...",
             "email": "...",
-            "telephone": "..."
+            "telephone": "...",
+            "username": "..."
         }
 
         Retourne les identifiants générés (username + password temporaire).
@@ -307,12 +308,15 @@ class UserViewSet(viewsets.ModelViewSet):
         last_name = request.data.get('last_name', '')
         email = request.data.get('email')
         telephone = request.data.get('telephone', '')
+        username = request.data.get('username', '')
 
         # Validation
         if not first_name.strip():
             return Response({'first_name': 'Prénom requis'}, status=status.HTTP_400_BAD_REQUEST)
         if not last_name.strip():
             return Response({'last_name': 'Nom requis'}, status=status.HTTP_400_BAD_REQUEST)
+        if not username:
+            return Response({'username': 'Identifiant requis'}, status=status.HTTP_400_BAD_REQUEST)
         if not email or not email.strip():
             return Response({'email': 'Email requis'}, status=status.HTTP_400_BAD_REQUEST)
         if '@' not in email:
@@ -323,13 +327,9 @@ class UserViewSet(viewsets.ModelViewSet):
         if User.objects.filter(email=email).exists():
             return Response({'email': 'Cet email est déjà utilisé'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Générer un username unique
-        username_base = f"{first_name.lower()}{last_name.lower()}".replace(' ', '')
-        username = username_base
-        counter = 1
-        while User.objects.filter(username=username).exists():
-            username = f"{username_base}{counter}"
-            counter += 1
+        # Vérifier que l'username choisi est disponible
+        if User.objects.filter(username=username).exists():
+            return Response({'username': 'Cet identifiant est déjà pris. Veuillez en choisir un autre.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Générer un mot de passe temporaire
         temp_password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
