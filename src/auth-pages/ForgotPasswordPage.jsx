@@ -92,7 +92,7 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-navy-900 dark:bg-navy-600 text-white py-3 rounded-lg font-semibold hover:bg-navy-800 dark:hover:bg-navy-500 transition disabled:opacity-50"
+              className="w-full bg-navy-900 dark:bg-navy-700 text-white py-3 rounded-lg font-semibold hover:bg-navy-800 dark:hover:bg-navy-600 transition disabled:opacity-50"
             >
               {loading ? 'Envoi...' : 'Envoyer les instructions'}
             </button>
@@ -108,7 +108,7 @@ export default function ForgotPasswordPage() {
             </p>
             <button
               onClick={() => navigate('/login')}
-              className="w-full bg-navy-900 dark:bg-navy-600 text-white py-3 rounded-lg font-semibold hover:bg-navy-800 dark:hover:bg-navy-500 transition"
+              className="w-full bg-navy-900 dark:bg-navy-700 text-white py-3 rounded-lg font-semibold hover:bg-navy-800 dark:hover:bg-navy-600 transition"
             >
               Retour à la connexion
             </button>

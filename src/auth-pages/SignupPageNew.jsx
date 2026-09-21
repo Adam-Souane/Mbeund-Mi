@@ -121,13 +121,13 @@ export default function SignupPage() {
           </div>
           {errors.password_confirm && <p className="text-xs text-red-500">{errors.password_confirm}</p>}
 
-          <button type="submit" disabled={loading} className="w-full bg-navy-900 text-white py-3 rounded-lg font-semibold hover:bg-navy-800 transition disabled:opacity-50">
+          <button type="submit" disabled={loading} className="w-full bg-navy-900 dark:bg-navy-700 text-white py-3 rounded-lg font-semibold hover:bg-navy-800 dark:hover:bg-navy-600 transition disabled:opacity-50">
             {loading ? 'Création...' : 'Créer un compte'}
           </button>
         </form>
 
         <p className={`text-center text-sm mt-6 ${darkMode ? 'text-navy-400' : 'text-navy-600'}`}>
-          Vous avez déjà un compte ? <button onClick={() => navigate('/login')} className="text-navy-900 font-semibold hover:underline">Se connecter</button>
+          Vous avez déjà un compte ? <button onClick={() => navigate('/login')} className="font-semibold text-red hover:underline transition">Se connecter</button>
         </p>
       </div>
     </div>
