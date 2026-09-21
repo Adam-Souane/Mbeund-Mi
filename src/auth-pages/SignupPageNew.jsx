@@ -121,7 +121,7 @@ export default function SignupPage() {
           </div>
           {errors.password_confirm && <p className="text-xs text-red-500">{errors.password_confirm}</p>}
 
-          <button type="submit" disabled={loading} className="w-full bg-navy-900 dark:bg-navy-700 text-white py-3 rounded-lg font-semibold hover:bg-navy-800 dark:hover:bg-navy-600 transition disabled:opacity-50">
+          <button type="submit" disabled={loading} className="w-full bg-navy dark:bg-navy-800 text-white py-3 rounded-lg font-semibold hover:bg-navy-700 dark:hover:bg-navy-900 transition disabled:opacity-50">
             {loading ? 'Création...' : 'Créer un compte'}
           </button>
         </form>
