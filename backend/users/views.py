@@ -13,9 +13,48 @@ from .models import Profile, InviteCode
 from .serializers import UserSerializer, ProfileSerializer
 
 
+def generate_username_options(first_name, last_name, max_options=3):
+  """Génère jusqu'à max_options usernames disponibles."""
+  username_base = f"{first_name.lower()}{last_name.lower()}".replace(' ', '')
+  options = []
+
+  # Essayer le username de base
+  if not User.objects.filter(username=username_base).exists():
+    options.append(username_base)
+
+  # Ajouter des options avec suffixes numériques
+  counter = 2
+  while len(options) < max_options:
+    candidate = f"{username_base}{counter}"
+    if not User.objects.filter(username=candidate).exists():
+      options.append(candidate)
+    counter += 1
+
+  return options
+
+
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+
+    @action(detail=False, methods=['get'], permission_classes=[AllowAny], url_path='check-username')
+    def check_username(self, request):
+        """
+        GET /api/users/check-username/?first_name=...&last_name=...
+        Retourne les usernames disponibles basés sur prénom/nom.
+        """
+        first_name = request.query_params.get('first_name', '').strip()
+        last_name = request.query_params.get('last_name', '').strip()
+
+        if not first_name or not last_name:
+            return Response({'detail': 'Prénom et nom requis'}, status=status.HTTP_400_BAD_REQUEST)
+
+        options = generate_username_options(first_name, last_name, max_options=3)
+
+        return Response({
+            'options': options,
+            'recommended': options[0] if options else None,
+        })
 
     @action(detail=False, methods=['post'], permission_classes=[AllowAny], url_path='register')
     def register(self, request):
@@ -30,6 +69,7 @@ class UserViewSet(viewsets.ModelViewSet):
             "first_name": "...",
             "last_name": "...",
             "telephone": "...",
+            "username": "...",
             "role": "citoyen" ou "autorite"
         }
         """
@@ -38,6 +78,7 @@ class UserViewSet(viewsets.ModelViewSet):
         first_name = request.data.get('first_name', '')
         last_name = request.data.get('last_name', '')
         telephone = request.data.get('telephone', '')
+        username = request.data.get('username', '')
         role = request.data.get('role', 'citoyen')
 
         # Validation
@@ -45,18 +86,16 @@ class UserViewSet(viewsets.ModelViewSet):
             return Response({'password': 'Mot de passe requis (min. 8 caractères)'}, status=status.HTTP_400_BAD_REQUEST)
         if not telephone:
             return Response({'telephone': 'Numéro de téléphone requis'}, status=status.HTTP_400_BAD_REQUEST)
+        if not username:
+            return Response({'username': 'Identifiant requis'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Email est facultatif, mais s'il est fourni, il doit être unique
         if email and User.objects.filter(email=email).exists():
             return Response({'email': 'Cet email est déjà utilisé'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Générer un username unique depuis le prénom et nom
-        username_base = f"{first_name.lower()}{last_name.lower()}".replace(' ', '')
-        username = username_base
-        counter = 1
-        while User.objects.filter(username=username).exists():
-            username = f"{username_base}{counter}"
-            counter += 1
+        # Vérifier que l'username choisi est disponible
+        if User.objects.filter(username=username).exists():
+            return Response({'username': 'Cet identifiant est déjà pris. Veuillez en choisir un autre.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Créer l'utilisateur et mettre à jour le profil
         try:

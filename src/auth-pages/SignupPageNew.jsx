@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import Logo from '../shared/components/Logo';
 import { useTheme } from '../theme/ThemeContext';
 import client from '../api/client';
@@ -17,6 +17,8 @@ export default function SignupPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [usernameOptions, setUsernameOptions] = useState([]);
+  const [loadingUsernames, setLoadingUsernames] = useState(false);
 
   const [formData, setFormData] = useState({
     email: '',
@@ -25,13 +27,38 @@ export default function SignupPage() {
     password_confirm: '',
     first_name: '',
     last_name: '',
+    username: '',
   });
 
-  const generateUsername = (firstName, lastName) => {
-    return `${firstName.toLowerCase()}${lastName.toLowerCase()}`.replace(/\s+/g, '');
-  };
-
-  const generatedUsername = generateUsername(formData.first_name, formData.last_name);
+  // Charger les options d'identifiant quand prénom/nom changent
+  useEffect(() => {
+    if (formData.first_name.trim() && formData.last_name.trim()) {
+      const fetchUsernameOptions = async () => {
+        setLoadingUsernames(true);
+        try {
+          const response = await client.get('/users/check-username/', {
+            params: {
+              first_name: formData.first_name,
+              last_name: formData.last_name,
+            },
+          });
+          setUsernameOptions(response.data.options || []);
+          // Sélectionner la première option par défaut
+          if (!formData.username && response.data.options?.length > 0) {
+            setFormData((prev) => ({ ...prev, username: response.data.options[0] }));
+          }
+        } catch (error) {
+          console.error('Erreur lors du chargement des identifiants:', error);
+        } finally {
+          setLoadingUsernames(false);
+        }
+      };
+      fetchUsernameOptions();
+    } else {
+      setUsernameOptions([]);
+      setFormData((prev) => ({ ...prev, username: '' }));
+    }
+  }, [formData.first_name, formData.last_name]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -43,6 +70,10 @@ export default function SignupPage() {
 
   const validateForm = () => {
     const newErrors = {};
+
+    if (!formData.first_name.trim()) newErrors.first_name = 'Prénom requis';
+    if (!formData.last_name.trim()) newErrors.last_name = 'Nom requis';
+    if (!formData.username) newErrors.username = 'Identifiant requis';
 
     // Pour les autorités, email est requis. Pour les citoyens, il est facultatif.
     if (role === 'autorite') {
@@ -72,15 +103,13 @@ export default function SignupPage() {
 
     setLoading(true);
     try {
-      // Générer le username depuis le prénom et nom
-      const generatedUsername = `${formData.first_name.toLowerCase()}${formData.last_name.toLowerCase()}`.replace(/\s+/g, '');
-
       const response = await client.post('/users/register/', {
         email: formData.email,
         password: formData.password,
         first_name: formData.first_name,
         last_name: formData.last_name,
         telephone: formData.telephone,
+        username: formData.username,
         role: role,
       });
 
@@ -93,7 +122,7 @@ export default function SignupPage() {
       if (response.data.requires_otp) {
         navigate('/otp-verify', {
           state: {
-            username: generatedUsername,
+            username: formData.username,
             email: formData.email,
             phoneNumber: formData.telephone,
             password: formData.password,
@@ -127,16 +156,42 @@ export default function SignupPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
-            <input type="text" name="first_name" value={formData.first_name} onChange={handleChange} placeholder="Prénom" className={`px-4 py-2 rounded-lg border ${darkMode ? 'border-navy-700 bg-navy-900 text-white' : 'border-navy-200 bg-white'}`} />
-            <input type="text" name="last_name" value={formData.last_name} onChange={handleChange} placeholder="Nom" className={`px-4 py-2 rounded-lg border ${darkMode ? 'border-navy-700 bg-navy-900 text-white' : 'border-navy-200 bg-white'}`} />
+            <div>
+              <input type="text" name="first_name" value={formData.first_name} onChange={handleChange} placeholder="Prénom" className={`w-full px-4 py-2 rounded-lg border ${darkMode ? 'border-navy-700 bg-navy-900 text-white' : 'border-navy-200 bg-white'}`} />
+              {errors.first_name && <p className="text-xs text-red-500">{errors.first_name}</p>}
+            </div>
+            <div>
+              <input type="text" name="last_name" value={formData.last_name} onChange={handleChange} placeholder="Nom" className={`w-full px-4 py-2 rounded-lg border ${darkMode ? 'border-navy-700 bg-navy-900 text-white' : 'border-navy-200 bg-white'}`} />
+              {errors.last_name && <p className="text-xs text-red-500">{errors.last_name}</p>}
+            </div>
           </div>
 
-          {generatedUsername && (
-            <div className={`px-4 py-2.5 rounded-lg text-sm ${darkMode ? 'bg-navy-800 border border-navy-700 text-navy-200' : 'bg-navy-50 border border-navy-200 text-navy-700'}`}>
-              <p className={`text-xs font-medium ${darkMode ? 'text-navy-400' : 'text-navy-600'}`}>Identifiant généré</p>
-              <p className="font-mono font-semibold">{generatedUsername}</p>
+          {usernameOptions.length > 0 && (
+            <div className={`px-4 py-3 rounded-lg ${darkMode ? 'bg-navy-800 border border-navy-700' : 'bg-navy-50 border border-navy-200'}`}>
+              <div className="flex items-center gap-2 mb-2">
+                <p className={`text-xs font-medium ${darkMode ? 'text-navy-400' : 'text-navy-600'}`}>Choisissez votre identifiant</p>
+                {loadingUsernames && <Loader2 size={12} className="animate-spin" />}
+              </div>
+              <div className="space-y-2">
+                {usernameOptions.map((option) => (
+                  <label key={option} className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="username"
+                      value={option}
+                      checked={formData.username === option}
+                      onChange={handleChange}
+                      className="accent-red"
+                    />
+                    <code className={`font-mono text-sm font-semibold ${formData.username === option ? (darkMode ? 'text-white' : 'text-navy-900') : (darkMode ? 'text-navy-300' : 'text-navy-600')}`}>
+                      {option}
+                    </code>
+                  </label>
+                ))}
+              </div>
             </div>
           )}
+          {errors.username && <p className="text-xs text-red-500">{errors.username}</p>}
 
           <div>
             <label className={`block text-sm font-medium ${darkMode ? 'text-navy-200' : 'text-navy-700'} mb-1`}>
