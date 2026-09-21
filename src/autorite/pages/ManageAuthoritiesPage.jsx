@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Eye, EyeOff, Copy, Check } from 'lucide-react';
+import AutoriteShell from '../desktop/AutoriteShell';
 import { useTheme } from '../../theme/ThemeContext';
 import client from '../../api/client';
 import { useToast } from '../../shared/toast/ToastContext';
 
-export default function ManageAuthoritiesPage() {
+function ManageAuthoritiesPageContent() {
   const { darkMode } = useTheme();
   const { showToast } = useToast();
 
@@ -80,77 +81,63 @@ export default function ManageAuthoritiesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-navy-900'}`}>
-          Gérer les autorités
-        </h1>
-        <p className={`text-sm mt-1 ${darkMode ? 'text-navy-400' : 'text-navy-600'}`}>
-          Créez des comptes autorité en fournissant les informations. Les identifiants seront générés automatiquement.
-        </p>
+        <h1 className="text-2xl font-bold text-navy dark:text-white">Gérer les autorités</h1>
+        <p className="text-sm text-navy-600 dark:text-navy-200 mt-0.5">Créez des comptes autorité. Les identifiants seront générés automatiquement.</p>
       </div>
 
-      <div className={`rounded-lg border p-6 ${darkMode ? 'border-navy-700 bg-navy-800' : 'border-navy-200 bg-white'}`}>
-        <h2 className={`text-xl font-semibold mb-4 ${darkMode ? 'text-white' : 'text-navy-900'}`}>
-          Créer une nouvelle autorité
-        </h2>
+      <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-6">
+        <h2 className="text-lg font-bold text-navy dark:text-white mb-4">Créer une nouvelle autorité</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-navy-200' : 'text-navy-700'}`}>
-                Prénom
-              </label>
+              <label className="block text-sm font-medium text-navy-700 dark:text-navy-200 mb-1">Prénom</label>
               <input
                 type="text"
                 name="first_name"
                 value={formData.first_name}
                 onChange={handleChange}
                 placeholder="Jean"
-                className={`w-full px-4 py-2 rounded-lg border ${darkMode ? 'border-navy-600 bg-navy-700 text-white' : 'border-navy-200 bg-white'}`}
+                className="w-full px-4 py-2 rounded-lg border border-navy-200 dark:border-navy-700 bg-white dark:bg-navy-800 text-navy dark:text-white"
               />
               {errors.first_name && <p className="text-xs text-red-500 mt-1">{errors.first_name}</p>}
             </div>
             <div>
-              <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-navy-200' : 'text-navy-700'}`}>
-                Nom
-              </label>
+              <label className="block text-sm font-medium text-navy-700 dark:text-navy-200 mb-1">Nom</label>
               <input
                 type="text"
                 name="last_name"
                 value={formData.last_name}
                 onChange={handleChange}
                 placeholder="Dupont"
-                className={`w-full px-4 py-2 rounded-lg border ${darkMode ? 'border-navy-600 bg-navy-700 text-white' : 'border-navy-200 bg-white'}`}
+                className="w-full px-4 py-2 rounded-lg border border-navy-200 dark:border-navy-700 bg-white dark:bg-navy-800 text-navy dark:text-white"
               />
               {errors.last_name && <p className="text-xs text-red-500 mt-1">{errors.last_name}</p>}
             </div>
           </div>
 
           <div>
-            <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-navy-200' : 'text-navy-700'}`}>
-              Email
-            </label>
+            <label className="block text-sm font-medium text-navy-700 dark:text-navy-200 mb-1">Email</label>
             <input
               type="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
               placeholder="jean.dupont@thiaroye.sn"
-              className={`w-full px-4 py-2 rounded-lg border ${darkMode ? 'border-navy-600 bg-navy-700 text-white' : 'border-navy-200 bg-white'}`}
+              className="w-full px-4 py-2 rounded-lg border border-navy-200 dark:border-navy-700 bg-white dark:bg-navy-800 text-navy dark:text-white"
             />
             {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
           </div>
 
           <div>
-            <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-navy-200' : 'text-navy-700'}`}>
-              Numéro de téléphone
-            </label>
+            <label className="block text-sm font-medium text-navy-700 dark:text-navy-200 mb-1">Numéro de téléphone</label>
             <input
               type="tel"
               name="telephone"
               value={formData.telephone}
               onChange={handleChange}
               placeholder="+221 77 000 00 00"
-              className={`w-full px-4 py-2 rounded-lg border ${darkMode ? 'border-navy-600 bg-navy-700 text-white' : 'border-navy-200 bg-white'}`}
+              className="w-full px-4 py-2 rounded-lg border border-navy-200 dark:border-navy-700 bg-white dark:bg-navy-800 text-navy dark:text-white"
             />
             {errors.telephone && <p className="text-xs text-red-500 mt-1">{errors.telephone}</p>}
           </div>
@@ -158,7 +145,7 @@ export default function ManageAuthoritiesPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-navy dark:bg-navy-700 text-white py-3 rounded-lg font-semibold hover:bg-navy-700 dark:hover:bg-navy-600 transition disabled:opacity-50"
+            className="w-full bg-navy dark:bg-navy-800 text-white py-2.5 rounded-lg font-semibold hover:bg-navy-700 dark:hover:bg-navy-700 transition disabled:opacity-50"
           >
             {loading ? 'Création...' : 'Créer l\'autorité'}
           </button>
@@ -166,87 +153,76 @@ export default function ManageAuthoritiesPage() {
       </div>
 
       {createdAuthority && (
-        <div className={`rounded-lg border p-6 ${darkMode ? 'border-green-700/30 bg-green-900/20' : 'border-green-200 bg-green-50'}`}>
-          <h3 className={`text-lg font-semibold mb-4 ${darkMode ? 'text-green-400' : 'text-green-700'}`}>
-            ✓ Autorité créée avec succès !
-          </h3>
+        <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-6">
+          <h3 className="text-lg font-bold text-navy dark:text-white mb-4">✓ Autorité créée avec succès !</h3>
 
           <div className="space-y-3">
-            <div className={`p-3 rounded-lg ${darkMode ? 'bg-navy-700' : 'bg-white border border-navy-200'}`}>
-              <p className={`text-xs font-medium mb-1 ${darkMode ? 'text-navy-300' : 'text-navy-600'}`}>
-                Nom complet
+            <div className="bg-navy-50 dark:bg-navy-800 p-3 rounded-lg">
+              <p className="text-xs font-medium text-navy-600 dark:text-navy-300 mb-1">Nom complet</p>
+              <p className="text-sm font-mono text-navy dark:text-white">
+                {createdAuthority.first_name} {createdAuthority.last_name}
               </p>
-              <div className="flex items-center justify-between">
-                <p className={`text-sm font-mono ${darkMode ? 'text-white' : 'text-navy-900'}`}>
-                  {createdAuthority.first_name} {createdAuthority.last_name}
-                </p>
-              </div>
             </div>
 
-            <div className={`p-3 rounded-lg ${darkMode ? 'bg-navy-700' : 'bg-white border border-navy-200'}`}>
-              <p className={`text-xs font-medium mb-1 ${darkMode ? 'text-navy-300' : 'text-navy-600'}`}>
-                Identifiant (username)
-              </p>
+            <div className="bg-navy-50 dark:bg-navy-800 p-3 rounded-lg">
+              <p className="text-xs font-medium text-navy-600 dark:text-navy-300 mb-1">Identifiant (username)</p>
               <div className="flex items-center justify-between">
-                <p className={`text-sm font-mono ${darkMode ? 'text-white' : 'text-navy-900'}`}>
-                  {createdAuthority.username}
-                </p>
+                <p className="text-sm font-mono text-navy dark:text-white">{createdAuthority.username}</p>
                 <button
                   onClick={() => copyToClipboard(createdAuthority.username, 'username')}
-                  className="text-navy dark:text-navy-200 hover:text-navy-700"
+                  className="text-navy-600 dark:text-navy-300 hover:text-navy-900 dark:hover:text-white"
                 >
                   {copiedField === 'username' ? <Check size={18} /> : <Copy size={18} />}
                 </button>
               </div>
             </div>
 
-            <div className={`p-3 rounded-lg ${darkMode ? 'bg-navy-700' : 'bg-white border border-navy-200'}`}>
-              <p className={`text-xs font-medium mb-1 ${darkMode ? 'text-navy-300' : 'text-navy-600'}`}>
-                Mot de passe temporaire
-              </p>
+            <div className="bg-navy-50 dark:bg-navy-800 p-3 rounded-lg">
+              <p className="text-xs font-medium text-navy-600 dark:text-navy-300 mb-1">Mot de passe temporaire</p>
               <div className="flex items-center justify-between gap-2">
-                <p className={`text-sm font-mono ${darkMode ? 'text-white' : 'text-navy-900'} flex-1 break-all`}>
+                <p className="text-sm font-mono text-navy dark:text-white flex-1 break-all">
                   {showPassword ? createdAuthority.password : '••••••••'}
                 </p>
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="text-navy dark:text-navy-200 hover:text-navy-700 flex-shrink-0"
+                  className="text-navy-600 dark:text-navy-300 hover:text-navy-900 dark:hover:text-white flex-shrink-0"
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
                 <button
                   onClick={() => copyToClipboard(createdAuthority.password, 'password')}
-                  className="text-navy dark:text-navy-200 hover:text-navy-700 flex-shrink-0"
+                  className="text-navy-600 dark:text-navy-300 hover:text-navy-900 dark:hover:text-white flex-shrink-0"
                 >
                   {copiedField === 'password' ? <Check size={18} /> : <Copy size={18} />}
                 </button>
               </div>
             </div>
 
-            <div className={`p-3 rounded-lg ${darkMode ? 'bg-blue-900/20 border border-blue-700/30' : 'bg-blue-50 border border-blue-200'}`}>
-              <p className={`text-xs font-medium mb-2 ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>
-                📋 À partager avec l'autorité
-              </p>
-              <p className={`text-xs ${darkMode ? 'text-blue-200' : 'text-blue-600'}`}>
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/30 p-3 rounded-lg">
+              <p className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-2">À partager avec l'autorité</p>
+              <p className="text-xs text-blue-600 dark:text-blue-200">
                 Copiez l'identifiant et le mot de passe, puis partagez-les avec la personne en personne.
-                Elle pourra se connecter et modifier son mot de passe dans les paramètres.
               </p>
             </div>
           </div>
 
           <button
             onClick={() => setCreatedAuthority(null)}
-            className={`w-full mt-4 px-4 py-2 rounded-lg text-sm font-medium ${
-              darkMode
-                ? 'bg-navy-700 text-white hover:bg-navy-600'
-                : 'bg-navy-100 text-navy-900 hover:bg-navy-200'
-            }`}
+            className="w-full mt-4 px-4 py-2 rounded-lg text-sm font-medium bg-navy-50 dark:bg-navy-800 text-navy dark:text-white hover:bg-navy-100 dark:hover:bg-navy-700 transition"
           >
             Créer une autre autorité
           </button>
         </div>
       )}
     </div>
+  );
+}
+
+export default function ManageAuthoritiesPage() {
+  return (
+    <AutoriteShell>
+      <ManageAuthoritiesPageContent />
+    </AutoriteShell>
   );
 }
