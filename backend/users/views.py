@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 from django.db import transaction
 from django.core.cache import cache
 from django.utils import timezone
+from datetime import timedelta
 import random
 import string
 from .models import Profile, InviteCode
@@ -326,6 +327,33 @@ class UserViewSet(viewsets.ModelViewSet):
             )
         except Exception as e:
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated], url_path='list-authorities')
+    def list_authorities(self, request):
+        """
+        GET /api/users/list-authorities/
+        Retourne les autorités créées aujourd'hui (pour l'admin).
+
+        Réservé à l'admin.
+        """
+        # Vérifier que l'utilisateur est admin
+        if request.user.profile.role != 'admin':
+            return Response(
+                {'detail': 'Accès réservé aux administrateurs'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Récupérer les autorités créées aujourd'hui
+        today = timezone.now().date()
+        authorities = User.objects.filter(
+            profile__role='autorite',
+            date_joined__date=today
+        ).values('username', 'first_name', 'last_name', 'email', 'date_joined').order_by('-date_joined')
+
+        return Response(
+            {'authorities': list(authorities), 'count': len(authorities)},
+            status=status.HTTP_200_OK
+        )
 
     def _generate_otp(self):
         """Génère un code OTP de 6 chiffres"""

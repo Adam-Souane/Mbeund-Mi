@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Copy, Check, Lock } from 'lucide-react';
 import AutoriteShell from '../desktop/AutoriteShell';
@@ -106,6 +106,19 @@ function ManageAuthoritiesPageContent() {
   const togglePasswordVisibility = (id) => {
     setVisiblePasswords((prev) => ({ ...prev, [id]: !prev[id] }));
   };
+
+  // Charger les autorités créées aujourd'hui au montage
+  useEffect(() => {
+    const loadAuthorities = async () => {
+      try {
+        const response = await client.get('/users/list-authorities/');
+        setAuthorities(response.data.authorities || []);
+      } catch (error) {
+        console.error('Erreur lors du chargement des autorités:', error);
+      }
+    };
+    loadAuthorities();
+  }, []);
 
   return (
     <div className="space-y-6">
