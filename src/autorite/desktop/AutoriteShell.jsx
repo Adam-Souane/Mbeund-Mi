@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, Map, CloudRain, Camera, BarChart3, ShieldAlert, Settings, PhoneCall, Users2, TrendingUp, Activity, ChevronDown } from 'lucide-react';
 import Logo from '../../shared/components/Logo';
 import ThemeToggle from '../../theme/ThemeToggle';
 import { useAuth } from '../../auth/AuthContext';
-import { useUser } from '../../auth/AuthContext';
 
 const NAV_GROUPS = [
   {
@@ -63,8 +62,7 @@ const NAV_GROUPS = [
  * propre contenu, plus de header dupliqué par page.
  */
 export default function AutoriteShell({ children }) {
-  const { logout, user } = useAuth();
-  const location = useLocation();
+  const { logout, role } = useAuth();
   const [expandedGroups, setExpandedGroups] = useState(new Set(['principal', 'alertes']));
 
   const toggleGroup = (groupId) => {
@@ -77,7 +75,7 @@ export default function AutoriteShell({ children }) {
     setExpandedGroups(newExpanded);
   };
 
-  const isAdmin = user?.profile?.role === 'admin';
+  const isAdmin = role === 'admin';
 
   return (
     <div className="min-h-screen bg-navy-50 dark:bg-navy-950 text-navy dark:text-navy-50 flex flex-col">
