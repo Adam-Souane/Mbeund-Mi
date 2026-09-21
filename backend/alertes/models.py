@@ -57,6 +57,7 @@ class EpisodeInondation(models.Model):
     date_debut = models.DateTimeField()
     date_fin = models.DateTimeField(null=True, blank=True)
     surface_ha = models.FloatField(null=True, blank=True)
+    is_synthetic = models.BooleanField(default=False, help_text="TRUE = donnée de test/démo, FALSE = vraie inondation observée")
 
     class Meta:
         verbose_name = "Épisode d'inondation"
@@ -64,7 +65,8 @@ class EpisodeInondation(models.Model):
         ordering = ['-date_debut']
 
     def __str__(self):
-        return f"Épisode du {self.date_debut}"
+        suffix = " (test)" if self.is_synthetic else ""
+        return f"Épisode du {self.date_debut}{suffix}"
 
 
 class PredictionIA(models.Model):

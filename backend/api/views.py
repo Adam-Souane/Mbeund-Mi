@@ -267,15 +267,24 @@ class EpisodeInondationViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=False, methods=['get'], url_path='backtesting')
     def backtesting(self, request):
         """
-        GET /api/inondations/backtesting/
+        GET /api/inondations/backtesting/?include_synthetic=true
         Exécute le backtesting : pour chaque inondation historique, calcule
         ce que le modèle aurait prédit (basé sur les pluies 72h avant).
+
+        Query params:
+            include_synthetic (bool, default=true):
+                true = inclut les données synthétiques (pour démo)
+                false = compte SEULEMENT les vraies inondations (production)
+
         Retourne les résultats avec statistiques de détection.
         """
         from api.services.backtesting_service import BacktestingService
         try:
+            # By default include synthetic (for demo), but allow override
+            include_synthetic = request.query_params.get('include_synthetic', 'true').lower() == 'true'
+
             service = BacktestingService()
-            resultat = service.executer_backtesting()
+            resultat = service.executer_backtesting(include_synthetic=include_synthetic)
             return Response(resultat)
         except Exception as e:
             return Response({"erreur": str(e)}, status=500)

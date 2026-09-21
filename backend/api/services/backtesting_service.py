@@ -67,10 +67,14 @@ class BacktestingService:
 
         return pluie_cumulee, pluies_list
 
-    def executer_backtesting(self):
+    def executer_backtesting(self, include_synthetic=False):
         """
         Exécute le backtesting : pour chaque inondation réelle,
         calcule ce que le modèle aurait prédit.
+
+        Args:
+            include_synthetic (bool): Si True, inclut les données synthétiques (pour démo).
+                                     Si False (défaut), compte SEULEMENT les vraies inondations.
 
         Retourne:
         {
@@ -96,7 +100,11 @@ class BacktestingService:
           }
         }
         """
-        episodes = EpisodeInondation.objects.all().order_by('date_debut')
+        # Filter: only real data by default, but allow synthetic for demo
+        if include_synthetic:
+            episodes = EpisodeInondation.objects.all().order_by('date_debut')
+        else:
+            episodes = EpisodeInondation.objects.filter(is_synthetic=False).order_by('date_debut')
 
         if not episodes.exists():
             return {
