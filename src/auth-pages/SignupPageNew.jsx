@@ -38,9 +38,15 @@ export default function SignupPage() {
   const validateForm = () => {
     const newErrors = {};
 
-    // Email est facultatif
-    if (formData.email.trim() && !formData.email.includes('@')) {
-      newErrors.email = 'Email invalide';
+    // Pour les autorités, email est requis. Pour les citoyens, il est facultatif.
+    if (role === 'autorite') {
+      if (!formData.email.trim()) newErrors.email = 'Email requis';
+      else if (!formData.email.includes('@')) newErrors.email = 'Email invalide';
+    } else {
+      // Citoyen: email facultatif
+      if (formData.email.trim() && !formData.email.includes('@')) {
+        newErrors.email = 'Email invalide';
+      }
     }
     if (!formData.telephone.trim()) newErrors.telephone = 'Numéro de téléphone requis';
     if (!formData.password) newErrors.password = 'Mot de passe requis';
@@ -121,7 +127,7 @@ export default function SignupPage() {
 
           <div>
             <label className={`block text-sm font-medium ${darkMode ? 'text-navy-200' : 'text-navy-700'} mb-1`}>
-              Email <span className={`text-xs ${darkMode ? 'text-navy-400' : 'text-navy-500'}`}>(Facultatif)</span>
+              Email {role === 'autorite' ? <span className={`text-xs ${darkMode ? 'text-navy-400' : 'text-navy-500'}`}>(Requis)</span> : <span className={`text-xs ${darkMode ? 'text-navy-400' : 'text-navy-500'}`}>(Facultatif)</span>}
             </label>
             <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="email@exemple.com" className={`w-full px-4 py-2 rounded-lg border ${darkMode ? 'border-navy-700 bg-navy-900 text-white' : 'border-navy-200 bg-white'}`} />
             {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}

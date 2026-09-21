@@ -102,33 +102,54 @@ class UserViewSet(viewsets.ModelViewSet):
     def password_reset(self, request):
         """
         POST /api/users/password-reset/
-        Demande une réinitialisation de mot de passe via numéro de téléphone.
+        Demande une réinitialisation de mot de passe.
 
-        Body: {"telephone": "..."}
+        Body (Citoyen): {"telephone": "..."}
+        Body (Autorité): {"email": "..."}
 
-        Note: En production, envoyer un SMS avec un lien de réinitialisation.
+        Note: En production, envoyer un SMS (citoyen) ou email (autorité) avec un lien de réinitialisation.
         Pour la démo, retourner juste un succès.
         """
         telephone = request.data.get('telephone')
+        email = request.data.get('email')
 
-        if not telephone:
-            return Response({'detail': 'Numéro de téléphone requis'}, status=status.HTTP_400_BAD_REQUEST)
+        # Chercher par téléphone (citoyen)
+        if telephone:
+            try:
+                profile = Profile.objects.get(telephone=telephone)
+                user = profile.user
+                # TODO: Envoyer un SMS de réinitialisation en production
+                return Response(
+                    {'detail': 'Instructions envoyées par SMS'},
+                    status=status.HTTP_200_OK,
+                )
+            except Profile.DoesNotExist:
+                # Ne pas révéler si le numéro existe (sécurité)
+                return Response(
+                    {'detail': 'Si ce numéro existe, vous recevrez les instructions'},
+                    status=status.HTTP_200_OK,
+                )
 
-        try:
-            # Trouver l'utilisateur par son numéro de téléphone via le profil
-            profile = Profile.objects.get(telephone=telephone)
-            user = profile.user
-            # TODO: Envoyer un SMS de réinitialisation en production
-            return Response(
-                {'detail': 'Instructions envoyées par SMS'},
-                status=status.HTTP_200_OK,
-            )
-        except Profile.DoesNotExist:
-            # Ne pas révéler si le numéro existe (sécurité)
-            return Response(
-                {'detail': 'Si ce numéro existe, vous recevrez les instructions'},
-                status=status.HTTP_200_OK,
-            )
+        # Chercher par email (autorité)
+        elif email:
+            try:
+                user = User.objects.get(email=email)
+                # TODO: Envoyer un email de réinitialisation en production
+                return Response(
+                    {'detail': 'Instructions envoyées par email'},
+                    status=status.HTTP_200_OK,
+                )
+            except User.DoesNotExist:
+                # Ne pas révéler si l'email existe (sécurité)
+                return Response(
+                    {'detail': 'Si cet email existe, vous recevrez les instructions'},
+                    status=status.HTTP_200_OK,
+                )
+
+        return Response(
+            {'detail': 'Téléphone ou email requis'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
     def _generate_otp(self):
         """Génère un code OTP de 6 chiffres"""
