@@ -29,8 +29,8 @@ const ADMIN_NAV_ITEMS = [
  * propre contenu, plus de header dupliqué par page.
  */
 export default function AutoriteShell({ children }) {
-  const { logout, user } = useAuth();
-  const isAdmin = user?.role === 'admin';
+  const { logout, role } = useAuth();
+  const isAdmin = role === 'admin';
 
   const NAV_ITEMS = [...BASE_NAV_ITEMS, ...(isAdmin ? ADMIN_NAV_ITEMS : [])];
 
