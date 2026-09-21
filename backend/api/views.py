@@ -264,6 +264,22 @@ class EpisodeInondationViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = EpisodeInondation.objects.all()
     serializer_class = EpisodeInondationSerializer
 
+    @action(detail=False, methods=['get'], url_path='backtesting')
+    def backtesting(self, request):
+        """
+        GET /api/inondations/backtesting/
+        Exécute le backtesting : pour chaque inondation historique, calcule
+        ce que le modèle aurait prédit (basé sur les pluies 72h avant).
+        Retourne les résultats avec statistiques de détection.
+        """
+        from api.services.backtesting_service import BacktestingService
+        try:
+            service = BacktestingService()
+            resultat = service.executer_backtesting()
+            return Response(resultat)
+        except Exception as e:
+            return Response({"erreur": str(e)}, status=500)
+
 
 class SignalementCitoyenViewSet(viewsets.ModelViewSet):
     queryset = SignalementCitoyen.objects.all()

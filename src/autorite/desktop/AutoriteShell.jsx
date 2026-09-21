@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Map, CloudRain, Camera, BarChart3, ShieldAlert, Settings, PhoneCall, Users2, TrendingUp } from 'lucide-react';
+import { LayoutDashboard, Map, CloudRain, Camera, BarChart3, ShieldAlert, Settings, PhoneCall, Users2, TrendingUp, Activity } from 'lucide-react';
 import Logo from '../../shared/components/Logo';
 import ThemeToggle from '../../theme/ThemeToggle';
 import { useAuth } from '../../auth/AuthContext';
@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { to: '/autorite/registre', label: 'Registre communautaire', icon: Users2 },
   { to: '/autorite/statistiques', label: 'Statistiques', icon: BarChart3 },
   { to: '/autorite/fiabilite', label: 'Fiabilité du modèle', icon: TrendingUp },
+  { to: '/autorite/backtesting', label: 'Backtesting', icon: Activity },
   { to: '/autorite/crise', label: 'Gestion de crise', icon: ShieldAlert },
   { to: '/autorite/capteurs', label: 'Admin & capteurs', icon: Settings },
   { to: '/autorite/contact', label: 'Contact & urgence', icon: PhoneCall },
