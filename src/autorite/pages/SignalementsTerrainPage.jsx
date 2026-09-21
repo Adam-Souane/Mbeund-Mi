@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle2, XCircle, ChevronLeft, ChevronRight, ImageOff, Droplets, Copy } from 'lucide-react';
+import { CheckCircle2, XCircle, ChevronLeft, ChevronRight, ImageOff, Droplets, Copy, User, Phone, MapPin } from 'lucide-react';
 import AutoriteShell from '../desktop/AutoriteShell';
 import { useSignalements, useValiderSignalement } from '../../shared/hooks/useSignalements';
 import { flattenApiErrors } from '../../shared/utils/apiErrors';
@@ -50,6 +50,32 @@ function SignalementCard({ feature }) {
           </span>
           <span className="text-xs text-navy-400 flex-shrink-0">{formatDateTime(properties.date_creation)}</span>
         </div>
+
+        {/* Infos du citoyen */}
+        {(properties.citoyen_prenom || properties.citoyen_telephone || properties.citoyen_quartier) && (
+          <div className="bg-navy-50 dark:bg-navy-800/50 rounded-lg p-2.5 space-y-1">
+            <div className="text-xs font-semibold text-navy-600 dark:text-navy-300 mb-1.5">Signaleur</div>
+            {(properties.citoyen_prenom || properties.citoyen_nom) && (
+              <div className="flex items-center gap-1.5 text-xs text-navy-700 dark:text-navy-200">
+                <User size={13} className="flex-shrink-0" />
+                <span>{properties.citoyen_prenom} {properties.citoyen_nom}</span>
+              </div>
+            )}
+            {properties.citoyen_telephone && (
+              <div className="flex items-center gap-1.5 text-xs text-navy-700 dark:text-navy-200">
+                <Phone size={13} className="flex-shrink-0" />
+                <span className="font-mono">{properties.citoyen_telephone}</span>
+              </div>
+            )}
+            {properties.citoyen_quartier && (
+              <div className="flex items-center gap-1.5 text-xs text-navy-700 dark:text-navy-200">
+                <MapPin size={13} className="flex-shrink-0" />
+                <span>{properties.citoyen_quartier}</span>
+              </div>
+            )}
+          </div>
+        )}
+
         <p className="text-base text-navy-600 dark:text-navy-200">{properties.description || 'Sans description.'}</p>
 
         {(NIVEAU_EAU_INFO[properties.niveau_eau_estime] || properties.signalement_similaire) && (

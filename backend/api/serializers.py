@@ -464,17 +464,43 @@ def compress_image(uploaded_image):
 
 
 class SignalementCitoyenSerializer(HybridGeoFeatureModelSerializer):
+    # Infos du citoyen qui a fait le signalement
+    citoyen_nom = serializers.SerializerMethodField()
+    citoyen_prenom = serializers.SerializerMethodField()
+    citoyen_telephone = serializers.SerializerMethodField()
+    citoyen_quartier = serializers.SerializerMethodField()
+
     class Meta:
         model = SignalementCitoyen
         geo_field = 'localisation'
         fields = (
             'id', 'localisation', 'description', 'photo', 'valide', 'date_creation', 'categorie',
             'niveau_eau_estime', 'score_eau_estime', 'signalement_similaire',
+            'citoyen_nom', 'citoyen_prenom', 'citoyen_telephone', 'citoyen_quartier',
         )
         read_only_fields = (
             'id', 'valide', 'date_creation',
             'niveau_eau_estime', 'score_eau_estime', 'signalement_similaire',
+            'citoyen_nom', 'citoyen_prenom', 'citoyen_telephone', 'citoyen_quartier',
         )
+
+    def get_citoyen_nom(self, obj):
+        return obj.signale_par.last_name if obj.signale_par else None
+
+    def get_citoyen_prenom(self, obj):
+        return obj.signale_par.first_name if obj.signale_par else None
+
+    def get_citoyen_telephone(self, obj):
+        if obj.signale_par and hasattr(obj.signale_par, 'profile'):
+            return obj.signale_par.profile.telephone
+        return None
+
+    def get_citoyen_quartier(self, obj):
+        if obj.signale_par and hasattr(obj.signale_par, 'profilvulnerabilite'):
+            zone = obj.signale_par.profilvulnerabilite.zone
+            if zone and hasattr(zone, 'properties'):
+                return zone.properties.get('quartier')
+        return None
 
     def to_internal_value(self, data):
         # Make a mutable copy of data if it is a QueryDict
