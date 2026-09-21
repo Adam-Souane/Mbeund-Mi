@@ -70,6 +70,9 @@ export default function SignupPage() {
         role: role,
       });
 
+      console.log('Signup response:', response.data);
+      console.log('requires_otp:', response.data.requires_otp);
+
       showToast('Compte créé avec succès !', 'success');
 
       // Si c'est un compte citoyen, rediriger vers la vérification OTP
