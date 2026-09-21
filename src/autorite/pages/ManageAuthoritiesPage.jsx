@@ -40,7 +40,8 @@ function ManageAuthoritiesPageContent() {
   const [visiblePasswords, setVisiblePasswords] = useState({});
   const [copiedField, setCopiedField] = useState(null);
   const [deleteModal, setDeleteModal] = useState(null);
-  const [regenerateModal, setRegenerateModal] = useState(null);
+  const [regenerateConfirmModal, setRegenerateConfirmModal] = useState(null);
+  const [regenerateResultModal, setRegenerateResultModal] = useState(null);
   const [newPassword, setNewPassword] = useState(null);
 
   const [formData, setFormData] = useState({
@@ -110,13 +111,16 @@ function ManageAuthoritiesPageContent() {
     setVisiblePasswords((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleRegeneratePassword = async (username) => {
+  const handleConfirmRegenerate = async () => {
     try {
-      const response = await client.post('/users/regenerate-authority-password/', { username });
+      const response = await client.post('/users/regenerate-authority-password/', { username: regenerateConfirmModal });
       setNewPassword(response.data);
+      setRegenerateConfirmModal(null);
+      setRegenerateResultModal(response.data.username);
       showToast('Mot de passe régénéré avec succès !', 'success');
     } catch (error) {
       showToast('Erreur lors de la régénération du mot de passe', 'error');
+      setRegenerateConfirmModal(null);
     }
   };
 
@@ -275,7 +279,7 @@ function ManageAuthoritiesPageContent() {
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center gap-2">
                         <button
-                          onClick={() => setRegenerateModal(auth.username)}
+                          onClick={() => setRegenerateConfirmModal(auth.username)}
                           className="text-navy-600 dark:text-navy-300 hover:text-navy-900 dark:hover:text-white transition"
                           title="Régénérer le mot de passe"
                         >
@@ -298,45 +302,71 @@ function ManageAuthoritiesPageContent() {
         </div>
       )}
 
-      {/* Modal Régénérer mot de passe */}
-      {regenerateModal && (
+      {/* Modal Confirmation Régénérer */}
+      {regenerateConfirmModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-navy rounded-xl p-6 max-w-md w-full">
-            <h3 className="text-lg font-bold text-navy dark:text-white mb-4">
-              Nouveau mot de passe généré
+            <h3 className="text-lg font-bold text-navy dark:text-white mb-2">
+              Confirmer la régénération
+            </h3>
+            <p className="text-navy-600 dark:text-navy-300 mb-6">
+              Êtes-vous sûr de vouloir régénérer le mot de passe pour <strong>{regenerateConfirmModal}</strong> ?
+              Un nouveau mot de passe sera généré et devra être partagé avec l'autorité.
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setRegenerateConfirmModal(null)}
+                className="flex-1 bg-navy-100 dark:bg-navy-800 text-navy dark:text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-navy-200 dark:hover:bg-navy-700 transition"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleConfirmRegenerate}
+                className="flex-1 bg-blue-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-blue-700 transition"
+              >
+                Régénérer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Résultat Régénération */}
+      {regenerateResultModal && newPassword && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-navy rounded-xl p-6 max-w-md w-full">
+            <h3 className="text-lg font-bold text-green-600 dark:text-green-400 mb-4">
+              Mot de passe régénéré ✓
             </h3>
 
-            {newPassword ? (
-              <div className="space-y-4">
-                <div className="bg-navy-50 dark:bg-navy-800 p-3 rounded-lg">
-                  <p className="text-xs font-medium text-navy-600 dark:text-navy-300 mb-1">Utilisateur</p>
-                  <p className="font-mono text-navy dark:text-white">{newPassword.username}</p>
-                </div>
-
-                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700/30 p-3 rounded-lg">
-                  <p className="text-xs font-medium text-green-700 dark:text-green-300 mb-1">Nouveau mot de passe</p>
-                  <div className="flex items-center gap-2">
-                    <code className="font-mono text-green-900 dark:text-green-100 flex-1 break-all">{newPassword.password}</code>
-                    <button
-                      onClick={() => copyToClipboard(newPassword.password, 'newpass')}
-                      className="text-green-700 dark:text-green-300 hover:text-green-900 dark:hover:text-green-100"
-                    >
-                      {copiedField === 'newpass' ? <Check size={16} /> : <Copy size={16} />}
-                    </button>
-                  </div>
-                </div>
-
-                <p className="text-xs text-navy-600 dark:text-navy-300">
-                  Partagez ce mot de passe avec l'autorité en personne.
-                </p>
+            <div className="space-y-4">
+              <div className="bg-navy-50 dark:bg-navy-800 p-3 rounded-lg">
+                <p className="text-xs font-medium text-navy-600 dark:text-navy-300 mb-1">Utilisateur</p>
+                <p className="font-mono text-navy dark:text-white">{newPassword.username}</p>
               </div>
-            ) : (
-              <p className="text-navy-600 dark:text-navy-300 mb-4">Régénération en cours...</p>
-            )}
+
+              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700/30 p-3 rounded-lg">
+                <p className="text-xs font-medium text-green-700 dark:text-green-300 mb-1">Nouveau mot de passe</p>
+                <div className="flex items-center gap-2">
+                  <code className="font-mono text-green-900 dark:text-green-100 flex-1 break-all">{newPassword.password}</code>
+                  <button
+                    onClick={() => copyToClipboard(newPassword.password, 'newpass')}
+                    className="text-green-700 dark:text-green-300 hover:text-green-900 dark:hover:text-green-100"
+                  >
+                    {copiedField === 'newpass' ? <Check size={16} /> : <Copy size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              <p className="text-xs text-navy-600 dark:text-navy-300">
+                Partagez ce mot de passe avec l'autorité en personne.
+              </p>
+            </div>
 
             <button
               onClick={() => {
-                setRegenerateModal(null);
+                setRegenerateResultModal(null);
                 setNewPassword(null);
               }}
               className="w-full mt-4 bg-navy dark:bg-navy-800 text-white px-4 py-2 rounded-lg font-semibold hover:bg-navy-700 dark:hover:bg-navy-700 transition"
