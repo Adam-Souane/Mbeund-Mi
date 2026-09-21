@@ -4,6 +4,9 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth.models import User
 from django.db import transaction
+from django.core.cache import cache
+import random
+import string
 from .models import Profile
 from .serializers import UserSerializer, ProfileSerializer
 
@@ -64,16 +67,26 @@ class UserViewSet(viewsets.ModelViewSet):
                     last_name=last_name,
                 )
 
-                Profile.objects.create(
+                profile = Profile.objects.create(
                     user=user,
                     role=role,
                     telephone=telephone,
                 )
 
+                # Générer et stocker un code OTP (seulement pour citoyens)
+                otp = None
+                if role == 'citoyen':
+                    otp = self._generate_otp()
+                    cache_key = f'otp_{username}'
+                    cache.set(cache_key, otp, timeout=600)  # 10 minutes
+                    # TODO: En production, envoyer par email ou SMS
+                    print(f'[DEMO] OTP for {username}: {otp}')
+
             return Response(
                 {
                     'detail': 'Compte créé avec succès',
                     'user': UserSerializer(user).data,
+                    'requires_otp': role == 'citoyen',
                 },
                 status=status.HTTP_201_CREATED,
             )
@@ -107,3 +120,94 @@ class UserViewSet(viewsets.ModelViewSet):
                 {'detail': 'Si cet email existe, vous recevrez les instructions'},
                 status=status.HTTP_200_OK,
             )
+
+    def _generate_otp(self):
+        """Génère un code OTP de 6 chiffres"""
+        return ''.join(random.choices(string.digits, k=6))
+
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny], url_path='verify-otp')
+    def verify_otp(self, request):
+        """
+        POST /api/users/verify-otp/
+        Vérifie le code OTP fourni par l'utilisateur.
+
+        Body:
+        {
+            "username": "...",
+            "otp": "000000"
+        }
+        """
+        username = request.data.get('username')
+        otp = request.data.get('otp')
+
+        if not username:
+            return Response({'detail': 'Nom d\'utilisateur requis'}, status=status.HTTP_400_BAD_REQUEST)
+        if not otp:
+            return Response({'detail': 'Code OTP requis'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(username=username)
+            cache_key = f'otp_{username}'
+            stored_otp = cache.get(cache_key)
+
+            if not stored_otp:
+                return Response(
+                    {'detail': 'Code OTP expiré. Veuillez renvoyer le code.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            if str(otp) != str(stored_otp):
+                return Response(
+                    {'detail': 'Code OTP invalide'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # OTP valide : marquer l'utilisateur comme vérifié
+            cache.delete(cache_key)
+            profile = user.profile
+            profile.is_verified = True
+            profile.save()
+
+            return Response(
+                {
+                    'detail': 'Vérification réussie',
+                    'user': UserSerializer(user).data,
+                },
+                status=status.HTTP_200_OK,
+            )
+        except User.DoesNotExist:
+            return Response({'detail': 'Utilisateur non trouvé'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny], url_path='resend-otp')
+    def resend_otp(self, request):
+        """
+        POST /api/users/resend-otp/
+        Renvoie un nouveau code OTP à l'utilisateur.
+
+        Body:
+        {
+            "username": "..."
+        }
+        """
+        username = request.data.get('username')
+
+        if not username:
+            return Response({'detail': 'Nom d\'utilisateur requis'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(username=username)
+            otp = self._generate_otp()
+            cache_key = f'otp_{username}'
+            cache.set(cache_key, otp, timeout=600)  # 10 minutes
+
+            # TODO: En production, envoyer par email ou SMS
+            print(f'[DEMO] OTP for {username}: {otp}')
+
+            return Response(
+                {'detail': 'Nouveau code OTP envoyé'},
+                status=status.HTTP_200_OK,
+            )
+        except User.DoesNotExist:
+            return Response({'detail': 'Utilisateur non trouvé'}, status=status.HTTP_404_NOT_FOUND)

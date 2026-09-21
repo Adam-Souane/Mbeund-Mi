@@ -110,7 +110,9 @@ export default function LoginPage() {
             </label>
 
             <div className="text-right -mt-2">
-              <span className="text-xs font-semibold text-red cursor-pointer">Mot de passe oublié ?</span>
+              <Link to="/forgot-password" className="text-xs font-semibold text-red cursor-pointer hover:underline">
+                Mot de passe oublié ?
+              </Link>
             </div>
 
             {error && (
@@ -135,8 +137,16 @@ export default function LoginPage() {
             {tab === 'citoyen' && (
               <p className="text-center text-xs text-navy-600 dark:text-navy-200">
                 Pas encore de compte ?{' '}
-                <Link to="/signup" className="font-bold text-red">
+                <Link to="/signup?role=citoyen" className="font-bold text-red hover:underline">
                   Créer un compte citoyen
+                </Link>
+              </p>
+            )}
+            {tab === 'autorite' && (
+              <p className="text-center text-xs text-navy-600 dark:text-navy-200">
+                Pas encore de compte ?{' '}
+                <Link to="/signup?role=autorite" className="font-bold text-red hover:underline">
+                  Créer un compte autorité
                 </Link>
               </p>
             )}

@@ -60,7 +60,7 @@ export default function SignupPage() {
 
     setLoading(true);
     try {
-      await client.post('/users/register/', {
+      const response = await client.post('/users/register/', {
         username: formData.username,
         email: formData.email,
         password: formData.password,
@@ -70,8 +70,22 @@ export default function SignupPage() {
         role: role,
       });
 
-      showToast('Compte créé avec succès ! Veuillez vous connecter.', 'success');
-      navigate('/login');
+      showToast('Compte créé avec succès !', 'success');
+
+      // Si c'est un compte citoyen, rediriger vers la vérification OTP
+      if (response.data.requires_otp) {
+        navigate('/otp-verify', {
+          state: {
+            username: formData.username,
+            email: formData.email,
+            phoneNumber: formData.telephone,
+            password: formData.password,
+          },
+        });
+      } else {
+        // Sinon, rediriger vers login (pour les comptes autorité)
+        navigate('/login');
+      }
     } catch (error) {
       const errorData = error.response?.data || {};
       if (typeof errorData === 'object') {

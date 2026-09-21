@@ -3,6 +3,7 @@ import SplashScreen from './shared/layout/SplashScreen';
 import LoginPage from './auth-pages/LoginPage';
 import SignupPage from './auth-pages/SignupPageNew';
 import ForgotPasswordPage from './auth-pages/ForgotPasswordPage';
+import OTPVerificationPage from './auth-pages/OTPVerificationPage';
 import RequireAuth from './auth/RequireAuth';
 import AccueilPageBody from './citizen/pages/AccueilPageBody';
 import CartePageBody from './citizen/pages/CartePageBody';
@@ -37,6 +38,7 @@ export default function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/otp-verify" element={<OTPVerificationPage />} />
 
       {/* Citoyen */}
       <Route path="/citoyen/accueil" element={<Citoyen><AccueilPageBody /></Citoyen>} />
