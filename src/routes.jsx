@@ -61,9 +61,9 @@ export default function AppRoutes() {
       <Route path="/autorite/fiabilite" element={<Autorite><FiabiliteModelePage /></Autorite>} />
       <Route path="/autorite/backtesting" element={<Autorite><BacktestingPage /></Autorite>} />
       <Route path="/autorite/crise" element={<Autorite><GestionDeCrisePage /></Autorite>} />
-      <Route path="/autorite/authorities" element={<Autorite><ManageAuthoritiesPage /></Autorite>} />
       <Route path="/autorite/capteurs" element={<Autorite><AdminCapteursPage /></Autorite>} />
       <Route path="/autorite/contact" element={<Autorite><ContactUrgencePage /></Autorite>} />
+      <Route path="/autorite/authorities" element={<Autorite><ManageAuthoritiesPage /></Autorite>} />
 
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>

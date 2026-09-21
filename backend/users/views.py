@@ -240,6 +240,93 @@ class UserViewSet(viewsets.ModelViewSet):
             status=status.HTTP_400_BAD_REQUEST
         )
 
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated], url_path='create-authority')
+    def create_authority(self, request):
+        """
+        POST /api/users/create-authority/
+        Crée un compte autorité (réservé à l'admin).
+
+        Body:
+        {
+            "first_name": "...",
+            "last_name": "...",
+            "email": "...",
+            "telephone": "..."
+        }
+
+        Retourne les identifiants générés (username + password temporaire).
+        """
+        # Vérifier que l'utilisateur est admin
+        if request.user.profile.role != 'admin':
+            return Response(
+                {'detail': 'Accès réservé aux administrateurs'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        first_name = request.data.get('first_name', '')
+        last_name = request.data.get('last_name', '')
+        email = request.data.get('email')
+        telephone = request.data.get('telephone', '')
+
+        # Validation
+        if not first_name.strip():
+            return Response({'first_name': 'Prénom requis'}, status=status.HTTP_400_BAD_REQUEST)
+        if not last_name.strip():
+            return Response({'last_name': 'Nom requis'}, status=status.HTTP_400_BAD_REQUEST)
+        if not email or not email.strip():
+            return Response({'email': 'Email requis'}, status=status.HTTP_400_BAD_REQUEST)
+        if '@' not in email:
+            return Response({'email': 'Email invalide'}, status=status.HTTP_400_BAD_REQUEST)
+        if not telephone.strip():
+            return Response({'telephone': 'Numéro de téléphone requis'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if User.objects.filter(email=email).exists():
+            return Response({'email': 'Cet email est déjà utilisé'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Générer un username unique
+        username_base = f"{first_name.lower()}{last_name.lower()}".replace(' ', '')
+        username = username_base
+        counter = 1
+        while User.objects.filter(username=username).exists():
+            username = f"{username_base}{counter}"
+            counter += 1
+
+        # Générer un mot de passe temporaire
+        temp_password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
+
+        try:
+            with transaction.atomic():
+                # Créer l'utilisateur
+                user = User.objects.create_user(
+                    username=username,
+                    email=email,
+                    password=temp_password,
+                    first_name=first_name,
+                    last_name=last_name,
+                )
+
+                # Mettre à jour le profil
+                profile = user.profile
+                profile.role = 'autorite'
+                profile.telephone = telephone
+                profile.is_verified = True  # Vérifié automatiquement (créé par admin)
+                profile.save()
+
+            return Response(
+                {
+                    'detail': 'Autorité créée avec succès',
+                    'username': username,
+                    'password': temp_password,
+                    'first_name': first_name,
+                    'last_name': last_name,
+                    'email': email,
+                    'telephone': telephone,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+        except Exception as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
     def _generate_otp(self):
         """Génère un code OTP de 6 chiffres"""
         return ''.join(random.choices(string.digits, k=6))
@@ -330,90 +417,3 @@ class UserViewSet(viewsets.ModelViewSet):
             )
         except User.DoesNotExist:
             return Response({'detail': 'Utilisateur non trouvé'}, status=status.HTTP_404_NOT_FOUND)
-
-    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated], url_path='create-authority')
-    def create_authority(self, request):
-        """
-        POST /api/users/create-authority/
-        Admin crée une nouvelle autorité.
-        Requiert authentification (admin seulement).
-
-        Body:
-        {
-            "first_name": "...",
-            "last_name": "...",
-            "email": "...",
-            "telephone": "..."
-        }
-        """
-        # Vérifier que l'utilisateur est admin
-        user = request.user
-        if not hasattr(user, 'profile') or user.profile.role != 'admin':
-            return Response(
-                {'detail': 'Seul un admin peut créer des autorités'},
-                status=status.HTTP_403_FORBIDDEN
-            )
-
-        first_name = request.data.get('first_name', '')
-        last_name = request.data.get('last_name', '')
-        email = request.data.get('email', '')
-        telephone = request.data.get('telephone', '')
-
-        # Validation
-        if not first_name.strip():
-            return Response({'first_name': 'Prénom requis'}, status=status.HTTP_400_BAD_REQUEST)
-        if not last_name.strip():
-            return Response({'last_name': 'Nom requis'}, status=status.HTTP_400_BAD_REQUEST)
-        if not email.strip():
-            return Response({'email': 'Email requis'}, status=status.HTTP_400_BAD_REQUEST)
-        if not email.count('@'):
-            return Response({'email': 'Email invalide'}, status=status.HTTP_400_BAD_REQUEST)
-        if not telephone.strip():
-            return Response({'telephone': 'Téléphone requis'}, status=status.HTTP_400_BAD_REQUEST)
-
-        if User.objects.filter(email=email).exists():
-            return Response({'email': 'Cet email est déjà utilisé'}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Générer un username unique
-        username_base = f"{first_name.lower()}{last_name.lower()}".replace(' ', '')
-        username = username_base
-        counter = 1
-        while User.objects.filter(username=username).exists():
-            username = f"{username_base}{counter}"
-            counter += 1
-
-        # Générer un mot de passe temporaire
-        temporary_password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
-
-        try:
-            with transaction.atomic():
-                # Créer l'utilisateur
-                auth_user = User.objects.create_user(
-                    username=username,
-                    email=email,
-                    password=temporary_password,
-                    first_name=first_name,
-                    last_name=last_name,
-                )
-
-                # Mettre à jour le profil
-                profile = auth_user.profile
-                profile.role = 'autorite'
-                profile.telephone = telephone
-                profile.is_verified = True
-                profile.save()
-
-            return Response(
-                {
-                    'id': auth_user.id,
-                    'username': username,
-                    'email': email,
-                    'first_name': first_name,
-                    'last_name': last_name,
-                    'temporary_password': temporary_password,
-                    'detail': f'Autorité créée. Username: {username}, Mot de passe temporaire: {temporary_password}',
-                },
-                status=status.HTTP_201_CREATED,
-            )
-        except Exception as e:
-            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
