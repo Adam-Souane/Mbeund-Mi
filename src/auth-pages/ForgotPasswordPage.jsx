@@ -11,8 +11,8 @@ export default function ForgotPasswordPage() {
   const { darkMode } = useTheme();
   const { showToast } = useToast();
 
-  const [step, setStep] = useState(1); // 1: email input, 2: success
-  const [email, setEmail] = useState('');
+  const [step, setStep] = useState(1); // 1: phone input, 2: success
+  const [telephone, setTelephone] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -20,23 +20,18 @@ export default function ForgotPasswordPage() {
     e.preventDefault();
     setError('');
 
-    if (!email.trim()) {
-      setError('Email requis');
-      return;
-    }
-
-    if (!email.includes('@')) {
-      setError('Email invalide');
+    if (!telephone.trim()) {
+      setError('Numéro de téléphone requis');
       return;
     }
 
     setLoading(true);
     try {
-      await client.post('/users/password-reset/', { email });
+      await client.post('/users/password-reset/', { telephone });
       setStep(2);
-      showToast('Email de réinitialisation envoyé', 'success');
+      showToast('Instructions de réinitialisation envoyées', 'success');
     } catch (err) {
-      setError(err.response?.data?.detail || 'Erreur lors de l\'envoi de l\'email');
+      setError(err.response?.data?.detail || 'Erreur lors de l\'envoi des instructions');
     } finally {
       setLoading(false);
     }
@@ -56,28 +51,28 @@ export default function ForgotPasswordPage() {
         <div className="text-center mb-8">
           <Logo size="lg" />
           <h1 className={`text-2xl font-bold mt-4 ${darkMode ? 'text-white' : 'text-navy-900'}`}>
-            {step === 1 ? 'Mot de passe oublié ?' : 'Email envoyé'}
+            {step === 1 ? 'Mot de passe oublié ?' : 'SMS envoyé'}
           </h1>
         </div>
 
         {step === 1 ? (
           <form onSubmit={handleSubmit} className="space-y-4">
             <p className={`text-sm ${darkMode ? 'text-navy-300' : 'text-navy-700'} mb-6`}>
-              Entrez votre email pour recevoir les instructions de réinitialisation.
+              Entrez votre numéro de téléphone pour recevoir les instructions de réinitialisation.
             </p>
 
             <div>
               <label className={`block text-sm font-medium ${darkMode ? 'text-navy-200' : 'text-navy-700'} mb-1`}>
-                Email
+                Numéro de téléphone
               </label>
               <input
-                type="email"
-                value={email}
+                type="tel"
+                value={telephone}
                 onChange={(e) => {
-                  setEmail(e.target.value);
+                  setTelephone(e.target.value);
                   setError('');
                 }}
-                placeholder="email@exemple.com"
+                placeholder="+221 77 000 00 00"
                 className={`w-full px-4 py-2 rounded-lg border ${
                   error
                     ? 'border-red-500'
@@ -101,10 +96,10 @@ export default function ForgotPasswordPage() {
           <div className="text-center py-8">
             <CheckCircle size={64} className="text-green-500 mx-auto mb-4" />
             <p className={`text-sm ${darkMode ? 'text-navy-300' : 'text-navy-700'} mb-6`}>
-              Un email avec les instructions de réinitialisation a été envoyé à <strong>{email}</strong>
+              Un SMS avec les instructions de réinitialisation a été envoyé à <strong>{telephone}</strong>
             </p>
             <p className={`text-xs ${darkMode ? 'text-navy-400' : 'text-navy-600'} mb-8`}>
-              Vérifiez votre boîte mail (et les spams) dans quelques minutes.
+              Vérifiez vos messages SMS dans quelques minutes.
             </p>
             <button
               onClick={() => navigate('/login')}

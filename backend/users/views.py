@@ -39,15 +39,13 @@ class UserViewSet(viewsets.ModelViewSet):
         role = request.data.get('role', 'citoyen')
 
         # Validation
-        if not email:
-            return Response({'email': 'Email requis'}, status=status.HTTP_400_BAD_REQUEST)
         if not password or len(password) < 8:
             return Response({'password': 'Mot de passe requis (min. 8 caractères)'}, status=status.HTTP_400_BAD_REQUEST)
         if not telephone:
             return Response({'telephone': 'Numéro de téléphone requis'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Vérifier que l'email n'existe pas
-        if User.objects.filter(email=email).exists():
+        # Email est facultatif, mais s'il est fourni, il doit être unique
+        if email and User.objects.filter(email=email).exists():
             return Response({'email': 'Cet email est déjà utilisé'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Générer un username unique depuis le prénom et nom
@@ -58,7 +56,7 @@ class UserViewSet(viewsets.ModelViewSet):
             username = f"{username_base}{counter}"
             counter += 1
 
-        # Créer l'utilisateur et le profil
+        # Créer l'utilisateur et mettre à jour le profil
         try:
             with transaction.atomic():
                 user = User.objects.create_user(
@@ -69,11 +67,11 @@ class UserViewSet(viewsets.ModelViewSet):
                     last_name=last_name,
                 )
 
-                profile = Profile.objects.create(
-                    user=user,
-                    role=role,
-                    telephone=telephone,
-                )
+                # Mettre à jour le profil créé automatiquement par le signal post_save
+                profile = user.profile
+                profile.role = role
+                profile.telephone = telephone
+                profile.save()
 
                 # Générer et stocker un code OTP (seulement pour citoyens)
                 otp = None
@@ -84,12 +82,17 @@ class UserViewSet(viewsets.ModelViewSet):
                     # TODO: En production, envoyer par email ou SMS
                     print(f'[DEMO] OTP for {username}: {otp}')
 
+            response_data = {
+                'detail': 'Compte créé avec succès',
+                'user': UserSerializer(user).data,
+                'requires_otp': role == 'citoyen',
+            }
+            # Afficher le code OTP en démo (à retirer en production)
+            if otp:
+                response_data['demo_otp'] = otp
+
             return Response(
-                {
-                    'detail': 'Compte créé avec succès',
-                    'user': UserSerializer(user).data,
-                    'requires_otp': role == 'citoyen',
-                },
+                response_data,
                 status=status.HTTP_201_CREATED,
             )
         except Exception as e:
@@ -99,27 +102,31 @@ class UserViewSet(viewsets.ModelViewSet):
     def password_reset(self, request):
         """
         POST /api/users/password-reset/
-        Demande une réinitialisation de mot de passe.
+        Demande une réinitialisation de mot de passe via numéro de téléphone.
 
-        Note: En production, envoyer un email avec un lien de réinitialisation.
+        Body: {"telephone": "..."}
+
+        Note: En production, envoyer un SMS avec un lien de réinitialisation.
         Pour la démo, retourner juste un succès.
         """
-        email = request.data.get('email')
+        telephone = request.data.get('telephone')
 
-        if not email:
-            return Response({'detail': 'Email requis'}, status=status.HTTP_400_BAD_REQUEST)
+        if not telephone:
+            return Response({'detail': 'Numéro de téléphone requis'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            user = User.objects.get(email=email)
-            # TODO: Envoyer un email de réinitialisation en production
+            # Trouver l'utilisateur par son numéro de téléphone via le profil
+            profile = Profile.objects.get(telephone=telephone)
+            user = profile.user
+            # TODO: Envoyer un SMS de réinitialisation en production
             return Response(
-                {'detail': 'Instructions envoyées par email'},
+                {'detail': 'Instructions envoyées par SMS'},
                 status=status.HTTP_200_OK,
             )
-        except User.DoesNotExist:
-            # Ne pas révéler si l'email existe (sécurité)
+        except Profile.DoesNotExist:
+            # Ne pas révéler si le numéro existe (sécurité)
             return Response(
-                {'detail': 'Si cet email existe, vous recevrez les instructions'},
+                {'detail': 'Si ce numéro existe, vous recevrez les instructions'},
                 status=status.HTTP_200_OK,
             )
 

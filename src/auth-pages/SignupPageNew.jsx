@@ -38,8 +38,10 @@ export default function SignupPage() {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.email.trim()) newErrors.email = 'Email requis';
-    if (!formData.email.includes('@')) newErrors.email = 'Email invalide';
+    // Email est facultatif
+    if (formData.email.trim() && !formData.email.includes('@')) {
+      newErrors.email = 'Email invalide';
+    }
     if (!formData.telephone.trim()) newErrors.telephone = 'Numéro de téléphone requis';
     if (!formData.password) newErrors.password = 'Mot de passe requis';
     if (formData.password.length < 8) newErrors.password = 'Min. 8 caractères';
