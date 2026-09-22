@@ -88,37 +88,69 @@ class ChatView(APIView):
     }
 
     def post(self, request):
-        question = (request.data.get('question') or '').strip()
-        if not question:
-            return Response({"question": ["Ce champ est obligatoire."]}, status=400)
+        try:
+            question = (request.data.get('question') or '').strip()
+            if not question:
+                return Response({"question": ["Ce champ est obligatoire."]}, status=400)
 
-        zone_risque = ZoneRisque.objects.order_by('-score_risque_moyen').first()
-        niveau_risque = self._RISQUE_LABELS.get(
-            getattr(zone_risque, 'niveau_risque', None), 'FAIBLE'
-        )
+            # Récupérer le contexte de la base de données
+            try:
+                zone_risque = ZoneRisque.objects.order_by('-score_risque_moyen').first()
+                niveau_risque = self._RISQUE_LABELS.get(
+                    getattr(zone_risque, 'niveau_risque', None) if zone_risque else None, 'FAIBLE'
+                )
+            except Exception as e:
+                print(f"[ChatView] Erreur récupération zone_risque: {e}")
+                niveau_risque = 'FAIBLE'
 
-        prevision = PrevisionMeteo.objects.order_by('-date_prevision').first()
-        if prevision:
-            meteo_context = (
-                f"Température {prevision.temperature}°C, "
-                f"précipitations {prevision.precipitation} mm, "
-                f"vent {prevision.vitesse_vent} km/h"
+            try:
+                prevision = PrevisionMeteo.objects.order_by('-date_prevision').first()
+                if prevision:
+                    meteo_context = (
+                        f"Température {prevision.temperature}°C, "
+                        f"précipitations {prevision.precipitation} mm, "
+                        f"vent {prevision.vitesse_vent} km/h"
+                    )
+                else:
+                    meteo_context = "Non disponible"
+            except Exception as e:
+                print(f"[ChatView] Erreur récupération météo: {e}")
+                meteo_context = "Non disponible"
+
+            try:
+                signalements = SignalementCitoyen.objects.filter(valide=True).order_by('-date_creation')[:3]
+                descriptions = [s.description[:120] for s in signalements if s.description]
+                signalements_context = " ; ".join(descriptions) if descriptions else "Aucun récent"
+            except Exception as e:
+                print(f"[ChatView] Erreur récupération signalements: {e}")
+                signalements_context = "Aucun récent"
+
+            # Utiliser le chatbot
+            try:
+                chatbot = _get_chatbot_service()
+                reply = chatbot.poser_question(
+                    question,
+                    meteo_context=meteo_context,
+                    signalements_context=signalements_context,
+                    niveau_risque=niveau_risque,
+                )
+                return Response({"reply": reply})
+            except Exception as e:
+                print(f"[ChatView] Erreur chatbot service: {e}")
+                import traceback
+                traceback.print_exc()
+                return Response(
+                    {"error": f"Erreur du service chatbot: {str(e)}"},
+                    status=500
+                )
+        except Exception as e:
+            print(f"[ChatView] Erreur générale: {e}")
+            import traceback
+            traceback.print_exc()
+            return Response(
+                {"error": f"Erreur générale: {str(e)}"},
+                status=500
             )
-        else:
-            meteo_context = "Non disponible"
-
-        signalements = SignalementCitoyen.objects.filter(valide=True).order_by('-date_creation')[:3]
-        descriptions = [s.description[:120] for s in signalements if s.description]
-        signalements_context = " ; ".join(descriptions) if descriptions else "Aucun récent"
-
-        chatbot = _get_chatbot_service()
-        reply = chatbot.poser_question(
-            question,
-            meteo_context=meteo_context,
-            signalements_context=signalements_context,
-            niveau_risque=niveau_risque,
-        )
-        return Response({"reply": reply})
 
 
 class CapteurViewSet(viewsets.ModelViewSet):
