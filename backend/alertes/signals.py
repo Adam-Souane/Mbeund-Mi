@@ -16,11 +16,20 @@ def log_alerte_creation(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=SignalementCitoyen)
 def log_signalement_validation(sender, instance, created, **kwargs):
-    """Enregistre quand un signalement est validé"""
-    if instance.valide and instance.signale_par:
-        AuthorityActivity.objects.create(
-            authority=instance.signale_par,
-            action_type='request_handled',
-            description=f'Signalement validé: {instance.get_categorie_display()}',
-            zone='',
-        )
+    """Enregistre quand un signalement devient validé"""
+    # Only log if signalement was just validated (changed from False to True)
+    # Check if this is an update and validation status changed
+    if not created and instance.valide and instance.signale_par:
+        # Check if validation status just changed (was False before)
+        try:
+            old_instance = SignalementCitoyen.objects.get(pk=instance.pk)
+            # Only log if it wasn't validated before
+            if not getattr(old_instance, 'valide', False):
+                AuthorityActivity.objects.create(
+                    authority=instance.signale_par,
+                    action_type='request_handled',
+                    description=f'Signalement validé: {instance.get_categorie_display()}',
+                    zone='',
+                )
+        except SignalementCitoyen.DoesNotExist:
+            pass

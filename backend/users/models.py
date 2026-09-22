@@ -47,11 +47,6 @@ class Profile(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.role}"
 
-@receiver(post_save, sender=User)
-def create_user_profile(sender, instance, created, **kwargs):
-    if created:
-        Profile.objects.create(user=instance)
-
 class AuthorityTracking(models.Model):
     """Suivi des actions et statistiques d'une autorité"""
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='tracking')
@@ -107,9 +102,8 @@ class AuthorityActivity(models.Model):
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
-        Profile.objects.create(user=instance)
-        if instance.profile.role == 'autorite':
-            AuthorityTracking.objects.create(user=instance)
+        # Create profile with default role (citoyen)
+        profile = Profile.objects.create(user=instance)
 
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
