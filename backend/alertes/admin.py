@@ -94,8 +94,10 @@ class SegmentRueAdmin(admin.ModelAdmin):
 
 @admin.register(PrevisionMeteo)
 class PrevisionMeteoAdmin(admin.ModelAdmin):
-    list_display = ('date_prevision', 'temperature', 'precipitation', 'vitesse_vent', 'source')
-    list_filter = ('source', 'date_prevision')
+    list_display = ('date_prevision', 'zone', 'temperature_c', 'precipitation_mm', 'humidity_percent', 'source')
+    list_filter = ('source', 'date_prevision', 'zone')
+    search_fields = ('zone__quartier',)
+    list_select_related = ('zone',)
 
 @admin.register(HistoriqueRisque)
 class HistoriqueRisqueAdmin(admin.ModelAdmin):

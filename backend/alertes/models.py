@@ -15,6 +15,11 @@ class ZoneRisque(models.Model):
     description = models.TextField(blank=True)
     score_risque_moyen = models.DecimalField(max_digits=4, decimal_places=2, default=0)
 
+    # Seuils d'alerte (configurables par zone)
+    seuil_jaune = models.DecimalField(max_digits=4, decimal_places=2, default=0.40, help_text="Score seuil pour alerte jaune (0-1)")
+    seuil_orange = models.DecimalField(max_digits=4, decimal_places=2, default=0.65, help_text="Score seuil pour alerte orange (0-1)")
+    seuil_rouge = models.DecimalField(max_digits=4, decimal_places=2, default=0.85, help_text="Score seuil pour alerte rouge (0-1)")
+
     class Meta:
         verbose_name = "Zone de risque"
         verbose_name_plural = "Zones de risque"
@@ -189,22 +194,38 @@ class SegmentRue(models.Model):
 
 
 class PrevisionMeteo(models.Model):
+    # Lié à une zone spécifique (optionnel - peut être global)
+    zone = models.ForeignKey(ZoneRisque, on_delete=models.CASCADE, null=True, blank=True, related_name='previsions_meteo')
+
+    # Période de prévision
     date_prevision = models.DateTimeField()
-    temperature = models.DecimalField(max_digits=4, decimal_places=1, null=True, blank=True)
-    precipitation = models.DecimalField(max_digits=5, decimal_places=2)
-    vitesse_vent = models.DecimalField(max_digits=4, decimal_places=1, null=True, blank=True)
-    # Source des données : open-source (OpenWeatherMap, Open-Meteo) en attendant une
-    # réponse de l'ANACIM sur l'accès aux historiques de pluie officiels.
-    source = models.CharField(max_length=100, blank=True)
+    date_fin = models.DateTimeField(null=True, blank=True, help_text="Date fin si prévision multi-jours")
+
+    # Données météo
+    temperature_c = models.DecimalField(max_digits=4, decimal_places=1, null=True, blank=True, help_text="Température en °C")
+    temperature_max_c = models.DecimalField(max_digits=4, decimal_places=1, null=True, blank=True)
+    temperature_min_c = models.DecimalField(max_digits=4, decimal_places=1, null=True, blank=True)
+    precipitation_mm = models.DecimalField(max_digits=5, decimal_places=2, help_text="Précipitation en mm")
+    humidity_percent = models.DecimalField(max_digits=5, decimal_places=1, null=True, blank=True, help_text="Humidité relative %")
+    vitesse_vent = models.DecimalField(max_digits=4, decimal_places=1, null=True, blank=True, help_text="Vitesse vent km/h")
+    weather_code = models.IntegerField(null=True, blank=True, help_text="Code météo WMO")
+
+    # Métadonnées
+    source = models.CharField(max_length=100, default='open-meteo', help_text="Source: open-meteo, anacim, etc.")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name = "Prévision météo"
         verbose_name_plural = "Prévisions météo"
         ordering = ['-date_prevision']
+        indexes = [
+            models.Index(fields=['date_prevision']),
+            models.Index(fields=['zone', 'date_prevision']),
+        ]
 
     def __str__(self):
-        return f"Prévision {self.date_prevision.strftime('%Y-%m-%d %H:%M')} : {self.precipitation}mm"
+        zone_str = f" - {self.zone.quartier}" if self.zone else ""
+        return f"Prévision {self.date_prevision.strftime('%Y-%m-%d %H:%M')}{zone_str} : {self.precipitation_mm}mm, {self.temperature_c}°C"
 
 
 class HistoriqueRisque(models.Model):

@@ -2,17 +2,18 @@ import json
 import os
 import sys
 import time
-from datetime import timedelta
+from datetime import datetime, timedelta
 from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.utils import timezone
 from django.db.models import Sum
 from django.db.models.functions import TruncDate
-from alertes.models import ZoneRisque, Alerte, PredictionIA, EpisodeInondation, ContactAlerte
+from alertes.models import ZoneRisque, Alerte, PredictionIA, EpisodeInondation, ContactAlerte, PrevisionMeteo
 from capteurs.models import Capteur, Mesure
 from api.services.sms_service import send_alert_sms
 from alertes.flood_risk_predictor import predict_zone_risk
+from alertes.weather_service import WeatherService, get_weather_features_for_prediction
 
 logger = get_task_logger(__name__)
 
@@ -272,25 +273,28 @@ def predire_risques_avec_random_forest(self):
                     continue
 
                 ancien_niveau = zone.niveau_risque
-                nouveau_niveau = prediction['risque'].lower()  # 'Faible', 'Moyen', 'Grave' → minuscules
+                score = float(prediction['score'])
 
-                # Mapper les niveaux Random Forest vers les niveaux Django
-                risque_map = {
-                    'faible': 'vert',
-                    'moyen': 'jaune',
-                    'grave': 'rouge'
-                }
-                nouveau_niveau = risque_map.get(nouveau_niveau, 'vert')
+                # Déterminer le niveau de risque basé sur les seuils configurables de la zone
+                if score >= float(zone.seuil_rouge):
+                    nouveau_niveau = 'rouge'
+                elif score >= float(zone.seuil_orange):
+                    nouveau_niveau = 'orange'
+                elif score >= float(zone.seuil_jaune):
+                    nouveau_niveau = 'jaune'
+                else:
+                    nouveau_niveau = 'vert'
 
                 # Mettre à jour la zone
                 zone.niveau_risque = nouveau_niveau
-                zone.score_risque_moyen = float(prediction['score'])
+                zone.score_risque_moyen = score
                 zone.save()
                 zones_updatées += 1
 
                 logger.info(
                     f"[RF Task] Zone {zone.quartier} mise à jour: "
-                    f"{ancien_niveau} → {nouveau_niveau} (score: {prediction['score']:.2f}, "
+                    f"{ancien_niveau} → {nouveau_niveau} (score: {score:.2f}, "
+                    f"seuils: {float(zone.seuil_jaune):.2f}/{float(zone.seuil_orange):.2f}/{float(zone.seuil_rouge):.2f}, "
                     f"pluie: {pluie_24h:.1f}mm)"
                 )
 
@@ -345,6 +349,64 @@ def predire_risques_avec_random_forest(self):
 
     except Exception as e:
         logger.error(f"[RF Task] Erreur critique: {e}")
+        raise
+
+
+@shared_task(
+    bind=True,
+    max_retries=3,
+    retry_backoff=True,
+    retry_backoff_max=300,
+    autoretry_for=(Exception,)
+)
+def mettre_a_jour_previsions_meteo(self):
+    """
+    Tâche périodique pour récupérer les prévisions météo d'Open-Meteo.
+
+    - Récupère prévisions 7 jours
+    - Stocke dans la base de données
+    - Améliore prédictions Random Forest
+    """
+    logger.info(f"[Weather Task] Démarrage récupération prévisions météo (Essai {self.request.retries + 1}/3)")
+
+    try:
+        # Récupérer les données d'Open-Meteo
+        weather_data = WeatherService.get_current_and_forecast()
+
+        if weather_data is None:
+            logger.warning("[Weather Task] Impossible de récupérer les données météo")
+            return {"status": "skipped", "reason": "api_unavailable"}
+
+        # Stocker les prévisions 7 jours
+        previsions_creees = 0
+        for day_forecast in weather_data['forecast_7d']:
+            date = datetime.fromisoformat(day_forecast['date'])
+
+            # Vérifier si prévision existe déjà
+            if not PrevisionMeteo.objects.filter(
+                date_prevision__date=date.date(),
+                source='open-meteo'
+            ).exists():
+                PrevisionMeteo.objects.create(
+                    date_prevision=date,
+                    precipitation_mm=day_forecast['precipitation_mm'],
+                    temperature_max_c=day_forecast['temperature_max_c'],
+                    temperature_min_c=day_forecast['temperature_min_c'],
+                    source='open-meteo'
+                )
+                previsions_creees += 1
+
+        logger.info(f"[Weather Task] {previsions_creees} prévisions météo stockées")
+
+        return {
+            "status": "success",
+            "previsions_creees": previsions_creees,
+            "current_precipitation": weather_data['current']['precipitation_mm'],
+            "forecast_24h_precipitation": weather_data['forecast_24h']['precipitation_total_mm'],
+        }
+
+    except Exception as e:
+        logger.error(f"[Weather Task] Erreur critique: {e}")
         raise
 
 

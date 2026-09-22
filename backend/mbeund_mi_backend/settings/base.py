@@ -215,9 +215,13 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 
 CELERY_BEAT_SCHEDULE = {
+    'mettre-a-jour-previsions-meteo': {
+        'task': 'alertes.tasks.mettre_a_jour_previsions_meteo',
+        'schedule': timedelta(hours=3),  # Prévisions météo toutes les 3h
+    },
     'predire-risques-random-forest': {
         'task': 'alertes.tasks.predire_risques_avec_random_forest',
-        'schedule': timedelta(hours=6),  # Toutes les 6 heures (plus souvent que GEE)
+        'schedule': timedelta(hours=6),  # Prédictions toutes les 6 heures
     },
     'analyse-gee-periodique': {
         'task': 'alertes.tasks.analyse_gee_periodique',
