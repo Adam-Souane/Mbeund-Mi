@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Map, CloudRain, Camera, BarChart3, ShieldAlert, Settings, PhoneCall, Users2, TrendingUp, Activity, UserPlus, MoreVertical, ChevronDown } from 'lucide-react';
+import { LayoutDashboard, Map, CloudRain, Camera, BarChart3, ShieldAlert, Settings, PhoneCall, Users2, TrendingUp, Activity, UserPlus, MoreVertical, ChevronDown, Download } from 'lucide-react';
 import Logo from '../../shared/components/Logo';
 import ThemeToggle from '../../theme/ThemeToggle';
 import { useAuth } from '../../auth/AuthContext';
@@ -18,6 +18,7 @@ const TOOLS_ITEMS = [
   { to: '/autorite/fiabilite', label: 'Fiabilité du modèle', icon: TrendingUp },
   { to: '/autorite/backtesting', label: 'Backtesting', icon: Activity },
   { to: '/autorite/capteurs', label: 'Admin & capteurs', icon: Settings },
+  { to: '/autorite/export', label: 'Exports & Rapports', icon: Download },
 ];
 
 const MORE_ITEMS = [
