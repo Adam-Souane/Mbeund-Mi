@@ -587,7 +587,7 @@ class UserViewSet(viewsets.ModelViewSet):
     def authority_stats(self, request):
         """
         GET /api/users/authority-stats/
-        Retourne les statistiques de suivi des autorités créées par l'admin.
+        Retourne les statistiques de suivi de TOUTES les autorités.
 
         Réservé à l'admin.
         """
@@ -597,10 +597,9 @@ class UserViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        # Récupérer les autorités créées par cet admin
+        # Récupérer TOUTES les autorités (indépendamment de qui les a créées)
         authorities = User.objects.filter(
-            profile__role='autorite',
-            tracking__created_by=request.user
+            profile__role='autorite'
         ).select_related('tracking', 'profile')
 
         stats_list = []
