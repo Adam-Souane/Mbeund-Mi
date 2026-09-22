@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, Map, CloudRain, Camera, BarChart3, ShieldAlert, Settings, PhoneCall, Users2, TrendingUp, Activity, UserPlus, MoreVertical, ChevronDown, Download } from 'lucide-react';
 import Logo from '../../shared/components/Logo';
 import ThemeToggle from '../../theme/ThemeToggle';
+import NotificationCenter from '../../shared/components/NotificationCenter';
 import { useAuth } from '../../auth/AuthContext';
 
 const SIDEBAR_ITEMS = [
@@ -156,6 +157,7 @@ export default function AutoriteShell({ children }) {
           <Logo size="sm" />
           <div className="flex items-center gap-2">
             <DropdownMenu label="Outils" icon={BarChart3} items={TOOLS_ITEMS} />
+            <NotificationCenter />
             <ThemeToggle />
             <ProfileMenu isAdmin={isAdmin} logout={logout} />
           </div>

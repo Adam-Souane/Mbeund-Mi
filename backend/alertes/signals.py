@@ -3,7 +3,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
-from alertes.models import Alerte
+from alertes.models import Alerte, SignalementCitoyen, SMSSignalement
 
 logger = logging.getLogger(__name__)
 
@@ -45,3 +45,53 @@ def envoyer_sms_si_risque_eleve(sender, instance, created, **kwargs):
             envoyer_sms_alerte.delay(instance.id)
         except Exception as e:
             logger.error(f"Error dispatching SMS task for Alerte (ID: {instance.id}): {e}", exc_info=True)
+
+
+@receiver(post_save, sender=SignalementCitoyen)
+def broadcast_signalement(sender, instance, created, **kwargs):
+    """Broadcast nouveaux signalements aux autorités via WebSocket."""
+    if created:
+        try:
+            from api.serializers import SignalementCitoyenSerializer
+
+            serializer = SignalementCitoyenSerializer(instance)
+            data = serializer.data
+
+            channel_layer = get_channel_layer()
+            if channel_layer is not None:
+                # Envoyer aux autorités seulement
+                async_to_sync(channel_layer.group_send)(
+                    "autorite_notifications",
+                    {
+                        "type": "send_signalement",
+                        "data": data
+                    }
+                )
+                logger.info(f"Broadcasted new SignalementCitoyen (ID: {instance.id}) to autorite_notifications group")
+        except Exception as e:
+            logger.error(f"Error broadcasting SignalementCitoyen (ID: {instance.id}): {e}", exc_info=True)
+
+
+@receiver(post_save, sender=SMSSignalement)
+def broadcast_sms_signalement(sender, instance, created, **kwargs):
+    """Broadcast SMS reçus aux autorités via WebSocket."""
+    if created:
+        try:
+            from api.serializers import SMSSignalementSerializer
+
+            serializer = SMSSignalementSerializer(instance)
+            data = serializer.data
+
+            channel_layer = get_channel_layer()
+            if channel_layer is not None:
+                # Envoyer aux autorités seulement
+                async_to_sync(channel_layer.group_send)(
+                    "autorite_notifications",
+                    {
+                        "type": "send_sms",
+                        "data": data
+                    }
+                )
+                logger.info(f"Broadcasted new SMSSignalement (ID: {instance.id}) to autorite_notifications group")
+        except Exception as e:
+            logger.error(f"Error broadcasting SMSSignalement (ID: {instance.id}): {e}", exc_info=True)
