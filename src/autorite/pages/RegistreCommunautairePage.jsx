@@ -1,5 +1,7 @@
-import { HeartHandshake, Users2, CheckCircle2, ShieldQuestion } from 'lucide-react';
+import { useState } from 'react';
+import { HeartHandshake, Users2, CheckCircle2, ShieldQuestion, AlertCircle, X } from 'lucide-react';
 import AutoriteShell from '../desktop/AutoriteShell';
+import { useTheme } from '../../theme/ThemeContext';
 import { useZones } from '../../shared/hooks/useZones';
 import { useProfilsVulnerabilite } from '../../shared/hooks/useVulnerabilite';
 import { useRelaisQuartierListe, useVerifierRelais } from '../../shared/hooks/useRelaisQuartier';
@@ -10,6 +12,8 @@ function formatDate(iso) {
 }
 
 export default function RegistreCommunautairePage() {
+  const { darkMode } = useTheme();
+  const [confirmUnverify, setConfirmUnverify] = useState(null);
   const { data: zonesData } = useZones();
   const { data: profilsData, isLoading: profilsLoading } = useProfilsVulnerabilite();
   const { data: relaisData, isLoading: relaisLoading } = useRelaisQuartierListe();
@@ -99,7 +103,15 @@ export default function RegistreCommunautairePage() {
                   </p>
                 </div>
                 <button
-                  onClick={() => verifierRelais.mutate({ id: r.id, verifie: !r.verifie })}
+                  onClick={() => {
+                    if (r.verifie) {
+                      // Afficher la modale de confirmation pour retirer
+                      setConfirmUnverify(r);
+                    } else {
+                      // Vérifier directement sans confirmation
+                      verifierRelais.mutate({ id: r.id, verifie: true });
+                    }
+                  }}
                   disabled={verifierRelais.isPending}
                   className={`text-sm font-bold rounded-md px-3.5 py-2 disabled:opacity-60 flex-shrink-0 ${
                     r.verifie
@@ -114,6 +126,57 @@ export default function RegistreCommunautairePage() {
           )}
         </div>
       </div>
+
+      {/* Modale de confirmation pour retirer la vérification */}
+      {confirmUnverify && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className={`${darkMode ? 'bg-navy-900' : 'bg-white'} border ${darkMode ? 'border-navy-800' : 'border-navy-50'} rounded-xl max-w-md w-full p-6`}>
+            {/* En-tête */}
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                  <AlertCircle size={24} className="text-orange-600 dark:text-orange-400" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-navy dark:text-white">Retirer la vérification?</h3>
+                  <p className="text-sm text-navy-600 dark:text-navy-400">{confirmUnverify.username}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setConfirmUnverify(null)}
+                className="p-1 hover:bg-navy-100 dark:hover:bg-navy-800 rounded-lg transition-colors"
+              >
+                <X size={20} className="text-navy-600 dark:text-navy-400" />
+              </button>
+            </div>
+
+            {/* Message */}
+            <p className="text-sm text-navy-600 dark:text-navy-300 mb-6">
+              Êtes-vous sûr de vouloir retirer la vérification de ce relais de quartier? Ce relais ne sera plus marqué comme vérifié.
+            </p>
+
+            {/* Boutons d'action */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmUnverify(null)}
+                className="flex-1 px-4 py-2.5 rounded-lg font-semibold text-navy dark:text-white bg-navy-100 dark:bg-navy-800 hover:bg-navy-200 dark:hover:bg-navy-700 transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => {
+                  verifierRelais.mutate({ id: confirmUnverify.id, verifie: false });
+                  setConfirmUnverify(null);
+                }}
+                disabled={verifierRelais.isPending}
+                className="flex-1 px-4 py-2.5 rounded-lg font-semibold text-white bg-orange-600 hover:bg-orange-700 disabled:opacity-60 transition-colors"
+              >
+                {verifierRelais.isPending ? 'Suppression...' : 'Retirer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AutoriteShell>
   );
 }
