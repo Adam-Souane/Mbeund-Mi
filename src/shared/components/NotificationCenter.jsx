@@ -108,7 +108,7 @@ export default function NotificationCenter() {
 
           {/* Badge de compteur */}
           {unreadCount > 0 && (
-            <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
+            <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full animate-pulse-notification">
               {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}
@@ -201,6 +201,17 @@ export default function NotificationCenter() {
         }
         .animate-slide-in-right {
           animation: slide-in-right 0.3s ease-out;
+        }
+        @keyframes pulse-notification {
+          0%, 100% {
+            box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+          }
+          50% {
+            box-shadow: 0 0 0 8px rgba(220, 38, 38, 0);
+          }
+        }
+        .animate-pulse-notification {
+          animation: pulse-notification 2s infinite;
         }
       `}</style>
     </>
