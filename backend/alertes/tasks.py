@@ -28,11 +28,16 @@ _prediction_service = None
 
 
 def _get_prediction_service():
-    """Charge le service IA (modèles RandomForest/LSTM) une seule fois par worker."""
+    """Charge le service IA (modeles RandomForest/LSTM) une seule fois par worker."""
     global _prediction_service
     if _prediction_service is None:
-        from ia.service_prediction import PredictionService
-        _prediction_service = PredictionService()
+        try:
+            from ia.service_prediction import PredictionService
+            _prediction_service = PredictionService()
+        except (ImportError, ModuleNotFoundError):
+            logger.warning("ia.service_prediction not found, using flood_risk_predictor")
+            from alertes.flood_risk_predictor import FloodRiskPredictor
+            _prediction_service = FloodRiskPredictor()
     return _prediction_service
 
 

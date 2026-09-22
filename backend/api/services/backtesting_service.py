@@ -33,13 +33,18 @@ class BacktestingService:
             self.pluies_df['date'] = pd.to_datetime(self.pluies_df['date'])
             self.pluies_df = self.pluies_df.sort_values('date')
 
-            # Charger le service de prédiction
-            from ia.service_prediction import PredictionService
-            self.prediction_service = PredictionService()
+            # Charger le service de prédiction Random Forest
+            try:
+                from ia.service_prediction import PredictionService
+                self.prediction_service = PredictionService()
+            except (ImportError, ModuleNotFoundError):
+                logger.warning("ia.service_prediction not found, using flood_risk_predictor fallback")
+                from alertes.flood_risk_predictor import FloodRiskPredictor
+                self.prediction_service = FloodRiskPredictor()
 
             logger.info(f"Backtesting service initialized with {len(self.pluies_df)} days of rain data")
         except Exception as e:
-            logger.error(f"Erreur chargement données backtesting: {e}")
+            logger.error(f"Erreur chargement donnees backtesting: {e}")
             raise
 
     def _obtenir_pluies_precedentes(self, date, jours=3):
@@ -134,11 +139,28 @@ class BacktestingService:
 
                 # Lancer la prédiction du modèle
                 if pluie_cumulee > 0:
-                    mesures = [{"pluie_mm": pluie_cumulee, "niveau_eau_cm": niveau_estime}]
-                    resultat_pred = self.prediction_service.analyser_risque(1, mesures)
+                    # Déterminer quel service on a (ia.PredictionService ou flood_risk_predictor.FloodRiskPredictor)
+                    service_name = self.prediction_service.__class__.__name__
 
-                    risque_predit = resultat_pred.get('risque_global', 'vert')
-                    confiance = resultat_pred.get('confiance', 0)
+                    if service_name == 'FloodRiskPredictor':
+                        # Utiliser predict_zone_risk pour le FloodRiskPredictor
+                        resultat_pred = self.prediction_service.predict_zone_risk(
+                            "Thiaroye Gare",
+                            pluie_cumulee
+                        )
+                        risque_map = {
+                            'Faible': 'vert',
+                            'Moyen': 'jaune',
+                            'Grave': 'orange'
+                        }
+                        risque_predit = risque_map.get(resultat_pred.get('risque', 'Faible'), 'vert')
+                        confiance = resultat_pred.get('score', 0) * 100
+                    else:
+                        # Utiliser analyser_risque pour PredictionService original
+                        mesures = [{"pluie_mm": pluie_cumulee, "niveau_eau_cm": niveau_estime}]
+                        resultat_pred = self.prediction_service.analyser_risque(1, mesures)
+                        risque_predit = resultat_pred.get('risque_global', 'vert')
+                        confiance = resultat_pred.get('confiance', 0)
                 else:
                     # Aucune pluie = pas de prédiction d'inondation
                     risque_predit = 'vert'
