@@ -52,6 +52,36 @@ def create_user_profile(sender, instance, created, **kwargs):
     if created:
         Profile.objects.create(user=instance)
 
+class AuthorityTracking(models.Model):
+    """Suivi des actions et statistiques d'une autorité"""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='tracking')
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='authorities_created')
+
+    # Statistiques
+    crises_gerees = models.IntegerField(default=0, help_text="Nombre de crises gérées")
+    requetes_traitees = models.IntegerField(default=0, help_text="Nombre de requêtes/signalements traités")
+    alertes_envoyees = models.IntegerField(default=0, help_text="Nombre d'alertes envoyées")
+    heures_travail = models.DecimalField(max_digits=5, decimal_places=1, default=0, help_text="Heures de travail estimées")
+
+    # Dates
+    date_creation_compte = models.DateTimeField(auto_now_add=True)
+    derniere_connexion = models.DateTimeField(null=True, blank=True)
+    premiere_action = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Suivi d'autorité"
+        verbose_name_plural = "Suivi d'autorités"
+
+    def __str__(self):
+        return f"Suivi de {self.user.username}"
+
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        Profile.objects.create(user=instance)
+        if instance.profile.role == 'autorite':
+            AuthorityTracking.objects.create(user=instance)
+
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
     # Sécurité au cas où le profil n'a pas été créé

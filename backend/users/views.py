@@ -9,7 +9,7 @@ from django.utils import timezone
 from datetime import timedelta
 import random
 import string
-from .models import Profile, InviteCode
+from .models import Profile, InviteCode, AuthorityTracking
 from .serializers import UserSerializer, ProfileSerializer
 
 
@@ -352,6 +352,12 @@ class UserViewSet(viewsets.ModelViewSet):
                 profile.is_verified = True  # Vérifié automatiquement (créé par admin)
                 profile.save()
 
+                # Créer le tracking pour l'autorité
+                AuthorityTracking.objects.create(
+                    user=user,
+                    created_by=request.user
+                )
+
             return Response(
                 {
                     'detail': 'Autorité créée avec succès',
@@ -576,3 +582,56 @@ class UserViewSet(viewsets.ModelViewSet):
             )
         except User.DoesNotExist:
             return Response({'detail': 'Utilisateur non trouvé'}, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated], url_path='authority-stats')
+    def authority_stats(self, request):
+        """
+        GET /api/users/authority-stats/
+        Retourne les statistiques de suivi des autorités créées par l'admin.
+
+        Réservé à l'admin.
+        """
+        if request.user.profile.role != 'admin':
+            return Response(
+                {'detail': 'Accès réservé aux administrateurs'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Récupérer les autorités créées par cet admin
+        authorities = User.objects.filter(
+            profile__role='autorite',
+            tracking__created_by=request.user
+        ).select_related('tracking', 'profile')
+
+        stats_list = []
+        for user in authorities:
+            tracking = user.tracking if hasattr(user, 'tracking') else None
+            stats_list.append({
+                'id': user.id,
+                'username': user.username,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'email': user.email,
+                'telephone': user.profile.telephone,
+                'date_joined': user.date_joined.isoformat(),
+                'derniere_connexion': tracking.derniere_connexion.isoformat() if tracking and tracking.derniere_connexion else None,
+                'crises_gerees': tracking.crises_gerees if tracking else 0,
+                'requetes_traitees': tracking.requetes_traitees if tracking else 0,
+                'alertes_envoyees': tracking.alertes_envoyees if tracking else 0,
+                'heures_travail': float(tracking.heures_travail) if tracking else 0,
+                'premiere_action': tracking.premiere_action.isoformat() if tracking and tracking.premiere_action else None,
+            })
+
+        return Response(
+            {
+                'authorities': stats_list,
+                'count': len(stats_list),
+                'total_stats': {
+                    'crises_gerees': sum(s['crises_gerees'] for s in stats_list),
+                    'requetes_traitees': sum(s['requetes_traitees'] for s in stats_list),
+                    'alertes_envoyees': sum(s['alertes_envoyees'] for s in stats_list),
+                    'heures_travail_total': sum(s['heures_travail'] for s in stats_list),
+                }
+            },
+            status=status.HTTP_200_OK
+        )

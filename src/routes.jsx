@@ -24,6 +24,7 @@ import RegistreCommunautairePage from './autorite/pages/RegistreCommunautairePag
 import FiabiliteModelePage from './autorite/pages/FiabiliteModelePage';
 import BacktestingPage from './autorite/pages/BacktestingPage';
 import ManageAuthoritiesPage from './autorite/pages/ManageAuthoritiesPage';
+import AuthorityTrackingPage from './autorite/pages/AuthorityTrackingPage';
 import ExportPage from './autorite/pages/ExportPage';
 import PredictionsDashboard from './pages/PredictionsDashboard';
 
@@ -31,8 +32,8 @@ function Citoyen({ children }) {
   return <RequireAuth space="citoyen">{children}</RequireAuth>;
 }
 
-function Autorite({ children, pageKey = null }) {
-  return <RequireAuth space="autorite" pageKey={pageKey}>{children}</RequireAuth>;
+function Autorite({ children }) {
+  return <RequireAuth space="autorite">{children}</RequireAuth>;
 }
 
 export default function AppRoutes() {
@@ -61,12 +62,13 @@ export default function AppRoutes() {
       <Route path="/autorite/signalements" element={<Autorite><SignalementsTerrainPage /></Autorite>} />
       <Route path="/autorite/registre" element={<Autorite><RegistreCommunautairePage /></Autorite>} />
       <Route path="/autorite/statistiques" element={<Autorite><StatistiquesPage /></Autorite>} />
-      <Route path="/autorite/fiabilite" element={<Autorite pageKey="fiabilite"><FiabiliteModelePage /></Autorite>} />
-      <Route path="/autorite/backtesting" element={<Autorite pageKey="backtesting"><BacktestingPage /></Autorite>} />
+      <Route path="/autorite/fiabilite" element={<Autorite><FiabiliteModelePage /></Autorite>} />
+      <Route path="/autorite/backtesting" element={<Autorite><BacktestingPage /></Autorite>} />
       <Route path="/autorite/crise" element={<Autorite><GestionDeCrisePage /></Autorite>} />
-      <Route path="/autorite/capteurs" element={<Autorite pageKey="admin-capteurs"><AdminCapteursPage /></Autorite>} />
+      <Route path="/autorite/capteurs" element={<Autorite><AdminCapteursPage /></Autorite>} />
       <Route path="/autorite/contact" element={<Autorite><ContactUrgencePage /></Autorite>} />
       <Route path="/autorite/authorities" element={<Autorite><ManageAuthoritiesPage /></Autorite>} />
+      <Route path="/autorite/tracking" element={<Autorite><AuthorityTrackingPage /></Autorite>} />
       <Route path="/autorite/export" element={<Autorite><ExportPage /></Autorite>} />
 
       <Route path="*" element={<Navigate to="/login" replace />} />
