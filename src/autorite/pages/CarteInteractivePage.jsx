@@ -38,7 +38,7 @@ export default function CarteInteractivePage() {
             signalements: signalementsFeatures,
             refuges: refugesData,
           }}
-          height={640}
+          height={350}
         />
       )}
     </AutoriteShell>
