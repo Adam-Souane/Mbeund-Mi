@@ -3,7 +3,7 @@ from django.utils.html import format_html
 from .models import (
     ZoneRisque, Alerte, EpisodeInondation, PredictionIA, SignalementCitoyen,
     SegmentRue, PrevisionMeteo, HistoriqueRisque, ContactAlerte,
-    ProfilVulnerabilite, RelaisQuartier,
+    ProfilVulnerabilite, RelaisQuartier, ActivityLog, CrisisManagement,
 )
 
 @admin.register(ZoneRisque)
@@ -121,3 +121,72 @@ class RelaisQuartierAdmin(admin.ModelAdmin):
     list_display = ('user', 'zone', 'verifie', 'disponible', 'date_inscription')
     list_filter = ('verifie', 'disponible', 'zone')
     search_fields = ('user__username',)
+
+
+@admin.register(ActivityLog)
+class ActivityLogAdmin(admin.ModelAdmin):
+    list_display = ('authority', 'action_type_badge', 'description_short', 'timestamp')
+    list_filter = ('action_type', 'timestamp', 'authority')
+    search_fields = ('authority__username', 'description')
+    readonly_fields = ('timestamp', 'authority', 'action_type', 'description', 'metadata', 'ip_address')
+    date_hierarchy = 'timestamp'
+
+    @admin.display(description='Type d\'action')
+    def action_type_badge(self, obj):
+        colors = {
+            'alert_created': '#cce5ff',
+            'threshold_changed': '#fff3cd',
+            'crisis_started': '#f8d7da',
+            'crisis_resolved': '#d4edda',
+            'sms_sent': '#e2e3e5',
+            'push_sent': '#e2e3e5',
+        }
+        bg = colors.get(obj.action_type, '#ffffff')
+        return format_html(
+            '<span style="background-color: {}; padding: 4px 8px; border-radius: 4px; font-weight: bold; display: inline-block;">{}</span>',
+            bg, obj.get_action_type_display()
+        )
+
+    @admin.display(description='Description')
+    def description_short(self, obj):
+        return obj.description[:50] + '...' if len(obj.description) > 50 else obj.description
+
+
+@admin.register(CrisisManagement)
+class CrisisManagementAdmin(admin.ModelAdmin):
+    list_display = ('authority', 'crisis_date', 'zone', 'status_badge', 'hours_worked', 'notifications_sent', 'resolved_at')
+    list_filter = ('status', 'crisis_date', 'zone', 'authority')
+    search_fields = ('authority__username', 'zone__quartier')
+    readonly_fields = ('created_at', 'duration_hours')
+    fieldsets = (
+        ('Responsable', {
+            'fields': ('authority',)
+        }),
+        ('Informations de crise', {
+            'fields': ('crisis_date', 'zone', 'status')
+        }),
+        ('Charge de travail', {
+            'fields': ('hours_worked', 'duration_hours', 'notifications_sent')
+        }),
+        ('Résolution', {
+            'fields': ('resolved_at', 'notes')
+        }),
+        ('Métadonnées', {
+            'fields': ('created_at',),
+            'classes': ('collapse',)
+        }),
+    )
+    date_hierarchy = 'crisis_date'
+
+    @admin.display(description='Statut')
+    def status_badge(self, obj):
+        colors = {
+            'ongoing': '#f8d7da',
+            'resolved': '#d4edda',
+            'archived': '#e2e3e5',
+        }
+        bg = colors.get(obj.status, '#ffffff')
+        return format_html(
+            '<span style="background-color: {}; padding: 4px 8px; border-radius: 4px; font-weight: bold; display: inline-block;">{}</span>',
+            bg, obj.get_status_display()
+        )

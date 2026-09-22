@@ -30,6 +30,12 @@ from api.views import (
     MesSignalementsView,
     EnregistrerTriageAppelView,
 )
+from api.views.admin_views import (
+    list_authorities,
+    authority_activity,
+    authority_stats,
+    log_activity,
+)
 
 router = DefaultRouter()
 router.register(r'users', UserViewSet, basename='user')
@@ -63,5 +69,12 @@ urlpatterns = [
     path('sms/inbound/', SMSInboundWebhookView.as_view(), name='sms-inbound-webhook'),
     path('export/csv/<str:export_type>/', ExportCSVView.as_view(), name='export-csv'),
     path('export/pdf/<str:export_type>/', ExportPDFView.as_view(), name='export-pdf'),
+
+    # Admin endpoints (Super Admin only)
+    path('admin/authorities/', list_authorities, name='admin-list-authorities'),
+    path('admin/authorities/<int:authority_id>/activity/', authority_activity, name='admin-authority-activity'),
+    path('admin/authorities/<int:authority_id>/stats/', authority_stats, name='admin-authority-stats'),
+    path('admin/log-activity/', log_activity, name='admin-log-activity'),
+
     path('', include(router.urls)),
 ]
