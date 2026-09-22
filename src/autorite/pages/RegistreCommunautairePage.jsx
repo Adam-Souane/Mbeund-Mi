@@ -113,10 +113,10 @@ export default function RegistreCommunautairePage() {
                     }
                   }}
                   disabled={verifierRelais.isPending}
-                  className={`text-sm font-bold rounded-md px-3.5 py-2 disabled:opacity-60 flex-shrink-0 ${
+                  className={`text-sm font-bold rounded-md px-3.5 py-2 disabled:opacity-60 flex-shrink-0 text-white transition-colors ${
                     r.verifie
-                      ? 'text-navy-600 dark:text-navy-200 border-[1.5px] border-navy-200 dark:border-navy-800'
-                      : 'text-white bg-navy dark:bg-navy-800'
+                      ? 'bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600'
+                      : 'bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600'
                   }`}
                 >
                   {r.verifie ? 'Retirer la vérification' : 'Vérifier'}
