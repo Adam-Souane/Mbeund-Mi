@@ -1,0 +1,26 @@
+Date,Zone,Gravite_niveau,Pluviometrie_mm,Hauteur_eau_cm,Duree_heures,Familles_affectees,Maisons_endommagees
+2020-08-20,Thiaroye sur Mer,Grave,78.5,45,18,1250,380
+2020-09-15,Thiaroye Gare,Moyen,52.3,28,12,680,120
+2020-09-18,Djida Thiaroye Kaw,Faible,35.8,15,8,240,45
+2021-07-25,Zone Côtière Yoff,Grave,89.2,52,24,1580,520
+2021-08-10,Camp Militaire,Moyen,48.6,22,10,420,85
+2021-09-05,Pikine Zone,Moyen,56.4,32,14,750,160
+2021-09-22,Thiaroye sur Mer,Grave,92.1,58,28,1890,650
+2022-06-30,CEM Thiaroye 44,Faible,38.2,18,9,280,60
+2022-07-20,Thiaroye Gare,Moyen,65.7,38,16,920,210
+2022-08-15,Djida Thiaroye Kaw,Moyen,54.3,31,13,620,140
+2022-09-10,Zone Côtière Yoff,Grave,85.6,48,20,1450,480
+2023-07-28,Thiaroye sur Mer,Moyen,62.4,36,15,1100,250
+2023-08-14,Camp Militaire,Faible,41.2,20,10,380,75
+2023-09-03,Pikine Zone,Moyen,58.9,33,14,890,180
+2023-09-25,Thiaroye Gare,Moyen,66.8,39,17,950,220
+2024-07-10,Djida Thiaroye Kaw,Moyen,55.2,32,13,680,145
+2024-08-05,CEM Thiaroye 44,Moyen,59.6,34,15,720,165
+2024-08-22,Zone Côtière Yoff,Grave,87.3,50,22,1520,510
+2024-09-08,Thiaroye sur Mer,Grave,76.4,44,17,1280,360
+2025-07-15,Camp Militaire,Moyen,51.8,29,12,680,135
+2025-08-12,Thiaroye Gare,Moyen,63.2,36,15,850,200
+2025-09-01,Pikine Zone,Moyen,57.6,32,13,820,170
+2026-07-20,Djida Thiaroye Kaw,Moyen,53.4,31,12,620,135
+2026-08-10,Zone Côtière Yoff,Grave,84.1,47,21,1420,480
+2026-08-28,Thiaroye sur Mer,Moyen,61.3,35,14,1050,240
