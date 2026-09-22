@@ -25,6 +25,7 @@ import FiabiliteModelePage from './autorite/pages/FiabiliteModelePage';
 import BacktestingPage from './autorite/pages/BacktestingPage';
 import ManageAuthoritiesPage from './autorite/pages/ManageAuthoritiesPage';
 import ExportPage from './autorite/pages/ExportPage';
+import PredictionsDashboard from './pages/PredictionsDashboard';
 
 function Citoyen({ children }) {
   return <RequireAuth space="citoyen">{children}</RequireAuth>;
@@ -54,6 +55,7 @@ export default function AppRoutes() {
 
       {/* Autorité */}
       <Route path="/autorite/dashboard" element={<Autorite><TableauDeBordPage /></Autorite>} />
+      <Route path="/autorite/predictions" element={<Autorite><PredictionsDashboard /></Autorite>} />
       <Route path="/autorite/carte" element={<Autorite><CarteInteractivePage /></Autorite>} />
       <Route path="/autorite/previsions" element={<Autorite><PrevisionsAlertesPage /></Autorite>} />
       <Route path="/autorite/signalements" element={<Autorite><SignalementsTerrainPage /></Autorite>} />
