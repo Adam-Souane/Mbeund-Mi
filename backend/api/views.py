@@ -38,6 +38,8 @@ from api.serializers import (
 )
 from api.permissions import IsAutoriteOrAdmin, EstAdminOuAutorite
 from api.services.sms_inbound_service import traiter_webhook_sms
+from api.services.export_service import ExportService
+from api.services.pdf_export_service import PDFExportService
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -577,6 +579,108 @@ class SMSInboundWebhookView(APIView):
                 )
 
         except Exception as e:
+            return Response(
+                {"erreur": str(e)},
+                status=500
+            )
+
+
+class ExportCSVView(APIView):
+    """
+    GET /api/export/csv/{type}/ — Exporte les données au format CSV.
+
+    Types supportés:
+    - alertes: Historique des alertes
+    - signalements: Signalements citoyens
+    - zones: Zones à risque
+    - predictions: Prédictions IA
+    - refuges: Points de refuge
+    - episodes: Épisodes d'inondation
+
+    Paramètres optionnels:
+    - depuis: Date ISO (YYYY-MM-DD) pour filtrer les données récentes
+    """
+    permission_classes = [EstAdminOuAutorite()]
+
+    def get(self, request, export_type):
+        try:
+            depuis = request.query_params.get('depuis')
+            if depuis:
+                from datetime import datetime
+                depuis = datetime.fromisoformat(depuis)
+
+            # Sélectionner le type d'export
+            if export_type == 'alertes':
+                bytes_io, filename = ExportService.generer_csv_alertes(depuis=depuis)
+            elif export_type == 'signalements':
+                bytes_io, filename = ExportService.generer_csv_signalements(depuis=depuis)
+            elif export_type == 'zones':
+                bytes_io, filename = ExportService.generer_csv_zones_risque()
+            elif export_type == 'predictions':
+                bytes_io, filename = ExportService.generer_csv_predictions()
+            elif export_type == 'refuges':
+                bytes_io, filename = ExportService.generer_csv_refuges()
+            elif export_type == 'episodes':
+                bytes_io, filename = ExportService.generer_csv_episodes()
+            else:
+                return Response(
+                    {
+                        "erreur": f"Type d'export non supporté: {export_type}",
+                        "types_supportes": ['alertes', 'signalements', 'zones', 'predictions', 'refuges', 'episodes']
+                    },
+                    status=400
+                )
+
+            # Retourner le fichier CSV
+            response = Response(bytes_io.getvalue())
+            response['Content-Type'] = 'text/csv; charset=utf-8'
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
+
+        except Exception as e:
+            logger.error(f"Erreur export CSV {export_type}: {e}")
+            return Response(
+                {"erreur": str(e)},
+                status=500
+            )
+
+
+class ExportPDFView(APIView):
+    """
+    GET /api/export/pdf/{type}/ — Exporte les données au format PDF.
+
+    Types supportés:
+    - alertes: Rapport des alertes avec charte graphique et logo
+    - signalements: Rapport des signalements citoyens
+
+    Les PDF incluent le logo Mbeund-Mi et respectent la charte graphique.
+    """
+    permission_classes = [EstAdminOuAutorite()]
+
+    def get(self, request, export_type):
+        try:
+            # Sélectionner le type d'export PDF
+            if export_type == 'alertes':
+                pdf_bytes, filename = PDFExportService.generer_pdf_alertes()
+            elif export_type == 'signalements':
+                pdf_bytes, filename = PDFExportService.generer_pdf_signalements()
+            else:
+                return Response(
+                    {
+                        "erreur": f"Type d'export PDF non supporté: {export_type}",
+                        "types_supportes": ['alertes', 'signalements']
+                    },
+                    status=400
+                )
+
+            # Retourner le fichier PDF
+            response = Response(pdf_bytes.getvalue())
+            response['Content-Type'] = 'application/pdf'
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
+
+        except Exception as e:
+            logger.error(f"Erreur export PDF {export_type}: {e}")
             return Response(
                 {"erreur": str(e)},
                 status=500

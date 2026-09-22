@@ -23,6 +23,8 @@ from api.views import (
     PointRefugeViewSet,
     SMSSignalementViewSet,
     SMSInboundWebhookView,
+    ExportCSVView,
+    ExportPDFView,
 )
 
 router = DefaultRouter()
@@ -51,5 +53,7 @@ urlpatterns = [
     path('itineraire-securise/', ItineraireSecuriseView.as_view(), name='itineraire-securise'),
     path('mon-profil-vulnerabilite/', MonProfilVulnerabiliteView.as_view(), name='mon-profil-vulnerabilite'),
     path('sms/inbound/', SMSInboundWebhookView.as_view(), name='sms-inbound-webhook'),
+    path('export/csv/<str:export_type>/', ExportCSVView.as_view(), name='export-csv'),
+    path('export/pdf/<str:export_type>/', ExportPDFView.as_view(), name='export-pdf'),
     path('', include(router.urls)),
 ]
