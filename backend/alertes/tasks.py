@@ -7,9 +7,12 @@ from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.utils import timezone
+from django.db.models import Sum
+from django.db.models.functions import TruncDate
 from alertes.models import ZoneRisque, Alerte, PredictionIA, EpisodeInondation, ContactAlerte
 from capteurs.models import Capteur, Mesure
 from api.services.sms_service import send_alert_sms
+from alertes.flood_risk_predictor import predict_zone_risk
 
 logger = get_task_logger(__name__)
 
@@ -224,6 +227,125 @@ def envoyer_sms_alerte(self, alerte_id):
         "statut": alerte.statut,
         "nb_destinataires": nb_envoyes,
     }
+
+
+@shared_task(
+    bind=True,
+    max_retries=3,
+    retry_backoff=True,
+    retry_backoff_max=300,
+    autoretry_for=(Exception,)
+)
+def predire_risques_avec_random_forest(self):
+    """
+    Tâche périodique pour prédire les risques d'inondation avec Random Forest.
+
+    - Récupère les données pluviométriques dernières 24h pour chaque zone
+    - Utilise le modèle Random Forest pour prédire les niveaux de risque
+    - Met à jour les zones de risque dynamiquement
+    - Crée les alertes si risque détecté
+    - Envoie SMS aux autorités
+    """
+    logger.info(f"[RF Task] Démarrage prédictions Random Forest (Essai {self.request.retries + 1}/3)")
+
+    try:
+        zones = ZoneRisque.objects.all()
+        zones_updatées = 0
+        alertes_créées = 0
+
+        for zone in zones:
+            try:
+                # Récupérer la pluviométrie des dernières 24h pour la zone
+                capteurs_zone = Capteur.objects.filter(zone=zone, type='pluviometre')
+                pluie_24h = Mesure.objects.filter(
+                    capteur__in=capteurs_zone,
+                    timestamp__gte=timezone.now() - timedelta(days=1)
+                ).aggregate(total=Sum('valeur'))['total'] or 0.0
+
+                logger.debug(f"[RF Task] Zone {zone.quartier}: pluviométrie 24h = {pluie_24h:.1f}mm")
+
+                # Prédiction avec Random Forest
+                prediction = predict_zone_risk(zone.quartier, pluie_24h)
+
+                if 'erreur' in prediction:
+                    logger.warning(f"[RF Task] Erreur prédiction {zone.quartier}: {prediction['erreur']}")
+                    continue
+
+                ancien_niveau = zone.niveau_risque
+                nouveau_niveau = prediction['risque'].lower()  # 'Faible', 'Moyen', 'Grave' → minuscules
+
+                # Mapper les niveaux Random Forest vers les niveaux Django
+                risque_map = {
+                    'faible': 'vert',
+                    'moyen': 'jaune',
+                    'grave': 'rouge'
+                }
+                nouveau_niveau = risque_map.get(nouveau_niveau, 'vert')
+
+                # Mettre à jour la zone
+                zone.niveau_risque = nouveau_niveau
+                zone.score_risque_moyen = float(prediction['score'])
+                zone.save()
+                zones_updatées += 1
+
+                logger.info(
+                    f"[RF Task] Zone {zone.quartier} mise à jour: "
+                    f"{ancien_niveau} → {nouveau_niveau} (score: {prediction['score']:.2f}, "
+                    f"pluie: {pluie_24h:.1f}mm)"
+                )
+
+                # Créer alerte si risque détecté (jaune ou rouge)
+                if nouveau_niveau in ('jaune', 'orange', 'rouge'):
+                    alerte_existante = Alerte.objects.filter(
+                        zone=zone,
+                        niveau=nouveau_niveau,
+                        statut='en_attente',
+                        timestamp__gte=timezone.now() - timedelta(hours=1)
+                    ).exists()
+
+                    if not alerte_existante:
+                        message = (
+                            f"Alerte {nouveau_niveau.upper()}: Risque d'inondation détecté à {zone.quartier}. "
+                            f"Pluviométrie: {pluie_24h:.1f}mm. "
+                            f"Probabilités - Faible: {prediction['probabilites']['Faible']:.0%}, "
+                            f"Moyen: {prediction['probabilites']['Moyen']:.0%}, "
+                            f"Grave: {prediction['probabilites']['Grave']:.0%}"
+                        )
+
+                        alerte = Alerte.objects.create(
+                            niveau=nouveau_niveau,
+                            zone=zone,
+                            message=message,
+                            timestamp=timezone.now(),
+                            canaux='sms,web,email',
+                            statut='en_attente',
+                        )
+                        alertes_créées += 1
+
+                        logger.warning(f"[RF Task] Alerte créée pour {zone.quartier}: {nouveau_niveau}")
+
+                        # Envoyer SMS immédiatement
+                        envoyer_sms_alerte.delay(alerte.id)
+
+            except Exception as e:
+                logger.error(f"[RF Task] Erreur traitement zone {zone.quartier}: {e}")
+                continue
+
+        logger.info(
+            f"[RF Task] Prédictions terminées: {zones_updatées}/{len(zones)} zones mises à jour, "
+            f"{alertes_créées} alerte(s) créée(s)"
+        )
+
+        return {
+            "status": "success",
+            "zones_updatees": zones_updatées,
+            "alertes_creees": alertes_créées,
+            "total_zones": len(zones)
+        }
+
+    except Exception as e:
+        logger.error(f"[RF Task] Erreur critique: {e}")
+        raise
 
 
 @shared_task(
