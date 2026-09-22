@@ -105,7 +105,15 @@ export default function InteractiveMap({ data = {}, height = 560, route }) {
         </div>
       )}
 
-      <MapContainer center={THIAROYE_CENTER} zoom={15} scrollWheelZoom style={{ width: '100%', height: '100%' }}>
+      <MapContainer
+        center={THIAROYE_CENTER}
+        zoom={15}
+        scrollWheelZoom={true}
+        dragging={true}
+        touchZoom={true}
+        doubleClickZoom={true}
+        style={{ width: '100%', height: '100%' }}
+      >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
