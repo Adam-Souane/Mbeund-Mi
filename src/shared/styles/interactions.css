@@ -1,0 +1,117 @@
+/* Micro-interactions et hover effects pour meilleur polish */
+
+/* Cards - Hover effects */
+.card-hover {
+  @apply transition-all duration-200 ease-out;
+}
+
+.card-hover:hover {
+  @apply shadow-lg -translate-y-1;
+}
+
+/* Interactive cards avec focus */
+.interactive-card {
+  @apply transition-all duration-200 ease-out;
+  @apply focus-within:ring-2 focus-within:ring-red focus-within:ring-inset;
+}
+
+.interactive-card:hover {
+  @apply shadow-md -translate-y-0.5;
+  @apply dark:bg-navy-800;
+}
+
+/* Buttons - Smooth transitions */
+.btn-primary {
+  @apply transition-all duration-150 ease-in-out;
+  @apply active:scale-95;
+}
+
+.btn-primary:hover:not(:disabled) {
+  @apply shadow-md -translate-y-0.5;
+}
+
+.btn-primary:active:not(:disabled) {
+  @apply shadow-sm translate-y-0;
+}
+
+/* Form inputs - Focus states */
+.form-input-focus {
+  @apply transition-all duration-150;
+  @apply focus:ring-2 focus:ring-offset-0;
+}
+
+/* Status indicators */
+.status-pulse {
+  @apply animate-pulse;
+}
+
+.status-success {
+  @apply animate-in fade-in duration-300;
+}
+
+.status-error {
+  @apply animate-in fade-in duration-300 bg-red-50 dark:bg-red-900/20;
+}
+
+/* Loading states */
+.loading-spinner {
+  @apply animate-spin;
+}
+
+/* Smooth dropdown transitions */
+.collapsible-content {
+  @apply transition-all duration-300 ease-in-out;
+  @apply overflow-hidden;
+}
+
+.collapsible-content[data-open="false"] {
+  @apply max-h-0 opacity-0 pointer-events-none;
+}
+
+.collapsible-content[data-open="true"] {
+  @apply max-h-[2000px] opacity-100;
+}
+
+/* Checkbox animations */
+.checkbox-animated {
+  @apply transition-all duration-150;
+}
+
+.checkbox-animated:checked {
+  @apply scale-105;
+}
+
+/* Link hover effects */
+.link-underline {
+  @apply relative inline-block;
+  @apply after:absolute after:bottom-0 after:left-0 after:h-0.5 after:bg-red;
+  @apply after:w-0 after:transition-all after:duration-200;
+  @apply hover:after:w-full;
+}
+
+/* Badge animations */
+.badge-animate {
+  @apply transition-all duration-200;
+}
+
+.badge-animate:hover {
+  @apply scale-105 shadow-md;
+}
+
+/* Smooth color transitions for dark mode */
+.smooth-color-transition {
+  @apply transition-colors duration-300;
+}
+
+/* Accessibility - Visible focus for keyboard users */
+:focus-visible {
+  @apply outline-none ring-2 ring-red ring-offset-2 ring-offset-white dark:ring-offset-navy-950;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  @apply ring-2 ring-red ring-offset-2;
+}
