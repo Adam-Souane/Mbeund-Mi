@@ -11,6 +11,18 @@ class MbeundMiChatbot:
         self.name = "NDAM"
         self.location = "Thiaroye-sur-Mer"
 
+    def _handle_risk_question(self, niveau_risque, meteo_context):
+        """Répond aux questions sur le risque d'inondation."""
+        return (
+            f"Le niveau de risque actuel à Thiaroye-sur-Mer est: {niveau_risque}\n\n"
+            f"Contexte météorologique:\n{meteo_context}\n\n"
+            f"Recommandations:\n"
+            f"• Consultez régulièrement les alertes\n"
+            f"• Localisez votre point de refuge sur la carte\n"
+            f"• Préparez votre kit d'urgence\n"
+            f"• Restez vigilant en cas de précipitations importantes"
+        )
+
     def poser_question(self, question, meteo_context="", signalements_context="", niveau_risque="FAIBLE"):
         """
         Répond à une question en fonction du contexte local.
