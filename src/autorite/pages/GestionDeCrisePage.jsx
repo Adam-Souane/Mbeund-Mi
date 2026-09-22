@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Send, CheckCircle2, ChevronLeft, ChevronRight, Plus, AlertTriangle, Droplet, CornerDownRight, Check, Phone, Clock, Save, X } from 'lucide-react';
 import AutoriteShell from '../desktop/AutoriteShell';
 import RiskBadge from '../../shared/components/RiskBadge';
+import A11yStatusMessage from '../../shared/components/A11yStatusMessage';
 import { useZones } from '../../shared/hooks/useZones';
 import { useAlertesListe, useCreateAlerte, useUpdateAlerteStatut } from '../../shared/hooks/useAlertes';
 import { useEnregistrerTriageAppel } from '../../shared/hooks/useEnregistrerTriageAppel';
@@ -69,11 +70,17 @@ function NouvelleAlerteForm() {
 
       <div className="grid sm:grid-cols-2 gap-3">
         <label className="block">
-          <span className="block text-sm font-semibold mb-1.5">Zone</span>
+          <span className="block text-sm font-semibold mb-1.5" id="zone-label">Zone</span>
+          <span className="block text-xs text-navy-500 dark:text-navy-400 mb-1.5" id="zone-desc">
+            Sélectionner la zone affectée
+          </span>
           <select
             required
             value={zoneId}
             onChange={(e) => setZoneId(e.target.value)}
+            aria-labelledby="zone-label"
+            aria-describedby="zone-desc"
+            aria-invalid={!zoneId && mutation.isError}
             className="w-full px-3 py-2.5 rounded-md border-[1.5px] border-navy-200 dark:border-navy-800 bg-white dark:bg-navy text-base"
           >
             <option value="">Sélectionner…</option>
@@ -86,10 +93,15 @@ function NouvelleAlerteForm() {
         </label>
 
         <label className="block">
-          <span className="block text-sm font-semibold mb-1.5">Niveau</span>
+          <span className="block text-sm font-semibold mb-1.5" id="niveau-label">Niveau</span>
+          <span className="block text-xs text-navy-500 dark:text-navy-400 mb-1.5" id="niveau-desc">
+            Vert (faible) à Rouge (critique)
+          </span>
           <select
             value={niveau}
             onChange={(e) => setNiveau(e.target.value)}
+            aria-labelledby="niveau-label"
+            aria-describedby="niveau-desc"
             className="w-full px-3 py-2.5 rounded-md border-[1.5px] border-navy-200 dark:border-navy-800 bg-white dark:bg-navy text-base"
           >
             {NIVEAUX.map((n) => (
@@ -102,42 +114,61 @@ function NouvelleAlerteForm() {
       </div>
 
       <label className="block">
-        <span className="block text-sm font-semibold mb-1.5">Message</span>
+        <span className="block text-sm font-semibold mb-1.5" id="message-label">Message</span>
+        <span className="block text-xs text-navy-500 dark:text-navy-400 mb-1.5" id="message-desc">
+          Décrivez la situation et les actions recommandées
+        </span>
         <textarea
           rows={2}
           required
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           placeholder="Ex : Montée d'eau rapide signalée, niveau rouge."
+          aria-labelledby="message-label"
+          aria-describedby="message-desc"
+          aria-invalid={!message && mutation.isError}
           className="w-full px-3 py-2.5 rounded-md border-[1.5px] border-navy-200 dark:border-navy-800 bg-white dark:bg-navy text-base"
         />
       </label>
 
       <label className="block">
-        <span className="block text-sm font-semibold mb-1.5">Canaux</span>
+        <span className="block text-sm font-semibold mb-1.5" id="canaux-label">Canaux</span>
+        <span className="block text-xs text-navy-500 dark:text-navy-400 mb-1.5" id="canaux-desc">
+          Canaux de communication (sms, push, etc)
+        </span>
         <input
           type="text"
           value={canaux}
           onChange={(e) => setCanaux(e.target.value)}
           placeholder="sms,push"
+          aria-labelledby="canaux-label"
+          aria-describedby="canaux-desc"
           className="w-full px-3 py-2.5 rounded-md border-[1.5px] border-navy-200 dark:border-navy-800 bg-white dark:bg-navy text-base"
         />
       </label>
 
-      {mutation.isError && (
-        <div className="text-sm text-red">
-          {flattenApiErrors(mutation.error).map((msg, i) => (
-            <p key={i}>{msg}</p>
-          ))}
-        </div>
+      <A11yStatusMessage
+        type="error"
+        messages={mutation.isError ? flattenApiErrors(mutation.error) : []}
+        visible={mutation.isError}
+      />
+
+      {mutation.isSuccess && (
+        <A11yStatusMessage
+          type="success"
+          message="Alerte créée avec succès"
+          visible={true}
+        />
       )}
 
       <button
         type="submit"
         disabled={mutation.isPending}
-        className="self-start flex items-center gap-2 bg-red text-white font-bold text-sm px-4 py-2.5 rounded-md disabled:opacity-60"
+        aria-label="Émettre l'alerte aux citoyens"
+        aria-busy={mutation.isPending}
+        className="self-start flex items-center gap-2 bg-red text-white font-bold text-sm px-4 py-2.5 rounded-md disabled:opacity-60 hover:bg-red-700 transition-colors"
       >
-        <Send size={14} />
+        <Send size={14} aria-hidden="true" />
         {mutation.isPending ? 'Envoi…' : "Émettre l'alerte"}
       </button>
     </form>
@@ -299,9 +330,11 @@ function FilDeReflexe() {
           <button
             onClick={handleSaveCall}
             disabled={mutation.isPending}
+            aria-label="Enregistrer l'appel de triage avec toutes les données saisies"
+            aria-busy={mutation.isPending}
             className="flex items-center gap-1.5 bg-red text-white font-bold text-sm px-3.5 py-2 rounded-md hover:bg-red-600 transition flex-shrink-0 disabled:opacity-60"
           >
-            <Save size={14} />
+            <Save size={14} aria-hidden="true" />
             {mutation.isPending ? 'Enregistrement…' : 'Enregistrer appel'}
           </button>
         </div>
@@ -309,20 +342,33 @@ function FilDeReflexe() {
         {/* Citoyen input + status */}
         <div className="flex items-end gap-3 flex-wrap">
           <label className="block flex-1 min-w-[200px]">
-            <span className="block text-xs font-semibold text-navy-500 mb-1.5">ID ou numéro citoyen</span>
+            <span className="block text-xs font-semibold text-navy-500 mb-1.5" id="citoyen-label">
+              ID ou numéro citoyen
+            </span>
+            <span className="block text-xs text-navy-400 mb-1" id="citoyen-desc">
+              Entrez l'ID (ex: 123) ou le numéro de téléphone
+            </span>
             <input
               type="text"
               placeholder="Ex: 123 ou +221 77 123 45 67"
               value={citoyenInput}
               onChange={(e) => setCitoyenInput(e.target.value)}
+              aria-labelledby="citoyen-label"
+              aria-describedby="citoyen-desc"
+              aria-invalid={statusMessage.includes('Veuillez entrer')}
               className="w-full px-3 py-2 rounded border border-navy-200 dark:border-navy-700 bg-white dark:bg-navy text-sm"
             />
           </label>
 
           {statusMessage && (
-            <div className={`flex items-center gap-2 text-xs font-semibold px-3 py-2 rounded flex-1 min-w-[200px] ${
-              statusMessage.startsWith('✗') ? 'bg-red/10 text-red' : 'bg-green/10 text-green-600'
-            }`}>
+            <div
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+              className={`flex items-center gap-2 text-xs font-semibold px-3 py-2 rounded flex-1 min-w-[200px] ${
+                statusMessage.startsWith('✗') ? 'bg-red/10 text-red' : 'bg-green/10 text-green-600'
+              }`}
+            >
               <span>{statusMessage}</span>
             </div>
           )}
@@ -345,30 +391,37 @@ function FilDeReflexe() {
             >
               <button
                 onClick={() => setExpandedCategory(isExpanded ? null : cat.id)}
-                className="w-full px-5 py-3 flex items-center gap-3 bg-navy-50 dark:bg-navy-900 hover:bg-navy-100 dark:hover:bg-navy-800 transition text-left"
+                aria-expanded={isExpanded}
+                aria-controls={`category-${cat.id}`}
+                aria-label={`${cat.titre} - ${categoryCompleted} sur ${cat.actions.length} complétés`}
+                className="w-full px-5 py-3 flex items-center gap-3 bg-navy-50 dark:bg-navy-900 hover:bg-navy-100 dark:hover:bg-navy-800 transition text-left focus:outline-none focus:ring-2 focus:ring-red focus:ring-inset"
               >
-                <Icon size={18} className="text-red flex-shrink-0" />
+                <Icon size={18} className="text-red flex-shrink-0" aria-hidden="true" />
                 <div className="flex-1 min-w-0">
                   <h4 className="font-bold text-sm">{cat.titre}</h4>
                   <p className="text-xs text-navy-400 mt-0.5">{categoryCompleted}/{cat.actions.length} complétés</p>
                 </div>
-                <span className={`transform transition flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`}>▼</span>
+                <span className={`transform transition flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`} aria-hidden="true">▼</span>
               </button>
 
               {isExpanded && (
-                <div className="p-4 space-y-3 border-t border-navy-50 dark:border-navy-700">
+                <div id={`category-${cat.id}`} className="p-4 space-y-3 border-t border-navy-50 dark:border-navy-700">
                   {cat.actions.map((action, idx) => {
                     const key = `${cat.id}-${idx}`;
                     const isChecked = checkedItems[key];
+                    const checkboxId = `checkbox-${key}`;
+                    const notesId = `notes-${key}`;
 
                     return (
                       <div key={idx} className="space-y-2">
-                        <label className="flex items-start gap-2.5 cursor-pointer">
+                        <label htmlFor={checkboxId} className="flex items-start gap-2.5 cursor-pointer">
                           <input
+                            id={checkboxId}
                             type="checkbox"
                             checked={isChecked || false}
                             onChange={() => toggleItem(cat.id, idx)}
-                            className="w-4 h-4 accent-red flex-shrink-0 mt-0.5 cursor-pointer"
+                            aria-describedby={notesId}
+                            className="w-4 h-4 accent-red flex-shrink-0 mt-0.5 cursor-pointer focus:ring-2 focus:ring-red focus:ring-inset"
                           />
                           <span className={`text-sm transition ${isChecked ? 'line-through text-navy-400' : 'text-navy-600 dark:text-navy-200 font-semibold'}`}>
                             {action}
@@ -376,11 +429,13 @@ function FilDeReflexe() {
                         </label>
                         {isChecked && (
                           <textarea
-                            placeholder="Notes (optional)..."
+                            id={notesId}
+                            placeholder="Ajouter des notes (optionnel)..."
+                            aria-label={`Notes pour ${action}`}
                             value={notes[key] || ''}
                             onChange={(e) => setNotes((prev) => ({ ...prev, [key]: e.target.value }))}
                             rows={2}
-                            className="ml-6 w-full px-2.5 py-1.5 text-xs rounded border border-navy-100 dark:border-navy-700 bg-navy-50 dark:bg-navy-900 text-navy-600 dark:text-navy-200 placeholder:text-navy-400"
+                            className="ml-6 w-full px-2.5 py-1.5 text-xs rounded border border-navy-100 dark:border-navy-700 bg-navy-50 dark:bg-navy-900 text-navy-600 dark:text-navy-200 placeholder:text-navy-400 focus:ring-2 focus:ring-red focus:ring-inset"
                           />
                         )}
                       </div>

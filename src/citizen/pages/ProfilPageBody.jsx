@@ -396,106 +396,123 @@ export default function ProfilPageBody() {
 
           <div className="grid sm:grid-cols-2 gap-4">
             <label className="block">
-              <span className="block text-xs font-semibold mb-1.5 flex items-center gap-1.5">
-                <Droplet size={14} />
+              <span className="block text-xs font-semibold mb-1.5 flex items-center gap-1.5" id="eau-label">
+                <Droplet size={14} aria-hidden="true" />
                 Eau potable (litres)
+              </span>
+              <span className="block text-xs text-navy-500 dark:text-navy-400 mb-1" id="eau-desc">
+                Quantité d'eau potable actuellement stockée
               </span>
               <input
                 type="number"
                 min={0}
                 value={survivalKitForm.eau_potable_litres}
                 onChange={(e) => setSurvivalKitForm((f) => ({ ...f, eau_potable_litres: Number(e.target.value) }))}
-                className="w-full px-3.5 py-2.5 rounded-md border-[1.5px] border-navy-200 dark:border-navy-800 bg-white dark:bg-navy text-sm"
+                aria-labelledby="eau-label"
+                aria-describedby="eau-desc"
+                className="w-full px-3.5 py-2.5 rounded-md border-[1.5px] border-navy-200 dark:border-navy-800 bg-white dark:bg-navy text-sm focus:ring-2 focus:ring-red focus:ring-inset"
                 placeholder="Ex: 20"
               />
             </label>
 
             <label className="block">
-              <span className="block text-xs font-semibold mb-1.5 flex items-center gap-1.5">
-                <Utensils size={14} />
+              <span className="block text-xs font-semibold mb-1.5 flex items-center gap-1.5" id="nourriture-label">
+                <Utensils size={14} aria-hidden="true" />
                 Nourriture (jours)
+              </span>
+              <span className="block text-xs text-navy-500 dark:text-navy-400 mb-1" id="nourriture-desc">
+                Nombre de jours de nourriture non-périssable disponible
               </span>
               <input
                 type="number"
                 min={0}
                 value={survivalKitForm.nourriture_jours}
                 onChange={(e) => setSurvivalKitForm((f) => ({ ...f, nourriture_jours: Number(e.target.value) }))}
-                className="w-full px-3.5 py-2.5 rounded-md border-[1.5px] border-navy-200 dark:border-navy-800 bg-white dark:bg-navy text-sm"
+                aria-labelledby="nourriture-label"
+                aria-describedby="nourriture-desc"
+                className="w-full px-3.5 py-2.5 rounded-md border-[1.5px] border-navy-200 dark:border-navy-800 bg-white dark:bg-navy text-sm focus:ring-2 focus:ring-red focus:ring-inset"
                 placeholder="Ex: 3"
               />
             </label>
 
-            <label className="flex items-center gap-2.5 text-sm font-semibold">
+            <label className="flex items-center gap-2.5 text-sm font-semibold cursor-pointer">
               <input
                 type="checkbox"
                 checked={survivalKitForm.medicaments}
                 onChange={(e) => setSurvivalKitForm((f) => ({ ...f, medicaments: e.target.checked }))}
-                className="accent-red w-4 h-4"
+                aria-label="Médicaments essentiels disponibles"
+                className="accent-red w-4 h-4 focus:ring-2 focus:ring-red"
               />
               Médicaments essentiels
             </label>
 
-            <label className="flex items-center gap-2.5 text-sm font-semibold">
+            <label className="flex items-center gap-2.5 text-sm font-semibold cursor-pointer">
               <input
                 type="checkbox"
                 checked={survivalKitForm.documents_importants}
                 onChange={(e) => setSurvivalKitForm((f) => ({ ...f, documents_importants: e.target.checked }))}
-                className="accent-red w-4 h-4"
+                aria-label="Documents importants préparés"
+                className="accent-red w-4 h-4 focus:ring-2 focus:ring-red"
               />
               Documents importants
             </label>
 
-            <label className="flex items-center gap-2.5 text-sm font-semibold">
+            <label className="flex items-center gap-2.5 text-sm font-semibold cursor-pointer">
               <input
                 type="checkbox"
                 checked={survivalKitForm.lampe_torche}
                 onChange={(e) => setSurvivalKitForm((f) => ({ ...f, lampe_torche: e.target.checked }))}
-                className="accent-red w-4 h-4"
+                aria-label="Lampe torche disponible"
+                className="accent-red w-4 h-4 focus:ring-2 focus:ring-red"
               />
               Lampe torche
             </label>
 
-            <label className="flex items-center gap-2.5 text-sm font-semibold">
+            <label className="flex items-center gap-2.5 text-sm font-semibold cursor-pointer">
               <input
                 type="checkbox"
                 checked={survivalKitForm.batterie_portable}
                 onChange={(e) => setSurvivalKitForm((f) => ({ ...f, batterie_portable: e.target.checked }))}
-                className="accent-red w-4 h-4"
+                aria-label="Batterie portable chargée"
+                className="accent-red w-4 h-4 focus:ring-2 focus:ring-red"
               />
               Batterie portable
             </label>
 
-            <label className="flex items-center gap-2.5 text-sm font-semibold">
+            <label className="flex items-center gap-2.5 text-sm font-semibold cursor-pointer">
               <input
                 type="checkbox"
                 checked={survivalKitForm.trousse_premiers_secours}
                 onChange={(e) => setSurvivalKitForm((f) => ({ ...f, trousse_premiers_secours: e.target.checked }))}
-                className="accent-red w-4 h-4"
+                aria-label="Trousse de premiers secours préparée"
+                className="accent-red w-4 h-4 focus:ring-2 focus:ring-red"
               />
               Trousse de premiers secours
             </label>
 
-            <label className="flex items-center gap-2.5 text-sm font-semibold">
+            <label className="flex items-center gap-2.5 text-sm font-semibold cursor-pointer">
               <input
                 type="checkbox"
                 checked={survivalKitForm.vetements_secours}
                 onChange={(e) => setSurvivalKitForm((f) => ({ ...f, vetements_secours: e.target.checked }))}
-                className="accent-red w-4 h-4"
+                aria-label="Vêtements de secours disponibles"
+                className="accent-red w-4 h-4 focus:ring-2 focus:ring-red"
               />
               Vêtements de secours
             </label>
 
-            <label className="flex items-center gap-2.5 text-sm font-semibold">
+            <label className="flex items-center gap-2.5 text-sm font-semibold cursor-pointer">
               <input
                 type="checkbox"
                 checked={survivalKitForm.points_refuge_identifies}
                 onChange={(e) => setSurvivalKitForm((f) => ({ ...f, points_refuge_identifies: e.target.checked }))}
-                className="accent-red w-4 h-4"
+                aria-label="Points de refuge identifiés"
+                className="accent-red w-4 h-4 focus:ring-2 focus:ring-red"
               />
               Points de refuge identifiés
             </label>
 
-            <label className="flex items-center gap-2.5 text-sm font-semibold">
+            <label className="flex items-center gap-2.5 text-sm font-semibold cursor-pointer">
               <input
                 type="checkbox"
                 checked={survivalKitForm.voisins_contactes}
