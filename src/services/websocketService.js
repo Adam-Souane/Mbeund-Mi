@@ -25,7 +25,7 @@ class WebSocketService {
     }
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = url || `${protocol}//${window.location.host}/ws/predictions/`;
+    const wsUrl = url || `${protocol}//localhost:8000/ws/predictions/`;
 
     try {
       this.ws = new WebSocket(wsUrl);
