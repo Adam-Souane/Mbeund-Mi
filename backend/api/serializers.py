@@ -10,7 +10,7 @@ from capteurs.models import Capteur, Mesure
 from alertes.models import (
     ZoneRisque, Alerte, PredictionIA, EpisodeInondation, SignalementCitoyen,
     SegmentRue, PrevisionMeteo, HistoriqueRisque, ContactAlerte,
-    ProfilVulnerabilite, RelaisQuartier, PointRefuge,
+    ProfilVulnerabilite, RelaisQuartier, PointRefuge, SMSSignalement,
 )
 from api.services.vision_service import analyser_photo, trouve_signalement_similaire
 
@@ -651,3 +651,22 @@ class PointRefugeSerializer(HybridGeoFeatureModelSerializer):
             'adresse', 'quartier', 'capacite', 'contact', 'hauteur_etage', 'notes', 'actif',
         )
         read_only_fields = ('id', 'date_ajout')
+
+
+class SMSSignalementSerializer(serializers.ModelSerializer):
+    signalement_id = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SMSSignalement
+        fields = (
+            'id', 'telephone', 'contenu_sms', 'localisation_texte', 'statut',
+            'signalement_id', 'message_erreur', 'timestamp_recu', 'timestamp_traite',
+            'provider_name', 'provider_id',
+        )
+        read_only_fields = (
+            'id', 'statut', 'message_erreur', 'timestamp_recu', 'timestamp_traite',
+            'signalement_id',
+        )
+
+    def get_signalement_id(self, obj):
+        return obj.signalement_cree_id

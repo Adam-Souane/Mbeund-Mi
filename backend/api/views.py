@@ -16,7 +16,7 @@ from capteurs.models import Capteur, Mesure
 from alertes.models import (
     Alerte, ZoneRisque, PredictionIA, EpisodeInondation, SignalementCitoyen,
     SegmentRue, PrevisionMeteo, HistoriqueRisque, ContactAlerte,
-    ProfilVulnerabilite, RelaisQuartier, PointRefuge,
+    ProfilVulnerabilite, RelaisQuartier, PointRefuge, SMSSignalement,
 )
 from api.serializers import (
     CapteurSerializer,
@@ -34,8 +34,10 @@ from api.serializers import (
     ProfilVulnerabiliteSerializer,
     RelaisQuartierSerializer,
     PointRefugeSerializer,
+    SMSSignalementSerializer,
 )
 from api.permissions import IsAutoriteOrAdmin, EstAdminOuAutorite
+from api.services.sms_inbound_service import traiter_webhook_sms
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -510,3 +512,72 @@ class PointRefugeViewSet(viewsets.ReadOnlyModelViewSet):
         if quartier:
             queryset = queryset.filter(quartier__iexact=quartier)
         return queryset
+
+
+class SMSSignalementViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Signalements reçus via SMS entrants. Lisible par autorité/admin seulement.
+    """
+    queryset = SMSSignalement.objects.select_related('signalement_cree').all()
+    serializer_class = SMSSignalementSerializer
+    permission_classes = [EstAdminOuAutorite()]
+    pagination_class = PageNumberPagination
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        statut = self.request.query_params.get('statut')
+        if statut:
+            queryset = queryset.filter(statut=statut)
+        return queryset
+
+
+class SMSInboundWebhookView(APIView):
+    """
+    POST /api/sms/inbound/ — Webhook pour recevoir les SMS entrants.
+    Accepte les requêtes de Twilio (non authentifiées pour webhook).
+
+    Données attendues (form data Twilio):
+    - From: numéro du citoyen (ex: +221770000000)
+    - Body: contenu du SMS
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        try:
+            # Récupérer les données du webhook Twilio
+            phone_number = request.data.get('From', '')
+            message_text = request.data.get('Body', '').strip()
+            message_sid = request.data.get('MessageSid', '')
+
+            if not phone_number or not message_text:
+                return Response(
+                    {"erreur": "From et Body sont obligatoires"},
+                    status=400
+                )
+
+            # Traiter le SMS
+            sms_sig = traiter_webhook_sms(
+                phone_number=phone_number,
+                message_text=message_text,
+                provider='twilio',
+                provider_id=message_sid
+            )
+
+            if sms_sig:
+                return Response({
+                    "statut": "accepté",
+                    "sms_id": sms_sig.id,
+                    "message": f"SMS de {phone_number} reçu et traité",
+                    "signalement_cree": sms_sig.signalement_cree_id,
+                })
+            else:
+                return Response(
+                    {"erreur": "Erreur lors du traitement du SMS"},
+                    status=500
+                )
+
+        except Exception as e:
+            return Response(
+                {"erreur": str(e)},
+                status=500
+            )

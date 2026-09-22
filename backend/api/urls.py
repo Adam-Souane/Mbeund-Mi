@@ -21,6 +21,8 @@ from api.views import (
     ProfilVulnerabiliteViewSet,
     RelaisQuartierViewSet,
     PointRefugeViewSet,
+    SMSSignalementViewSet,
+    SMSInboundWebhookView,
 )
 
 router = DefaultRouter()
@@ -39,6 +41,7 @@ router.register(r'contacts-alerte', ContactAlerteViewSet, basename='contact-aler
 router.register(r'profils-vulnerabilite', ProfilVulnerabiliteViewSet, basename='profil-vulnerabilite')
 router.register(r'relais-quartier', RelaisQuartierViewSet, basename='relais-quartier')
 router.register(r'refuges', PointRefugeViewSet, basename='refuge')
+router.register(r'sms-signalements', SMSSignalementViewSet, basename='sms-signalement')
 
 
 urlpatterns = [
@@ -47,5 +50,6 @@ urlpatterns = [
     path('chat/', ChatView.as_view(), name='chat'),
     path('itineraire-securise/', ItineraireSecuriseView.as_view(), name='itineraire-securise'),
     path('mon-profil-vulnerabilite/', MonProfilVulnerabiliteView.as_view(), name='mon-profil-vulnerabilite'),
+    path('sms/inbound/', SMSInboundWebhookView.as_view(), name='sms-inbound-webhook'),
     path('', include(router.urls)),
 ]

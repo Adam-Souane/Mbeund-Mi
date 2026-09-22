@@ -323,3 +323,53 @@ class RelaisQuartier(models.Model):
 
     def __str__(self):
         return f"{self.user.username} — relais {self.zone.quartier}"
+
+
+class SMSSignalement(models.Model):
+    """
+    Signalement d'inondation reçu via SMS entrant (Twilio/Infobip webhook).
+    Sert à tracker les SMS, extraire la localisation, et créer automatiquement
+    un SignalementCitoyen avec photo/texte du SMS.
+    """
+    STATUT_CHOICES = [
+        ('recu', 'Reçu'),
+        ('traitement', 'En traitement'),
+        ('converti', 'Converti en signalement'),
+        ('erreur', 'Erreur de traitement'),
+    ]
+
+    telephone = models.CharField(max_length=20, help_text="Numéro du citoyen qui a envoyé le SMS")
+    contenu_sms = models.TextField(help_text="Texte du SMS reçu")
+    localisation_texte = models.CharField(max_length=300, blank=True, help_text="Localisation extraite du SMS")
+    localisation_geom = SpatialPointField(srid=4326, null=True, blank=True, help_text="Coordonnées géographiques (si extractible)")
+
+    statut = models.CharField(max_length=20, choices=STATUT_CHOICES, default='recu')
+    signalement_cree = models.ForeignKey(
+        'SignalementCitoyen',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='sms_source',
+        help_text="SignalementCitoyen créé à partir de ce SMS (si conversion réussie)"
+    )
+
+    message_erreur = models.TextField(blank=True, help_text="Détail si statut='erreur'")
+    timestamp_recu = models.DateTimeField(auto_now_add=True)
+    timestamp_traite = models.DateTimeField(null=True, blank=True)
+
+    # Métadonnées du fournisseur SMS (Twilio, Infobip, etc.)
+    provider_id = models.CharField(max_length=100, blank=True, help_text="Identifiant externe du message")
+    provider_name = models.CharField(max_length=50, blank=True, help_text="Fournisseur SMS (twilio, infobip, etc.)")
+
+    class Meta:
+        verbose_name = "SMS signalement"
+        verbose_name_plural = "SMS signalements"
+        ordering = ['-timestamp_recu']
+        indexes = [
+            models.Index(fields=['-timestamp_recu']),
+            models.Index(fields=['statut']),
+            models.Index(fields=['telephone']),
+        ]
+
+    def __str__(self):
+        return f"SMS de {self.telephone} - {self.get_statut_display()}"
