@@ -3,6 +3,7 @@ import { Send, CheckCircle2, ChevronLeft, ChevronRight, Plus, AlertTriangle, Dro
 import AutoriteShell from '../desktop/AutoriteShell';
 import RiskBadge from '../../shared/components/RiskBadge';
 import A11yStatusMessage from '../../shared/components/A11yStatusMessage';
+import ErrorMessage from '../../shared/components/ErrorMessage';
 import { useZones } from '../../shared/hooks/useZones';
 import { useAlertesListe, useCreateAlerte, useUpdateAlerteStatut } from '../../shared/hooks/useAlertes';
 import { useEnregistrerTriageAppel } from '../../shared/hooks/useEnregistrerTriageAppel';
@@ -147,16 +148,19 @@ function NouvelleAlerteForm() {
         />
       </label>
 
-      <A11yStatusMessage
-        type="error"
-        messages={mutation.isError ? flattenApiErrors(mutation.error) : []}
-        visible={mutation.isError}
-      />
+      {mutation.isError && (
+        <ErrorMessage
+          error={flattenApiErrors(mutation.error)[0]}
+          title="Impossible de créer l'alerte"
+          suggestion="Vérifiez les champs et réessayez"
+          type="error"
+        />
+      )}
 
       {mutation.isSuccess && (
         <A11yStatusMessage
           type="success"
-          message="Alerte créée avec succès"
+          message="✓ Alerte créée et envoyée avec succès!"
           visible={true}
         />
       )}

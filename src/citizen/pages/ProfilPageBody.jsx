@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Moon, LogOut, ShieldCheck, HeartHandshake, Users2, Loader2, CheckCircle2, Copy, Check, AlertCircle, Droplet, Utensils, Phone, Mail, MapPin, Clock, Layers } from 'lucide-react';
 import CitizenShell from '../shared/CitizenShell';
+import FormField from '../../shared/components/FormField';
+import ErrorMessage from '../../shared/components/ErrorMessage';
 import { useAuth } from '../../auth/AuthContext';
 import { useTheme } from '../../theme/ThemeContext';
 import { useZones } from '../../shared/hooks/useZones';
@@ -76,6 +78,9 @@ export default function ProfilPageBody() {
   // Historique des signalements
   const { data: mesSignalements } = useMySignalements();
 
+  // Validation errors
+  const [errors, setErrors] = useState({});
+
   // Effects
   useEffect(() => {
     if (monProfil) {
@@ -142,12 +147,24 @@ export default function ProfilPageBody() {
 
   const handleSaveSurvivalKit = (e) => {
     e.preventDefault();
-    saveSurvivalKit.mutate(survivalKitForm);
+    setErrors({});
+    saveSurvivalKit.mutate(survivalKitForm, {
+      onError: (error) => {
+        const errorMessages = flattenApiErrors(error);
+        setErrors({ survivalKit: errorMessages[0] });
+      },
+    });
   };
 
   const handleSaveContact = (e) => {
     e.preventDefault();
-    saveEmergencyContact.mutate(contactForm);
+    setErrors({});
+    saveEmergencyContact.mutate(contactForm, {
+      onError: (error) => {
+        const errorMessages = flattenApiErrors(error);
+        setErrors({ contact: errorMessages[0] });
+      },
+    });
   };
 
   const initial = username?.[0]?.toUpperCase() ?? '?';
@@ -394,6 +411,14 @@ export default function ProfilPageBody() {
             Préparez-vous pour les situations d'urgence en complétant votre kit de survie.
           </p>
 
+          {errors.survivalKit && (
+            <ErrorMessage
+              error={errors.survivalKit}
+              title="Erreur lors de la sauvegarde"
+              suggestion="Vérifiez les données et réessayez"
+            />
+          )}
+
           <div className="grid sm:grid-cols-2 gap-4">
             <label className="block">
               <span className="block text-xs font-semibold mb-1.5 flex items-center gap-1.5" id="eau-label">
@@ -580,6 +605,14 @@ export default function ProfilPageBody() {
           <p className="text-xs text-navy-600 dark:text-navy-200 mb-4">
             Indiquez une personne de confiance à contacter en cas d'urgence.
           </p>
+
+          {errors.contact && (
+            <ErrorMessage
+              error={errors.contact}
+              title="Erreur lors de la sauvegarde"
+              suggestion="Vérifiez les données et réessayez"
+            />
+          )}
 
           <div className="grid sm:grid-cols-2 gap-4">
             <label className="block">
