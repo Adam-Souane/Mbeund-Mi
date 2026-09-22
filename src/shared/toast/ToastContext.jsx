@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useState } from 'react';
 import { X, ShieldAlert } from 'lucide-react';
 import { riskInfo } from '../components/RiskBadge';
+import { useNotifications } from '../contexts/NotificationContext';
 
 const ToastContext = createContext(null);
 
@@ -8,6 +9,7 @@ let nextId = 1;
 
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
+  const { addNotification } = useNotifications();
 
   const dismiss = useCallback((id) => {
     setToasts((list) => list.filter((t) => t.id !== id));
@@ -16,10 +18,22 @@ export function ToastProvider({ children }) {
   const showToast = useCallback(
     (toast) => {
       const id = nextId++;
-      setToasts((list) => [...list, { id, ...toast }]);
+      const toastData = { id, ...toast };
+      setToasts((list) => [...list, toastData]);
+
+      // Ajouter aussi au système global de notifications
+      addNotification({
+        type: 'toast',
+        data: {
+          titre: toast.title || toast.titre,
+          message: toast.message,
+        },
+        niveau: toast.niveau || 'vert',
+      });
+
       setTimeout(() => dismiss(id), 7000);
     },
-    [dismiss]
+    [dismiss, addNotification]
   );
 
   return (

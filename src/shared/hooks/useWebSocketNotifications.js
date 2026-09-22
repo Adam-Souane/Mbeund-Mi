@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../auth/AuthContext';
+import { useNotifications } from '../contexts/NotificationContext';
 
 /**
  * Hook pour recevoir les notifications push temps réel via WebSocket.
@@ -10,6 +11,7 @@ import { useAuth } from '../../auth/AuthContext';
  */
 export function useWebSocketNotifications() {
   const { token } = useAuth();
+  const { addNotification } = useNotifications();
   const [isConnected, setIsConnected] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [lastNotification, setLastNotification] = useState(null);
@@ -57,6 +59,9 @@ export function useWebSocketNotifications() {
         setNotifications((prev) => [notification, ...prev].slice(0, 100)); // Garder les 100 dernières
         setLastNotification(notification);
 
+        // Ajouter aussi au système global de notifications
+        addNotification(notification);
+
         // Afficher un toast/son si souhaité
         if (payload.type === 'alerte') {
           console.warn('[WebSocket] Alerte reçue:', payload.data);
@@ -91,7 +96,7 @@ export function useWebSocketNotifications() {
         ws.close();
       }
     };
-  }, [token]);
+  }, [token, addNotification]);
 
   return {
     isConnected,
