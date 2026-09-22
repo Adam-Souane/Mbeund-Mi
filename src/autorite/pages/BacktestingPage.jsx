@@ -1,13 +1,30 @@
-import { Calendar, Cloud, Target, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
+import { Calendar, Cloud, Target, AlertCircle, CheckCircle, XCircle, Lock } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 import AutoriteShell from '../desktop/AutoriteShell';
 import { useTheme } from '../../theme/ThemeContext';
+import { useAuth } from '../../auth/AuthContext';
 import { useBacktesting } from '../../shared/hooks/useBacktesting';
 import { riskInfo } from '../../shared/components/RiskBadge';
 
 export default function BacktestingPage() {
   const { darkMode } = useTheme();
+  const { role } = useAuth();
   const { data, loading, error } = useBacktesting();
+
+  // Vérifier que l'utilisateur est admin
+  if (role !== 'admin') {
+    return (
+      <AutoriteShell>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className={`text-center ${darkMode ? 'bg-navy' : 'bg-white'} p-12 rounded-xl border ${darkMode ? 'border-navy-800' : 'border-navy-50'}`}>
+            <Lock size={48} className="mx-auto mb-4 text-red-500" />
+            <h2 className="text-2xl font-bold text-navy dark:text-white mb-2">Accès réservé aux administrateurs</h2>
+            <p className="text-navy-600 dark:text-navy-300">Cette page n'est accessible que pour les administrateurs du système.</p>
+          </div>
+        </div>
+      </AutoriteShell>
+    );
+  }
 
   const gridColor = darkMode ? '#2E4460' : '#EBF0F5';
   const axisColor = darkMode ? '#8AA0B8' : '#4A6480';

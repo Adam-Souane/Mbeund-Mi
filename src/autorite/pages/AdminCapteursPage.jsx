@@ -1,5 +1,7 @@
-import { Gauge, Droplet, CloudRain } from 'lucide-react';
+import { Gauge, Droplet, CloudRain, Lock } from 'lucide-react';
 import AutoriteShell from '../desktop/AutoriteShell';
+import { useAuth } from '../../auth/AuthContext';
+import { useTheme } from '../../theme/ThemeContext';
 import { useCapteurs, useUpdateCapteur } from '../../shared/hooks/useCapteurs';
 import { useZones } from '../../shared/hooks/useZones';
 import { useMesuresRecentes } from '../../shared/hooks/useMesuresRecentes';
@@ -24,9 +26,26 @@ function formatDateTime(iso) {
 }
 
 export default function AdminCapteursPage() {
+  const { role } = useAuth();
+  const { darkMode } = useTheme();
   const { data: capteursData, isLoading } = useCapteurs();
   const { data: zonesData } = useZones();
   const { data: mesuresRecentes } = useMesuresRecentes();
+
+  // Vérifier que l'utilisateur est admin
+  if (role !== 'admin') {
+    return (
+      <AutoriteShell>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className={`text-center ${darkMode ? 'bg-navy' : 'bg-white'} p-12 rounded-xl border ${darkMode ? 'border-navy-800' : 'border-navy-50'}`}>
+            <Lock size={48} className="mx-auto mb-4 text-red-500" />
+            <h2 className="text-2xl font-bold text-navy dark:text-white mb-2">Accès réservé aux administrateurs</h2>
+            <p className="text-navy-600 dark:text-navy-300">Cette page n'est accessible que pour les administrateurs du système.</p>
+          </div>
+        </div>
+      </AutoriteShell>
+    );
+  }
   const updateCapteur = useUpdateCapteur();
 
   const zoneNameById = new Map((zonesData?.features ?? []).map((f) => [f.id, f.properties.quartier]));

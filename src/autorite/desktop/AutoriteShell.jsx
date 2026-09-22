@@ -14,12 +14,15 @@ const SIDEBAR_ITEMS = [
   { to: '/autorite/crise', label: 'Gestion de crise', icon: ShieldAlert },
 ];
 
-const TOOLS_ITEMS = [
+const TOOLS_ITEMS_COMMON = [
   { to: '/autorite/statistiques', label: 'Statistiques', icon: BarChart3 },
+  { to: '/autorite/export', label: 'Exports & Rapports', icon: Download },
+];
+
+const TOOLS_ITEMS_ADMIN = [
   { to: '/autorite/fiabilite', label: 'Fiabilité du modèle', icon: TrendingUp },
   { to: '/autorite/backtesting', label: 'Backtesting', icon: Activity },
   { to: '/autorite/capteurs', label: 'Admin & capteurs', icon: Settings },
-  { to: '/autorite/export', label: 'Exports & Rapports', icon: Download },
 ];
 
 const MORE_ITEMS = [
@@ -156,6 +159,9 @@ export default function AutoriteShell({ children }) {
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef(null);
 
+  // Sélectionner les items selon le rôle
+  const toolsItems = isAdmin ? [...TOOLS_ITEMS_COMMON, ...TOOLS_ITEMS_ADMIN] : TOOLS_ITEMS_COMMON;
+
   useEffect(() => {
     function handleClickOutside(e) {
       if (moreRef.current && !moreRef.current.contains(e.target)) {
@@ -172,7 +178,7 @@ export default function AutoriteShell({ children }) {
         <div className="max-w-[1600px] mx-auto flex items-center justify-between px-7 py-4">
           <Logo size="sm" />
           <div className="flex items-center gap-2">
-            <DropdownMenu label="Outils" icon={BarChart3} items={TOOLS_ITEMS} />
+            <DropdownMenu label="Outils" icon={BarChart3} items={toolsItems} />
             <NotificationCenter />
             <ThemeToggle />
             <ProfileMenu isAdmin={isAdmin} logout={logout} />
