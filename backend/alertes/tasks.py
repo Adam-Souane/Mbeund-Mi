@@ -300,8 +300,80 @@ def analyse_gee_periodique(self):
     )
 
     logger.info(f"[GEE Task] Analyse GEE terminée. Épisode d'inondation enregistré : ID {episode.id}, surface : {surface_ha} ha")
+
+    # Intégration avec les zones de risque : mettre à jour les zones affectées
+    zones_affectees = mettre_a_jour_zones_depuis_gee(episode)
+    logger.info(f"[GEE Task] {len(zones_affectees)} zone(s) mise(s) à jour avec niveau rouge")
+
     return {
         "status": "success",
         "episode_id": episode.id,
         "surface_ha": surface_ha,
+        "zones_affectees": len(zones_affectees),
     }
+
+
+def mettre_a_jour_zones_depuis_gee(episode_inondation):
+    """
+    Trouve les zones de risque qui se chevauchent avec l'épisode d'inondation détecté
+    par satellite (GEE), et met à jour leur niveau_risque à 'rouge' + crée des alertes.
+
+    Retourne la liste des zones affectées.
+    """
+    from django.contrib.gis.geos import GEOSGeometry
+    from django.db.models import Q
+
+    zones_affectees = []
+
+    if not settings.USE_GIS:
+        logger.warning("[GEE Integration] GIS not enabled - zone update skipped")
+        return zones_affectees
+
+    try:
+        # Zones dont la géométrie chevauche l'épisode d'inondation
+        zones_concernees = ZoneRisque.objects.filter(
+            geom__intersects=episode_inondation.geom
+        )
+
+        maintenant = timezone.now()
+        for zone in zones_concernees:
+            ancien_niveau = zone.niveau_risque
+
+            # Mise à jour du niveau de risque à ROUGE
+            zone.niveau_risque = 'rouge'
+            zone.score_risque_moyen = 0.95  # Score très élevé pour les inondations détectées
+            zone.save()
+
+            zones_affectees.append(zone.id)
+
+            logger.info(
+                f"[GEE Integration] Zone '{zone.quartier}' mise à jour : "
+                f"{ancien_niveau} → {zone.niveau_risque} (détection satellite)"
+            )
+
+            # Créer une alerte automatique pour cette zone
+            alerte = Alerte.objects.create(
+                niveau='rouge',
+                zone=zone,
+                message=(
+                    f"⚠️ INONDATION DÉTECTÉE PAR SATELLITE dans {zone.quartier}. "
+                    f"Surface inondée : {episode_inondation.surface_ha} ha. "
+                    f"Évacuation recommandée. Éviter cette zone."
+                ),
+                timestamp=maintenant,
+                canaux='sms,web,email',
+                statut='en_attente',
+            )
+
+            logger.warning(
+                f"[GEE Integration] Alerte critique créée pour {zone.quartier} "
+                f"(Alerte ID: {alerte.id}, Épisode: {episode_inondation.id})"
+            )
+
+            # Déclencher l'envoi de SMS immédiatement
+            envoyer_sms_alerte.delay(alerte.id)
+
+    except Exception as e:
+        logger.error(f"[GEE Integration] Erreur lors de la mise à jour des zones : {e}")
+
+    return zones_affectees
