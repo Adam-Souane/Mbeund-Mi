@@ -1,43 +1,62 @@
 import { useState } from 'react';
-import { Download, FileText, FileJson, Loader2 } from 'lucide-react';
+import { Download, FileText, FileJson, Loader2, AlertTriangle, MessageSquare, Map, Zap, Home, Cloud } from 'lucide-react';
 import AutoriteShell from '../desktop/AutoriteShell';
+import client from '../../api/client';
 
 const EXPORT_TYPES = [
   {
     id: 'alertes',
     label: 'Alertes',
     description: 'Historique de toutes les alertes émises',
-    icon: '🚨',
+    icon: AlertTriangle,
+    iconColor: 'text-red-600 dark:text-red-400',
+    csvSupported: true,
+    pdfSupported: true,
   },
   {
     id: 'signalements',
     label: 'Signalements Citoyens',
     description: 'Tous les signalements d\'inondation reçus',
-    icon: '📱',
+    icon: MessageSquare,
+    iconColor: 'text-blue-600 dark:text-blue-400',
+    csvSupported: true,
+    pdfSupported: true,
   },
   {
     id: 'zones',
     label: 'Zones à Risque',
     description: 'Zones de Thiaroye avec niveaux de risque',
-    icon: '🗺️',
+    icon: Map,
+    iconColor: 'text-teal-600 dark:text-teal-400',
+    csvSupported: true,
+    pdfSupported: false,
   },
   {
     id: 'predictions',
     label: 'Prédictions IA',
     description: 'Dernières prédictions du modèle IA',
-    icon: '🤖',
+    icon: Zap,
+    iconColor: 'text-yellow-600 dark:text-yellow-400',
+    csvSupported: true,
+    pdfSupported: false,
   },
   {
     id: 'refuges',
     label: 'Points de Refuge',
     description: 'Écoles, mosquées, centres d\'accueil',
-    icon: '🏫',
+    icon: Home,
+    iconColor: 'text-green-600 dark:text-green-400',
+    csvSupported: true,
+    pdfSupported: false,
   },
   {
     id: 'episodes',
     label: 'Épisodes d\'Inondation',
     description: 'Historique des inondations (test + réelles)',
-    icon: '💧',
+    icon: Cloud,
+    iconColor: 'text-purple-600 dark:text-purple-400',
+    csvSupported: true,
+    pdfSupported: false,
   },
 ];
 
@@ -50,28 +69,16 @@ export default function ExportPage() {
     setError(null);
 
     try {
-      const url = `/api/export/${format}/${type}/`;
-      const response = await fetch(url);
-
-      if (!response.ok) {
-        throw new Error(`Erreur lors du téléchargement (${response.status})`);
-      }
-
-      // Déterminer le type de contenu et l'extension
-      const contentType = response.headers.get('content-type');
-      let extension = format;
-      if (format === 'pdf') {
-        extension = 'pdf';
-      } else if (format === 'csv') {
-        extension = 'csv';
-      }
+      const url = `/export/${format}/${type}/`;
+      const response = await client.get(url, {
+        responseType: 'blob',
+      });
 
       // Créer un blob et télécharger
-      const blob = await response.blob();
-      const filename = response.headers
-        .get('content-disposition')
+      const blob = response.data;
+      const filename = response.headers['content-disposition']
         ?.split('filename="')[1]
-        ?.split('"')[0] || `export_${type}.${extension}`;
+        ?.split('"')[0] || `export_${type}.${format}`;
 
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
@@ -110,7 +117,9 @@ export default function ExportPage() {
           >
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <div className="text-3xl mb-2">{type.icon}</div>
+                <div className="mb-2">
+                  <type.icon size={32} className={`${type.iconColor}`} />
+                </div>
                 <h3 className="text-lg font-bold text-navy dark:text-navy-50">
                   {type.label}
                 </h3>
@@ -121,33 +130,37 @@ export default function ExportPage() {
             </div>
 
             <div className="flex gap-2 pt-2 border-t border-navy-50 dark:border-navy-800">
-              <button
-                onClick={() => handleExport(type.id, 'csv')}
-                disabled={loading === `${type.id}-csv`}
-                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-navy-50 dark:bg-navy-800 text-navy dark:text-navy-200 hover:bg-navy-100 dark:hover:bg-navy-700 transition-colors disabled:opacity-60 text-sm font-semibold"
-                title="Télécharger en CSV (Excel compatible)"
-              >
-                {loading === `${type.id}-csv` ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : (
-                  <FileJson size={16} />
-                )}
-                CSV
-              </button>
+              {type.csvSupported && (
+                <button
+                  onClick={() => handleExport(type.id, 'csv')}
+                  disabled={loading === `${type.id}-csv`}
+                  className={`${type.pdfSupported ? 'flex-1' : 'w-full'} flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-navy-50 dark:bg-navy-800 text-navy dark:text-navy-200 hover:bg-navy-100 dark:hover:bg-navy-700 transition-colors disabled:opacity-60 text-sm font-semibold`}
+                  title="Télécharger en CSV (Excel compatible)"
+                >
+                  {loading === `${type.id}-csv` ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <FileJson size={16} />
+                  )}
+                  CSV
+                </button>
+              )}
 
-              <button
-                onClick={() => handleExport(type.id, 'pdf')}
-                disabled={loading === `${type.id}-pdf`}
-                className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-red text-white hover:bg-red-700 transition-colors disabled:opacity-60 text-sm font-semibold"
-                title="Télécharger en PDF (avec logo et mise en forme)"
-              >
-                {loading === `${type.id}-pdf` ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : (
-                  <FileText size={16} />
-                )}
-                PDF
-              </button>
+              {type.pdfSupported && (
+                <button
+                  onClick={() => handleExport(type.id, 'pdf')}
+                  disabled={loading === `${type.id}-pdf`}
+                  className={`${type.csvSupported ? 'flex-1' : 'w-full'} flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-red text-white hover:bg-red-700 transition-colors disabled:opacity-60 text-sm font-semibold`}
+                  title="Télécharger en PDF (avec logo et mise en forme)"
+                >
+                  {loading === `${type.id}-pdf` ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <FileText size={16} />
+                  )}
+                  PDF
+                </button>
+              )}
             </div>
           </div>
         ))}

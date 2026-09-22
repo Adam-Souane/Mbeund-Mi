@@ -43,41 +43,24 @@ class PDFExportService:
 
     @staticmethod
     def _get_header():
-        """Crée l'en-tête du rapport avec logo et titre."""
+        """Crée l'en-tête du rapport avec logo agrandi et sous-titre."""
         elements = []
 
-        # Conteneur pour logo + titre
         logo_path = PDFExportService._get_logo_path()
 
-        data = []
         if logo_path:
-            logo = Image(logo_path, width=2.5*cm, height=1*cm)
-            data.append([logo, Paragraph(
-                '<font size=24 color="#1B2A40"><b>MBEUND MI</b></font><br/>'
-                '<font size=10 color="#4A6480">Prévention des Inondations • Thiaroye-sur-Mer</font>',
-                ParagraphStyle(
-                    'HeaderStyle',
-                    fontSize=12,
-                    textColor=COLORS['navy'],
-                    spaceAfter=12,
-                )
-            )])
-        else:
-            data.append([Paragraph(
-                '<font size=24 color="#1B2A40"><b>MBEUND MI</b></font><br/>'
-                '<font size=10 color="#4A6480">Prévention des Inondations • Thiaroye-sur-Mer</font>',
-                ParagraphStyle('HeaderStyle', fontSize=12, textColor=COLORS['navy'], spaceAfter=12)
-            )])
+            # Logo agrandi comme en-tête principal
+            logo = Image(logo_path, width=5*cm, height=2*cm)
+            elements.append(logo)
 
-        header_table = Table(data, colWidths=[3*cm, 20*cm])
-        header_table.setStyle(TableStyle([
-            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('BORDER', (0, 0), (-1, -1), 0),
-        ]))
+        # Sous-titre centré
+        subtitle = Paragraph(
+            '<font size=11 color="#4A6480"><b>Prévention des Inondations • Thiaroye-sur-Mer</b></font>',
+            ParagraphStyle('SubtitleStyle', fontSize=11, textColor=COLORS['navy_light'], alignment=TA_CENTER)
+        )
+        elements.append(subtitle)
+        elements.append(Spacer(1, 0.8*cm))
 
-        elements.append(header_table)
-        elements.append(Spacer(1, 0.5*cm))
         return elements
 
     @staticmethod
@@ -220,7 +203,14 @@ class PDFExportService:
         Returns:
             (BytesIO PDF, nom_fichier)
         """
-        signalements = SignalementCitoyen.objects.select_related('signale_par').order_by('-date_creation')[:100]
+        queryset = SignalementCitoyen.objects.select_related('signale_par').order_by('-date_creation')
+
+        # Récupérer les stats avant le slice
+        total = queryset.count()
+        valides = queryset.filter(valide=True).count()
+
+        # Ensuite faire le slice pour récupérer les 100 premiers
+        signalements = queryset[:100]
 
         output = io.BytesIO()
         doc = SimpleDocTemplate(
@@ -249,8 +239,7 @@ class PDFExportService:
         elements.append(Paragraph('Rapport des Signalements Citoyens', title_style))
 
         # Statistiques
-        total = signalements.count()
-        valides = signalements.filter(valide=True).count()
+        # (déjà calculées avant le slice)
 
         stats_text = Paragraph(
             f'<font size=10 color="#1B2A40"><b>Total signalements:</b> {total} • '

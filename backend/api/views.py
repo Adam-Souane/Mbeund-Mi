@@ -2,6 +2,7 @@ import os
 import sys
 from django.conf import settings
 from django.db.models import Subquery, OuterRef
+from django.http import FileResponse
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
@@ -600,7 +601,7 @@ class ExportCSVView(APIView):
     Paramètres optionnels:
     - depuis: Date ISO (YYYY-MM-DD) pour filtrer les données récentes
     """
-    permission_classes = [EstAdminOuAutorite()]
+    permission_classes = [EstAdminOuAutorite]
 
     def get(self, request, export_type):
         try:
@@ -655,33 +656,31 @@ class ExportPDFView(APIView):
 
     Les PDF incluent le logo Mbeund-Mi et respectent la charte graphique.
     """
-    permission_classes = [EstAdminOuAutorite()]
+    permission_classes = [EstAdminOuAutorite]
 
     def get(self, request, export_type):
+        types_pdf = ['alertes', 'signalements']
+        types_non_impl = ['zones', 'predictions', 'refuges', 'episodes']
+
+        if export_type in types_non_impl:
+            return Response(
+                {"erreur": f"PDF pour '{export_type}' pas encore implémenté", "types_ok": types_pdf},
+                status=501
+            )
+
+        if export_type not in types_pdf:
+            return Response({"erreur": f"Type non supporté: {export_type}"}, status=400)
+
         try:
-            # Sélectionner le type d'export PDF
             if export_type == 'alertes':
                 pdf_bytes, filename = PDFExportService.generer_pdf_alertes()
-            elif export_type == 'signalements':
+            else:  # signalements
                 pdf_bytes, filename = PDFExportService.generer_pdf_signalements()
-            else:
-                return Response(
-                    {
-                        "erreur": f"Type d'export PDF non supporté: {export_type}",
-                        "types_supportes": ['alertes', 'signalements']
-                    },
-                    status=400
-                )
 
-            # Retourner le fichier PDF
-            response = Response(pdf_bytes.getvalue())
-            response['Content-Type'] = 'application/pdf'
-            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            pdf_bytes.seek(0)
+            response = FileResponse(pdf_bytes, as_attachment=True, filename=filename, content_type='application/pdf')
             return response
 
         except Exception as e:
-            logger.error(f"Erreur export PDF {export_type}: {e}")
-            return Response(
-                {"erreur": str(e)},
-                status=500
-            )
+            logger.error(f"PDF {export_type}: {e}", exc_info=True)
+            return Response({"erreur": str(e)}, status=500)

@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback } from 'react';
-import { useAuth } from '../auth/AuthContext';
+import { useEffect, useState } from 'react';
+import { useAuth } from '../../auth/AuthContext';
 
 /**
  * Hook pour recevoir les notifications push temps réel via WebSocket.
