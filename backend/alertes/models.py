@@ -69,6 +69,40 @@ class EpisodeInondation(models.Model):
         return f"Épisode du {self.date_debut}{suffix}"
 
 
+class PointRefuge(models.Model):
+    """Points de refuge/abri en cas d'inondation (écoles, mosquées, centres surélevés, etc.)"""
+
+    TYPE_CHOICES = [
+        ('ecole', 'École'),
+        ('mosquee', 'Mosquée'),
+        ('centre_sante', 'Centre de santé'),
+        ('mairie', 'Mairie'),
+        ('bâtiment_public', 'Bâtiment public'),
+        ('autre', 'Autre'),
+    ]
+
+    nom = models.CharField(max_length=200)
+    type_refuge = models.CharField(max_length=50, choices=TYPE_CHOICES)
+    localisation = SpatialPointField(srid=4326)
+    zone = models.ForeignKey(ZoneRisque, on_delete=models.CASCADE, related_name='refuges', null=True, blank=True)
+    adresse = models.CharField(max_length=300, blank=True)
+    quartier = models.CharField(max_length=100)
+    capacite = models.IntegerField(null=True, blank=True, help_text="Nombre de personnes max")
+    contact = models.CharField(max_length=50, blank=True, help_text="Numéro de téléphone du responsable")
+    hauteur_etage = models.IntegerField(null=True, blank=True, help_text="Nombre d'étages (pour refuges surélevés)")
+    notes = models.TextField(blank=True)
+    actif = models.BooleanField(default=True)
+    date_ajout = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Point de refuge"
+        verbose_name_plural = "Points de refuge"
+        ordering = ['quartier', 'nom']
+
+    def __str__(self):
+        return f"{self.nom} ({self.get_type_refuge_display()}) - {self.quartier}"
+
+
 class PredictionIA(models.Model):
     zone = models.ForeignKey(ZoneRisque, on_delete=models.CASCADE, related_name='predictions')
     probabilite = models.FloatField()

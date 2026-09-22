@@ -20,6 +20,7 @@ from api.views import (
     MonProfilVulnerabiliteView,
     ProfilVulnerabiliteViewSet,
     RelaisQuartierViewSet,
+    PointRefugeViewSet,
 )
 
 router = DefaultRouter()
@@ -37,6 +38,7 @@ router.register(r'signalements', SignalementCitoyenViewSet, basename='signalemen
 router.register(r'contacts-alerte', ContactAlerteViewSet, basename='contact-alerte')
 router.register(r'profils-vulnerabilite', ProfilVulnerabiliteViewSet, basename='profil-vulnerabilite')
 router.register(r'relais-quartier', RelaisQuartierViewSet, basename='relais-quartier')
+router.register(r'refuges', PointRefugeViewSet, basename='refuge')
 
 
 urlpatterns = [

@@ -5,6 +5,7 @@ import { useInondations } from '../../shared/hooks/useInondations';
 import { useCapteurs } from '../../shared/hooks/useCapteurs';
 import { useSegments } from '../../shared/hooks/useSegments';
 import { useSignalementsApercu } from '../../shared/hooks/useSignalements';
+import { useRefuges } from '../../shared/hooks/useRefuges';
 
 export default function CarteInteractivePage() {
   const { data: zonesData, isLoading } = useZones();
@@ -12,6 +13,7 @@ export default function CarteInteractivePage() {
   const { data: capteursData } = useCapteurs();
   const { data: segmentsData } = useSegments();
   const { data: signalementsData } = useSignalementsApercu();
+  const { data: refugesData } = useRefuges();
 
   const signalementsFeatures = signalementsData?.results?.features ?? [];
 
@@ -34,6 +36,7 @@ export default function CarteInteractivePage() {
             segments: segmentsData,
             capteurs: capteursData,
             signalements: signalementsFeatures,
+            refuges: refugesData,
           }}
           height={640}
         />

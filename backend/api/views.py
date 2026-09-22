@@ -16,7 +16,7 @@ from capteurs.models import Capteur, Mesure
 from alertes.models import (
     Alerte, ZoneRisque, PredictionIA, EpisodeInondation, SignalementCitoyen,
     SegmentRue, PrevisionMeteo, HistoriqueRisque, ContactAlerte,
-    ProfilVulnerabilite, RelaisQuartier,
+    ProfilVulnerabilite, RelaisQuartier, PointRefuge,
 )
 from api.serializers import (
     CapteurSerializer,
@@ -33,6 +33,7 @@ from api.serializers import (
     CustomTokenObtainPairSerializer,
     ProfilVulnerabiliteSerializer,
     RelaisQuartierSerializer,
+    PointRefugeSerializer,
 )
 from api.permissions import IsAutoriteOrAdmin, EstAdminOuAutorite
 
@@ -488,3 +489,24 @@ class RelaisQuartierViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
+
+
+class PointRefugeViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Points de refuge/abri en cas d'inondation (écoles, mosquées, centres, etc.)
+    Liste complète visible pour tous (citoyens et autorités).
+    """
+    queryset = PointRefuge.objects.select_related('zone').filter(actif=True)
+    serializer_class = PointRefugeSerializer
+    permission_classes = [permissions.AllowAny]
+    pagination_class = PageNumberPagination
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        zone = self.request.query_params.get('zone')
+        if zone:
+            queryset = queryset.filter(zone_id=zone)
+        quartier = self.request.query_params.get('quartier')
+        if quartier:
+            queryset = queryset.filter(quartier__iexact=quartier)
+        return queryset

@@ -15,6 +15,7 @@ const LAYER_LABELS = {
   segments: 'Rues & drainage',
   capteurs: 'Capteurs',
   signalements: 'Signalements citoyens',
+  refuges: 'Points de refuge',
 };
 
 function formatDate(iso) {
@@ -54,7 +55,7 @@ function FitRoute({ coordinates }) {
  * @param {object} [route] — itinéraire à superposer, au format { type: 'LineString', coordinates: [[lon, lat], ...] } (voir useItineraireSecurise).
  */
 export default function InteractiveMap({ data = {}, height = 560, route }) {
-  const { zones, inondations, segments, capteurs, signalements } = data;
+  const { zones, inondations, segments, capteurs, signalements, refuges } = data;
 
   const availableLayers = Object.keys(LAYER_LABELS).filter((key) => {
     if (key === 'signalements') return !!signalements?.length;
@@ -190,6 +191,54 @@ export default function InteractiveMap({ data = {}, height = 560, route }) {
                     <div>Type : {f.properties.type}</div>
                     <div>Statut : {f.properties.statut}</div>
                     {f.properties.dernier_releve && <div>Dernier relevé : {formatDate(f.properties.dernier_releve)}</div>}
+                  </div>
+                </Popup>
+              </CircleMarker>
+            );
+          })}
+
+        {visible.refuges &&
+          refuges.features.map((f) => {
+            const point = pointToLatLng(f.geometry);
+            if (!point) return null;
+            const typeColors = {
+              ecole: '#3C9A5F',
+              mosquee: '#8B5CF6',
+              centre_sante: '#EF4444',
+              mairie: '#F59E0B',
+              bâtiment_public: '#06B6D4',
+              autre: '#8AA0B8',
+            };
+            const typeLabel = {
+              ecole: 'École',
+              mosquee: 'Mosquée',
+              centre_sante: 'Centre de santé',
+              mairie: 'Mairie',
+              bâtiment_public: 'Bâtiment public',
+              autre: 'Autre',
+            };
+            const color = typeColors[f.properties.type_refuge] || '#8AA0B8';
+            return (
+              <CircleMarker
+                key={`refuge-${f.id}`}
+                center={point}
+                radius={9}
+                pathOptions={{
+                  color: '#fff',
+                  weight: 2,
+                  fillColor: color,
+                  fillOpacity: 1,
+                }}
+              >
+                <Popup>
+                  <div className="text-xs space-y-1 min-w-[200px]">
+                    <div className="font-bold text-sm">{f.properties.nom}</div>
+                    <div>Type : {typeLabel[f.properties.type_refuge]}</div>
+                    <div>Quartier : {f.properties.quartier}</div>
+                    {f.properties.adresse && <div>Adresse : {f.properties.adresse}</div>}
+                    {f.properties.capacite && <div>Capacite : {f.properties.capacite} personnes</div>}
+                    {f.properties.contact && <div>Contact : {f.properties.contact}</div>}
+                    {f.properties.notes && <p className="text-navy-600 dark:text-navy-200 text-[11px] mt-1">{f.properties.notes}</p>}
                   </div>
                 </Popup>
               </CircleMarker>

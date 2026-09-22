@@ -10,7 +10,7 @@ from capteurs.models import Capteur, Mesure
 from alertes.models import (
     ZoneRisque, Alerte, PredictionIA, EpisodeInondation, SignalementCitoyen,
     SegmentRue, PrevisionMeteo, HistoriqueRisque, ContactAlerte,
-    ProfilVulnerabilite, RelaisQuartier,
+    ProfilVulnerabilite, RelaisQuartier, PointRefuge,
 )
 from api.services.vision_service import analyser_photo, trouve_signalement_similaire
 
@@ -638,3 +638,16 @@ class RelaisQuartierSerializer(serializers.ModelSerializer):
         model = RelaisQuartier
         fields = ('id', 'username', 'zone', 'verifie', 'disponible', 'date_inscription')
         read_only_fields = ('id', 'verifie', 'date_inscription')
+
+
+class PointRefugeSerializer(HybridGeoFeatureModelSerializer):
+    zone_info = ZoneRisqueSerializer(source='zone', read_only=True)
+
+    class Meta:
+        model = PointRefuge
+        geo_field = 'localisation'
+        fields = (
+            'id', 'nom', 'type_refuge', 'localisation', 'zone', 'zone_info',
+            'adresse', 'quartier', 'capacite', 'contact', 'hauteur_etage', 'notes', 'actif',
+        )
+        read_only_fields = ('id', 'date_ajout')

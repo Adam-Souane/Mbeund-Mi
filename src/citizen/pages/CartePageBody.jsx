@@ -5,6 +5,7 @@ import RiskBadge from '../../shared/components/RiskBadge';
 import { useZones } from '../../shared/hooks/useZones';
 import { useInondations } from '../../shared/hooks/useInondations';
 import { useSignalementsApercu } from '../../shared/hooks/useSignalements';
+import { useRefuges } from '../../shared/hooks/useRefuges';
 import { useGeolocation } from '../../shared/hooks/useGeolocation';
 import { useItineraireSecurise } from '../../shared/hooks/useItineraireSecurise';
 import { flattenApiErrors } from '../../shared/utils/apiErrors';
@@ -13,6 +14,7 @@ export default function CartePageBody() {
   const { data: zonesData, isLoading } = useZones();
   const { data: inondationsData } = useInondations();
   const { data: signalementsData } = useSignalementsApercu();
+  const { data: refugesData } = useRefuges();
   const { status: geoStatus, locate } = useGeolocation();
   const itineraire = useItineraireSecurise();
 
@@ -111,7 +113,7 @@ export default function CartePageBody() {
         <p className="text-sm text-navy-400">Chargement de la carte…</p>
       ) : (
         <InteractiveMap
-          data={{ zones: zonesData, inondations: inondationsData, signalements: signalementsFeatures }}
+          data={{ zones: zonesData, inondations: inondationsData, signalements: signalementsFeatures, refuges: refugesData }}
           route={itineraire.data?.route}
           height={560}
         />
