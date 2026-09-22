@@ -9,7 +9,7 @@ from django.utils import timezone
 from datetime import timedelta
 import random
 import string
-from .models import Profile, InviteCode, AuthorityTracking
+from .models import Profile, InviteCode, AuthorityTracking, AuthorityActivity
 from .serializers import UserSerializer, ProfileSerializer
 
 
@@ -377,7 +377,7 @@ class UserViewSet(viewsets.ModelViewSet):
     def list_authorities(self, request):
         """
         GET /api/users/list-authorities/
-        Retourne les autorités créées aujourd'hui (pour l'admin).
+        Retourne TOUTES les autorités (pour l'admin).
 
         Réservé à l'admin.
         """
@@ -388,11 +388,9 @@ class UserViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        # Récupérer les autorités créées aujourd'hui
-        today = timezone.now().date()
+        # Récupérer TOUTES les autorités
         authorities = User.objects.filter(
-            profile__role='autorite',
-            date_joined__date=today
+            profile__role='autorite'
         ).values('username', 'first_name', 'last_name', 'email', 'date_joined').order_by('-date_joined')
 
         return Response(
@@ -631,6 +629,57 @@ class UserViewSet(viewsets.ModelViewSet):
                     'alertes_envoyees': sum(s['alertes_envoyees'] for s in stats_list),
                     'heures_travail_total': sum(s['heures_travail'] for s in stats_list),
                 }
+            },
+            status=status.HTTP_200_OK
+        )
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated], url_path='authority-activities/(?P<user_id>[0-9]+)')
+    def authority_activities(self, request, user_id=None):
+        """
+        GET /api/users/authority-activities/{user_id}/
+        Retourne l'historique des activités d'une autorité.
+
+        Réservé à l'admin.
+        """
+        if request.user.profile.role != 'admin':
+            return Response(
+                {'detail': 'Accès réservé aux administrateurs'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        try:
+            authority = User.objects.get(id=user_id, profile__role='autorite')
+        except User.DoesNotExist:
+            return Response(
+                {'detail': 'Autorité non trouvée'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Récupérer les 50 dernières activités
+        activities = AuthorityActivity.objects.filter(authority=authority)[:50]
+
+        activities_list = [
+            {
+                'id': act.id,
+                'action_type': act.action_type,
+                'action_label': act.get_action_type_display(),
+                'description': act.description,
+                'zone': act.zone,
+                'timestamp': act.timestamp.isoformat(),
+            }
+            for act in activities
+        ]
+
+        return Response(
+            {
+                'authority': {
+                    'id': authority.id,
+                    'username': authority.username,
+                    'first_name': authority.first_name,
+                    'last_name': authority.last_name,
+                },
+                'activities': activities_list,
+                'count': len(activities_list),
             },
             status=status.HTTP_200_OK
         )

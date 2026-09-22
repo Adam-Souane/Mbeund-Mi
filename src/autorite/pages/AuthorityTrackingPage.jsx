@@ -4,7 +4,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { useToast } from '../../shared/toast/ToastContext';
 import AutoriteShell from '../desktop/AutoriteShell';
 import client from '../../api/client';
-import { Users, Target, AlertCircle, Clock, TrendingUp, Award, Star } from 'lucide-react';
+import { Users, Search, ChevronRight, X, AlertCircle, Inbox, Bell, Clock, TrendingUp, Eye } from 'lucide-react';
 
 function AuthorityTrackingContent() {
   const { darkMode } = useTheme();
@@ -13,6 +13,8 @@ function AuthorityTrackingContent() {
   const [authorities, setAuthorities] = useState([]);
   const [totalStats, setTotalStats] = useState({});
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedAuthority, setSelectedAuthority] = useState(null);
 
   useEffect(() => {
     if (role !== 'admin') return;
@@ -33,6 +35,16 @@ function AuthorityTrackingContent() {
     fetchStats();
   }, [role, showToast]);
 
+  const filteredAuthorities = authorities.filter((auth) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      auth.first_name.toLowerCase().includes(query) ||
+      auth.last_name.toLowerCase().includes(query) ||
+      auth.username.toLowerCase().includes(query) ||
+      auth.email.toLowerCase().includes(query)
+    );
+  });
+
   if (role !== 'admin') {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -46,7 +58,8 @@ function AuthorityTrackingContent() {
 
   const bgCard = darkMode ? 'bg-navy' : 'bg-white';
   const borderCard = darkMode ? 'border-navy-800' : 'border-navy-50';
-  const textMuted = darkMode ? 'text-navy-400' : 'text-navy-600';
+  const bgTable = darkMode ? 'bg-navy-900' : 'bg-white';
+  const hoverRow = darkMode ? 'hover:bg-navy-800/50' : 'hover:bg-navy-50/50';
 
   return (
     <div className="space-y-6">
@@ -64,25 +77,22 @@ function AuthorityTrackingContent() {
       {/* Statistiques Globales */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          icon={Target}
+          icon={AlertCircle}
           title="Crises Gérées"
           value={totalStats.crises_gerees || 0}
           color="from-red-500 to-red-600"
-          darkMode={darkMode}
         />
         <StatCard
-          icon={AlertCircle}
+          icon={Inbox}
           title="Requêtes Traitées"
           value={totalStats.requetes_traitees || 0}
           color="from-blue-500 to-blue-600"
-          darkMode={darkMode}
         />
         <StatCard
-          icon={TrendingUp}
+          icon={Bell}
           title="Alertes Envoyées"
           value={totalStats.alertes_envoyees || 0}
           color="from-orange-500 to-orange-600"
-          darkMode={darkMode}
         />
         <StatCard
           icon={Clock}
@@ -90,35 +100,114 @@ function AuthorityTrackingContent() {
           value={Math.round(totalStats.heures_travail_total || 0)}
           suffix="h"
           color="from-green-500 to-green-600"
-          darkMode={darkMode}
         />
       </div>
 
-      {/* Grille des Autorités */}
-      {loading ? (
-        <div className="flex items-center justify-center p-8">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red mx-auto mb-2"></div>
-            <p className="text-navy-600 dark:text-navy-300">Chargement...</p>
+      {/* Recherche + Tableau */}
+      <div className={`${bgTable} border ${borderCard} rounded-xl overflow-hidden`}>
+        {/* Barre de recherche */}
+        <div className="p-6 border-b border-navy-200 dark:border-navy-800">
+          <div className="relative">
+            <Search className="absolute left-3 top-3.5 text-navy-400 dark:text-navy-500" size={20} />
+            <input
+              type="text"
+              placeholder="Rechercher par nom, email ou identifiant..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 rounded-lg border border-navy-200 dark:border-navy-700 bg-white dark:bg-navy-800 text-navy dark:text-white text-sm"
+            />
           </div>
+          <p className="text-xs text-navy-600 dark:text-navy-400 mt-2">
+            {filteredAuthorities.length} / {authorities.length} autorités trouvées
+          </p>
         </div>
-      ) : authorities.length === 0 ? (
-        <div className={`${bgCard} border ${borderCard} rounded-xl p-12 text-center`}>
-          <Users size={48} className="mx-auto mb-4 text-navy-400 dark:text-navy-600" />
-          <p className={textMuted}>Aucune autorité créée pour le moment</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {authorities.map((auth) => (
-            <AuthorityCard key={auth.id} authority={auth} darkMode={darkMode} />
-          ))}
-        </div>
+
+        {/* Tableau */}
+        {loading ? (
+          <div className="flex items-center justify-center p-8">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red mx-auto mb-2"></div>
+              <p className="text-navy-600 dark:text-navy-300">Chargement...</p>
+            </div>
+          </div>
+        ) : filteredAuthorities.length === 0 ? (
+          <div className="p-12 text-center text-navy-600 dark:text-navy-300">
+            Aucune autorité trouvée
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-navy-200 dark:border-navy-800 bg-navy-50 dark:bg-navy-800">
+                  <th className="px-6 py-4 text-left font-semibold text-navy-700 dark:text-navy-200">Nom</th>
+                  <th className="px-6 py-4 text-left font-semibold text-navy-700 dark:text-navy-200">Email</th>
+                  <th className="px-6 py-4 text-center font-semibold text-navy-700 dark:text-navy-200">Crises</th>
+                  <th className="px-6 py-4 text-center font-semibold text-navy-700 dark:text-navy-200">Requêtes</th>
+                  <th className="px-6 py-4 text-center font-semibold text-navy-700 dark:text-navy-200">Alertes</th>
+                  <th className="px-6 py-4 text-center font-semibold text-navy-700 dark:text-navy-200">Heures</th>
+                  <th className="px-6 py-4 text-center font-semibold text-navy-700 dark:text-navy-200">Activité</th>
+                  <th className="px-6 py-4 text-center font-semibold text-navy-700 dark:text-navy-200">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredAuthorities.map((auth) => (
+                  <tr key={auth.id} className={`border-b border-navy-200 dark:border-navy-800 ${hoverRow} transition-colors cursor-pointer`}>
+                    <td className="px-6 py-4">
+                      <div>
+                        <p className="font-semibold text-navy dark:text-white">
+                          {auth.first_name} {auth.last_name}
+                        </p>
+                        <p className="text-xs text-navy-600 dark:text-navy-400 mt-0.5">{auth.username}</p>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-navy-600 dark:text-navy-300">{auth.email}</td>
+                    <td className="px-6 py-4 text-center font-semibold text-navy dark:text-white">{auth.crises_gerees}</td>
+                    <td className="px-6 py-4 text-center font-semibold text-navy dark:text-white">{auth.requetes_traitees}</td>
+                    <td className="px-6 py-4 text-center font-semibold text-navy dark:text-white">{auth.alertes_envoyees}</td>
+                    <td className="px-6 py-4 text-center font-semibold text-navy dark:text-white">{auth.heures_travail.toFixed(1)}h</td>
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <div className="h-2 w-24 bg-navy-100 dark:bg-navy-800 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-green-500 to-green-400"
+                            style={{ width: `${calculateActivityScore(auth)}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-xs font-bold text-green-600 dark:text-green-400 w-8 text-right">
+                          {calculateActivityScore(auth)}%
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <button
+                        onClick={() => setSelectedAuthority(auth)}
+                        className="text-navy-600 dark:text-navy-300 hover:text-navy dark:hover:text-white transition-colors"
+                        title="Voir détails"
+                      >
+                        <Eye size={18} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Modal Détails */}
+      {selectedAuthority && (
+        <AuthorityDetailModal
+          authority={selectedAuthority}
+          onClose={() => setSelectedAuthority(null)}
+          darkMode={darkMode}
+        />
       )}
     </div>
   );
 }
 
-function StatCard({ icon: Icon, title, value, suffix = '', color, darkMode }) {
+function StatCard({ icon: Icon, title, value, suffix = '', color }) {
   return (
     <div className={`rounded-xl overflow-hidden shadow-md transition-transform hover:scale-105`}>
       <div className={`bg-gradient-to-br ${color} p-6 text-white`}>
@@ -135,133 +224,152 @@ function StatCard({ icon: Icon, title, value, suffix = '', color, darkMode }) {
   );
 }
 
-function AuthorityCard({ authority, darkMode }) {
-  const bgCard = darkMode ? 'bg-navy-900' : 'bg-white';
-  const borderCard = darkMode ? 'border-navy-800' : 'border-navy-50';
-  const textSecondary = darkMode ? 'text-navy-400' : 'text-navy-600';
+function AuthorityDetailModal({ authority, onClose, darkMode }) {
+  const [activeTab, setActiveTab] = useState('overview');
+  const [activities, setActivities] = useState([]);
+  const [activitiesLoading, setActivitiesLoading] = useState(false);
+  const { showToast } = useToast();
 
-  const performanceLevel = getPerformanceLevel(
-    authority.crises_gerees,
-    authority.requetes_traitees,
-    authority.alertes_envoyees
-  );
+  useEffect(() => {
+    if (activeTab === 'activities') {
+      setActivitiesLoading(true);
+      client.get(`/users/authority-activities/${authority.id}/`)
+        .then(res => setActivities(res.data.activities || []))
+        .catch(err => showToast('Erreur lors du chargement des activités', 'error'))
+        .finally(() => setActivitiesLoading(false));
+    }
+  }, [activeTab, authority.id, showToast]);
+
+  const bgModal = darkMode ? 'bg-navy-900' : 'bg-white';
+  const borderModal = darkMode ? 'border-navy-800' : 'border-navy-50';
+  const bgTabActive = darkMode ? 'bg-navy-800 text-white' : 'bg-navy-50 text-navy';
 
   return (
-    <div className={`${bgCard} border ${borderCard} rounded-xl p-6 hover:shadow-lg transition-shadow`}>
-      {/* En-tête avec performance badge */}
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex-1">
-          <h3 className="text-lg font-bold text-navy dark:text-white">
-            {authority.first_name} {authority.last_name}
-          </h3>
-          <p className={`text-sm ${textSecondary}`}>{authority.username}</p>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className={`${bgModal} border ${borderModal} rounded-xl max-w-2xl w-full my-8`}>
+        {/* En-tête */}
+        <div className="flex items-center justify-between p-6 border-b border-navy-200 dark:border-navy-800">
+          <div>
+            <h2 className="text-2xl font-bold text-navy dark:text-white">
+              {authority.first_name} {authority.last_name}
+            </h2>
+            <p className="text-sm text-navy-600 dark:text-navy-400 mt-1">{authority.username}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-lg hover:bg-navy-100 dark:hover:bg-navy-800 transition-colors"
+          >
+            <X size={24} className="text-navy-600 dark:text-navy-300" />
+          </button>
         </div>
-        <PerformanceBadge level={performanceLevel} />
-      </div>
 
-      {/* Informations de contact */}
-      <div className={`text-xs ${textSecondary} space-y-1 mb-4 pb-4 border-b ${borderCard}`}>
-        <p>📧 {authority.email}</p>
-        <p>📱 {authority.telephone}</p>
-      </div>
-
-      {/* Mini Statistiques */}
-      <div className="grid grid-cols-2 gap-3 mb-4">
-        <MiniStat
-          label="Crises"
-          value={authority.crises_gerees}
-          icon="🚨"
-          darkMode={darkMode}
-        />
-        <MiniStat
-          label="Requêtes"
-          value={authority.requetes_traitees}
-          icon="📋"
-          darkMode={darkMode}
-        />
-        <MiniStat
-          label="Alertes"
-          value={authority.alertes_envoyees}
-          icon="🔔"
-          darkMode={darkMode}
-        />
-        <MiniStat
-          label="Heures"
-          value={`${authority.heures_travail.toFixed(1)}h`}
-          icon="⏱️"
-          darkMode={darkMode}
-        />
-      </div>
-
-      {/* Barre de progression activité */}
-      <div className="mb-3">
-        <div className="flex items-center justify-between mb-2">
-          <span className={`text-xs font-semibold ${textSecondary}`}>Activité</span>
-          <span className={`text-xs font-bold text-green-600 dark:text-green-400`}>
-            {calculateActivityScore(authority)}%
-          </span>
+        {/* Onglets */}
+        <div className="flex border-b border-navy-200 dark:border-navy-800">
+          {['overview', 'activities'].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`flex-1 px-6 py-3 font-semibold border-b-2 transition-colors ${
+                activeTab === tab
+                  ? `${bgTabActive} border-red`
+                  : `text-navy-600 dark:text-navy-400 border-transparent hover:bg-navy-50 dark:hover:bg-navy-800/50`
+              }`}
+            >
+              {tab === 'overview' ? 'Vue d\'ensemble' : 'Historique des activités'}
+            </button>
+          ))}
         </div>
-        <div className="h-2 bg-navy-100 dark:bg-navy-800 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-gradient-to-r from-green-500 to-green-400 rounded-full transition-all"
-            style={{ width: `${calculateActivityScore(authority)}%` }}
-          ></div>
-        </div>
-      </div>
 
-      {/* Dernière connexion */}
-      <div className={`text-xs ${textSecondary} text-center`}>
-        {authority.derniere_connexion ? (
-          <>Dernière connexion: {new Date(authority.derniere_connexion).toLocaleDateString('fr-FR')}</>
-        ) : (
-          <>Pas encore connecté</>
-        )}
+        {/* Contenu */}
+        <div className="p-6">
+          {activeTab === 'overview' && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <DetailStat icon={AlertCircle} label="Crises gérées" value={authority.crises_gerees} />
+                <DetailStat icon={Inbox} label="Requêtes traitées" value={authority.requetes_traitees} />
+                <DetailStat icon={Bell} label="Alertes envoyées" value={authority.alertes_envoyees} />
+                <DetailStat icon={Clock} label="Heures de travail" value={`${authority.heures_travail.toFixed(1)}h`} />
+              </div>
+
+              <div className={`p-4 rounded-lg ${darkMode ? 'bg-navy-800' : 'bg-navy-50'}`}>
+                <p className="text-sm font-semibold text-navy-700 dark:text-navy-200 mb-3">Informations de contact</p>
+                <div className="space-y-2 text-sm text-navy-600 dark:text-navy-300">
+                  <p>📧 {authority.email}</p>
+                  <p>📱 {authority.telephone}</p>
+                  <p>📅 Créé le {new Date(authority.date_joined).toLocaleDateString('fr-FR')}</p>
+                  {authority.derniere_connexion ? (
+                    <p>🔑 Dernière connexion: {new Date(authority.derniere_connexion).toLocaleDateString('fr-FR')}</p>
+                  ) : (
+                    <p>🔑 Pas encore connecté</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'activities' && (
+            <div>
+              {activitiesLoading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red mx-auto mb-2"></div>
+                  <p className="text-navy-600 dark:text-navy-300 text-sm">Chargement...</p>
+                </div>
+              ) : activities.length === 0 ? (
+                <p className="text-center text-navy-600 dark:text-navy-300 py-8">Aucune activité enregistrée</p>
+              ) : (
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {activities.map((activity) => (
+                    <div
+                      key={activity.id}
+                      className={`p-3 rounded-lg ${darkMode ? 'bg-navy-800/50' : 'bg-navy-50'} border ${darkMode ? 'border-navy-700' : 'border-navy-100'}`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <p className="font-semibold text-navy dark:text-white text-sm">{activity.action_label}</p>
+                          {activity.description && (
+                            <p className="text-xs text-navy-600 dark:text-navy-400 mt-1">{activity.description}</p>
+                          )}
+                          {activity.zone && (
+                            <p className="text-xs text-navy-600 dark:text-navy-400">Zone: {activity.zone}</p>
+                          )}
+                        </div>
+                        <p className="text-xs text-navy-600 dark:text-navy-500 ml-4 whitespace-nowrap">
+                          {new Date(activity.timestamp).toLocaleDateString('fr-FR', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-function PerformanceBadge({ level }) {
-  const badges = {
-    excellent: { emoji: '⭐', label: 'Excellent', color: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300' },
-    good: { emoji: '👍', label: 'Bon', color: 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300' },
-    fair: { emoji: '📈', label: 'Acceptable', color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300' },
-    new: { emoji: '🆕', label: 'Nouveau', color: 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300' },
-  };
-
-  const badge = badges[level] || badges.new;
+function DetailStat({ icon: Icon, label, value }) {
   return (
-    <div className={`${badge.color} px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1`}>
-      <span>{badge.emoji}</span>
-      <span>{badge.label}</span>
+    <div className="flex items-center gap-3">
+      <div className="p-3 bg-red/10 rounded-lg">
+        <Icon size={20} className="text-red" />
+      </div>
+      <div>
+        <p className="text-xs text-navy-600 dark:text-navy-400">{label}</p>
+        <p className="text-lg font-bold text-navy dark:text-white">{value}</p>
+      </div>
     </div>
   );
-}
-
-function MiniStat({ label, value, icon, darkMode }) {
-  const bgMini = darkMode ? 'bg-navy-800' : 'bg-navy-50';
-  return (
-    <div className={`${bgMini} rounded-lg p-2 text-center`}>
-      <div className="text-xl mb-1">{icon}</div>
-      <p className={`text-xs font-semibold ${darkMode ? 'text-navy-300' : 'text-navy-700'}`}>
-        {value}
-      </p>
-      <p className={`text-xs ${darkMode ? 'text-navy-500' : 'text-navy-500'}`}>{label}</p>
-    </div>
-  );
-}
-
-function getPerformanceLevel(crises, requetes, alertes) {
-  const total = crises + requetes + alertes;
-
-  if (total === 0) return 'new';
-  if (total >= 100) return 'excellent';
-  if (total >= 50) return 'good';
-  return 'fair';
 }
 
 function calculateActivityScore(authority) {
-  // Score basé sur le total d'activités (max 200 = 100%)
   const total = authority.crises_gerees + authority.requetes_traitees + authority.alertes_envoyees;
   return Math.min(100, (total / 200) * 100);
 }

@@ -75,6 +75,35 @@ class AuthorityTracking(models.Model):
     def __str__(self):
         return f"Suivi de {self.user.username}"
 
+
+class AuthorityActivity(models.Model):
+    """Historique des activités d'une autorité"""
+    ACTION_TYPES = [
+        ('alert_sent', 'Alerte envoyée'),
+        ('request_handled', 'Requête traitée'),
+        ('crisis_managed', 'Crise gérée'),
+        ('login', 'Connexion'),
+        ('dashboard_view', 'Dashboard consulté'),
+        ('report_generated', 'Rapport généré'),
+    ]
+
+    authority = models.ForeignKey(User, on_delete=models.CASCADE, related_name='activities')
+    action_type = models.CharField(max_length=50, choices=ACTION_TYPES)
+    description = models.TextField(blank=True)
+    zone = models.CharField(max_length=200, blank=True, help_text="Zone concernée si applicable")
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Activité d'autorité"
+        verbose_name_plural = "Activités d'autorité"
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['authority', '-timestamp']),
+        ]
+
+    def __str__(self):
+        return f"{self.authority.username} - {self.get_action_type_display()}"
+
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
