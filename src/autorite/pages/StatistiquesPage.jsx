@@ -22,11 +22,13 @@ export default function StatistiquesPage() {
 
   const gridColor = darkMode ? '#2E4460' : '#EBF0F5';
   const axisColor = darkMode ? '#8AA0B8' : '#4A6480';
+  const textColor = darkMode ? '#FFFFFF' : '#000000';
   const tooltipStyle = {
     backgroundColor: darkMode ? '#1B2A40' : '#FFFFFF',
     borderColor: darkMode ? '#2E4460' : '#EBF0F5',
     borderRadius: 8,
     fontSize: 12,
+    color: textColor,
   };
 
   const zonesChartData =
@@ -71,8 +73,8 @@ export default function StatistiquesPage() {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={zonesChartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-                <XAxis dataKey="quartier" stroke={axisColor} fontSize={11} />
-                <YAxis stroke={axisColor} fontSize={11} domain={[0, 1]} />
+                <XAxis dataKey="quartier" stroke={axisColor} fontSize={11} fill={axisColor} />
+                <YAxis stroke={axisColor} fontSize={11} domain={[0, 1]} fill={axisColor} />
                 <Tooltip contentStyle={tooltipStyle} />
                 <Bar dataKey="score" name="Score de risque" radius={[4, 4, 0, 0]}>
                   {zonesChartData.map((entry, i) => (
@@ -92,8 +94,8 @@ export default function StatistiquesPage() {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={alertesParNiveau} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-                <XAxis dataKey="label" stroke={axisColor} fontSize={11} />
-                <YAxis stroke={axisColor} fontSize={11} allowDecimals={false} />
+                <XAxis dataKey="label" stroke={axisColor} fontSize={11} fill={axisColor} />
+                <YAxis stroke={axisColor} fontSize={11} allowDecimals={false} fill={axisColor} />
                 <Tooltip contentStyle={tooltipStyle} />
                 <Bar dataKey="count" name="Alertes" radius={[4, 4, 0, 0]}>
                   {alertesParNiveau.map((entry, i) => (

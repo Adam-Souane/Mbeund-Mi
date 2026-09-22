@@ -373,3 +373,121 @@ class SMSSignalement(models.Model):
 
     def __str__(self):
         return f"SMS de {self.telephone} - {self.get_statut_display()}"
+
+
+class SurvivalKit(models.Model):
+    """Kit de survie et préparation en cas d'inondation pour un citoyen."""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='survival_kit')
+
+    # Ressources d'urgence
+    eau_potable_litres = models.IntegerField(default=0, help_text="Litres d'eau potable stockée")
+    nourriture_jours = models.IntegerField(default=0, help_text="Jours de nourriture non-périssable")
+    medicaments = models.BooleanField(default=False, help_text="Médicaments essentiels disponibles")
+    documents_importants = models.BooleanField(default=False, help_text="Documents importants préparés")
+
+    # Equipement
+    lampe_torche = models.BooleanField(default=False)
+    batterie_portable = models.BooleanField(default=False)
+    trousse_premiers_secours = models.BooleanField(default=False)
+    vetements_secours = models.BooleanField(default=False)
+
+    # Préparation
+    plan_evacuation = models.TextField(blank=True, help_text="Plan d'évacuation personnel")
+    points_refuge_identifies = models.BooleanField(default=False)
+    voisins_contactes = models.BooleanField(default=False)
+
+    # Metadata
+    derniere_mise_a_jour = models.DateTimeField(auto_now=True)
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name = "Kit de survie"
+        verbose_name_plural = "Kits de survie"
+
+    def __str__(self):
+        return f"Kit de survie de {self.user.username}"
+
+
+class EmergencyContact(models.Model):
+    """Contact d'urgence pour un citoyen."""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='emergency_contact')
+
+    # Contact principal
+    nom = models.CharField(max_length=100, help_text="Nom du contact d'urgence")
+    relation = models.CharField(
+        max_length=50,
+        choices=[
+            ('famille', 'Famille'),
+            ('ami', 'Ami'),
+            ('voisin', 'Voisin'),
+            ('medecin', 'Médecin'),
+            ('autre', 'Autre'),
+        ],
+        help_text="Relation avec le contact"
+    )
+    telephone = models.CharField(max_length=20, help_text="Numéro de téléphone")
+    email = models.EmailField(blank=True)
+    adresse = models.TextField(blank=True, help_text="Adresse du contact")
+
+    # Préférences de contact
+    alerter_automatiquement = models.BooleanField(
+        default=True,
+        help_text="Alerter automatiquement lors d'une alerte d'inondation"
+    )
+
+    # Metadata
+    date_ajout = models.DateTimeField(auto_now_add=True)
+    derniere_mise_a_jour = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Contact d'urgence"
+        verbose_name_plural = "Contacts d'urgence"
+
+    def __str__(self):
+        return f"{self.nom} ({self.user.username})"
+
+
+class TriageAppel(models.Model):
+    """Enregistrement d'un triage d'appel en crise."""
+    CATEGORIE_CHOICES = [
+        ('electrique', 'Danger électronique'),
+        ('eau', 'Eau potable & désinfectée'),
+        ('evacuation', 'Évacuation réflexe & secours'),
+    ]
+
+    # Informations de l'appel
+    autorite = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='triages_appels')
+    citoyen = models.ForeignKey(User, on_delete=models.CASCADE, related_name='appels_recus', limit_choices_to={'profile__role': 'citoyen'}, null=True, blank=True)
+    numero_citoyen = models.CharField(max_length=20, blank=True, help_text="Numéro de téléphone du citoyen si non identifié")
+    
+    # Détails du triage
+    categorie = models.CharField(max_length=20, choices=CATEGORIE_CHOICES)
+    date_appel = models.DateTimeField(auto_now_add=True)
+    duree_appel_minutes = models.IntegerField(default=0, help_text="Durée de l'appel en minutes")
+    
+    # Réponses du triage (JSON pour flexibilité)
+    reponses = models.JSONField(default=dict, help_text="Dictionnaire des réponses cochées et notes")
+    
+    # Complétude
+    pourcentage_complete = models.IntegerField(default=0, help_text="Pourcentage de complétude du triage (0-100)")
+    
+    # Notes générales
+    notes_generales = models.TextField(blank=True, help_text="Notes générales sur l'appel")
+    
+    # Métadonnées
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Triage d'appel"
+        verbose_name_plural = "Triages d'appels"
+        ordering = ['-date_appel']
+        indexes = [
+            models.Index(fields=['citoyen', '-date_appel']),
+            models.Index(fields=['autorite', '-date_appel']),
+            models.Index(fields=['categorie', '-date_appel']),
+        ]
+    
+    def __str__(self):
+        citoyen_info = self.citoyen.username if self.citoyen else self.numero_citoyen
+        return f"Triage {self.get_categorie_display()} - {citoyen_info} ({self.date_appel.strftime('%Y-%m-%d %H:%M')})"

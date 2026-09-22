@@ -14,11 +14,13 @@ export default function BacktestingPage() {
   const bgCard = darkMode ? '#1B2A40' : '#FFFFFF';
   const textMuted = darkMode ? '#8AA0B8' : '#6B7280';
 
+  const textColor = darkMode ? '#FFFFFF' : '#000000';
   const tooltipStyle = {
     backgroundColor: bgCard,
     borderColor: darkMode ? '#2E4460' : '#EBF0F5',
     borderRadius: 8,
     fontSize: 12,
+    color: textColor,
   };
 
   if (loading) {
@@ -164,8 +166,8 @@ export default function BacktestingPage() {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={detectionChartData} margin={{ top: 5, right: 10, left: -15, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-                <XAxis dataKey="name" stroke={axisColor} fontSize={11} />
-                <YAxis stroke={axisColor} fontSize={11} />
+                <XAxis dataKey="name" stroke={axisColor} fontSize={11} fill={axisColor} />
+                <YAxis stroke={axisColor} fontSize={11} fill={axisColor} />
                 <Tooltip contentStyle={tooltipStyle} />
                 <Bar dataKey="value" name="Nombre" radius={[4, 4, 0, 0]}>
                   {detectionChartData.map((entry, i) => (
@@ -187,8 +189,8 @@ export default function BacktestingPage() {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={riskChartData} margin={{ top: 5, right: 10, left: -15, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-                <XAxis dataKey="risque" stroke={axisColor} fontSize={11} />
-                <YAxis stroke={axisColor} fontSize={11} />
+                <XAxis dataKey="risque" stroke={axisColor} fontSize={11} fill={axisColor} />
+                <YAxis stroke={axisColor} fontSize={11} fill={axisColor} />
                 <Tooltip contentStyle={tooltipStyle} />
                 <Bar dataKey="count" name="Épisodes">
                   {riskChartData.map((entry, i) => (

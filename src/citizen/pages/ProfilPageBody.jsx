@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Moon, LogOut, ShieldCheck, HeartHandshake, Users2, Loader2, CheckCircle2, Copy, Check } from 'lucide-react';
+import { Moon, LogOut, ShieldCheck, HeartHandshake, Users2, Loader2, CheckCircle2, Copy, Check, AlertCircle, Droplet, Utensils, Phone, Mail, MapPin, Clock, Layers } from 'lucide-react';
 import CitizenShell from '../shared/CitizenShell';
 import { useAuth } from '../../auth/AuthContext';
 import { useTheme } from '../../theme/ThemeContext';
@@ -7,6 +7,9 @@ import { useZones } from '../../shared/hooks/useZones';
 import { useMonProfilVulnerabilite, useSaveMonProfilVulnerabilite } from '../../shared/hooks/useVulnerabilite';
 import { useMonRelais, useCreateRelais, useDeleteRelais } from '../../shared/hooks/useRelaisQuartier';
 import { flattenApiErrors } from '../../shared/utils/apiErrors';
+import { useSurvivalKit, useSaveSurvivalKit } from '../../shared/hooks/useSurvivalKit';
+import { useEmergencyContact, useSaveEmergencyContact } from '../../shared/hooks/useEmergencyContact';
+import { useMySignalements } from '../../shared/hooks/useMySignalements';
 
 const ROLE_LABELS = {
   citoyen: 'Citoyen',
@@ -28,10 +31,52 @@ export default function ProfilPageBody() {
   const { darkMode, toggleTheme } = useTheme();
   const { data: zonesData } = useZones();
 
+  // Profil Vulnérabilité
   const { data: monProfil } = useMonProfilVulnerabilite();
   const saveProfil = useSaveMonProfilVulnerabilite();
   const [profilForm, setProfilForm] = useState(PROFIL_VIDE);
 
+  // Relais Quartier
+  const { data: monRelais } = useMonRelais();
+  const createRelais = useCreateRelais();
+  const deleteRelais = useDeleteRelais();
+  const [relaisZone, setRelaisZone] = useState('');
+  const [copiedUsername, setCopiedUsername] = useState(false);
+
+  // Kit de survie
+  const { data: monSurvivalKit } = useSurvivalKit();
+  const saveSurvivalKit = useSaveSurvivalKit();
+  const [survivalKitForm, setSurvivalKitForm] = useState({
+    eau_potable_litres: 0,
+    nourriture_jours: 0,
+    medicaments: false,
+    documents_importants: false,
+    lampe_torche: false,
+    batterie_portable: false,
+    trousse_premiers_secours: false,
+    vetements_secours: false,
+    plan_evacuation: '',
+    points_refuge_identifies: false,
+    voisins_contactes: false,
+    notes: '',
+  });
+
+  // Contact d'urgence
+  const { data: monContact } = useEmergencyContact();
+  const saveEmergencyContact = useSaveEmergencyContact();
+  const [contactForm, setContactForm] = useState({
+    nom: '',
+    relation: 'famille',
+    telephone: '',
+    email: '',
+    adresse: '',
+    alerter_automatiquement: true,
+  });
+
+  // Historique des signalements
+  const { data: mesSignalements } = useMySignalements();
+
+  // Effects
   useEffect(() => {
     if (monProfil) {
       setProfilForm({
@@ -45,11 +90,37 @@ export default function ProfilPageBody() {
     }
   }, [monProfil]);
 
-  const { data: monRelais } = useMonRelais();
-  const createRelais = useCreateRelais();
-  const deleteRelais = useDeleteRelais();
-  const [relaisZone, setRelaisZone] = useState('');
-  const [copiedUsername, setCopiedUsername] = useState(false);
+  useEffect(() => {
+    if (monSurvivalKit) {
+      setSurvivalKitForm({
+        eau_potable_litres: monSurvivalKit.eau_potable_litres ?? 0,
+        nourriture_jours: monSurvivalKit.nourriture_jours ?? 0,
+        medicaments: monSurvivalKit.medicaments ?? false,
+        documents_importants: monSurvivalKit.documents_importants ?? false,
+        lampe_torche: monSurvivalKit.lampe_torche ?? false,
+        batterie_portable: monSurvivalKit.batterie_portable ?? false,
+        trousse_premiers_secours: monSurvivalKit.trousse_premiers_secours ?? false,
+        vetements_secours: monSurvivalKit.vetements_secours ?? false,
+        plan_evacuation: monSurvivalKit.plan_evacuation ?? '',
+        points_refuge_identifies: monSurvivalKit.points_refuge_identifies ?? false,
+        voisins_contactes: monSurvivalKit.voisins_contactes ?? false,
+        notes: monSurvivalKit.notes ?? '',
+      });
+    }
+  }, [monSurvivalKit]);
+
+  useEffect(() => {
+    if (monContact) {
+      setContactForm({
+        nom: monContact.nom ?? '',
+        relation: monContact.relation ?? 'famille',
+        telephone: monContact.telephone ?? '',
+        email: monContact.email ?? '',
+        adresse: monContact.adresse ?? '',
+        alerter_automatiquement: monContact.alerter_automatiquement ?? true,
+      });
+    }
+  }, [monContact]);
 
   const copyUsername = () => {
     navigator.clipboard.writeText(username);
@@ -67,6 +138,16 @@ export default function ProfilPageBody() {
   const handleDevenirRelais = () => {
     if (!relaisZone) return;
     createRelais.mutate({ zone: relaisZone });
+  };
+
+  const handleSaveSurvivalKit = (e) => {
+    e.preventDefault();
+    saveSurvivalKit.mutate(survivalKitForm);
+  };
+
+  const handleSaveContact = (e) => {
+    e.preventDefault();
+    saveEmergencyContact.mutate(contactForm);
   };
 
   const initial = username?.[0]?.toUpperCase() ?? '?';
@@ -300,6 +381,343 @@ export default function ProfilPageBody() {
                 <p key={i}>{msg}</p>
               ))}
             </div>
+          )}
+        </div>
+
+        {/* Kit de Survie */}
+        <form onSubmit={handleSaveSurvivalKit} className="lg:col-span-2 bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-1">
+            <AlertCircle size={16} className="text-risk-orange" />
+            <h3 className="text-sm font-bold">Kit de survie en cas d'inondation</h3>
+          </div>
+          <p className="text-xs text-navy-600 dark:text-navy-200 mb-4">
+            Préparez-vous pour les situations d'urgence en complétant votre kit de survie.
+          </p>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <label className="block">
+              <span className="block text-xs font-semibold mb-1.5 flex items-center gap-1.5">
+                <Droplet size={14} />
+                Eau potable (litres)
+              </span>
+              <input
+                type="number"
+                min={0}
+                value={survivalKitForm.eau_potable_litres}
+                onChange={(e) => setSurvivalKitForm((f) => ({ ...f, eau_potable_litres: Number(e.target.value) }))}
+                className="w-full px-3.5 py-2.5 rounded-md border-[1.5px] border-navy-200 dark:border-navy-800 bg-white dark:bg-navy text-sm"
+                placeholder="Ex: 20"
+              />
+            </label>
+
+            <label className="block">
+              <span className="block text-xs font-semibold mb-1.5 flex items-center gap-1.5">
+                <Utensils size={14} />
+                Nourriture (jours)
+              </span>
+              <input
+                type="number"
+                min={0}
+                value={survivalKitForm.nourriture_jours}
+                onChange={(e) => setSurvivalKitForm((f) => ({ ...f, nourriture_jours: Number(e.target.value) }))}
+                className="w-full px-3.5 py-2.5 rounded-md border-[1.5px] border-navy-200 dark:border-navy-800 bg-white dark:bg-navy text-sm"
+                placeholder="Ex: 3"
+              />
+            </label>
+
+            <label className="flex items-center gap-2.5 text-sm font-semibold">
+              <input
+                type="checkbox"
+                checked={survivalKitForm.medicaments}
+                onChange={(e) => setSurvivalKitForm((f) => ({ ...f, medicaments: e.target.checked }))}
+                className="accent-red w-4 h-4"
+              />
+              Médicaments essentiels
+            </label>
+
+            <label className="flex items-center gap-2.5 text-sm font-semibold">
+              <input
+                type="checkbox"
+                checked={survivalKitForm.documents_importants}
+                onChange={(e) => setSurvivalKitForm((f) => ({ ...f, documents_importants: e.target.checked }))}
+                className="accent-red w-4 h-4"
+              />
+              Documents importants
+            </label>
+
+            <label className="flex items-center gap-2.5 text-sm font-semibold">
+              <input
+                type="checkbox"
+                checked={survivalKitForm.lampe_torche}
+                onChange={(e) => setSurvivalKitForm((f) => ({ ...f, lampe_torche: e.target.checked }))}
+                className="accent-red w-4 h-4"
+              />
+              Lampe torche
+            </label>
+
+            <label className="flex items-center gap-2.5 text-sm font-semibold">
+              <input
+                type="checkbox"
+                checked={survivalKitForm.batterie_portable}
+                onChange={(e) => setSurvivalKitForm((f) => ({ ...f, batterie_portable: e.target.checked }))}
+                className="accent-red w-4 h-4"
+              />
+              Batterie portable
+            </label>
+
+            <label className="flex items-center gap-2.5 text-sm font-semibold">
+              <input
+                type="checkbox"
+                checked={survivalKitForm.trousse_premiers_secours}
+                onChange={(e) => setSurvivalKitForm((f) => ({ ...f, trousse_premiers_secours: e.target.checked }))}
+                className="accent-red w-4 h-4"
+              />
+              Trousse de premiers secours
+            </label>
+
+            <label className="flex items-center gap-2.5 text-sm font-semibold">
+              <input
+                type="checkbox"
+                checked={survivalKitForm.vetements_secours}
+                onChange={(e) => setSurvivalKitForm((f) => ({ ...f, vetements_secours: e.target.checked }))}
+                className="accent-red w-4 h-4"
+              />
+              Vêtements de secours
+            </label>
+
+            <label className="flex items-center gap-2.5 text-sm font-semibold">
+              <input
+                type="checkbox"
+                checked={survivalKitForm.points_refuge_identifies}
+                onChange={(e) => setSurvivalKitForm((f) => ({ ...f, points_refuge_identifies: e.target.checked }))}
+                className="accent-red w-4 h-4"
+              />
+              Points de refuge identifiés
+            </label>
+
+            <label className="flex items-center gap-2.5 text-sm font-semibold">
+              <input
+                type="checkbox"
+                checked={survivalKitForm.voisins_contactes}
+                onChange={(e) => setSurvivalKitForm((f) => ({ ...f, voisins_contactes: e.target.checked }))}
+                className="accent-red w-4 h-4"
+              />
+              Voisins contactés
+            </label>
+
+            <label className="block sm:col-span-2">
+              <span className="block text-xs font-semibold mb-1.5">Plan d'évacuation</span>
+              <textarea
+                rows={2}
+                value={survivalKitForm.plan_evacuation}
+                onChange={(e) => setSurvivalKitForm((f) => ({ ...f, plan_evacuation: e.target.value }))}
+                placeholder="Décrivez votre plan d'évacuation..."
+                className="w-full px-3.5 py-2.5 rounded-md border-[1.5px] border-navy-200 dark:border-navy-800 bg-white dark:bg-navy text-sm placeholder:text-navy-400"
+              />
+            </label>
+
+            <label className="block sm:col-span-2">
+              <span className="block text-xs font-semibold mb-1.5">Notes supplémentaires</span>
+              <textarea
+                rows={2}
+                value={survivalKitForm.notes}
+                onChange={(e) => setSurvivalKitForm((f) => ({ ...f, notes: e.target.value }))}
+                placeholder="Ajoutez d'autres équipements ou détails..."
+                className="w-full px-3.5 py-2.5 rounded-md border-[1.5px] border-navy-200 dark:border-navy-800 bg-white dark:bg-navy text-sm placeholder:text-navy-400"
+              />
+            </label>
+          </div>
+
+          {saveSurvivalKit.isError && (
+            <div className="mt-3 px-3 py-2.5 rounded-md bg-red-50 dark:bg-red/15 text-red-900 dark:text-red-200 text-xs space-y-1">
+              {flattenApiErrors(saveSurvivalKit.error).map((msg, i) => (
+                <p key={i}>{msg}</p>
+              ))}
+            </div>
+          )}
+
+          <div className="flex items-center gap-3 mt-4">
+            <button
+              type="submit"
+              disabled={saveSurvivalKit.isPending}
+              className="flex items-center gap-1.5 bg-red text-white font-bold text-sm px-5 py-2.5 rounded-md disabled:opacity-60"
+            >
+              {saveSurvivalKit.isPending && <Loader2 size={14} className="animate-spin" />}
+              Enregistrer
+            </button>
+            {saveSurvivalKit.isSuccess && (
+              <span className="flex items-center gap-1.5 text-xs font-bold text-risk-vert">
+                <CheckCircle2 size={14} />
+                Enregistré
+              </span>
+            )}
+          </div>
+        </form>
+
+        {/* Contact d'Urgence */}
+        <form onSubmit={handleSaveContact} className="lg:col-span-2 bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-1">
+            <Phone size={16} className="text-risk-vert" />
+            <h3 className="text-sm font-bold">Contact d'urgence</h3>
+          </div>
+          <p className="text-xs text-navy-600 dark:text-navy-200 mb-4">
+            Indiquez une personne de confiance à contacter en cas d'urgence.
+          </p>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <label className="block">
+              <span className="block text-xs font-semibold mb-1.5">Nom complet</span>
+              <input
+                type="text"
+                value={contactForm.nom}
+                onChange={(e) => setContactForm((f) => ({ ...f, nom: e.target.value }))}
+                className="w-full px-3.5 py-2.5 rounded-md border-[1.5px] border-navy-200 dark:border-navy-800 bg-white dark:bg-navy text-sm"
+                placeholder="Ex: Jean Dupont"
+              />
+            </label>
+
+            <label className="block">
+              <span className="block text-xs font-semibold mb-1.5">Relation</span>
+              <select
+                value={contactForm.relation}
+                onChange={(e) => setContactForm((f) => ({ ...f, relation: e.target.value }))}
+                className="w-full px-3.5 py-2.5 rounded-md border-[1.5px] border-navy-200 dark:border-navy-800 bg-white dark:bg-navy text-sm"
+              >
+                <option value="famille">Famille</option>
+                <option value="ami">Ami</option>
+                <option value="voisin">Voisin</option>
+                <option value="medecin">Médecin</option>
+                <option value="autre">Autre</option>
+              </select>
+            </label>
+
+            <label className="block">
+              <span className="block text-xs font-semibold mb-1.5 flex items-center gap-1.5">
+                <Phone size={14} />
+                Téléphone
+              </span>
+              <input
+                type="tel"
+                value={contactForm.telephone}
+                onChange={(e) => setContactForm((f) => ({ ...f, telephone: e.target.value }))}
+                className="w-full px-3.5 py-2.5 rounded-md border-[1.5px] border-navy-200 dark:border-navy-800 bg-white dark:bg-navy text-sm"
+                placeholder="Ex: +221 77 123 45 67"
+              />
+            </label>
+
+            <label className="block">
+              <span className="block text-xs font-semibold mb-1.5 flex items-center gap-1.5">
+                <Mail size={14} />
+                Email
+              </span>
+              <input
+                type="email"
+                value={contactForm.email}
+                onChange={(e) => setContactForm((f) => ({ ...f, email: e.target.value }))}
+                className="w-full px-3.5 py-2.5 rounded-md border-[1.5px] border-navy-200 dark:border-navy-800 bg-white dark:bg-navy text-sm"
+                placeholder="Ex: jean@example.com"
+              />
+            </label>
+
+            <label className="block sm:col-span-2">
+              <span className="block text-xs font-semibold mb-1.5 flex items-center gap-1.5">
+                <MapPin size={14} />
+                Adresse
+              </span>
+              <textarea
+                rows={2}
+                value={contactForm.adresse}
+                onChange={(e) => setContactForm((f) => ({ ...f, adresse: e.target.value }))}
+                placeholder="Adresse complète du contact..."
+                className="w-full px-3.5 py-2.5 rounded-md border-[1.5px] border-navy-200 dark:border-navy-800 bg-white dark:bg-navy text-sm placeholder:text-navy-400"
+              />
+            </label>
+
+            <label className="flex items-center gap-2.5 text-sm font-semibold sm:col-span-2">
+              <input
+                type="checkbox"
+                checked={contactForm.alerter_automatiquement}
+                onChange={(e) => setContactForm((f) => ({ ...f, alerter_automatiquement: e.target.checked }))}
+                className="accent-red w-4 h-4"
+              />
+              M'alerter automatiquement en cas d'urgence
+            </label>
+          </div>
+
+          {saveEmergencyContact.isError && (
+            <div className="mt-3 px-3 py-2.5 rounded-md bg-red-50 dark:bg-red/15 text-red-900 dark:text-red-200 text-xs space-y-1">
+              {flattenApiErrors(saveEmergencyContact.error).map((msg, i) => (
+                <p key={i}>{msg}</p>
+              ))}
+            </div>
+          )}
+
+          <div className="flex items-center gap-3 mt-4">
+            <button
+              type="submit"
+              disabled={saveEmergencyContact.isPending}
+              className="flex items-center gap-1.5 bg-red text-white font-bold text-sm px-5 py-2.5 rounded-md disabled:opacity-60"
+            >
+              {saveEmergencyContact.isPending && <Loader2 size={14} className="animate-spin" />}
+              Enregistrer
+            </button>
+            {saveEmergencyContact.isSuccess && (
+              <span className="flex items-center gap-1.5 text-xs font-bold text-risk-vert">
+                <CheckCircle2 size={14} />
+                Enregistré
+              </span>
+            )}
+          </div>
+        </form>
+
+        {/* Historique des Signalements */}
+        <div className="lg:col-span-2 bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-1">
+            <Layers size={16} className="text-risk-jaune" />
+            <h3 className="text-sm font-bold">Historique de mes signalements</h3>
+          </div>
+          <p className="text-xs text-navy-600 dark:text-navy-200 mb-4">
+            Consulter tous vos signalements passés.
+          </p>
+
+          {mesSignalements?.results && mesSignalements.results.length > 0 ? (
+            <div className="space-y-3">
+              {mesSignalements.results.map((signalement) => (
+                <div key={signalement.id} className="border-l-4 border-risk-jaune pl-4 py-3 bg-navy-50 dark:bg-navy-900 rounded-md">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div>
+                      <p className="text-sm font-semibold">{signalement.description}</p>
+                      <span className={`inline-flex items-center gap-1 text-xs font-bold mt-1 ${
+                        signalement.valide ? 'text-risk-vert' : 'text-navy-500'
+                      }`}>
+                        {signalement.valide ? '✓ Validé' : '⏳ En attente'}
+                      </span>
+                    </div>
+                    <span className={`inline-flex px-2.5 py-1 rounded text-xs font-bold flex-shrink-0 ${
+                      signalement.categorie_display === 'Inondation' ? 'bg-risk-bleu/20 text-risk-bleu' :
+                      signalement.categorie_display === 'Dégâts' ? 'bg-red/20 text-red' :
+                      'bg-navy-200 text-navy-600'
+                    }`}>
+                      {signalement.categorie_display}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4 text-xs text-navy-600 dark:text-navy-400">
+                    <span className="flex items-center gap-1.5">
+                      <Clock size={12} />
+                      {new Date(signalement.date_creation).toLocaleDateString('fr-FR')}
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <Droplet size={12} />
+                      Niveau: {signalement.niveau_eau_display}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-navy-600 dark:text-navy-400 py-6 text-center">
+              Vous n'avez pas encore fait de signalements.
+            </p>
           )}
         </div>
 

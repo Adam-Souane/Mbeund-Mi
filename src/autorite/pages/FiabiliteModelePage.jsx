@@ -20,11 +20,13 @@ export default function FiabiliteModelePage() {
   const bgCard = darkMode ? '#1B2A40' : '#FFFFFF';
   const textMuted = darkMode ? '#8AA0B8' : '#6B7280';
 
+  const textColor = darkMode ? '#FFFFFF' : '#000000';
   const tooltipStyle = {
     backgroundColor: bgCard,
     borderColor: darkMode ? '#2E4460' : '#EBF0F5',
     borderRadius: 8,
     fontSize: 12,
+    color: textColor,
   };
 
   if (loading) {
@@ -140,8 +142,8 @@ export default function FiabiliteModelePage() {
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={calibrationChartData} margin={{ top: 5, right: 10, left: -15, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-                <XAxis dataKey="seuil" stroke={axisColor} fontSize={11} label={{ value: 'Probabilité prédite (%)', position: 'insideBottomRight', offset: -5 }} />
-                <YAxis stroke={axisColor} fontSize={11} label={{ value: 'Prob. réelle (%)', angle: -90, position: 'insideLeft' }} domain={[0, 1]} />
+                <XAxis dataKey="seuil" stroke={axisColor} fontSize={11} fill={axisColor} label={{ value: 'Probabilité prédite (%)', position: 'insideBottomRight', offset: -5, fill: axisColor }} />
+                <YAxis stroke={axisColor} fontSize={11} fill={axisColor} label={{ value: 'Prob. réelle (%)', angle: -90, position: 'insideLeft', fill: axisColor }} domain={[0, 1]} />
                 <Tooltip contentStyle={tooltipStyle} formatter={(v) => (v * 100).toFixed(1) + '%'} />
                 <Legend />
                 <Line type="monotone" dataKey="avant" stroke="#EF6234" name="Avant calibration" dot={{ r: 4 }} />
@@ -162,8 +164,8 @@ export default function FiabiliteModelePage() {
             <ResponsiveContainer width={400} height={256}>
               <BarChart data={matrixChartData} margin={{ top: 5, right: 10, left: 60, bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-                <XAxis dataKey="risque" stroke={axisColor} fontSize={11} />
-                <YAxis stroke={axisColor} fontSize={11} />
+                <XAxis dataKey="risque" stroke={axisColor} fontSize={11} fill={axisColor} />
+                <YAxis stroke={axisColor} fontSize={11} fill={axisColor} />
                 <Tooltip contentStyle={tooltipStyle} />
                 <Legend />
                 <Bar dataKey="vert" name="Vert" fill={RISK_COLORS.vert} />

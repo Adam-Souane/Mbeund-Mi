@@ -18,6 +18,7 @@ from alertes.models import (
     Alerte, ZoneRisque, PredictionIA, EpisodeInondation, SignalementCitoyen,
     SegmentRue, PrevisionMeteo, HistoriqueRisque, ContactAlerte,
     ProfilVulnerabilite, RelaisQuartier, PointRefuge, SMSSignalement,
+    SurvivalKit, EmergencyContact, TriageAppel,
 )
 from api.serializers import (
     CapteurSerializer,
@@ -36,6 +37,7 @@ from api.serializers import (
     RelaisQuartierSerializer,
     PointRefugeSerializer,
     SMSSignalementSerializer,
+    TriageAppelSerializer,
 )
 from api.permissions import IsAutoriteOrAdmin, EstAdminOuAutorite
 from api.services.sms_inbound_service import traiter_webhook_sms
@@ -716,3 +718,105 @@ class ExportPDFView(APIView):
         except Exception as e:
             logger.error(f"PDF {export_type}: {e}", exc_info=True)
             return Response({"erreur": str(e)}, status=500)
+
+
+class MonSurvivalKitView(APIView):
+    """
+    GET /api/mon-survival-kit/ - Récupérer le kit de survie personnel
+    PUT /api/mon-survival-kit/ - Mettre à jour le kit de survie
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        survival_kit, created = SurvivalKit.objects.get_or_create(user=request.user)
+        serializer = SurvivalKitSerializer(survival_kit)
+        return Response(serializer.data)
+
+    def put(self, request):
+        survival_kit, created = SurvivalKit.objects.get_or_create(user=request.user)
+        serializer = SurvivalKitSerializer(survival_kit, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+
+
+class MonEmergencyContactView(APIView):
+    """
+    GET /api/mon-emergency-contact/ - Récupérer le contact d'urgence
+    PUT /api/mon-emergency-contact/ - Mettre à jour le contact d'urgence
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        emergency_contact, created = EmergencyContact.objects.get_or_create(user=request.user)
+        serializer = EmergencyContactSerializer(emergency_contact)
+        return Response(serializer.data)
+
+    def put(self, request):
+        emergency_contact, created = EmergencyContact.objects.get_or_create(user=request.user)
+        serializer = EmergencyContactSerializer(emergency_contact, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+
+
+class MesSignalementsView(APIView):
+    """
+    GET /api/mes-signalements/ - Récupérer l'historique des signalements personnels
+    Retourne tous les signalements créés par l'utilisateur authentifié
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        # Filtrer les signalements de l'utilisateur actuel
+        signalements = SignalementCitoyen.objects.filter(
+            signale_par=request.user
+        ).order_by('-date_creation')
+        
+        # Pagination
+        paginator = PageNumberPagination()
+        paginator.page_size = 20
+        paginated = paginator.paginate_queryset(signalements, request)
+        
+        serializer = SignalementHistoriqueSerializer(paginated, many=True)
+        return paginator.get_paginated_response(serializer.data)
+
+
+class EnregistrerTriageAppelView(APIView):
+    """
+    POST /api/enregistrer-triage-appel/
+    Enregistre un triage d'appel avec les réponses du citoyen.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        try:
+            data = request.data
+            
+            # Récupérer ou créer le citoyen
+            citoyen = None
+            if 'citoyen_id' in data and data['citoyen_id']:
+                try:
+                    citoyen = User.objects.get(id=data['citoyen_id'])
+                except User.DoesNotExist:
+                    return Response({"error": "Citoyen non trouvé"}, status=400)
+            
+            # Créer le triage
+            triage = TriageAppel.objects.create(
+                autorite=request.user,
+                citoyen=citoyen,
+                numero_citoyen=data.get('numero_citoyen', ''),
+                categorie=data.get('categorie'),
+                duree_appel_minutes=data.get('duree_appel_minutes', 0),
+                reponses=data.get('reponses', {}),
+                pourcentage_complete=data.get('pourcentage_complete', 0),
+                notes_generales=data.get('notes_generales', '')
+            )
+            
+            serializer = TriageAppelSerializer(triage)
+            return Response(serializer.data, status=201)
+        
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)

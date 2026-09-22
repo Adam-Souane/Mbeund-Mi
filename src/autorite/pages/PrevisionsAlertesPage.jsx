@@ -3,6 +3,7 @@ import { CloudRain, Droplets, Wind } from 'lucide-react';
 import AutoriteShell from '../desktop/AutoriteShell';
 import WeatherWidget from '../../shared/components/WeatherWidget';
 import RiskBadge from '../../shared/components/RiskBadge';
+import BarometreIAPredictive from '../components/BarometreIAPredictive';
 import { usePrevisions } from '../../shared/hooks/usePrevisions';
 import { useAlertesRecentes } from '../../shared/hooks/useAlertes';
 
@@ -32,6 +33,8 @@ export default function PrevisionsAlertesPage() {
       </div>
 
       <WeatherWidget previsions={previsions} />
+
+      <BarometreIAPredictive previsions={previsions} />
 
       {/* Desktop : tableau + liste côte à côte plutôt qu'empilés pleine
           largeur (un tableau à 4 colonnes étiré sur toute la largeur laisse

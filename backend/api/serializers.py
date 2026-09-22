@@ -11,6 +11,7 @@ from alertes.models import (
     ZoneRisque, Alerte, PredictionIA, EpisodeInondation, SignalementCitoyen,
     SegmentRue, PrevisionMeteo, HistoriqueRisque, ContactAlerte,
     ProfilVulnerabilite, RelaisQuartier, PointRefuge, SMSSignalement,
+    SurvivalKit, EmergencyContact, TriageAppel,
 )
 from api.services.vision_service import analyser_photo, trouve_signalement_similaire
 
@@ -670,3 +671,59 @@ class SMSSignalementSerializer(serializers.ModelSerializer):
 
     def get_signalement_id(self, obj):
         return obj.signalement_cree_id
+
+
+class SurvivalKitSerializer(serializers.ModelSerializer):
+    """Serializer pour le kit de survie."""
+    class Meta:
+        model = SurvivalKit
+        fields = [
+            'user', 'eau_potable_litres', 'nourriture_jours', 
+            'medicaments', 'documents_importants', 'lampe_torche',
+            'batterie_portable', 'trousse_premiers_secours', 'vetements_secours',
+            'plan_evacuation', 'points_refuge_identifies', 'voisins_contactes',
+            'derniere_mise_a_jour', 'notes'
+        ]
+        read_only_fields = ['user', 'derniere_mise_a_jour']
+
+
+class EmergencyContactSerializer(serializers.ModelSerializer):
+    """Serializer pour le contact d'urgence."""
+    class Meta:
+        model = EmergencyContact
+        fields = [
+            'user', 'nom', 'relation', 'telephone', 'email', 'adresse',
+            'alerter_automatiquement', 'date_ajout', 'derniere_mise_a_jour'
+        ]
+        read_only_fields = ['user', 'date_ajout', 'derniere_mise_a_jour']
+
+
+class SignalementHistoriqueSerializer(serializers.ModelSerializer):
+    """Serializer pour afficher l'historique des signalements d'un utilisateur."""
+    categorie_display = serializers.CharField(source='get_categorie_display', read_only=True)
+    niveau_eau_display = serializers.CharField(source='get_niveau_eau_estime_display', read_only=True)
+    
+    class Meta:
+        model = SignalementCitoyen
+        fields = [
+            'id', 'description', 'categorie', 'categorie_display', 
+            'niveau_eau_estime', 'niveau_eau_display', 'valide',
+            'date_creation', 'localisation'
+        ]
+        read_only_fields = fields
+
+
+class TriageAppelSerializer(serializers.ModelSerializer):
+    """Serializer pour enregistrer un triage d'appel."""
+    citoyen_username = serializers.CharField(source='citoyen.username', read_only=True)
+    categorie_display = serializers.CharField(source='get_categorie_display', read_only=True)
+    
+    class Meta:
+        model = TriageAppel
+        fields = [
+            'id', 'autorite', 'citoyen', 'citoyen_username', 'numero_citoyen',
+            'categorie', 'categorie_display', 'date_appel', 'duree_appel_minutes',
+            'reponses', 'pourcentage_complete', 'notes_generales',
+            'date_creation', 'date_modification'
+        ]
+        read_only_fields = ['id', 'autorite', 'date_appel', 'date_creation', 'date_modification']

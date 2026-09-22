@@ -25,6 +25,10 @@ from api.views import (
     SMSInboundWebhookView,
     ExportCSVView,
     ExportPDFView,
+    MonSurvivalKitView,
+    MonEmergencyContactView,
+    MesSignalementsView,
+    EnregistrerTriageAppelView,
 )
 
 router = DefaultRouter()
@@ -52,6 +56,10 @@ urlpatterns = [
     path('chat/', ChatView.as_view(), name='chat'),
     path('itineraire-securise/', ItineraireSecuriseView.as_view(), name='itineraire-securise'),
     path('mon-profil-vulnerabilite/', MonProfilVulnerabiliteView.as_view(), name='mon-profil-vulnerabilite'),
+    path('mon-survival-kit/', MonSurvivalKitView.as_view(), name='mon-survival-kit'),
+    path('mon-emergency-contact/', MonEmergencyContactView.as_view(), name='mon-emergency-contact'),
+    path('mes-signalements/', MesSignalementsView.as_view(), name='mes-signalements'),
+    path('enregistrer-triage-appel/', EnregistrerTriageAppelView.as_view(), name='enregistrer-triage-appel'),
     path('sms/inbound/', SMSInboundWebhookView.as_view(), name='sms-inbound-webhook'),
     path('export/csv/<str:export_type>/', ExportCSVView.as_view(), name='export-csv'),
     path('export/pdf/<str:export_type>/', ExportPDFView.as_view(), name='export-pdf'),
