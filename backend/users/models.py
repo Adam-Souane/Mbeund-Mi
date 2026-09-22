@@ -117,3 +117,18 @@ def save_user_profile(sender, instance, **kwargs):
     if not hasattr(instance, 'profile'):
         Profile.objects.create(user=instance)
     instance.profile.save()
+
+
+def log_authority_login(sender, request, user, **kwargs):
+    """Signal pour enregistrer les connexions des autorités"""
+    if user.profile.role == 'autorite':
+        AuthorityActivity.objects.create(
+            authority=user,
+            action_type='login',
+            description='Connexion au système',
+        )
+
+        # Mettre à jour la dernière connexion dans le tracking
+        if hasattr(user, 'tracking'):
+            user.tracking.derniere_connexion = timezone.now()
+            user.tracking.save()

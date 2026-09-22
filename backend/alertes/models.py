@@ -47,6 +47,7 @@ class Alerte(models.Model):
     date_expiration = models.DateTimeField(null=True, blank=True)
     canaux = models.CharField(max_length=100, blank=True)
     statut = models.CharField(max_length=20, choices=STATUT_CHOICES, default='en_attente')
+    created_by = models.ForeignKey('auth.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='alertes_creees')
 
     class Meta:
         verbose_name = "Alerte"
