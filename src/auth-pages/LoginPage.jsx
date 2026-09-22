@@ -7,7 +7,7 @@ import { homeRouteForRole } from '../auth/RequireAuth';
 
 const ROLES = [
   { id: 'citoyen', label: 'Citoyen', fieldLabel: 'Identifiant', placeholder: 'jeandupont' },
-  { id: 'autorite', label: 'Autorité', fieldLabel: 'Identifiant', placeholder: 'jeandupont' },
+  { id: 'autorite', label: 'Autorite', fieldLabel: 'Identifiant', placeholder: 'jeandupont' },
 ];
 
 export default function LoginPage() {
@@ -35,16 +35,14 @@ export default function LoginPage() {
       const isAutoriteRole = ['autorite', 'admin', 'agent'].includes(actualRole);
       const selectedAutorite = tab === 'autorite';
 
-      // L'onglet ne fait que choisir le champ affiché — l'espace réel dépend
-      // du rôle porté par le compte, jamais du choix fait ici. On laisse le
-      // message le temps d'être lu avant de rediriger.
       if (selectedAutorite !== isAutoriteRole) {
-        setMismatchNotice(
+        setError(
           isAutoriteRole
-            ? 'Ce compte est un compte Autorité — redirection vers l’espace autorité.'
-            : 'Ce compte est un compte Citoyen — redirection vers l’espace citoyen.'
+            ? "Error: This is an Authority account. Select Authority tab."
+            : "Error: This is a Citizen account. Select Citizen tab."
         );
-        await new Promise((resolve) => setTimeout(resolve, 1600));
+        setIsSubmitting(false);
+        return;
       }
 
       navigate(from || homeRouteForRole(actualRole), { replace: true });
@@ -70,7 +68,13 @@ export default function LoginPage() {
               <button
                 key={r.id}
                 type="button"
-                onClick={() => setTab(r.id)}
+                onClick={() => {
+                  setTab(r.id);
+                  setUsername('');
+                  setPassword('');
+                  setError(null);
+                  setMismatchNotice(null);
+                }}
                 className={`flex-1 text-center py-2 rounded-md text-sm transition-colors ${
                   tab === r.id
                     ? 'bg-white dark:bg-navy text-navy dark:text-navy-50 font-bold shadow'
@@ -82,7 +86,7 @@ export default function LoginPage() {
             ))}
           </div>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4 lg:gap-5">
+          <form onSubmit={handleSubmit} autoComplete="off" className="flex flex-col gap-4 lg:gap-5">
             <label className="block">
               <span className="block text-xs lg:text-sm font-semibold text-navy dark:text-navy-50 mb-1.5">
                 {activeRole.fieldLabel}
@@ -90,6 +94,7 @@ export default function LoginPage() {
               <input
                 type="text"
                 required
+                autoComplete="off"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder={activeRole.placeholder}
@@ -102,9 +107,10 @@ export default function LoginPage() {
               <input
                 type="password"
                 required
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder="........"
                 className="w-full px-3.5 py-2.5 lg:py-3 rounded-md border-[1.5px] border-navy-200 dark:border-navy-800 bg-white dark:bg-navy text-navy dark:text-navy-50 text-sm lg:text-base focus:outline-none focus:border-navy dark:focus:border-navy-50"
               />
             </label>
@@ -112,7 +118,7 @@ export default function LoginPage() {
             {tab === 'citoyen' && (
               <div className="text-right -mt-2">
                 <Link to="/forgot-password" className="text-xs font-semibold text-red cursor-pointer hover:underline">
-                  Mot de passe oublié ?
+                  Mot de passe oublie ?
                 </Link>
               </div>
             )}
@@ -133,14 +139,14 @@ export default function LoginPage() {
               disabled={isSubmitting}
               className="w-full py-3 lg:py-3.5 rounded-md bg-navy dark:bg-navy-800 text-white text-sm lg:text-base font-bold disabled:opacity-60"
             >
-              {isSubmitting ? 'Connexion…' : 'Se connecter'}
+              {isSubmitting ? 'Connexion...' : 'Se connecter'}
             </button>
 
             {tab === 'citoyen' && (
               <p className="text-center text-xs text-navy-600 dark:text-navy-200">
                 Pas encore de compte ?{' '}
                 <Link to="/signup?role=citoyen" className="font-bold text-red hover:underline">
-                  Créer un compte citoyen
+                  Creer un compte citoyen
                 </Link>
               </p>
             )}
@@ -148,7 +154,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-center text-[11px] text-navy-400 mt-5">
-          MBEUND MI — {tab === 'citoyen' ? 'Prévention des inondations' : 'Poste de commandement'} · Thiaroye-sur-Mer
+          MBEUND MI - Thiaroye-sur-Mer
         </p>
       </div>
     </div>
