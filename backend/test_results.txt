@@ -1,0 +1,363 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-8.0.0, pluggy-1.6.0 -- C:\Users\pc\AppData\Local\Programs\Python\Python312\python.exe
+cachedir: .pytest_cache
+django: version: 5.0.8, settings: mbeund_mi_backend.settings.dev (from ini)
+rootdir: C:\Users\pc\Documents\PERSO\Mbeund-Mi\backend
+configfile: pytest.ini
+testpaths: .
+plugins: anyio-4.15.1, Faker-40.39.0, cov-7.1.0, django-4.8.0, mock-3.14.0
+collecting ... collected 115 items
+
+alertes/tests.py::test_create_alerte_success ERROR                       [  0%]
+alertes/tests.py::test_create_alerte_invalid_niveau ERROR                [  1%]
+alertes/tests.py::test_list_and_filter_alertes ERROR                     [  2%]
+alertes/tests.py::test_statut_transitions_valid ERROR                    [  3%]
+alertes/tests.py::test_statut_transitions_invalid ERROR                  [  4%]
+alertes/tests.py::test_alerte_orange_rouge_declenche_sms_et_passe_envoyee ERROR [  5%]
+alertes/tests.py::test_alerte_jaune_ne_declenche_pas_sms ERROR           [  6%]
+alertes/tests.py::test_statut_transition_unauthorized ERROR              [  6%]
+alertes/tests.py::test_statut_transition_not_found PASSED                [  7%]
+alertes/tests.py::test_statut_transition_bad_requests PASSED             [  8%]
+alertes/tests.py::test_segment_rue_crud PASSED                           [  9%]
+alertes/tests.py::test_segment_rue_forbidden_for_citoyen PASSED          [ 10%]
+alertes/tests.py::test_prevision_meteo_crud PASSED                       [ 11%]
+alertes/tests.py::test_prevision_meteo_forbidden_for_citoyen PASSED      [ 12%]
+alertes/tests.py::test_historique_risque_readonly_api PASSED             [ 13%]
+alertes/tests.py::test_historique_risque_serializer_validate_zone_ou_segment PASSED [ 13%]
+alertes/tests.py::test_historique_risque_contrainte_bdd PASSED           [ 14%]
+alertes/tests.py::test_appel_modele_ia_cree_prediction_et_alerte_si_risque_eleve FAILED [ 15%]
+alertes/tests.py::test_appel_modele_ia_sans_mesures PASSED               [ 16%]
+alertes/tests.py::test_ecoute_mqtt_declenche_analyse_ia_si_capteur_zone PASSED [ 17%]
+alertes/tests.py::test_analyse_gee_periodique_sans_authentification PASSED [ 18%]
+alertes/tests.py::test_analyse_gee_periodique_cree_episode_si_inondation_detectee PASSED [ 19%]
+alertes/tests.py::test_analyse_gee_periodique_aucune_inondation PASSED   [ 20%]
+alertes/tests.py::test_contact_alerte_inscription_libre PASSED           [ 20%]
+alertes/tests.py::test_contact_alerte_liste_reservee_autorite PASSED     [ 21%]
+alertes/tests.py::test_envoyer_sms_alerte_notifie_contacts_de_la_zone PASSED [ 22%]
+alertes/tests.py::test_appel_modele_ia_avec_historique_24_jours_predit_niveau_eau FAILED [ 23%]
+alertes/tests.py::test_historique_journalier_zone_incomplet_retourne_vide PASSED [ 24%]
+api/test_auth.py::test_jwt_obtain_pair_and_refresh PASSED                [ 25%]
+api/test_auth.py::test_jwt_carries_role_claim PASSED                     [ 26%]
+api/test_auth.py::test_jwt_role_claim_defaults_to_citoyen_without_profile PASSED [ 26%]
+api/test_auth.py::test_alerts_read_access PASSED                         [ 27%]
+api/test_auth.py::test_alerts_write_access_citoyen PASSED                [ 28%]
+api/test_auth.py::test_alerts_write_access_autorite PASSED               [ 29%]
+api/test_auth.py::test_alerts_write_access_admin PASSED                  [ 30%]
+api/test_auth.py::test_alerts_not_found PASSED                           [ 31%]
+api/test_auth.py::test_alerts_bad_request PASSED                         [ 32%]
+api/test_chat.py::test_chat_requires_authentication PASSED               [ 33%]
+api/test_chat.py::test_chat_requires_question_field PASSED               [ 33%]
+api/test_chat.py::test_chat_rejects_blank_question PASSED                [ 34%]
+api/test_chat.py::test_chat_returns_reply_from_chatbot_service PASSED    [ 35%]
+api/test_chat.py::test_chat_gathers_context_without_ndam_touching_db_directly FAILED [ 36%]
+api/test_chat.py::test_chat_defaults_when_no_data_available PASSED       [ 37%]
+api/test_endpoints.py::test_zones_geojson_endpoint PASSED                [ 38%]
+api/test_endpoints.py::test_predictions_latest_per_zone PASSED           [ 39%]
+api/test_endpoints.py::test_inondations_geojson_endpoint PASSED          [ 40%]
+api/test_endpoints.py::test_endpoints_unauthorized[/api/zones/] PASSED   [ 40%]
+api/test_endpoints.py::test_endpoints_unauthorized[/api/predictions/] PASSED [ 41%]
+api/test_endpoints.py::test_endpoints_unauthorized[/api/inondations/] PASSED [ 42%]
+api/test_endpoints.py::test_endpoints_not_found[/api/zones/9999/] PASSED [ 43%]
+api/test_endpoints.py::test_endpoints_not_found[/api/predictions/9999/] PASSED [ 44%]
+api/test_endpoints.py::test_endpoints_not_found[/api/inondations/9999/] PASSED [ 45%]
+api/test_endpoints.py::test_detail_endpoints_success PASSED              [ 46%]
+api/test_routing.py::test_find_safe_route_no_segments_returns_none PASSED [ 46%]
+api/test_routing.py::test_find_safe_route_too_far_from_network_returns_none PASSED [ 47%]
+api/test_routing.py::test_find_safe_route_prefers_lower_risk_path_to_same_zone PASSED [ 48%]
+api/test_routing.py::test_find_safe_route_prefers_lower_risk_zone_even_if_farther PASSED [ 49%]
+api/test_routing.py::test_itineraire_securise_view_requires_auth PASSED  [ 50%]
+api/test_routing.py::test_itineraire_securise_view_invalid_params PASSED [ 51%]
+api/test_routing.py::test_itineraire_securise_view_no_route_available PASSED [ 52%]
+api/test_routing.py::test_itineraire_securise_view_success PASSED        [ 53%]
+api/test_signalements.py::test_create_signalement_accepted PASSED        [ 53%]
+api/test_signalements.py::test_create_signalement_rejected PASSED        [ 54%]
+api/test_signalements.py::test_create_signalement_compression PASSED     [ 55%]
+api/test_signalements.py::test_create_signalement_computes_niveau_eau_estime PASSED [ 56%]
+api/test_signalements.py::test_create_signalement_flags_doublon_on_identical_photo PASSED [ 57%]
+api/test_signalements.py::test_create_signalement_no_doublon_for_different_photo PASSED [ 58%]
+api/test_signalements.py::test_signalements_unauthorized PASSED          [ 59%]
+api/test_signalements.py::test_signalements_citoyen_forbidden PASSED     [ 60%]
+api/test_signalements.py::test_signalements_autorite_allowed PASSED      [ 60%]
+api/test_signalements.py::test_signalements_not_found PASSED             [ 61%]
+api/test_signalements.py::test_signalement_valide_is_read_only_via_plain_update PASSED [ 62%]
+api/test_signalements.py::test_signalement_valider_action_requires_autorite PASSED [ 63%]
+api/test_signalements.py::test_signalement_valider_action_sets_valide_true PASSED [ 64%]
+api/test_signalements.py::test_signalement_valider_action_can_reject PASSED [ 65%]
+api/test_signalements.py::test_signalement_valider_action_missing_field PASSED [ 66%]
+api/test_signalements.py::test_signalement_valider_action_non_boolean PASSED [ 66%]
+api/test_vision_service.py::test_trouve_signalement_similaire_flags_near_duplicate PASSED [ 67%]
+api/test_vision_service.py::test_trouve_signalement_similaire_ignores_old_signalements PASSED [ 68%]
+api/test_vision_service.py::test_trouve_signalement_similaire_returns_none_without_match PASSED [ 69%]
+api/test_vulnerabilite.py::test_mon_profil_vulnerabilite_requires_auth PASSED [ 70%]
+api/test_vulnerabilite.py::test_mon_profil_vulnerabilite_get_before_declaration_is_null PASSED [ 71%]
+api/test_vulnerabilite.py::test_mon_profil_vulnerabilite_put_creates_then_updates PASSED [ 72%]
+api/test_vulnerabilite.py::test_mon_profil_vulnerabilite_scoped_to_own_user PASSED [ 73%]
+api/test_vulnerabilite.py::test_profils_vulnerabilite_list_reserved_to_autorite PASSED [ 73%]
+api/test_vulnerabilite.py::test_profils_vulnerabilite_filter_by_zone PASSED [ 74%]
+api/test_vulnerabilite.py::test_relais_quartier_create_requires_auth PASSED [ 75%]
+api/test_vulnerabilite.py::test_relais_quartier_create_and_moi PASSED    [ 76%]
+api/test_vulnerabilite.py::test_relais_quartier_double_inscription_rejected PASSED [ 77%]
+api/test_vulnerabilite.py::test_relais_quartier_verifie_read_only_on_create PASSED [ 78%]
+api/test_vulnerabilite.py::test_relais_quartier_list_reserved_to_autorite PASSED [ 79%]
+api/test_vulnerabilite.py::test_relais_quartier_verifier_action PASSED   [ 80%]
+api/test_vulnerabilite.py::test_relais_quartier_verifier_action_validates_payload PASSED [ 80%]
+api/test_vulnerabilite.py::test_relais_quartier_delete_scoped_to_own_user PASSED [ 81%]
+capteurs/tests.py::test_capteurs_list_and_create PASSED                  [ 82%]
+capteurs/tests.py::test_mesures_list_and_create PASSED                   [ 83%]
+capteurs/tests.py::test_mesures_recentes PASSED                          [ 84%]
+capteurs/tests.py::test_ecoute_mqtt_success PASSED                       [ 85%]
+capteurs/tests.py::test_ecoute_mqtt_malformed_json PASSED                [ 86%]
+capteurs/tests.py::test_ecoute_mqtt_missing_fields PASSED                [ 86%]
+capteurs/tests.py::test_ecoute_mqtt_unknown_capteur PASSED               [ 87%]
+capteurs/tests.py::test_capteurs_mesures_unauthorized PASSED             [ 88%]
+capteurs/tests.py::test_capteurs_mesures_not_found PASSED                [ 89%]
+capteurs/tests.py::test_capteurs_mesures_bad_request PASSED              [ 90%]
+capteurs/tests.py::test_capteurs_mesures_forbidden_for_citoyen PASSED    [ 91%]
+capteurs/tests.py::test_capteurs_mesures_delete_success PASSED           [ 92%]
+alertes/tests.py::test_websocket_alerte_broadcast FAILED                 [ 93%]
+alertes/tests.py::test_websocket_alerte_rejette_connexion_sans_token PASSED [ 93%]
+alertes/tests.py::test_predire_niveau_eau_lstm_rejette_historique_incomplet FAILED [ 94%]
+alertes/tests.py::test_predire_niveau_eau_lstm_valeur_coherente_avec_echelle_entrainement FAILED [ 95%]
+api/test_vision_service.py::test_analyser_photo_detects_high_water_level PASSED [ 96%]
+api/test_vision_service.py::test_analyser_photo_low_water_level_for_dry_scene PASSED [ 97%]
+api/test_vision_service.py::test_analyser_photo_never_raises_on_invalid_file PASSED [ 98%]
+api/test_vision_service.py::test_hamming_distance_zero_for_identical_hashes PASSED [ 99%]
+api/test_vision_service.py::test_hamming_distance_positive_for_different_images PASSED [100%]
+
+=================================== ERRORS ====================================
+________________ ERROR at setup of test_create_alerte_success _________________
+E   psycopg.errors.DuplicateDatabase: database "test_mbeund_mi_db" already exists
+
+The above exception was the direct cause of the following exception:
+E   django.db.utils.ProgrammingError: database "test_mbeund_mi_db" already exists
+
+During handling of the above exception, another exception occurred:
+E   psycopg.errors.ObjectInUse: database "test_mbeund_mi_db" is being accessed by other users
+    DETAIL:  There is 1 other session using the database.
+
+The above exception was the direct cause of the following exception:
+E   django.db.utils.OperationalError: database "test_mbeund_mi_db" is being accessed by other users
+    DETAIL:  There is 1 other session using the database.
+
+During handling of the above exception, another exception occurred:
+E   SystemExit: 2
+---------------------------- Captured stderr setup ----------------------------
+Creating test database for alias 'default'...
+
+Got an error creating the test database: database "test_mbeund_mi_db" already exists
+
+Destroying old test database for alias 'default'...
+
+Got an error recreating the test database: database "test_mbeund_mi_db" is being accessed by other users
+DETAIL:  There is 1 other session using the database.
+
+_____________ ERROR at setup of test_create_alerte_invalid_niveau _____________
+E   psycopg.errors.DuplicateDatabase: database "test_mbeund_mi_db" already exists
+
+The above exception was the direct cause of the following exception:
+E   django.db.utils.ProgrammingError: database "test_mbeund_mi_db" already exists
+
+During handling of the above exception, another exception occurred:
+E   psycopg.errors.ObjectInUse: database "test_mbeund_mi_db" is being accessed by other users
+    DETAIL:  There is 1 other session using the database.
+
+The above exception was the direct cause of the following exception:
+E   django.db.utils.OperationalError: database "test_mbeund_mi_db" is being accessed by other users
+    DETAIL:  There is 1 other session using the database.
+
+During handling of the above exception, another exception occurred:
+E   SystemExit: 2
+---------------------------- Captured stderr setup ----------------------------
+Creating test database for alias 'default'...
+
+Got an error creating the test database: database "test_mbeund_mi_db" already exists
+
+Destroying old test database for alias 'default'...
+
+Got an error recreating the test database: database "test_mbeund_mi_db" is being accessed by other users
+DETAIL:  There is 1 other session using the database.
+
+_______________ ERROR at setup of test_list_and_filter_alertes ________________
+E   psycopg.errors.DuplicateDatabase: database "test_mbeund_mi_db" already exists
+
+The above exception was the direct cause of the following exception:
+E   django.db.utils.ProgrammingError: database "test_mbeund_mi_db" already exists
+
+During handling of the above exception, another exception occurred:
+E   psycopg.errors.ObjectInUse: database "test_mbeund_mi_db" is being accessed by other users
+    DETAIL:  There is 1 other session using the database.
+
+The above exception was the direct cause of the following exception:
+E   django.db.utils.OperationalError: database "test_mbeund_mi_db" is being accessed by other users
+    DETAIL:  There is 1 other session using the database.
+
+During handling of the above exception, another exception occurred:
+E   SystemExit: 2
+---------------------------- Captured stderr setup ----------------------------
+Creating test database for alias 'default'...
+
+Got an error creating the test database: database "test_mbeund_mi_db" already exists
+
+Destroying old test database for alias 'default'...
+
+Got an error recreating the test database: database "test_mbeund_mi_db" is being accessed by other users
+DETAIL:  There is 1 other session using the database.
+
+_______________ ERROR at setup of test_statut_transitions_valid _______________
+E   psycopg.errors.DuplicateDatabase: database "test_mbeund_mi_db" already exists
+
+The above exception was the direct cause of the following exception:
+E   django.db.utils.ProgrammingError: database "test_mbeund_mi_db" already exists
+
+During handling of the above exception, another exception occurred:
+E   psycopg.errors.ObjectInUse: database "test_mbeund_mi_db" is being accessed by other users
+    DETAIL:  There is 1 other session using the database.
+
+The above exception was the direct cause of the following exception:
+E   django.db.utils.OperationalError: database "test_mbeund_mi_db" is being accessed by other users
+    DETAIL:  There is 1 other session using the database.
+
+During handling of the above exception, another exception occurred:
+E   SystemExit: 2
+---------------------------- Captured stderr setup ----------------------------
+Creating test database for alias 'default'...
+
+Got an error creating the test database: database "test_mbeund_mi_db" already exists
+
+Destroying old test database for alias 'default'...
+
+Got an error recreating the test database: database "test_mbeund_mi_db" is being accessed by other users
+DETAIL:  There is 1 other session using the database.
+
+______________ ERROR at setup of test_statut_transitions_invalid ______________
+E   psycopg.errors.DuplicateDatabase: database "test_mbeund_mi_db" already exists
+
+The above exception was the direct cause of the following exception:
+E   django.db.utils.ProgrammingError: database "test_mbeund_mi_db" already exists
+
+During handling of the above exception, another exception occurred:
+E   psycopg.errors.ObjectInUse: database "test_mbeund_mi_db" is being accessed by other users
+    DETAIL:  There is 1 other session using the database.
+
+The above exception was the direct cause of the following exception:
+E   django.db.utils.OperationalError: database "test_mbeund_mi_db" is being accessed by other users
+    DETAIL:  There is 1 other session using the database.
+
+During handling of the above exception, another exception occurred:
+E   SystemExit: 2
+---------------------------- Captured stderr setup ----------------------------
+Creating test database for alias 'default'...
+
+Got an error creating the test database: database "test_mbeund_mi_db" already exists
+
+Destroying old test database for alias 'default'...
+
+Got an error recreating the test database: database "test_mbeund_mi_db" is being accessed by other users
+DETAIL:  There is 1 other session using the database.
+
+__ ERROR at setup of test_alerte_orange_rouge_declenche_sms_et_passe_envoyee __
+E   psycopg.errors.DuplicateDatabase: database "test_mbeund_mi_db" already exists
+
+The above exception was the direct cause of the following exception:
+E   django.db.utils.ProgrammingError: database "test_mbeund_mi_db" already exists
+
+During handling of the above exception, another exception occurred:
+E   psycopg.errors.ObjectInUse: database "test_mbeund_mi_db" is being accessed by other users
+    DETAIL:  There is 1 other session using the database.
+
+The above exception was the direct cause of the following exception:
+E   django.db.utils.OperationalError: database "test_mbeund_mi_db" is being accessed by other users
+    DETAIL:  There is 1 other session using the database.
+
+During handling of the above exception, another exception occurred:
+E   SystemExit: 2
+---------------------------- Captured stderr setup ----------------------------
+Creating test database for alias 'default'...
+
+Got an error creating the test database: database "test_mbeund_mi_db" already exists
+
+Destroying old test database for alias 'default'...
+
+Got an error recreating the test database: database "test_mbeund_mi_db" is being accessed by other users
+DETAIL:  There is 1 other session using the database.
+
+__________ ERROR at setup of test_alerte_jaune_ne_declenche_pas_sms ___________
+E   psycopg.errors.DuplicateDatabase: database "test_mbeund_mi_db" already exists
+
+The above exception was the direct cause of the following exception:
+E   django.db.utils.ProgrammingError: database "test_mbeund_mi_db" already exists
+
+During handling of the above exception, another exception occurred:
+E   psycopg.errors.ObjectInUse: database "test_mbeund_mi_db" is being accessed by other users
+    DETAIL:  There is 1 other session using the database.
+
+The above exception was the direct cause of the following exception:
+E   django.db.utils.OperationalError: database "test_mbeund_mi_db" is being accessed by other users
+    DETAIL:  There is 1 other session using the database.
+
+During handling of the above exception, another exception occurred:
+E   SystemExit: 2
+---------------------------- Captured stderr setup ----------------------------
+Creating test database for alias 'default'...
+
+Got an error creating the test database: database "test_mbeund_mi_db" already exists
+
+Destroying old test database for alias 'default'...
+
+Got an error recreating the test database: database "test_mbeund_mi_db" is being accessed by other users
+DETAIL:  There is 1 other session using the database.
+
+____________ ERROR at setup of test_statut_transition_unauthorized ____________
+E   psycopg.errors.DuplicateDatabase: database "test_mbeund_mi_db" already exists
+
+The above exception was the direct cause of the following exception:
+E   django.db.utils.ProgrammingError: database "test_mbeund_mi_db" already exists
+
+During handling of the above exception, another exception occurred:
+E   psycopg.errors.ObjectInUse: database "test_mbeund_mi_db" is being accessed by other users
+    DETAIL:  There is 1 other session using the database.
+
+The above exception was the direct cause of the following exception:
+E   django.db.utils.OperationalError: database "test_mbeund_mi_db" is being accessed by other users
+    DETAIL:  There is 1 other session using the database.
+
+During handling of the above exception, another exception occurred:
+E   SystemExit: 2
+---------------------------- Captured stderr setup ----------------------------
+Creating test database for alias 'default'...
+
+Got an error creating the test database: database "test_mbeund_mi_db" already exists
+
+Destroying old test database for alias 'default'...
+
+Got an error recreating the test database: database "test_mbeund_mi_db" is being accessed by other users
+DETAIL:  There is 1 other session using the database.
+
+================================== FAILURES ===================================
+C:\Users\pc\Documents\PERSO\Mbeund-Mi\backend\alertes\tasks.py:124: AttributeError: 'FloodRiskPredictor' object has no attribute 'analyser_risque'
+C:\Users\pc\Documents\PERSO\Mbeund-Mi\backend\alertes\tasks.py:124: AttributeError: 'FloodRiskPredictor' object has no attribute 'analyser_risque'
+C:\Users\pc\Documents\PERSO\Mbeund-Mi\backend\api\test_chat.py:96: AssertionError: assert '27' in 'Non disponible'
+C:\Users\pc\AppData\Local\Programs\Python\Python312\Lib\site-packages\asgiref\timeout.py:108: TimeoutError
+C:\Users\pc\Documents\PERSO\Mbeund-Mi\backend\alertes\tests.py:658: ModuleNotFoundError: No module named 'ia.service_prediction'
+C:\Users\pc\Documents\PERSO\Mbeund-Mi\backend\alertes\tests.py:668: ModuleNotFoundError: No module named 'ia.service_prediction'
+============================== warnings summary ===============================
+api/test_vision_service.py::test_hamming_distance_positive_for_different_images
+  C:\Users\pc\Documents\PERSO\Mbeund-Mi\backend:0: PytestWarning: Error when trying to teardown test databases: OperationalError('database "test_mbeund_mi_db" is being accessed by other users\nDETAIL:  There are 2 other sessions using the database.')
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED alertes/tests.py::test_appel_modele_ia_cree_prediction_et_alerte_si_risque_eleve
+FAILED alertes/tests.py::test_appel_modele_ia_avec_historique_24_jours_predit_niveau_eau
+FAILED api/test_chat.py::test_chat_gathers_context_without_ndam_touching_db_directly
+FAILED alertes/tests.py::test_websocket_alerte_broadcast - TimeoutError
+FAILED alertes/tests.py::test_predire_niveau_eau_lstm_rejette_historique_incomplet
+FAILED alertes/tests.py::test_predire_niveau_eau_lstm_valeur_coherente_avec_echelle_entrainement
+ERROR alertes/tests.py::test_create_alerte_success - SystemExit: 2
+ERROR alertes/tests.py::test_create_alerte_invalid_niveau - SystemExit: 2
+ERROR alertes/tests.py::test_list_and_filter_alertes - SystemExit: 2
+ERROR alertes/tests.py::test_statut_transitions_valid - SystemExit: 2
+ERROR alertes/tests.py::test_statut_transitions_invalid - SystemExit: 2
+ERROR alertes/tests.py::test_alerte_orange_rouge_declenche_sms_et_passe_envoyee
+ERROR alertes/tests.py::test_alerte_jaune_ne_declenche_pas_sms - SystemExit: 2
+ERROR alertes/tests.py::test_statut_transition_unauthorized - SystemExit: 2
+======= 6 failed, 101 passed, 1 warning, 8 errors in 323.62s (0:05:23) ========
