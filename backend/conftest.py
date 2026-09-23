@@ -17,3 +17,8 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mbeund_mi_backend.settings.dev'
 def pytest_configure():
     """Configure pytest with Django"""
     django.setup()
+
+    # Configure Celery for tests: execute tasks synchronously (eager mode)
+    from django.conf import settings
+    settings.CELERY_TASK_ALWAYS_EAGER = True
+    settings.CELERY_TASK_EAGER_PROPAGATES = True
