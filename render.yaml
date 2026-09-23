@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: mbeund-mi-backend
+    env: python
+    pythonVersion: "3.12"
+    plan: free
+    root: backend
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput --settings=mbeund_mi_backend.settings.prod
+    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 4 --worker-class sync --timeout 120 mbeund_mi_backend.wsgi:application
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: ENVIRONMENT
+        value: "production"
+      - key: USE_GIS
+        value: "True"
+      - key: DJANGO_SETTINGS_MODULE
+        value: "mbeund_mi_backend.settings.prod"
