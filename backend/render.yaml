@@ -2,6 +2,7 @@ services:
   - type: web
     name: mbeund-mi-backend
     env: python
+    pythonVersion: "3.12"
     plan: free
     buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput --settings=mbeund_mi_backend.settings.prod
     startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 4 --worker-class sync --timeout 120 mbeund_mi_backend.wsgi:application
