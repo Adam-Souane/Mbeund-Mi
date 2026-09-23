@@ -2,7 +2,10 @@ import os
 from celery import Celery
 
 # Set the default Django settings module for the 'celery' program.
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mbeund_mi_backend.settings.dev')
+# En production, la variable d'environnement DJANGO_SETTINGS_MODULE doit être définie.
+# En développement, utiliser settings.dev par défaut.
+default_settings = 'mbeund_mi_backend.settings.prod' if os.environ.get('ENVIRONMENT') == 'production' else 'mbeund_mi_backend.settings.dev'
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', default_settings)
 
 app = Celery('mbeund_mi_backend')
 
