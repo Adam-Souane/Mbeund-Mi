@@ -43,6 +43,7 @@ from api.permissions import IsAutoriteOrAdmin, EstAdminOuAutorite
 from api.services.sms_inbound_service import traiter_webhook_sms
 from api.services.export_service import ExportService
 from api.services.pdf_export_service import PDFExportService
+from drf_spectacular.utils import extend_schema
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -70,6 +71,7 @@ def _get_chatbot_service():
     return _chatbot_service
 
 
+@extend_schema(exclude=True)
 class ChatView(APIView):
     """
     POST /api/chat/ — relaie une question à l'assistant NDAM.
@@ -398,6 +400,7 @@ class ContactAlerteViewSet(viewsets.ModelViewSet):
         return [EstAdminOuAutorite()]
 
 
+@extend_schema(exclude=True)
 class ItineraireSecuriseView(APIView):
     """
     GET /api/itineraire-securise/?lat=..&lon=..
@@ -429,6 +432,7 @@ class ItineraireSecuriseView(APIView):
         return Response(result)
 
 
+@extend_schema(exclude=True)
 class MonProfilVulnerabiliteView(APIView):
     """
     GET/PUT /api/mon-profil-vulnerabilite/ — un citoyen connecté consulte ou
@@ -620,6 +624,7 @@ class SMSInboundWebhookView(APIView):
             )
 
 
+@extend_schema(exclude=True)
 class ExportCSVView(APIView):
     """
     GET /api/export/csv/{type}/ — Exporte les données au format CSV.
@@ -680,6 +685,7 @@ class ExportCSVView(APIView):
             )
 
 
+@extend_schema(exclude=True)
 class ExportPDFView(APIView):
     """
     GET /api/export/pdf/{type}/ — Exporte les données au format PDF.
@@ -720,6 +726,7 @@ class ExportPDFView(APIView):
             return Response({"erreur": str(e)}, status=500)
 
 
+@extend_schema(exclude=True)
 class MonSurvivalKitView(APIView):
     """
     GET /api/mon-survival-kit/ - Récupérer le kit de survie personnel
@@ -741,6 +748,7 @@ class MonSurvivalKitView(APIView):
         return Response(serializer.errors, status=400)
 
 
+@extend_schema(exclude=True)
 class MonEmergencyContactView(APIView):
     """
     GET /api/mon-emergency-contact/ - Récupérer le contact d'urgence
@@ -762,6 +770,7 @@ class MonEmergencyContactView(APIView):
         return Response(serializer.errors, status=400)
 
 
+@extend_schema(exclude=True)
 class MesSignalementsView(APIView):
     """
     GET /api/mes-signalements/ - Récupérer l'historique des signalements personnels
@@ -784,6 +793,7 @@ class MesSignalementsView(APIView):
         return paginator.get_paginated_response(serializer.data)
 
 
+@extend_schema(exclude=True)
 class EnregistrerTriageAppelView(APIView):
     """
     POST /api/enregistrer-triage-appel/
