@@ -314,8 +314,8 @@ def test_segment_rue_forbidden_for_citoyen(citoyen_client):
 def test_prevision_meteo_crud(auth_client):
     payload = {
         "date_prevision": timezone.now().isoformat(),
-        "precipitation": 12.5,
-        "temperature": 27.3,
+        "precipitation_mm": 12.5,
+        "temperature_c": 27.3,
         "vitesse_vent": 15.0,
         "source": "Open-Meteo",
     }
@@ -330,7 +330,7 @@ def test_prevision_meteo_crud(auth_client):
 
 @pytest.mark.django_db
 def test_prevision_meteo_forbidden_for_citoyen(citoyen_client):
-    payload = {"date_prevision": timezone.now().isoformat(), "precipitation": 5.0}
+    payload = {"date_prevision": timezone.now().isoformat(), "precipitation_mm": 5.0}
     assert citoyen_client.post('/api/previsions/', payload, format='json').status_code == 403
 
 

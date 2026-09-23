@@ -74,8 +74,8 @@ def test_chat_gathers_context_without_ndam_touching_db_directly(mock_get_service
     )
     PrevisionMeteo.objects.create(
         date_prevision=timezone.now(),
-        temperature=27,
-        precipitation=62,
+        temperature_c=27,
+        precipitation_mm=62,
         vitesse_vent=18,
     )
     SignalementCitoyen.objects.create(

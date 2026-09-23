@@ -593,7 +593,7 @@ class SegmentRueSerializer(HybridGeoFeatureModelSerializer):
 class PrevisionMeteoSerializer(serializers.ModelSerializer):
     class Meta:
         model = PrevisionMeteo
-        fields = ('id', 'date_prevision', 'temperature', 'precipitation', 'vitesse_vent', 'source', 'created_at')
+        fields = ('id', 'zone', 'date_prevision', 'date_fin', 'temperature_c', 'temperature_max_c', 'temperature_min_c', 'precipitation_mm', 'humidity_percent', 'vitesse_vent', 'weather_code', 'source', 'created_at')
 
 
 class HistoriqueRisqueSerializer(serializers.ModelSerializer):

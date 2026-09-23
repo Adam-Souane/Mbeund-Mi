@@ -14,6 +14,13 @@ def log_alerte_creation(sender, instance, created, **kwargs):
             zone=instance.zone.quartier,
         )
 
+@receiver(post_save, sender=Alerte)
+def declencher_envoi_sms(sender, instance, created, **kwargs):
+    """Déclenche l'envoi de SMS pour les alertes orange/rouge créées"""
+    if created and instance.niveau in ('orange', 'rouge'):
+        from alertes.tasks import envoyer_sms_alerte
+        envoyer_sms_alerte.delay(instance.id)
+
 @receiver(post_save, sender=SignalementCitoyen)
 def log_signalement_validation(sender, instance, created, **kwargs):
     """Enregistre quand un signalement devient validé"""
