@@ -176,6 +176,13 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': "API de la plateforme de prévention des inondations de Thiaroye-sur-Mer.",
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
+    'SCHEMA_COERCE_METHOD_NAMES': 'lower',
+    'COERCE_DECIMAL_TO_STRING': True,
+    'ENUM_ADD_UNDERSCORES': True,
+    'PREPROCESSING_HOOKS': [],
+    'POSTPROCESSING_HOOKS': [],
+    'ERRORS_FORMAT': 'list',
+    'TITLE_CASING': None,
 }
 
 # SimpleJWT configuration
