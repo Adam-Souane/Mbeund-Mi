@@ -22,3 +22,8 @@ def pytest_configure():
     from django.conf import settings
     settings.CELERY_TASK_ALWAYS_EAGER = True
     settings.CELERY_TASK_EAGER_PROPAGATES = True
+
+def pytest_collection(session):
+    """Ensure sys.path is set before test collection"""
+    # sys.path already set above at module import time
+    pass

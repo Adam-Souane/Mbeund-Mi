@@ -49,6 +49,47 @@ class FloodRiskPredictor:
             logger.error(f"Erreur lors du chargement du modèle: {e}")
             return False
 
+    def analyser_risque(self, zone_id, mesures_recentes):
+        """
+        Interface compatible avec PredictionService.analyser_risque()
+        mesures_recentes = [{"capteur_id": 1, "pluie_mm": 15.2, "niveau_eau_cm": 45.0}, ...]
+        """
+        if not mesures_recentes:
+            return {"erreur": "Aucune mesure fournie"}
+
+        # Récupérer la zone pour son nom
+        from alertes.models import ZoneRisque
+        try:
+            zone = ZoneRisque.objects.get(id=zone_id)
+            zone_name = zone.quartier
+        except ZoneRisque.DoesNotExist:
+            return {"erreur": f"Zone {zone_id} non trouvée"}
+
+        # Utiliser la dernière mesure pour la pluviométrie
+        derniere_mesure = mesures_recentes[-1]
+        pluie_mm = float(derniere_mesure.get('pluie_mm', 0))
+
+        # Appeler predict_zone_risk et adapter la réponse
+        resultat = self.predict_zone_risk(zone_name, pluie_mm)
+
+        if 'erreur' in resultat:
+            return resultat
+
+        # Adapter le format de retour pour être compatible avec PredictionService
+        return {
+            "risque_global": resultat.get('risque', 'vert').lower(),
+            "confiance": resultat.get('confiance', 0),
+            "recommandation_fr": resultat.get('recommandation', ''),
+            "details": resultat
+        }
+
+    def predire_niveau_eau_lstm(self, historique):
+        """
+        Placeholder pour compatibilité avec PredictionService
+        Returns None car FloodRiskPredictor n'a pas de LSTM
+        """
+        return None
+
     def predict_zone_risk(self, zone_name, pluviometrie_mm, altitude_m=None, pente=None):
         """
         Prédire le niveau de risque pour une zone

@@ -109,8 +109,8 @@ class ChatView(APIView):
                 prevision = PrevisionMeteo.objects.order_by('-date_prevision').first()
                 if prevision:
                     meteo_context = (
-                        f"Température {prevision.temperature}°C, "
-                        f"précipitations {prevision.precipitation} mm, "
+                        f"Température {prevision.temperature_c}°C, "
+                        f"précipitations {prevision.precipitation_mm} mm, "
                         f"vent {prevision.vitesse_vent} km/h"
                     )
                 else:
