@@ -11,7 +11,7 @@ import random
 import string
 from .models import Profile, InviteCode, AuthorityTracking, AuthorityActivity
 from .serializers import UserSerializer, ProfileSerializer
-from api.services.sms_service import send_otp_sms
+from api.services.sms_service import send_otp_whatsapp
 
 
 def generate_username_options(first_name, last_name, max_options=3):
@@ -121,7 +121,7 @@ class UserViewSet(viewsets.ModelViewSet):
                     otp = self._generate_otp()
                     cache_key = f'otp_{username}'
                     cache.set(cache_key, otp, timeout=600)  # 10 minutes
-                    send_otp_sms(telephone, otp)
+                    send_otp_whatsapp(telephone, otp)
 
             response_data = {
                 'detail': 'Compte créé avec succès',
@@ -244,9 +244,9 @@ class UserViewSet(viewsets.ModelViewSet):
                 reset_code = self._generate_otp()
                 cache_key = f'password_reset_{user.username}'
                 cache.set(cache_key, reset_code, timeout=600)  # 10 minutes
-                send_otp_sms(telephone, reset_code)
+                send_otp_whatsapp(telephone, reset_code)
                 return Response(
-                    {'detail': 'Code de réinitialisation envoyé par SMS'},
+                    {'detail': 'Code de réinitialisation envoyé par WhatsApp'},
                     status=status.HTTP_200_OK,
                 )
             except Profile.DoesNotExist:
@@ -612,10 +612,10 @@ class UserViewSet(viewsets.ModelViewSet):
             cache_key = f'otp_{username}'
             cache.set(cache_key, otp, timeout=600)  # 10 minutes
 
-            send_otp_sms(user.profile.telephone, otp)
+            send_otp_whatsapp(user.profile.telephone, otp)
 
             return Response(
-                {'detail': 'Nouveau code OTP envoyé'},
+                {'detail': 'Nouveau code OTP envoyé par WhatsApp'},
                 status=status.HTTP_200_OK,
             )
         except User.DoesNotExist:
