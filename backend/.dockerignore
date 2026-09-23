@@ -1,0 +1,72 @@
+# Git
+.git
+.gitignore
+.github
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv
+*.egg-info/
+dist/
+build/
+*.egg
+.pytest_cache/
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Database
+db.sqlite3
+*.db
+
+# Static/Media (collectés par Django)
+staticfiles/
+media/
+
+# Logs
+*.log
+logs/
+
+# Cache
+.cache/
+*.cache
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Tests
+.coverage
+htmlcov/
+
+# Node (si vous avez du frontend)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Misc
+README.md
+docs/
+CHANGELOG.md
+.editorconfig
+.pre-commit-config.yaml
+
+# Celery
+celerybeat-schedule
+dump.rdb

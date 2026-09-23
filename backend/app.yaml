@@ -1,0 +1,25 @@
+runtime: python312
+env: standard
+entrypoint: gunicorn --bind :$PORT --workers 4 --worker-class sync --timeout 120 mbeund_mi_backend.wsgi:application
+
+env_variables:
+  DEBUG: "False"
+  ENVIRONMENT: "production"
+  USE_GIS: "True"
+
+automatic_scaling:
+  min_instances: 1
+  max_instances: 100
+
+# Resource configuration
+resources:
+  limits:
+    memory: 512Mi
+    cpu: "1"
+
+# Health check
+health_check:
+  disable_health_check: false
+
+# Timeout for requests
+timeout: 3600s
