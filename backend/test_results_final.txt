@@ -1,0 +1,21 @@
+﻿.............................FF..............................FFFFFF..... [ 62%]
+..................................x........                              [100%]
+============================== warnings summary ===============================
+alertes/tests.py::test_appel_modele_ia_cree_prediction_et_alerte_si_risque_eleve
+alertes/tests.py::test_appel_modele_ia_avec_historique_24_jours_predit_niveau_eau
+alertes/tests.py::test_appel_modele_ia_avec_historique_24_jours_predit_niveau_eau
+alertes/tests.py::test_predire_niveau_eau_lstm_valeur_coherente_avec_echelle_entrainement
+  C:\Users\pc\AppData\Local\Programs\Python\Python312\Lib\site-packages\keras\src\utils\python_utils.py:190: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+    value = float(value)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED api/test_auth.py::test_jwt_carries_role_claim - assert 429 == 200
+FAILED api/test_auth.py::test_jwt_role_claim_defaults_to_citoyen_without_profile
+FAILED api/test_signalements.py::test_create_signalement_accepted - assert 42...
+FAILED api/test_signalements.py::test_create_signalement_rejected - assert 42...
+FAILED api/test_signalements.py::test_create_signalement_compression - assert...
+FAILED api/test_signalements.py::test_create_signalement_computes_niveau_eau_estime
+FAILED api/test_signalements.py::test_create_signalement_flags_doublon_on_identical_photo
+FAILED api/test_signalements.py::test_create_signalement_no_doublon_for_different_photo
+8 failed, 106 passed, 1 xfailed, 4 warnings in 212.25s (0:03:32)

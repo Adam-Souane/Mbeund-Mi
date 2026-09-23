@@ -17,42 +17,47 @@ class AlerteConsumer(AsyncWebsocketConsumer):
     """
 
     async def connect(self):
-        # Authentification par JWT : le frontend n'utilise pas de cookie de
-        # session Django (AuthMiddlewareStack ne peuple donc jamais
-        # scope["user"] pour ce client), le token d'acces est transmis en
-        # query string (ws/alertes/?token=<access>) et verifie ici a la
-        # main. Meme niveau d'exigence que GET /api/alertes/
-        # (IsAutoriteOrAdmin : lecture ouverte a tout utilisateur
-        # authentifie, ecriture reservee autorite/admin) : on rejette les
-        # connexions anonymes plutot que de diffuser les alertes a tout le
-        # monde sans controle.
-        token = parse_qs(self.scope["query_string"].decode()).get("token", [None])[0]
-        if not token or not self._token_valide(token):
-            await self.close(code=4401)
-            return
+        try:
+            # Authentification par JWT : le frontend n'utilise pas de cookie de
+            # session Django (AuthMiddlewareStack ne peuple donc jamais
+            # scope["user"] pour ce client), le token d'acces est transmis en
+            # query string (ws/alertes/?token=<access>) et verifie ici a la
+            # main. Meme niveau d'exigence que GET /api/alertes/
+            # (IsAutoriteOrAdmin : lecture ouverte a tout utilisateur
+            # authentifie, ecriture reservee autorite/admin) : on rejette les
+            # connexions anonymes plutot que de diffuser les alertes a tout le
+            # monde sans controle.
+            token = parse_qs(self.scope["query_string"].decode()).get("token", [None])[0]
+            if not token or not self._token_valide(token):
+                await self.close(code=4401)
+                return
 
-        # Récupérer l'utilisateur et sa zone (pour les citoyens)
-        user = await self.get_user_from_token(token)
-        zone_id = await self.get_user_zone(user) if user else None
+            # Récupérer l'utilisateur et sa zone (pour les citoyens)
+            user = await self.get_user_from_token(token)
+            zone_id = await self.get_user_zone(user) if user else None
 
-        # Déterminer les groupes pour cet utilisateur
-        self.groups = ["alertes"]  # Tous reçoivent les alertes
+            # Déterminer les groupes pour cet utilisateur
+            self.groups = ["alertes"]  # Tous reçoivent les alertes
 
-        # Si citoyen : ajouter au groupe de la zone
-        if zone_id:
-            self.groups.append(f"zone_alerts_{zone_id}")
+            # Si citoyen : ajouter au groupe de la zone
+            if zone_id:
+                self.groups.append(f"zone_alerts_{zone_id}")
 
-        # Si autorité : ajouter au groupe des autorites
-        is_autorite = await self.check_is_autorite(user)
-        if is_autorite:
-            self.groups.append("autorite_notifications")
+            # Si autorité : ajouter au groupe des autorites
+            is_autorite = await self.check_is_autorite(user)
+            if is_autorite:
+                self.groups.append("autorite_notifications")
 
-        # Rejoindre tous les groupes
-        for group_name in self.groups:
-            await self.channel_layer.group_add(group_name, self.channel_name)
+            # Rejoindre tous les groupes
+            if self.channel_layer:
+                for group_name in self.groups:
+                    await self.channel_layer.group_add(group_name, self.channel_name)
 
-        await self.accept()
-        logger.info(f"Client connecté aux groupes: {self.groups}")
+            await self.accept()
+            logger.info(f"Client connecté aux groupes: {self.groups}")
+        except Exception as e:
+            logger.error(f"Erreur dans WebSocket connect: {e}", exc_info=True)
+            await self.close(code=1011)
 
     @staticmethod
     def _token_valide(token):
