@@ -11,6 +11,7 @@ import random
 import string
 from .models import Profile, InviteCode, AuthorityTracking, AuthorityActivity
 from .serializers import UserSerializer, ProfileSerializer
+from api.services.sms_service import send_otp_sms
 
 
 def generate_username_options(first_name, last_name, max_options=3):
@@ -120,17 +121,13 @@ class UserViewSet(viewsets.ModelViewSet):
                     otp = self._generate_otp()
                     cache_key = f'otp_{username}'
                     cache.set(cache_key, otp, timeout=600)  # 10 minutes
-                    # TODO: En production, envoyer par email ou SMS
-                    print(f'[DEMO] OTP for {username}: {otp}')
+                    send_otp_sms(telephone, otp)
 
             response_data = {
                 'detail': 'Compte créé avec succès',
                 'user': UserSerializer(user).data,
                 'requires_otp': role == 'citoyen',
             }
-            # Afficher le code OTP en démo (à retirer en production)
-            if otp:
-                response_data['demo_otp'] = otp
 
             return Response(
                 response_data,
@@ -571,8 +568,7 @@ class UserViewSet(viewsets.ModelViewSet):
             cache_key = f'otp_{username}'
             cache.set(cache_key, otp, timeout=600)  # 10 minutes
 
-            # TODO: En production, envoyer par email ou SMS
-            print(f'[DEMO] OTP for {username}: {otp}')
+            send_otp_sms(user.profile.telephone, otp)
 
             return Response(
                 {'detail': 'Nouveau code OTP envoyé'},
