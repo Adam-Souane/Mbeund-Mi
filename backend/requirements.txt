@@ -22,6 +22,7 @@ django-cors-headers==4.4.0
 requests==2.32.3
 twilio==9.3.2
 drf-spectacular==0.27.1
+reportlab==4.2.4
 
 # Itinéraire d'évacuation sûr (api/services/routing_service.py) : construit
 # un graphe à partir des SegmentRue et calcule un plus court chemin pondéré
