@@ -231,51 +231,95 @@ class UserViewSet(viewsets.ModelViewSet):
         Demande une réinitialisation de mot de passe.
 
         Body (Citoyen): {"telephone": "..."}
-        Body (Autorité): {"email": "..."}
 
-        Note: En production, envoyer un SMS (citoyen) ou email (autorité) avec un lien de réinitialisation.
-        Pour la démo, retourner juste un succès.
+        Envoie un code de réinitialisation par SMS au citoyen.
         """
         telephone = request.data.get('telephone')
-        email = request.data.get('email')
 
         # Chercher par téléphone (citoyen)
         if telephone:
             try:
                 profile = Profile.objects.get(telephone=telephone)
                 user = profile.user
-                # TODO: Envoyer un SMS de réinitialisation en production
+                reset_code = self._generate_otp()
+                cache_key = f'password_reset_{user.username}'
+                cache.set(cache_key, reset_code, timeout=600)  # 10 minutes
+                send_otp_sms(telephone, reset_code)
                 return Response(
-                    {'detail': 'Instructions envoyées par SMS'},
+                    {'detail': 'Code de réinitialisation envoyé par SMS'},
                     status=status.HTTP_200_OK,
                 )
             except Profile.DoesNotExist:
                 # Ne pas révéler si le numéro existe (sécurité)
                 return Response(
-                    {'detail': 'Si ce numéro existe, vous recevrez les instructions'},
-                    status=status.HTTP_200_OK,
-                )
-
-        # Chercher par email (autorité)
-        elif email:
-            try:
-                user = User.objects.get(email=email)
-                # TODO: Envoyer un email de réinitialisation en production
-                return Response(
-                    {'detail': 'Instructions envoyées par email'},
-                    status=status.HTTP_200_OK,
-                )
-            except User.DoesNotExist:
-                # Ne pas révéler si l'email existe (sécurité)
-                return Response(
-                    {'detail': 'Si cet email existe, vous recevrez les instructions'},
+                    {'detail': 'Si ce numéro existe, vous recevrez un code par SMS'},
                     status=status.HTTP_200_OK,
                 )
 
         return Response(
-            {'detail': 'Téléphone ou email requis'},
+            {'detail': 'Téléphone requis'},
             status=status.HTTP_400_BAD_REQUEST
         )
+
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny], url_path='confirm-password-reset')
+    def confirm_password_reset(self, request):
+        """
+        POST /api/users/confirm-password-reset/
+        Confirme le code de réinitialisation et change le mot de passe.
+
+        Body:
+        {
+            "username": "...",
+            "reset_code": "000000",
+            "new_password": "..."
+        }
+        """
+        username = request.data.get('username')
+        reset_code = request.data.get('reset_code')
+        new_password = request.data.get('new_password')
+
+        if not username or not reset_code or not new_password:
+            return Response(
+                {'detail': 'Username, reset_code et new_password requis'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if len(new_password) < 8:
+            return Response(
+                {'detail': 'Mot de passe requis (min. 8 caractères)'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            user = User.objects.get(username=username)
+            cache_key = f'password_reset_{username}'
+            stored_code = cache.get(cache_key)
+
+            if not stored_code:
+                return Response(
+                    {'detail': 'Code de réinitialisation expiré. Veuillez faire une nouvelle demande.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            if str(reset_code) != str(stored_code):
+                return Response(
+                    {'detail': 'Code de réinitialisation invalide'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            user.set_password(new_password)
+            user.save()
+            cache.delete(cache_key)
+
+            return Response(
+                {'detail': 'Mot de passe réinitialisé avec succès'},
+                status=status.HTTP_200_OK,
+            )
+        except User.DoesNotExist:
+            return Response(
+                {'detail': 'Utilisateur non trouvé'},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
     @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated], url_path='create-authority')
     def create_authority(self, request):
