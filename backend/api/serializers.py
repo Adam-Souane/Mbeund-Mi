@@ -602,11 +602,15 @@ class PrevisionMeteoSerializer(serializers.ModelSerializer):
 
 
 class HistoriqueRisqueSerializer(serializers.ModelSerializer):
-    type_cible = serializers.ReadOnlyField()
+    type_cible = serializers.SerializerMethodField()
 
     class Meta:
         model = HistoriqueRisque
         fields = ('id', 'type_cible', 'zone', 'segment', 'score_risque', 'date_calcul', 'details')
+
+    @extend_schema_field(serializers.CharField())
+    def get_type_cible(self, obj):
+        return obj.type_cible
 
     def validate(self, data):
         zone = data.get('zone')
@@ -625,7 +629,7 @@ class ContactAlerteSerializer(serializers.ModelSerializer):
 
 class ProfilVulnerabiliteSerializer(serializers.ModelSerializer):
     username = serializers.ReadOnlyField(source='user.username')
-    est_prioritaire = serializers.ReadOnlyField()
+    est_prioritaire = serializers.SerializerMethodField()
 
     class Meta:
         model = ProfilVulnerabilite
@@ -635,6 +639,10 @@ class ProfilVulnerabiliteSerializer(serializers.ModelSerializer):
             'est_prioritaire', 'updated_at',
         )
         read_only_fields = ('id', 'updated_at')
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_est_prioritaire(self, obj):
+        return obj.est_prioritaire
 
 
 class RelaisQuartierSerializer(serializers.ModelSerializer):
