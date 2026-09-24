@@ -572,6 +572,7 @@ class SMSSignalementViewSet(viewsets.ReadOnlyModelViewSet):
         return queryset
 
 
+@extend_schema(exclude=True)
 class SMSInboundWebhookView(APIView):
     """
     POST /api/sms/inbound/ — Webhook pour recevoir les SMS entrants.
