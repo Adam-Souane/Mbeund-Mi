@@ -27,7 +27,7 @@ export function useWebSocketNotifications() {
 
     // Connexion établie
     ws.onopen = () => {
-      console.log('[WebSocket] Connecté aux notifications');
+      if (import.meta.env.DEV) console.log('[WebSocket] Connecté aux notifications');
       setIsConnected(true);
       setError(null);
 
@@ -64,29 +64,29 @@ export function useWebSocketNotifications() {
 
         // Afficher un toast/son si souhaité
         if (payload.type === 'alerte') {
-          console.warn('[WebSocket] Alerte reçue:', payload.data);
+          if (import.meta.env.DEV) console.warn('[WebSocket] Alerte reçue:', payload.data);
           // Peut déclencher une notification navigateur ici
           showBrowserNotification(payload.data.niveau, `Alerte ${payload.data.zone?.quartier || ''}`);
         } else if (payload.type === 'signalement') {
-          console.log('[WebSocket] Signalement reçu:', payload.data);
+          if (import.meta.env.DEV) console.log('[WebSocket] Signalement reçu:', payload.data);
         } else if (payload.type === 'sms') {
-          console.log('[WebSocket] SMS reçu:', payload.data);
+          if (import.meta.env.DEV) console.log('[WebSocket] SMS reçu:', payload.data);
         }
       } catch (err) {
-        console.error('[WebSocket] Erreur parsing message:', err);
+        if (import.meta.env.DEV) console.error('[WebSocket] Erreur parsing message:', err);
       }
     };
 
     // Erreur
     ws.onerror = (err) => {
-      console.error('[WebSocket] Erreur:', err);
+      if (import.meta.env.DEV) console.error('[WebSocket] Erreur:', err);
       setError('Erreur connexion WebSocket');
       setIsConnected(false);
     };
 
     // Déconnexion
     ws.onclose = () => {
-      console.log('[WebSocket] Déconnecté');
+      if (import.meta.env.DEV) console.log('[WebSocket] Déconnecté');
       setIsConnected(false);
     };
 

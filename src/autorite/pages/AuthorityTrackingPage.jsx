@@ -25,7 +25,7 @@ function AuthorityTrackingContent() {
         setAuthorities(response.data.authorities || []);
         setTotalStats(response.data.total_stats || {});
       } catch (error) {
-        console.error('Erreur récupération stats:', error);
+        if (import.meta.env.DEV) console.error('Erreur récupération stats:', error);
         showToast('Erreur lors du chargement des statistiques', 'error');
       } finally {
         setLoading(false);

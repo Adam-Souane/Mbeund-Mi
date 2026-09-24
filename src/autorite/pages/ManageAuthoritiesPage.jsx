@@ -85,7 +85,7 @@ function ManageAuthoritiesPageContent() {
             setFormData((prev) => ({ ...prev, username: response.data.options[0] }));
           }
         } catch (error) {
-          console.error('Erreur lors du chargement des identifiants:', error);
+          if (import.meta.env.DEV) console.error('Erreur lors du chargement des identifiants:', error);
         } finally {
           setLoadingUsernames(false);
         }
@@ -192,7 +192,7 @@ function ManageAuthoritiesPageContent() {
         const response = await client.get('/users/list-authorities/');
         setAuthorities(response.data.authorities || []);
       } catch (error) {
-        console.error('Erreur lors du chargement des autorités:', error);
+        if (import.meta.env.DEV) console.error('Erreur lors du chargement des autorités:', error);
       }
     };
     loadAuthorities();

@@ -31,7 +31,7 @@ class WebSocketService {
       this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
-        console.log('[WebSocket] Connecté');
+        if (import.meta.env.DEV) console.log('[WebSocket] Connecté');
         this.reconnectAttempts = 0;
         this.emit('connection_open');
       };
@@ -41,22 +41,22 @@ class WebSocketService {
           const data = JSON.parse(event.data);
           this.handleMessage(data);
         } catch (error) {
-          console.error('[WebSocket] Erreur parsing message:', error);
+          if (import.meta.env.DEV) console.error('[WebSocket] Erreur parsing message:', error);
         }
       };
 
       this.ws.onerror = (error) => {
-        console.error('[WebSocket] Erreur:', error);
+        if (import.meta.env.DEV) console.error('[WebSocket] Erreur:', error);
         this.emit('connection_error', error);
       };
 
       this.ws.onclose = () => {
-        console.log('[WebSocket] Disconnecté');
+        if (import.meta.env.DEV) console.log('[WebSocket] Disconnecté');
         this.emit('connection_close');
         this.attemptReconnect();
       };
     } catch (error) {
-      console.error('[WebSocket] Erreur création WebSocket:', error);
+      if (import.meta.env.DEV) console.error('[WebSocket] Erreur création WebSocket:', error);
       this.attemptReconnect();
     }
   }
@@ -78,14 +78,14 @@ class WebSocketService {
         this.emit('prediction_made', payload);
         break;
       default:
-        console.log('[WebSocket] Message inconnu:', type, payload);
+        if (import.meta.env.DEV) console.log('[WebSocket] Message inconnu:', type, payload);
     }
   }
 
   send(type, payload = {}) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify({ type, payload }));
-    } else {
+    } else if (import.meta.env.DEV) {
       console.warn('[WebSocket] Non connecté, impossible d\'envoyer:', type);
     }
   }
@@ -108,7 +108,7 @@ class WebSocketService {
         try {
           callback(data);
         } catch (error) {
-          console.error(`[WebSocket] Erreur dans callback ${event}:`, error);
+          if (import.meta.env.DEV) console.error(`[WebSocket] Erreur dans callback ${event}:`, error);
         }
       });
     }
@@ -118,9 +118,9 @@ class WebSocketService {
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
       const delay = this.reconnectDelay * Math.pow(1.5, this.reconnectAttempts - 1);
-      console.log(`[WebSocket] Tentative de reconnexion ${this.reconnectAttempts} dans ${delay}ms`);
+      if (import.meta.env.DEV) console.log(`[WebSocket] Tentative de reconnexion ${this.reconnectAttempts} dans ${delay}ms`);
       setTimeout(() => this.connect(), delay);
-    } else {
+    } else if (import.meta.env.DEV) {
       console.error('[WebSocket] Reconnexion échouée après trop de tentatives');
     }
   }

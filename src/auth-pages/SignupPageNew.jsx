@@ -48,7 +48,7 @@ export default function SignupPage() {
             setFormData((prev) => ({ ...prev, username: response.data.options[0] }));
           }
         } catch (error) {
-          console.error('Erreur lors du chargement des identifiants:', error);
+          if (import.meta.env.DEV) console.error('Erreur lors du chargement des identifiants:', error);
         } finally {
           setLoadingUsernames(false);
         }
@@ -112,9 +112,6 @@ export default function SignupPage() {
         username: formData.username,
         role: role,
       });
-
-      console.log('Signup response:', response.data);
-      console.log('requires_otp:', response.data.requires_otp);
 
       showToast('Compte créé avec succès !', 'success');
 

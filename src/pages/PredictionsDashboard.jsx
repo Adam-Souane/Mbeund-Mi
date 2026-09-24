@@ -56,7 +56,7 @@ export default function PredictionsDashboard() {
 
       setLastUpdate(new Date());
     } catch (error) {
-      console.error('Erreur chargement données:', error);
+      if (import.meta.env.DEV) console.error('Erreur chargement données:', error);
     } finally {
       setLoading(false);
     }

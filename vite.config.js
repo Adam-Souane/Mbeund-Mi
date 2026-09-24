@@ -19,5 +19,28 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/ws/, '/ws')
       }
     }
-  }
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: false,
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+      },
+      mangle: true,
+    },
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ['react', 'react-dom', 'react-router-dom'],
+          query: ['@tanstack/react-query'],
+          ui: ['lucide-react', 'leaflet', 'react-leaflet'],
+          axios: ['axios'],
+        },
+      },
+    },
+    cssMinify: 'lightningcss',
+    reportCompressedSize: true,
+  },
 });
