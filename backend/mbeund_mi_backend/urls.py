@@ -24,11 +24,12 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, Sp
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
-    # Documentation API sécurisée:
-    # - /api/schema/ (JSON brut OpenAPI 3) — protégé (admin seulement)
-    # - /api/docs/ (Swagger, interactif) — public (mais requiert auth pour tester les endpoints)
-    # - /api/redoc/ (ReDoc, lecture) — public (lecture seule)
-    path('api/schema/', SpectacularAPIView.as_view(permission_classes=[IsAdminUser]), name='schema'),
+    # Documentation API:
+    # - /api/schema/ (JSON brut OpenAPI 3) — public (Swagger UI en a besoin)
+    # - /api/docs/ (Swagger UI, interactif) — public
+    # - /api/redoc/ (ReDoc, lecture) — public
+    # Sécurité: Les données sensibles sont protégées par authentification aux endpoints
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 ]
