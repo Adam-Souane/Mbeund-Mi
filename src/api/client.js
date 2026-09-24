@@ -3,6 +3,7 @@ import { getAccessToken, getRefreshToken, setTokens, clearTokens } from '../auth
 
 const client = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
+  timeout: 10000,
 });
 
 client.interceptors.request.use((config) => {
@@ -29,6 +30,25 @@ async function refreshAccessToken() {
   const response = await axios.post(`${import.meta.env.VITE_API_URL}/token/refresh/`, { refresh });
   setTokens({ access: response.data.access, refresh: response.data.refresh });
   return response.data.access;
+}
+
+function getErrorMessage(error) {
+  const { response, code, message } = error;
+
+  if (response?.status === 401) return 'Session expirée. Veuillez vous reconnecter.';
+  if (response?.status === 403) return 'Accès refusé. Vous n\'avez pas la permission.';
+  if (response?.status === 404) return 'Ressource non trouvée.';
+  if (response?.status === 422) {
+    const errors = response.data?.errors || response.data?.detail;
+    if (errors) return typeof errors === 'string' ? errors : 'Veuillez vérifier vos données.';
+  }
+  if (response?.status >= 500) return 'Erreur serveur. Veuillez réessayer plus tard.';
+  if (response?.status >= 400) return response.data?.detail || 'Une erreur s\'est produite.';
+  if (code === 'ECONNABORTED') return 'La demande a pris trop longtemps. Veuillez réessayer.';
+  if (code === 'ENOTFOUND' || code === 'ECONNREFUSED') return 'Impossible de se connecter au serveur.';
+  if (message === 'Network Error') return 'Erreur réseau. Vérifiez votre connexion.';
+
+  return 'Une erreur inattendue s\'est produite.';
 }
 
 client.interceptors.response.use(
@@ -58,6 +78,19 @@ client.interceptors.response.use(
       }
     }
 
+    // Global error logging (ne rejette pas encore, juste pour la visibilité)
+    const errorMsg = getErrorMessage(error);
+    if (import.meta.env.DEV) {
+      console.error(`API Error [${config?.method?.toUpperCase()} ${config?.url}]:`, {
+        status: response?.status,
+        message: errorMsg,
+        data: response?.data,
+        error: error.message,
+      });
+    }
+
+    // Attacher le message utilisateur-friendly à l'erreur
+    error.userMessage = errorMsg;
     return Promise.reject(error);
   }
 );

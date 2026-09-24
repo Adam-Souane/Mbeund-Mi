@@ -31,7 +31,7 @@ export function useAlertesSocket() {
 
     let socket;
     try {
-      socket = new WebSocket(`${wsUrl}?token=${encodeURIComponent(accessToken)}`);
+      socket = new WebSocket(wsUrl, [`Bearer ${accessToken}`]);
     } catch {
       return undefined;
     }

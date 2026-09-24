@@ -18,16 +18,23 @@ class AlerteConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
         try:
-            # Authentification par JWT : le frontend n'utilise pas de cookie de
-            # session Django (AuthMiddlewareStack ne peuple donc jamais
-            # scope["user"] pour ce client), le token d'acces est transmis en
-            # query string (ws/alertes/?token=<access>) et verifie ici a la
-            # main. Meme niveau d'exigence que GET /api/alertes/
-            # (IsAutoriteOrAdmin : lecture ouverte a tout utilisateur
-            # authentifie, ecriture reservee autorite/admin) : on rejette les
-            # connexions anonymes plutot que de diffuser les alertes a tout le
-            # monde sans controle.
-            token = parse_qs(self.scope["query_string"].decode()).get("token", [None])[0]
+            # Authentification par JWT via Sec-WebSocket-Protocol (subprotocol)
+            # au lieu du query string pour éviter l'exposition du token dans:
+            # - l'historique du navigateur
+            # - les logs du serveur
+            # - les DevTools Network
+            # Format: le frontend envoie le token comme subprotocol
+            token = None
+            if self.scope.get("subprotocols"):
+                for subprotocol in self.scope["subprotocols"]:
+                    if subprotocol.startswith("Bearer "):
+                        token = subprotocol[7:]
+                        break
+
+            # Fallback: accepter encore le query string pour la rétro-compatibilité
+            if not token:
+                token = parse_qs(self.scope["query_string"].decode()).get("token", [None])[0]
+
             if not token or not self._token_valide(token):
                 await self.close(code=4401)
                 return
