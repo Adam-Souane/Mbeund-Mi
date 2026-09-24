@@ -1,0 +1,3992 @@
+openapi: 3.0.3
+info:
+  title: MBEUND MI — API
+  version: 1.0.0
+  description: API de la plateforme de prévention des inondations de Thiaroye-sur-Mer.
+paths:
+  /api/alertes/:
+    get:
+      operationId: api_alertes_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAlerteList'
+          description: ''
+    post:
+      operationId: api_alertes_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Alerte'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Alerte'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Alerte'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alerte'
+          description: ''
+  /api/alertes/{id}/:
+    get:
+      operationId: api_alertes_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Alerte.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alerte'
+          description: ''
+    put:
+      operationId: api_alertes_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Alerte.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Alerte'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Alerte'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Alerte'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alerte'
+          description: ''
+    patch:
+      operationId: api_alertes_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Alerte.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAlerte'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAlerte'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAlerte'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alerte'
+          description: ''
+    delete:
+      operationId: api_alertes_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Alerte.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/alertes/{id}/statut/:
+    patch:
+      operationId: api_alertes_statut_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Alerte.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAlerte'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAlerte'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAlerte'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alerte'
+          description: ''
+  /api/capteurs/:
+    get:
+      operationId: api_capteurs_list
+      description: ViewSet for Capteur. Exposes standard GET/POST/PUT/DELETE.
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CapteurList'
+          description: ''
+    post:
+      operationId: api_capteurs_create
+      description: ViewSet for Capteur. Exposes standard GET/POST/PUT/DELETE.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Capteur'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Capteur'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Capteur'
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Capteur'
+          description: ''
+  /api/capteurs/{id}/:
+    get:
+      operationId: api_capteurs_retrieve
+      description: ViewSet for Capteur. Exposes standard GET/POST/PUT/DELETE.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Capteur.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Capteur'
+          description: ''
+    put:
+      operationId: api_capteurs_update
+      description: ViewSet for Capteur. Exposes standard GET/POST/PUT/DELETE.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Capteur.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Capteur'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Capteur'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Capteur'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Capteur'
+          description: ''
+    patch:
+      operationId: api_capteurs_partial_update
+      description: ViewSet for Capteur. Exposes standard GET/POST/PUT/DELETE.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Capteur.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCapteur'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCapteur'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCapteur'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Capteur'
+          description: ''
+    delete:
+      operationId: api_capteurs_destroy
+      description: ViewSet for Capteur. Exposes standard GET/POST/PUT/DELETE.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Capteur.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/contacts-alerte/:
+    get:
+      operationId: api_contacts_alerte_list
+      description: |-
+        Registre des citoyens souhaitant recevoir un SMS d'alerte dans leur zone.
+        Inscription libre (comme pour les signalements) ; consultation/gestion
+        réservées aux autorités/admin car ce sont des numéros de téléphone (PII).
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedContactAlerteList'
+          description: ''
+    post:
+      operationId: api_contacts_alerte_create
+      description: |-
+        Registre des citoyens souhaitant recevoir un SMS d'alerte dans leur zone.
+        Inscription libre (comme pour les signalements) ; consultation/gestion
+        réservées aux autorités/admin car ce sont des numéros de téléphone (PII).
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactAlerte'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ContactAlerte'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ContactAlerte'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactAlerte'
+          description: ''
+  /api/contacts-alerte/{id}/:
+    get:
+      operationId: api_contacts_alerte_retrieve
+      description: |-
+        Registre des citoyens souhaitant recevoir un SMS d'alerte dans leur zone.
+        Inscription libre (comme pour les signalements) ; consultation/gestion
+        réservées aux autorités/admin car ce sont des numéros de téléphone (PII).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Contact d'alerte.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactAlerte'
+          description: ''
+    put:
+      operationId: api_contacts_alerte_update
+      description: |-
+        Registre des citoyens souhaitant recevoir un SMS d'alerte dans leur zone.
+        Inscription libre (comme pour les signalements) ; consultation/gestion
+        réservées aux autorités/admin car ce sont des numéros de téléphone (PII).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Contact d'alerte.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactAlerte'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ContactAlerte'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ContactAlerte'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactAlerte'
+          description: ''
+    patch:
+      operationId: api_contacts_alerte_partial_update
+      description: |-
+        Registre des citoyens souhaitant recevoir un SMS d'alerte dans leur zone.
+        Inscription libre (comme pour les signalements) ; consultation/gestion
+        réservées aux autorités/admin car ce sont des numéros de téléphone (PII).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Contact d'alerte.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedContactAlerte'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedContactAlerte'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedContactAlerte'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactAlerte'
+          description: ''
+    delete:
+      operationId: api_contacts_alerte_destroy
+      description: |-
+        Registre des citoyens souhaitant recevoir un SMS d'alerte dans leur zone.
+        Inscription libre (comme pour les signalements) ; consultation/gestion
+        réservées aux autorités/admin car ce sont des numéros de téléphone (PII).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Contact d'alerte.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/historique-risque/:
+    get:
+      operationId: api_historique_risque_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedHistoriqueRisqueList'
+          description: ''
+  /api/historique-risque/{id}/:
+    get:
+      operationId: api_historique_risque_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Historique de risque.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HistoriqueRisque'
+          description: ''
+  /api/inondations/:
+    get:
+      operationId: api_inondations_list
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EpisodeInondationList'
+          description: ''
+  /api/inondations/{id}/:
+    get:
+      operationId: api_inondations_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Épisode d'inondation.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EpisodeInondation'
+          description: ''
+  /api/inondations/backtesting/:
+    get:
+      operationId: api_inondations_backtesting_retrieve
+      description: |-
+        GET /api/inondations/backtesting/?include_synthetic=true
+        Exécute le backtesting : pour chaque inondation historique, calcule
+        ce que le modèle aurait prédit (basé sur les pluies 72h avant).
+
+        Query params:
+            include_synthetic (bool, default=true):
+                true = inclut les données synthétiques (pour démo)
+                false = compte SEULEMENT les vraies inondations (production)
+
+        Retourne les résultats avec statistiques de détection.
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EpisodeInondation'
+          description: ''
+  /api/mesures/:
+    get:
+      operationId: api_mesures_list
+      description: |-
+        ViewSet for Mesure. Exposes standard GET/POST/PUT/DELETE,
+        and a custom action `/api/mesures/recentes/`.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMesureList'
+          description: ''
+    post:
+      operationId: api_mesures_create
+      description: |-
+        ViewSet for Mesure. Exposes standard GET/POST/PUT/DELETE,
+        and a custom action `/api/mesures/recentes/`.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Mesure'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Mesure'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Mesure'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mesure'
+          description: ''
+  /api/mesures/{id}/:
+    get:
+      operationId: api_mesures_retrieve
+      description: |-
+        ViewSet for Mesure. Exposes standard GET/POST/PUT/DELETE,
+        and a custom action `/api/mesures/recentes/`.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Mesure.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mesure'
+          description: ''
+    put:
+      operationId: api_mesures_update
+      description: |-
+        ViewSet for Mesure. Exposes standard GET/POST/PUT/DELETE,
+        and a custom action `/api/mesures/recentes/`.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Mesure.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Mesure'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Mesure'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Mesure'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mesure'
+          description: ''
+    patch:
+      operationId: api_mesures_partial_update
+      description: |-
+        ViewSet for Mesure. Exposes standard GET/POST/PUT/DELETE,
+        and a custom action `/api/mesures/recentes/`.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Mesure.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMesure'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedMesure'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedMesure'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mesure'
+          description: ''
+    delete:
+      operationId: api_mesures_destroy
+      description: |-
+        ViewSet for Mesure. Exposes standard GET/POST/PUT/DELETE,
+        and a custom action `/api/mesures/recentes/`.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Mesure.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/mesures/recentes/:
+    get:
+      operationId: api_mesures_recentes_retrieve
+      description: |-
+        GET /api/mesures/recentes/
+        Returns measurements from the last 24 hours, grouped by capteur.
+        Each capteur is represented as a GeoJSON feature, with its recent measurements list.
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mesure'
+          description: ''
+  /api/predictions/:
+    get:
+      operationId: api_predictions_list
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PredictionIA'
+          description: ''
+  /api/predictions/{id}/:
+    get:
+      operationId: api_predictions_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Prédiction IA.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PredictionIA'
+          description: ''
+  /api/predictions/fiabilite/:
+    get:
+      operationId: api_predictions_fiabilite_retrieve
+      description: |-
+        GET /api/predictions/fiabilite/
+        Retourne les métriques de fiabilité du modèle Random Forest : Brier Score,
+        Log Loss, Accuracy, matrice de confusion, courbe de calibration.
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PredictionIA'
+          description: ''
+  /api/previsions/:
+    get:
+      operationId: api_previsions_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPrevisionMeteoList'
+          description: ''
+    post:
+      operationId: api_previsions_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrevisionMeteo'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PrevisionMeteo'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PrevisionMeteo'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrevisionMeteo'
+          description: ''
+  /api/previsions/{id}/:
+    get:
+      operationId: api_previsions_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Prévision météo.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrevisionMeteo'
+          description: ''
+    put:
+      operationId: api_previsions_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Prévision météo.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrevisionMeteo'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PrevisionMeteo'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PrevisionMeteo'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrevisionMeteo'
+          description: ''
+    patch:
+      operationId: api_previsions_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Prévision météo.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPrevisionMeteo'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPrevisionMeteo'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPrevisionMeteo'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PrevisionMeteo'
+          description: ''
+    delete:
+      operationId: api_previsions_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Prévision météo.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/profils-vulnerabilite/:
+    get:
+      operationId: api_profils_vulnerabilite_list
+      description: |-
+        Consultation par une autorité/admin des profils de vulnérabilité déclarés
+        par les citoyens, pour prioriser l'assistance à l'évacuation. Un citoyen
+        déclare le sien via MonProfilVulnerabiliteView, jamais via ce ViewSet.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProfilVulnerabiliteList'
+          description: ''
+  /api/profils-vulnerabilite/{id}/:
+    get:
+      operationId: api_profils_vulnerabilite_retrieve
+      description: |-
+        Consultation par une autorité/admin des profils de vulnérabilité déclarés
+        par les citoyens, pour prioriser l'assistance à l'évacuation. Un citoyen
+        déclare le sien via MonProfilVulnerabiliteView, jamais via ce ViewSet.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Profil de vulnérabilité.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfilVulnerabilite'
+          description: ''
+  /api/refuges/:
+    get:
+      operationId: api_refuges_list
+      description: |-
+        Points de refuge/abri en cas d'inondation (écoles, mosquées, centres, etc.)
+        Liste complète visible pour tous (citoyens et autorités).
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPointRefugeList'
+          description: ''
+  /api/refuges/{id}/:
+    get:
+      operationId: api_refuges_retrieve
+      description: |-
+        Points de refuge/abri en cas d'inondation (écoles, mosquées, centres, etc.)
+        Liste complète visible pour tous (citoyens et autorités).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Point de refuge.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PointRefuge'
+          description: ''
+  /api/relais-quartier/:
+    get:
+      operationId: api_relais_quartier_list
+      description: |-
+        Citoyens volontaires pour relayer une alerte et aider à l'évacuation dans
+        leur zone. Chaque citoyen ne gère que sa propre inscription (OneToOne) ;
+        la liste complète et la vérification (`verifier`) sont réservées à
+        l'autorité/admin.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRelaisQuartierList'
+          description: ''
+    post:
+      operationId: api_relais_quartier_create
+      description: |-
+        Citoyens volontaires pour relayer une alerte et aider à l'évacuation dans
+        leur zone. Chaque citoyen ne gère que sa propre inscription (OneToOne) ;
+        la liste complète et la vérification (`verifier`) sont réservées à
+        l'autorité/admin.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RelaisQuartier'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RelaisQuartier'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RelaisQuartier'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RelaisQuartier'
+          description: ''
+  /api/relais-quartier/{id}/:
+    get:
+      operationId: api_relais_quartier_retrieve
+      description: |-
+        Citoyens volontaires pour relayer une alerte et aider à l'évacuation dans
+        leur zone. Chaque citoyen ne gère que sa propre inscription (OneToOne) ;
+        la liste complète et la vérification (`verifier`) sont réservées à
+        l'autorité/admin.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Relais de quartier.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RelaisQuartier'
+          description: ''
+    put:
+      operationId: api_relais_quartier_update
+      description: |-
+        Citoyens volontaires pour relayer une alerte et aider à l'évacuation dans
+        leur zone. Chaque citoyen ne gère que sa propre inscription (OneToOne) ;
+        la liste complète et la vérification (`verifier`) sont réservées à
+        l'autorité/admin.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Relais de quartier.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RelaisQuartier'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RelaisQuartier'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RelaisQuartier'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RelaisQuartier'
+          description: ''
+    patch:
+      operationId: api_relais_quartier_partial_update
+      description: |-
+        Citoyens volontaires pour relayer une alerte et aider à l'évacuation dans
+        leur zone. Chaque citoyen ne gère que sa propre inscription (OneToOne) ;
+        la liste complète et la vérification (`verifier`) sont réservées à
+        l'autorité/admin.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Relais de quartier.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedRelaisQuartier'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedRelaisQuartier'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedRelaisQuartier'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RelaisQuartier'
+          description: ''
+    delete:
+      operationId: api_relais_quartier_destroy
+      description: |-
+        Citoyens volontaires pour relayer une alerte et aider à l'évacuation dans
+        leur zone. Chaque citoyen ne gère que sa propre inscription (OneToOne) ;
+        la liste complète et la vérification (`verifier`) sont réservées à
+        l'autorité/admin.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Relais de quartier.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/relais-quartier/{id}/verifier/:
+    patch:
+      operationId: api_relais_quartier_verifier_partial_update
+      description: |-
+        PATCH /api/relais-quartier/{id}/verifier/  body: {"verifie": true|false}
+        `verifie` est en lecture seule sur le serializer (empêche un citoyen
+        de s'auto-vérifier) ; seule une autorité/admin peut le faire basculer.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Relais de quartier.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedRelaisQuartier'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedRelaisQuartier'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedRelaisQuartier'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RelaisQuartier'
+          description: ''
+  /api/relais-quartier/moi/:
+    get:
+      operationId: api_relais_quartier_moi_retrieve
+      description: GET /api/relais-quartier/moi/ — retrouve sa propre inscription
+        (ou null).
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RelaisQuartier'
+          description: ''
+  /api/segments/:
+    get:
+      operationId: api_segments_list
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SegmentRueList'
+          description: ''
+    post:
+      operationId: api_segments_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SegmentRue'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SegmentRue'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SegmentRue'
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SegmentRue'
+          description: ''
+  /api/segments/{id}/:
+    get:
+      operationId: api_segments_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Segment de rue.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SegmentRue'
+          description: ''
+    put:
+      operationId: api_segments_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Segment de rue.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SegmentRue'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SegmentRue'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SegmentRue'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SegmentRue'
+          description: ''
+    patch:
+      operationId: api_segments_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Segment de rue.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSegmentRue'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSegmentRue'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSegmentRue'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SegmentRue'
+          description: ''
+    delete:
+      operationId: api_segments_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Segment de rue.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/signalements/:
+    get:
+      operationId: api_signalements_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSignalementCitoyenList'
+          description: ''
+    post:
+      operationId: api_signalements_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignalementCitoyen'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SignalementCitoyen'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SignalementCitoyen'
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignalementCitoyen'
+          description: ''
+  /api/signalements/{id}/:
+    get:
+      operationId: api_signalements_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Signalement citoyen.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignalementCitoyen'
+          description: ''
+    put:
+      operationId: api_signalements_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Signalement citoyen.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignalementCitoyen'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SignalementCitoyen'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SignalementCitoyen'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignalementCitoyen'
+          description: ''
+    patch:
+      operationId: api_signalements_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Signalement citoyen.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSignalementCitoyen'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSignalementCitoyen'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSignalementCitoyen'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignalementCitoyen'
+          description: ''
+    delete:
+      operationId: api_signalements_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Signalement citoyen.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/signalements/{id}/valider/:
+    patch:
+      operationId: api_signalements_valider_partial_update
+      description: |-
+        PATCH /api/signalements/{id}/valider/  body: {"valide": true|false}
+        `valide` est en lecture seule sur le serializer (pour empêcher un
+        citoyen de l'auto-valider à la création) ; cette action dédiée est
+        le seul moyen pour une autorité/admin de le faire basculer.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Signalement citoyen.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSignalementCitoyen'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSignalementCitoyen'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSignalementCitoyen'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignalementCitoyen'
+          description: ''
+  /api/sms-signalements/:
+    get:
+      operationId: api_sms_signalements_list
+      description: Signalements reçus via SMS entrants. Lisible par autorité/admin
+        seulement.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSMSSignalementList'
+          description: ''
+  /api/sms-signalements/{id}/:
+    get:
+      operationId: api_sms_signalements_retrieve
+      description: Signalements reçus via SMS entrants. Lisible par autorité/admin
+        seulement.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this SMS signalement.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SMSSignalement'
+          description: ''
+  /api/token/:
+    post:
+      operationId: api_token_create
+      description: Identique à TokenObtainPairView, mais émet un JWT portant le claim
+        `role`.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomTokenObtainPair'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CustomTokenObtainPair'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CustomTokenObtainPair'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomTokenObtainPair'
+          description: ''
+  /api/token/refresh/:
+    post:
+      operationId: api_token_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/users/:
+    get:
+      operationId: api_users_list
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+          description: ''
+    post:
+      operationId: api_users_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/User'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/users/{id}/:
+    get:
+      operationId: api_users_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Utilisateur.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    put:
+      operationId: api_users_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Utilisateur.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/User'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    patch:
+      operationId: api_users_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Utilisateur.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUser'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUser'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUser'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    delete:
+      operationId: api_users_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Utilisateur.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/users/admin-register/:
+    post:
+      operationId: api_users_admin_register_create
+      description: |-
+        POST /api/users/admin-register/
+        Enregistre le premier admin avec un code d'invitation.
+
+        Body:
+        {
+            "code": "invitation_code",
+            "email": "...",
+            "password": "...",
+            "first_name": "...",
+            "last_name": "...",
+            "telephone": "..."
+        }
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/User'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/users/authority-activities/{user_id}/:
+    get:
+      operationId: api_users_authority_activities_retrieve
+      description: |-
+        GET /api/users/authority-activities/{user_id}/
+        Retourne l'historique des activités d'une autorité.
+
+        Réservé à l'admin.
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: string
+          pattern: ^[0-9]+$
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/users/authority-stats/:
+    get:
+      operationId: api_users_authority_stats_retrieve
+      description: |-
+        GET /api/users/authority-stats/
+        Retourne les statistiques de suivi de TOUTES les autorités.
+
+        Réservé à l'admin.
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/users/check-username/:
+    get:
+      operationId: api_users_check_username_retrieve
+      description: |-
+        GET /api/users/check-username/?first_name=...&last_name=...
+        Retourne les usernames disponibles basés sur prénom/nom.
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/users/confirm-password-reset/:
+    post:
+      operationId: api_users_confirm_password_reset_create
+      description: |-
+        POST /api/users/confirm-password-reset/
+        Confirme le code de réinitialisation et change le mot de passe.
+
+        Body:
+        {
+            "username": "...",
+            "reset_code": "000000",
+            "new_password": "..."
+        }
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/User'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/users/create-authority/:
+    post:
+      operationId: api_users_create_authority_create
+      description: |-
+        POST /api/users/create-authority/
+        Crée un compte autorité (réservé à l'admin).
+
+        Body:
+        {
+            "first_name": "...",
+            "last_name": "...",
+            "email": "...",
+            "telephone": "...",
+            "username": "..."
+        }
+
+        Retourne les identifiants générés (username + password temporaire).
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/User'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/users/delete-authority/:
+    post:
+      operationId: api_users_delete_authority_create
+      description: |-
+        POST /api/users/delete-authority/
+        Supprime une autorité (admin seulement).
+
+        Body:
+        {
+            "username": "..."
+        }
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/User'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/users/list-authorities/:
+    get:
+      operationId: api_users_list_authorities_retrieve
+      description: |-
+        GET /api/users/list-authorities/
+        Retourne TOUTES les autorités (pour l'admin).
+
+        Réservé à l'admin.
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/users/password-reset/:
+    post:
+      operationId: api_users_password_reset_create
+      description: |-
+        POST /api/users/password-reset/
+        Demande une réinitialisation de mot de passe.
+
+        Body (Citoyen): {"telephone": "..."}
+
+        Envoie un code de réinitialisation par SMS au citoyen.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/User'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/users/regenerate-authority-password/:
+    post:
+      operationId: api_users_regenerate_authority_password_create
+      description: |-
+        POST /api/users/regenerate-authority-password/
+        Régénère le mot de passe d'une autorité (admin seulement).
+
+        Body:
+        {
+            "username": "..."
+        }
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/User'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/users/register/:
+    post:
+      operationId: api_users_register_create
+      description: |-
+        POST /api/users/register/
+        Enregistre un nouvel utilisateur avec profil.
+
+        Body:
+        {
+            "email": "...",
+            "password": "...",
+            "first_name": "...",
+            "last_name": "...",
+            "telephone": "...",
+            "username": "...",
+            "role": "citoyen" ou "autorite"
+        }
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/User'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/users/resend-otp/:
+    post:
+      operationId: api_users_resend_otp_create
+      description: |-
+        POST /api/users/resend-otp/
+        Renvoie un nouveau code OTP à l'utilisateur.
+
+        Body:
+        {
+            "username": "..."
+        }
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/User'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/users/verify-otp/:
+    post:
+      operationId: api_users_verify_otp_create
+      description: |-
+        POST /api/users/verify-otp/
+        Vérifie le code OTP fourni par l'utilisateur.
+
+        Body:
+        {
+            "username": "...",
+            "otp": "000000"
+        }
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/User'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/zones/:
+    get:
+      operationId: api_zones_list
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ZoneRisqueGeoList'
+          description: ''
+  /api/zones/{id}/:
+    get:
+      operationId: api_zones_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Zone de risque.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ZoneRisqueGeo'
+          description: ''
+components:
+  schemas:
+    Alerte:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        niveau:
+          enum:
+          - vert
+          - jaune
+          - orange
+          - rouge
+          type: string
+          description: |-
+            * `vert` - Vert
+            * `jaune` - Jaune
+            * `orange` - Orange
+            * `rouge` - Rouge
+          x-spec-enum-id: e3a46195e882ce49
+        zone:
+          type: integer
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        date_expiration:
+          type: string
+          format: date-time
+          nullable: true
+        canaux:
+          type: string
+          maxLength: 100
+        statut:
+          enum:
+          - en_attente
+          - envoyee
+          - resolue
+          type: string
+          description: |-
+            * `en_attente` - En attente
+            * `envoyee` - Envoyée
+            * `resolue` - Résolue
+          x-spec-enum-id: 9c92dbb416261481
+      required:
+      - id
+      - niveau
+      - timestamp
+      - zone
+    Capteur:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - Feature
+        id:
+          type: integer
+          readOnly: true
+        geometry:
+          type: object
+          properties:
+            type:
+              type: string
+              enum:
+              - Point
+            coordinates:
+              type: array
+              items:
+                type: number
+                format: float
+              example:
+              - 12.9721
+              - 77.5933
+              minItems: 2
+              maxItems: 3
+        properties:
+          type: object
+          properties:
+            nom:
+              type: string
+              maxLength: 100
+            type:
+              enum:
+              - eau
+              - pluviometre
+              type: string
+              description: |-
+                * `eau` - Eau
+                * `pluviometre` - Pluviomètre
+              x-spec-enum-id: 42518428d226fb94
+            code_identifiant:
+              type: string
+              nullable: true
+              maxLength: 50
+            zone:
+              type: integer
+              nullable: true
+            actif:
+              type: boolean
+              description: Dérivé de `statut` — évite la désynchronisation entre deux
+                champs concurrents.
+              readOnly: true
+            statut:
+              enum:
+              - actif
+              - inactif
+              - maintenance
+              type: string
+              description: |-
+                * `actif` - Actif
+                * `inactif` - Inactif
+                * `maintenance` - En maintenance
+              x-spec-enum-id: 7405d499f96b1ded
+            dernier_releve:
+              type: string
+              format: date-time
+              nullable: true
+            date_installation:
+              type: string
+              format: date
+    CapteurList:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - FeatureCollection
+        features:
+          type: array
+          items:
+            $ref: '#/components/schemas/Capteur'
+    ContactAlerte:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        telephone:
+          type: string
+          maxLength: 20
+        zone:
+          type: integer
+        nom:
+          type: string
+          maxLength: 100
+        actif:
+          type: boolean
+        date_inscription:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - date_inscription
+      - id
+      - telephone
+      - zone
+    CustomTokenObtainPair:
+      type: object
+      description: |-
+        Ajoute le rôle du profil (admin/autorite/agent/citoyen) comme claim
+        personnalisé dans le JWT, pour que le frontend puisse savoir quel
+        espace afficher après connexion sans appel supplémentaire.
+      properties:
+        username:
+          type: string
+          writeOnly: true
+        password:
+          type: string
+          writeOnly: true
+      required:
+      - password
+      - username
+    EpisodeInondation:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - Feature
+        id:
+          type: integer
+          readOnly: true
+        geometry:
+          type: object
+          properties:
+            type:
+              type: string
+              enum:
+              - MultiPolygon
+            coordinates:
+              type: array
+              items:
+                type: array
+                items:
+                  type: array
+                  items:
+                    type: array
+                    items:
+                      type: number
+                      format: float
+                    example:
+                    - 12.9721
+                    - 77.5933
+                    minItems: 2
+                    maxItems: 3
+                  example:
+                  - - 22.4707
+                    - 70.0577
+                  - - 12.9721
+                    - 77.5933
+                  minItems: 4
+                example:
+                - - - 0.0
+                    - 0.0
+                  - - 0.0
+                    - 50.0
+                  - - 50.0
+                    - 50.0
+                  - - 50.0
+                    - 0.0
+                  - - 0.0
+                    - 0.0
+        properties:
+          type: object
+          properties:
+            date_debut:
+              type: string
+              format: date-time
+            date_fin:
+              type: string
+              format: date-time
+              nullable: true
+            surface_ha:
+              type: number
+              format: double
+              nullable: true
+    EpisodeInondationList:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - FeatureCollection
+        features:
+          type: array
+          items:
+            $ref: '#/components/schemas/EpisodeInondation'
+    HistoriqueRisque:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        type_cible:
+          type: string
+          readOnly: true
+        zone:
+          type: integer
+          nullable: true
+        segment:
+          type: integer
+          nullable: true
+        score_risque:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+        date_calcul:
+          type: string
+          format: date-time
+          readOnly: true
+        details:
+          nullable: true
+      required:
+      - date_calcul
+      - id
+      - score_risque
+      - type_cible
+    Mesure:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        capteur:
+          type: integer
+        valeur:
+          type: number
+          format: double
+        unite:
+          type: string
+          maxLength: 20
+        timestamp:
+          type: string
+          format: date-time
+      required:
+      - capteur
+      - id
+      - timestamp
+      - unite
+      - valeur
+    PaginatedAlerteList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Alerte'
+    PaginatedContactAlerteList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContactAlerte'
+    PaginatedHistoriqueRisqueList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/HistoriqueRisque'
+    PaginatedMesureList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Mesure'
+    PaginatedPointRefugeList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          $ref: '#/components/schemas/PointRefugeList'
+    PaginatedPrevisionMeteoList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PrevisionMeteo'
+    PaginatedProfilVulnerabiliteList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProfilVulnerabilite'
+    PaginatedRelaisQuartierList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/RelaisQuartier'
+    PaginatedSMSSignalementList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SMSSignalement'
+    PaginatedSignalementCitoyenList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          $ref: '#/components/schemas/SignalementCitoyenList'
+    PatchedAlerte:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        niveau:
+          enum:
+          - vert
+          - jaune
+          - orange
+          - rouge
+          type: string
+          description: |-
+            * `vert` - Vert
+            * `jaune` - Jaune
+            * `orange` - Orange
+            * `rouge` - Rouge
+          x-spec-enum-id: e3a46195e882ce49
+        zone:
+          type: integer
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        date_expiration:
+          type: string
+          format: date-time
+          nullable: true
+        canaux:
+          type: string
+          maxLength: 100
+        statut:
+          enum:
+          - en_attente
+          - envoyee
+          - resolue
+          type: string
+          description: |-
+            * `en_attente` - En attente
+            * `envoyee` - Envoyée
+            * `resolue` - Résolue
+          x-spec-enum-id: 9c92dbb416261481
+    PatchedCapteur:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - Feature
+        id:
+          type: integer
+          readOnly: true
+        geometry:
+          type: object
+          properties:
+            type:
+              type: string
+              enum:
+              - Point
+            coordinates:
+              type: array
+              items:
+                type: number
+                format: float
+              example:
+              - 12.9721
+              - 77.5933
+              minItems: 2
+              maxItems: 3
+        properties:
+          type: object
+          properties:
+            nom:
+              type: string
+              maxLength: 100
+            type:
+              enum:
+              - eau
+              - pluviometre
+              type: string
+              description: |-
+                * `eau` - Eau
+                * `pluviometre` - Pluviomètre
+              x-spec-enum-id: 42518428d226fb94
+            code_identifiant:
+              type: string
+              nullable: true
+              maxLength: 50
+            zone:
+              type: integer
+              nullable: true
+            actif:
+              type: boolean
+              description: Dérivé de `statut` — évite la désynchronisation entre deux
+                champs concurrents.
+              readOnly: true
+            statut:
+              enum:
+              - actif
+              - inactif
+              - maintenance
+              type: string
+              description: |-
+                * `actif` - Actif
+                * `inactif` - Inactif
+                * `maintenance` - En maintenance
+              x-spec-enum-id: 7405d499f96b1ded
+            dernier_releve:
+              type: string
+              format: date-time
+              nullable: true
+            date_installation:
+              type: string
+              format: date
+    PatchedContactAlerte:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        telephone:
+          type: string
+          maxLength: 20
+        zone:
+          type: integer
+        nom:
+          type: string
+          maxLength: 100
+        actif:
+          type: boolean
+        date_inscription:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedMesure:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        capteur:
+          type: integer
+        valeur:
+          type: number
+          format: double
+        unite:
+          type: string
+          maxLength: 20
+        timestamp:
+          type: string
+          format: date-time
+    PatchedPrevisionMeteo:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        zone:
+          type: integer
+          nullable: true
+        date_prevision:
+          type: string
+          format: date-time
+        date_fin:
+          type: string
+          format: date-time
+          nullable: true
+          description: Date fin si prévision multi-jours
+        temperature_c:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,1})?$
+          nullable: true
+          description: Température en °C
+        temperature_max_c:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,1})?$
+          nullable: true
+        temperature_min_c:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,1})?$
+          nullable: true
+        precipitation_mm:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          description: Précipitation en mm
+        humidity_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,1})?$
+          nullable: true
+          description: Humidité relative %
+        vitesse_vent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,1})?$
+          nullable: true
+          description: Vitesse vent km/h
+        weather_code:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+          description: Code météo WMO
+        source:
+          type: string
+          description: 'Source: open-meteo, anacim, etc.'
+          maxLength: 100
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedRelaisQuartier:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          title: Nom d’utilisateur
+          description: Requis. 150 caractères maximum. Uniquement des lettres, nombres
+            et les caractères « @ », « . », « + », « - » et « _ ».
+          readOnly: true
+        zone:
+          type: integer
+        verifie:
+          type: boolean
+          readOnly: true
+        disponible:
+          type: boolean
+        date_inscription:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedSegmentRue:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - Feature
+        id:
+          type: integer
+          readOnly: true
+        geometry:
+          type: object
+          properties:
+            type:
+              type: string
+              enum:
+              - LineString
+            coordinates:
+              type: array
+              items:
+                type: array
+                items:
+                  type: number
+                  format: float
+                example:
+                - 12.9721
+                - 77.5933
+                minItems: 2
+                maxItems: 3
+              example:
+              - - 22.4707
+                - 70.0577
+              - - 12.9721
+                - 77.5933
+              minItems: 2
+        properties:
+          type: object
+          properties:
+            nom:
+              type: string
+              maxLength: 150
+            zone:
+              type: integer
+              nullable: true
+            altitude_moyenne:
+              type: string
+              format: decimal
+              pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+              nullable: true
+            pente:
+              type: string
+              format: decimal
+              pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+              nullable: true
+            etat_drainage:
+              enum:
+              - bon
+              - moyen
+              - obstrue
+              - inexistant
+              type: string
+              description: |-
+                * `bon` - Bon
+                * `moyen` - Moyen
+                * `obstrue` - Obstrué
+                * `inexistant` - Inexistant
+              x-spec-enum-id: 2e05e1ce180c1362
+            score_risque_actuel:
+              type: string
+              format: decimal
+              pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+            created_at:
+              type: string
+              format: date-time
+              readOnly: true
+    PatchedSignalementCitoyen:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - Feature
+        id:
+          type: integer
+          readOnly: true
+        geometry:
+          type: object
+          properties:
+            type:
+              type: string
+              enum:
+              - Point
+            coordinates:
+              type: array
+              items:
+                type: number
+                format: float
+              example:
+              - 12.9721
+              - 77.5933
+              minItems: 2
+              maxItems: 3
+        properties:
+          type: object
+          properties:
+            description:
+              type: string
+            photo:
+              type: string
+              format: uri
+              nullable: true
+            valide:
+              type: boolean
+              readOnly: true
+            date_creation:
+              type: string
+              format: date-time
+              readOnly: true
+            categorie:
+              enum:
+              - egouts
+              - inondation
+              - autre
+              type: string
+              description: |-
+                * `egouts` - Égouts
+                * `inondation` - Inondation
+                * `autre` - Autre
+              x-spec-enum-id: 24e80297bf1e8390
+            niveau_eau_estime:
+              enum:
+              - indetermine
+              - faible
+              - modere
+              - eleve
+              type: string
+              description: |-
+                * `indetermine` - Indéterminé
+                * `faible` - Faible
+                * `modere` - Modéré
+                * `eleve` - Élevé
+              x-spec-enum-id: ee90771942ea3b34
+              readOnly: true
+            score_eau_estime:
+              type: number
+              format: double
+              readOnly: true
+              nullable: true
+            signalement_similaire:
+              type: integer
+              readOnly: true
+              nullable: true
+            citoyen_nom:
+              type: string
+              nullable: true
+              readOnly: true
+            citoyen_prenom:
+              type: string
+              nullable: true
+              readOnly: true
+            citoyen_telephone:
+              type: string
+              nullable: true
+              readOnly: true
+            citoyen_quartier:
+              type: string
+              nullable: true
+              readOnly: true
+    PatchedUser:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          title: Nom d’utilisateur
+          description: Requis. 150 caractères maximum. Uniquement des lettres, nombres
+            et les caractères « @ », « . », « + », « - » et « _ ».
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          title: Adresse électronique
+          maxLength: 254
+        first_name:
+          type: string
+          title: Prénom
+          maxLength: 150
+        last_name:
+          type: string
+          title: Nom
+          maxLength: 150
+        profile:
+          allOf:
+          - $ref: '#/components/schemas/Profile'
+          readOnly: true
+    PointRefuge:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - Feature
+        id:
+          type: integer
+          readOnly: true
+        geometry:
+          type: object
+          properties:
+            type:
+              type: string
+              enum:
+              - Point
+            coordinates:
+              type: array
+              items:
+                type: number
+                format: float
+              example:
+              - 12.9721
+              - 77.5933
+              minItems: 2
+              maxItems: 3
+        properties:
+          type: object
+          properties:
+            nom:
+              type: string
+              maxLength: 200
+            type_refuge:
+              enum:
+              - ecole
+              - mosquee
+              - centre_sante
+              - mairie
+              - bâtiment_public
+              - autre
+              type: string
+              description: |-
+                * `ecole` - École
+                * `mosquee` - Mosquée
+                * `centre_sante` - Centre de santé
+                * `mairie` - Mairie
+                * `bâtiment_public` - Bâtiment public
+                * `autre` - Autre
+              x-spec-enum-id: f618eaa6b0ba87e0
+            zone:
+              type: integer
+              nullable: true
+            zone_info:
+              allOf:
+              - $ref: '#/components/schemas/ZoneRisque'
+              readOnly: true
+            adresse:
+              type: string
+              maxLength: 300
+            quartier:
+              type: string
+              maxLength: 100
+            capacite:
+              type: integer
+              maximum: 2147483647
+              minimum: -2147483648
+              nullable: true
+              description: Nombre de personnes max
+            contact:
+              type: string
+              description: Numéro de téléphone du responsable
+              maxLength: 50
+            hauteur_etage:
+              type: integer
+              maximum: 2147483647
+              minimum: -2147483648
+              nullable: true
+              description: Nombre d'étages (pour refuges surélevés)
+            notes:
+              type: string
+            actif:
+              type: boolean
+    PointRefugeList:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - FeatureCollection
+        features:
+          type: array
+          items:
+            $ref: '#/components/schemas/PointRefuge'
+    PredictionIA:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        zone:
+          allOf:
+          - $ref: '#/components/schemas/ZoneRisque'
+          readOnly: true
+        probabilite:
+          type: number
+          format: double
+        horizon_h:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        confiance:
+          type: number
+          format: double
+        niveau_eau_predit_cm:
+          type: number
+          format: double
+          nullable: true
+        timestamp:
+          type: string
+          format: date-time
+      required:
+      - confiance
+      - horizon_h
+      - id
+      - probabilite
+      - timestamp
+      - zone
+    PrevisionMeteo:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        zone:
+          type: integer
+          nullable: true
+        date_prevision:
+          type: string
+          format: date-time
+        date_fin:
+          type: string
+          format: date-time
+          nullable: true
+          description: Date fin si prévision multi-jours
+        temperature_c:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,1})?$
+          nullable: true
+          description: Température en °C
+        temperature_max_c:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,1})?$
+          nullable: true
+        temperature_min_c:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,1})?$
+          nullable: true
+        precipitation_mm:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          description: Précipitation en mm
+        humidity_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,1})?$
+          nullable: true
+          description: Humidité relative %
+        vitesse_vent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,1})?$
+          nullable: true
+          description: Vitesse vent km/h
+        weather_code:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+          description: Code météo WMO
+        source:
+          type: string
+          description: 'Source: open-meteo, anacim, etc.'
+          maxLength: 100
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - date_prevision
+      - id
+      - precipitation_mm
+    ProfilVulnerabilite:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          title: Nom d’utilisateur
+          description: Requis. 150 caractères maximum. Uniquement des lettres, nombres
+            et les caractères « @ », « . », « + », « - » et « _ ».
+          readOnly: true
+        zone:
+          type: integer
+          nullable: true
+        personnes_agees:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        enfants_bas_age:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        personne_mobilite_reduite:
+          type: boolean
+        femme_enceinte:
+          type: boolean
+        notes:
+          type: string
+        est_prioritaire:
+          type: boolean
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - est_prioritaire
+      - id
+      - updated_at
+      - username
+    Profile:
+      type: object
+      properties:
+        role:
+          enum:
+          - admin
+          - autorite
+          - agent
+          - citoyen
+          type: string
+          description: |-
+            * `admin` - Admin
+            * `autorite` - Autorité
+            * `agent` - Agent terrain
+            * `citoyen` - Citoyen
+          x-spec-enum-id: 3cf127c0c29aa199
+        telephone:
+          type: string
+          maxLength: 20
+    RelaisQuartier:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          title: Nom d’utilisateur
+          description: Requis. 150 caractères maximum. Uniquement des lettres, nombres
+            et les caractères « @ », « . », « + », « - » et « _ ».
+          readOnly: true
+        zone:
+          type: integer
+        verifie:
+          type: boolean
+          readOnly: true
+        disponible:
+          type: boolean
+        date_inscription:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - date_inscription
+      - id
+      - username
+      - verifie
+      - zone
+    SMSSignalement:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        telephone:
+          type: string
+          description: Numéro du citoyen qui a envoyé le SMS
+          maxLength: 20
+        contenu_sms:
+          type: string
+          description: Texte du SMS reçu
+        localisation_texte:
+          type: string
+          description: Localisation extraite du SMS
+          maxLength: 300
+        statut:
+          enum:
+          - recu
+          - traitement
+          - converti
+          - erreur
+          type: string
+          description: |-
+            * `recu` - Reçu
+            * `traitement` - En traitement
+            * `converti` - Converti en signalement
+            * `erreur` - Erreur de traitement
+          x-spec-enum-id: 7206d532a01f84aa
+          readOnly: true
+        signalement_id:
+          type: integer
+          nullable: true
+          readOnly: true
+        message_erreur:
+          type: string
+          readOnly: true
+          description: Détail si statut='erreur'
+        timestamp_recu:
+          type: string
+          format: date-time
+          readOnly: true
+        timestamp_traite:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        provider_name:
+          type: string
+          description: Fournisseur SMS (twilio, infobip, etc.)
+          maxLength: 50
+        provider_id:
+          type: string
+          description: Identifiant externe du message
+          maxLength: 100
+      required:
+      - contenu_sms
+      - id
+      - message_erreur
+      - signalement_id
+      - statut
+      - telephone
+      - timestamp_recu
+      - timestamp_traite
+    SegmentRue:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - Feature
+        id:
+          type: integer
+          readOnly: true
+        geometry:
+          type: object
+          properties:
+            type:
+              type: string
+              enum:
+              - LineString
+            coordinates:
+              type: array
+              items:
+                type: array
+                items:
+                  type: number
+                  format: float
+                example:
+                - 12.9721
+                - 77.5933
+                minItems: 2
+                maxItems: 3
+              example:
+              - - 22.4707
+                - 70.0577
+              - - 12.9721
+                - 77.5933
+              minItems: 2
+        properties:
+          type: object
+          properties:
+            nom:
+              type: string
+              maxLength: 150
+            zone:
+              type: integer
+              nullable: true
+            altitude_moyenne:
+              type: string
+              format: decimal
+              pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+              nullable: true
+            pente:
+              type: string
+              format: decimal
+              pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+              nullable: true
+            etat_drainage:
+              enum:
+              - bon
+              - moyen
+              - obstrue
+              - inexistant
+              type: string
+              description: |-
+                * `bon` - Bon
+                * `moyen` - Moyen
+                * `obstrue` - Obstrué
+                * `inexistant` - Inexistant
+              x-spec-enum-id: 2e05e1ce180c1362
+            score_risque_actuel:
+              type: string
+              format: decimal
+              pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+            created_at:
+              type: string
+              format: date-time
+              readOnly: true
+    SegmentRueList:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - FeatureCollection
+        features:
+          type: array
+          items:
+            $ref: '#/components/schemas/SegmentRue'
+    SignalementCitoyen:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - Feature
+        id:
+          type: integer
+          readOnly: true
+        geometry:
+          type: object
+          properties:
+            type:
+              type: string
+              enum:
+              - Point
+            coordinates:
+              type: array
+              items:
+                type: number
+                format: float
+              example:
+              - 12.9721
+              - 77.5933
+              minItems: 2
+              maxItems: 3
+        properties:
+          type: object
+          properties:
+            description:
+              type: string
+            photo:
+              type: string
+              format: uri
+              nullable: true
+            valide:
+              type: boolean
+              readOnly: true
+            date_creation:
+              type: string
+              format: date-time
+              readOnly: true
+            categorie:
+              enum:
+              - egouts
+              - inondation
+              - autre
+              type: string
+              description: |-
+                * `egouts` - Égouts
+                * `inondation` - Inondation
+                * `autre` - Autre
+              x-spec-enum-id: 24e80297bf1e8390
+            niveau_eau_estime:
+              enum:
+              - indetermine
+              - faible
+              - modere
+              - eleve
+              type: string
+              description: |-
+                * `indetermine` - Indéterminé
+                * `faible` - Faible
+                * `modere` - Modéré
+                * `eleve` - Élevé
+              x-spec-enum-id: ee90771942ea3b34
+              readOnly: true
+            score_eau_estime:
+              type: number
+              format: double
+              readOnly: true
+              nullable: true
+            signalement_similaire:
+              type: integer
+              readOnly: true
+              nullable: true
+            citoyen_nom:
+              type: string
+              nullable: true
+              readOnly: true
+            citoyen_prenom:
+              type: string
+              nullable: true
+              readOnly: true
+            citoyen_telephone:
+              type: string
+              nullable: true
+              readOnly: true
+            citoyen_quartier:
+              type: string
+              nullable: true
+              readOnly: true
+    SignalementCitoyenList:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - FeatureCollection
+        features:
+          type: array
+          items:
+            $ref: '#/components/schemas/SignalementCitoyen'
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          title: Nom d’utilisateur
+          description: Requis. 150 caractères maximum. Uniquement des lettres, nombres
+            et les caractères « @ », « . », « + », « - » et « _ ».
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          title: Adresse électronique
+          maxLength: 254
+        first_name:
+          type: string
+          title: Prénom
+          maxLength: 150
+        last_name:
+          type: string
+          title: Nom
+          maxLength: 150
+        profile:
+          allOf:
+          - $ref: '#/components/schemas/Profile'
+          readOnly: true
+      required:
+      - id
+      - profile
+      - username
+    ZoneRisque:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        quartier:
+          type: string
+          maxLength: 100
+        niveau_risque:
+          enum:
+          - vert
+          - jaune
+          - orange
+          - rouge
+          type: string
+          description: |-
+            * `vert` - Vert
+            * `jaune` - Jaune
+            * `orange` - Orange
+            * `rouge` - Rouge
+          x-spec-enum-id: e3a46195e882ce49
+        description:
+          type: string
+        score_risque_moyen:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+      required:
+      - id
+      - niveau_risque
+      - quartier
+    ZoneRisqueGeo:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - Feature
+        id:
+          type: integer
+          readOnly: true
+        geometry:
+          type: object
+          properties:
+            type:
+              type: string
+              enum:
+              - Polygon
+            coordinates:
+              type: array
+              items:
+                type: array
+                items:
+                  type: array
+                  items:
+                    type: number
+                    format: float
+                  example:
+                  - 12.9721
+                  - 77.5933
+                  minItems: 2
+                  maxItems: 3
+                example:
+                - - 22.4707
+                  - 70.0577
+                - - 12.9721
+                  - 77.5933
+                minItems: 4
+              example:
+              - - - 0.0
+                  - 0.0
+                - - 0.0
+                  - 50.0
+                - - 50.0
+                  - 50.0
+                - - 50.0
+                  - 0.0
+                - - 0.0
+                  - 0.0
+        properties:
+          type: object
+          properties:
+            quartier:
+              type: string
+              maxLength: 100
+            niveau_risque:
+              enum:
+              - vert
+              - jaune
+              - orange
+              - rouge
+              type: string
+              description: |-
+                * `vert` - Vert
+                * `jaune` - Jaune
+                * `orange` - Orange
+                * `rouge` - Rouge
+              x-spec-enum-id: e3a46195e882ce49
+            description:
+              type: string
+            score_risque_moyen:
+              type: string
+              format: decimal
+              pattern: ^-?\d{0,2}(?:\.\d{0,2})?$
+    ZoneRisqueGeoList:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+          - FeatureCollection
+        features:
+          type: array
+          items:
+            $ref: '#/components/schemas/ZoneRisqueGeo'
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

@@ -682,6 +682,7 @@ class SMSSignalementSerializer(serializers.ModelSerializer):
             'signalement_id',
         )
 
+    @extend_schema_field(serializers.IntegerField(required=False, allow_null=True))
     def get_signalement_id(self, obj):
         return obj.signalement_cree_id
 

@@ -397,7 +397,7 @@ class ContactAlerteViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action == 'create':
             return [permissions.AllowAny()]
-        return [EstAdminOuAutorite()]
+        return [EstAdminOuAutorite]
 
 
 @extend_schema(exclude=True)
@@ -489,7 +489,7 @@ class RelaisQuartierViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ('list', 'verifier'):
-            return [EstAdminOuAutorite()]
+            return [EstAdminOuAutorite]
         return [permissions.IsAuthenticated()]
 
     def get_queryset(self):
@@ -561,7 +561,7 @@ class SMSSignalementViewSet(viewsets.ReadOnlyModelViewSet):
     """
     queryset = SMSSignalement.objects.select_related('signalement_cree').all()
     serializer_class = SMSSignalementSerializer
-    permission_classes = [EstAdminOuAutorite()]
+    permission_classes = [EstAdminOuAutorite]
     pagination_class = PageNumberPagination
 
     def get_queryset(self):
