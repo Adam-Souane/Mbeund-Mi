@@ -6,6 +6,7 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.conf import settings
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from drf_spectacular.utils import extend_schema_field
 from capteurs.models import Capteur, Mesure
 from alertes.models import (
     ZoneRisque, Alerte, PredictionIA, EpisodeInondation, SignalementCitoyen,
@@ -485,17 +486,21 @@ class SignalementCitoyenSerializer(HybridGeoFeatureModelSerializer):
             'citoyen_nom', 'citoyen_prenom', 'citoyen_telephone', 'citoyen_quartier',
         )
 
+    @extend_schema_field(serializers.CharField(required=False, allow_null=True))
     def get_citoyen_nom(self, obj):
         return obj.signale_par.last_name if obj.signale_par else None
 
+    @extend_schema_field(serializers.CharField(required=False, allow_null=True))
     def get_citoyen_prenom(self, obj):
         return obj.signale_par.first_name if obj.signale_par else None
 
+    @extend_schema_field(serializers.CharField(required=False, allow_null=True))
     def get_citoyen_telephone(self, obj):
         if obj.signale_par and hasattr(obj.signale_par, 'profile'):
             return obj.signale_par.profile.telephone
         return None
 
+    @extend_schema_field(serializers.CharField(required=False, allow_null=True))
     def get_citoyen_quartier(self, obj):
         if obj.signale_par and hasattr(obj.signale_par, 'profilvulnerabilite'):
             zone = obj.signale_par.profilvulnerabilite.zone

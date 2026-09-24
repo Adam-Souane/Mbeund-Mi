@@ -315,7 +315,7 @@ class ProfilVulnerabilite(models.Model):
         ordering = ['-updated_at']
 
     @property
-    def est_prioritaire(self):
+    def est_prioritaire(self) -> bool:
         return bool(
             self.personnes_agees or self.enfants_bas_age
             or self.personne_mobilite_reduite or self.femme_enceinte
