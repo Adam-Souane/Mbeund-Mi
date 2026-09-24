@@ -6,11 +6,24 @@ const client = axios.create({
   timeout: 10000,
 });
 
+function getCookie(name) {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop().split(';').shift();
+  return null;
+}
+
 client.interceptors.request.use((config) => {
   const token = getAccessToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  const csrfToken = getCookie('csrftoken');
+  if (csrfToken) {
+    config.headers['X-CSRFToken'] = csrfToken;
+  }
+
   return config;
 });
 
