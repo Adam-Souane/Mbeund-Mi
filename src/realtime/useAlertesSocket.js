@@ -4,13 +4,43 @@ import { useAuth } from '../auth/AuthContext';
 import { getAccessToken } from '../auth/tokenStorage';
 import { useToast } from '../shared/toast/ToastContext';
 import { riskInfo } from '../shared/components/RiskBadge';
+import { definirConnexion } from './etatConnexion';
 
-// Ouvre le WebSocket ws/alertes/ (broadcast-only, groupe "alertes" — voir
-// alertes/consumers.py et alertes/signals.py côté backend) et, à chaque
-// nouvelle Alerte créée, invalide le cache React Query concerné et affiche
-// un toast. Dégradation totalement silencieuse si Channels/Redis n'est pas
-// démarré : l'app reste utilisable, juste sans mise à jour instantanée —
-// un rechargement de page ou le polling de React Query prennent le relais.
+// Unique WebSocket de l'application (ws/alertes/, voir alertes/consumers.py).
+// Le serveur envoie { type, data, timestamp } avec type = alerte (tout le
+// monde), signalement ou sms (autorités) et prediction. Chaque message
+// rafraîchit les données React Query concernées et s'affiche en toast, donc
+// aussi dans le centre de notifications.
+//
+// Le jeton d'accès voyage dans Sec-WebSocket-Protocol : ['mbeund.jwt', jeton].
+// Un sous-protocole ne peut pas contenir d'espace (« Bearer <jeton> » fait
+// échouer new WebSocket) et le jeton ne doit pas apparaître dans l'URL.
+//
+// Dégradation silencieuse si Channels/Redis n'est pas démarré : l'app reste
+// utilisable, un rechargement ou le polling de React Query prennent le relais.
+const SOUS_PROTOCOLE_JWT = 'mbeund.jwt';
+
+const TRAITEMENTS = {
+  alerte: (data) => ({
+    cles: [['alertes']],
+    toast: {
+      categorie: 'alerte',
+      niveau: data.niveau,
+      title: `Nouvelle alerte ${riskInfo(data.niveau).label.toLowerCase()} — ${data.zone?.quartier ?? ''}`,
+      message: data.message,
+    },
+  }),
+  signalement: (data) => ({
+    cles: [['signalements']],
+    toast: { categorie: 'signalement', niveau: 'jaune', title: 'Nouveau signalement citoyen', message: (data.properties ?? data).description },
+  }),
+  sms: (data) => ({
+    cles: [['signalements']],
+    toast: { categorie: 'sms', niveau: 'jaune', title: 'SMS citoyen reçu', message: data.contenu_sms },
+  }),
+  prediction: () => ({ cles: [['predictions']], toast: null }),
+};
+
 export function useAlertesSocket() {
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
@@ -20,43 +50,48 @@ export function useAlertesSocket() {
     if (!isAuthenticated) return undefined;
 
     const wsUrl = import.meta.env.VITE_WS_URL;
-    if (!wsUrl) return undefined;
-
-    // Le consumer côté backend rejette désormais les connexions anonymes
-    // (même exigence que GET /api/alertes/ : utilisateur authentifié) — on
-    // transmet le token d'accès en query string, seul moyen disponible
-    // puisqu'un WebSocket natif ne permet pas d'en-tête Authorization.
     const accessToken = getAccessToken();
-    if (!accessToken) return undefined;
+    if (!wsUrl || !accessToken) return undefined;
 
     let socket;
     try {
-      socket = new WebSocket(wsUrl, [`Bearer ${accessToken}`]);
+      socket = new WebSocket(wsUrl, [SOUS_PROTOCOLE_JWT, accessToken]);
     } catch {
       return undefined;
     }
 
+    // La fermeture d'un ancien socket (effet relancé, mode strict de React)
+    // arrive après l'ouverture du nouveau : on ignore les sockets remplacés.
+    let actif = true;
+    socket.onopen = () => {
+      if (actif) definirConnexion(true);
+    };
+    socket.onclose = () => {
+      if (actif) definirConnexion(false);
+    };
+
     socket.onmessage = (event) => {
-      let alerte;
+      let message;
       try {
-        alerte = JSON.parse(event.data);
+        message = JSON.parse(event.data);
       } catch {
         return;
       }
-
-      queryClient.invalidateQueries({ queryKey: ['alertes'] });
-
-      showToast({
-        niveau: alerte.niveau,
-        title: `Nouvelle alerte ${riskInfo(alerte.niveau).label.toLowerCase()} — ${alerte.zone?.quartier ?? ''}`,
-        message: alerte.message,
-      });
+      const traiter = TRAITEMENTS[message.type];
+      if (!traiter) return;
+      const { cles, toast } = traiter(message.data ?? {});
+      cles.forEach((queryKey) => queryClient.invalidateQueries({ queryKey }));
+      if (toast) showToast(toast);
     };
 
     // Pas de reconnexion automatique : une coupure de Redis/Channels ne doit
     // ni spammer la console ni bloquer le reste de l'app.
     socket.onerror = () => {};
 
-    return () => socket.close();
+    return () => {
+      actif = false;
+      socket.close();
+      definirConnexion(false);
+    };
   }, [isAuthenticated, queryClient, showToast]);
 }

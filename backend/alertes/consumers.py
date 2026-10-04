@@ -1,6 +1,5 @@
 import json
 import logging
-from urllib.parse import parse_qs
 
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
@@ -8,6 +7,22 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import AccessToken
 
 logger = logging.getLogger(__name__)
+
+# Le navigateur ne permet pas d'en-tête Authorization sur un WebSocket. Le
+# jeton d'accès voyage donc dans Sec-WebSocket-Protocol, sous la forme
+# ['mbeund.jwt', '<jeton>'] (un sous-protocole ne peut pas contenir d'espace :
+# « Bearer <jeton> » est refusé par les navigateurs). Jamais dans l'URL, qui
+# finit dans l'historique et les journaux des serveurs.
+SOUS_PROTOCOLE_JWT = 'mbeund.jwt'
+
+
+def jeton_du_sous_protocole(sous_protocoles):
+    """Renvoie le jeton qui suit 'mbeund.jwt' dans la liste, ou None."""
+    sous_protocoles = list(sous_protocoles or [])
+    if SOUS_PROTOCOLE_JWT not in sous_protocoles:
+        return None
+    position = sous_protocoles.index(SOUS_PROTOCOLE_JWT) + 1
+    return sous_protocoles[position] if position < len(sous_protocoles) else None
 
 
 class AlerteConsumer(AsyncWebsocketConsumer):
@@ -18,23 +33,7 @@ class AlerteConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
         try:
-            # Authentification par JWT via Sec-WebSocket-Protocol (subprotocol)
-            # au lieu du query string pour éviter l'exposition du token dans:
-            # - l'historique du navigateur
-            # - les logs du serveur
-            # - les DevTools Network
-            # Format: le frontend envoie le token comme subprotocol
-            token = None
-            if self.scope.get("subprotocols"):
-                for subprotocol in self.scope["subprotocols"]:
-                    if subprotocol.startswith("Bearer "):
-                        token = subprotocol[7:]
-                        break
-
-            # Fallback: accepter encore le query string pour la rétro-compatibilité
-            if not token:
-                token = parse_qs(self.scope["query_string"].decode()).get("token", [None])[0]
-
+            token = jeton_du_sous_protocole(self.scope.get("subprotocols"))
             if not token or not self._token_valide(token):
                 await self.close(code=4401)
                 return
@@ -60,7 +59,8 @@ class AlerteConsumer(AsyncWebsocketConsumer):
                 for group_name in self.groups:
                     await self.channel_layer.group_add(group_name, self.channel_name)
 
-            await self.accept()
+            # Le navigateur exige que le serveur confirme le sous-protocole choisi.
+            await self.accept(subprotocol=SOUS_PROTOCOLE_JWT)
             logger.info(f"Client connecté aux groupes: {self.groups}")
         except Exception as e:
             logger.error(f"Erreur dans WebSocket connect: {e}", exc_info=True)

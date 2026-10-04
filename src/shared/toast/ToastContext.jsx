@@ -29,9 +29,10 @@ export function ToastProvider({ children }) {
       const toastData = { id, ...toast };
       setToasts((list) => [...list, toastData]);
 
-      // Ajouter aussi au système global de notifications
+      // Ajouter aussi au système global de notifications ; `categorie`
+      // (alerte, signalement, sms) choisit l'icône dans le centre de notifications.
       addNotification({
-        type: 'toast',
+        type: toast.categorie || 'toast',
         data: {
           titre: toast.title || toast.titre,
           message: toast.message,

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { X, Bell, AlertTriangle, MessageSquare, Smartphone, CheckCircle, AlertCircle } from 'lucide-react';
-import { useWebSocketNotifications } from '../hooks/useWebSocketNotifications';
+import { useConnexionTempsReel } from '../../realtime/etatConnexion';
 import { useNotifications } from '../contexts/NotificationContext';
 
 const NOTIFICATION_COLORS = {
@@ -17,7 +17,7 @@ const NOTIFICATION_COLORS = {
  * Affiche les notifications WebSocket + Toast (alertes, signalements, SMS, messages d'application).
  */
 export default function NotificationCenter() {
-  const { isConnected } = useWebSocketNotifications();
+  const isConnected = useConnexionTempsReel();
   const { notifications } = useNotifications();
   const [visibleNotifications, setVisibleNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -180,7 +180,7 @@ export default function NotificationCenter() {
               ) : (
                 <span className="flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 bg-gray-400 rounded-full" />
-                  En tentative de reconnexion...
+                  Temps réel indisponible (les données se mettent à jour au rechargement)
                 </span>
               )}
             </div>

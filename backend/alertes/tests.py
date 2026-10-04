@@ -1,4 +1,5 @@
 import pytest
+from django.conf import settings
 from datetime import timedelta
 from django.utils import timezone
 from rest_framework.test import APIClient
@@ -182,7 +183,9 @@ from rest_framework_simplejwt.tokens import AccessToken
 from mbeund_mi_backend.asgi import application
 
 @pytest.mark.django_db(transaction=True)
-@pytest.mark.skip(reason="KNOWN LIMITATION: WebSocket async testing with Django Channels + PostgreSQL has async event loop conflicts. The consumer code works correctly in production. This requires a dedicated async test infrastructure or e2e tests.")
+@pytest.mark.skipif(
+    "postgresql" in settings.DATABASES["default"]["ENGINE"] or "postgis" in settings.DATABASES["default"]["ENGINE"],
+    reason="KNOWN LIMITATION: WebSocket async testing with Django Channels + PostgreSQL has async event loop conflicts. The consumer code works correctly in production. This requires a dedicated async test infrastructure or e2e tests.")
 def test_websocket_alerte_broadcast():
     """Test WebSocket broadcast of alerts.
 
@@ -215,7 +218,9 @@ def test_websocket_alerte_broadcast():
         zone, access_token = await sync_to_async(create_test_data)()
 
         # 2. Connect to WebSocket with timeout
-        communicator = WebsocketCommunicator(application, f"/ws/alertes/?token={access_token}")
+        communicator = WebsocketCommunicator(
+            application, "/ws/alertes/", subprotocols=["mbeund.jwt", access_token],
+        )
         try:
             connected, subprotocol = await asyncio.wait_for(
                 communicator.connect(),
@@ -227,6 +232,7 @@ def test_websocket_alerte_broadcast():
             pytest.skip("WebSocket connection timeout - consumer issue in test environment")
 
         assert connected, "WebSocket connection failed"
+        assert subprotocol == "mbeund.jwt"
 
         # 3. Create alert to trigger broadcast
         def create_alerte():
@@ -250,10 +256,11 @@ def test_websocket_alerte_broadcast():
             pytest.skip("WebSocket receive timeout - broadcast not received")
 
         # 5. Verify message
-        assert response["id"] == alerte.id
-        assert response["niveau"] == "rouge"
-        assert response["zone"]["id"] == zone.id
-        assert response["zone"]["quartier"] == "Thiaroye"
+        assert response["type"] == "alerte"
+        assert response["data"]["id"] == alerte.id
+        assert response["data"]["niveau"] == "rouge"
+        assert response["data"]["zone"]["id"] == zone.id
+        assert response["data"]["zone"]["quartier"] == "Thiaroye"
 
         # 6. Clean up
         await communicator.disconnect()
@@ -268,7 +275,7 @@ def test_websocket_alerte_broadcast():
 @pytest.mark.django_db(transaction=True)
 def test_websocket_alerte_rejette_connexion_sans_token():
     """Regression test pour la correction de securite : une connexion WS
-    anonyme (sans ?token=... valide) doit etre rejetee, comme GET
+    anonyme (sans jeton valide) doit etre rejetee, comme GET
     /api/alertes/ le fait pour un utilisateur non authentifie."""
     async def run_test():
         communicator = WebsocketCommunicator(application, "/ws/alertes/")
@@ -277,6 +284,30 @@ def test_websocket_alerte_rejette_connexion_sans_token():
         await communicator.disconnect()
 
     asyncio.run(run_test())
+
+
+@pytest.mark.django_db(transaction=True)
+def test_websocket_jeton_dans_l_url_refuse():
+    """Le jeton n'est plus accepté dans l'URL (?token=), seulement dans
+    Sec-WebSocket-Protocol."""
+    async def run_test():
+        user = await sync_to_async(User.objects.create_user)(username='ws_url', password='password123')
+        jeton = str(AccessToken.for_user(user))
+        communicator = WebsocketCommunicator(application, f"/ws/alertes/?token={jeton}")
+        connected, _ = await communicator.connect()
+        assert not connected
+        await communicator.disconnect()
+
+    from asgiref.sync import sync_to_async
+    asyncio.run(run_test())
+
+
+def test_jeton_du_sous_protocole():
+    from alertes.consumers import jeton_du_sous_protocole
+    assert jeton_du_sous_protocole(["mbeund.jwt", "abc.def"]) == "abc.def"
+    assert jeton_du_sous_protocole(["mbeund.jwt"]) is None
+    assert jeton_du_sous_protocole(["Bearer abc"]) is None
+    assert jeton_du_sous_protocole(None) is None
 
 @pytest.mark.django_db
 def test_statut_transition_unauthorized(api_client, test_zone):

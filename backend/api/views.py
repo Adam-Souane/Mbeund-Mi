@@ -590,57 +590,76 @@ class SMSSignalementViewSet(viewsets.ReadOnlyModelViewSet):
         return queryset
 
 
+def signature_twilio_valide(request):
+    """
+    Vérifie l'en-tête X-Twilio-Signature (HMAC-SHA1 de l'URL et des paramètres,
+    clé = TWILIO_AUTH_TOKEN) : sans cela, n'importe qui pourrait créer de faux
+    signalements en appelant le webhook.
+
+    Sans jeton Twilio, le webhook n'est accepté qu'en développement (DEBUG).
+    TWILIO_WEBHOOK_URL permet de fixer l'URL exacte déclarée chez Twilio si un
+    proxy la modifie.
+    """
+    from django.conf import settings
+
+    jeton = settings.TWILIO_AUTH_TOKEN
+    if not jeton:
+        return settings.DEBUG
+    from twilio.request_validator import RequestValidator
+    url = os.environ.get('TWILIO_WEBHOOK_URL') or request.build_absolute_uri()
+    return RequestValidator(jeton).validate(
+        url, request.POST.dict(), request.headers.get('X-Twilio-Signature', ''),
+    )
+
+
 @extend_schema(exclude=True)
 class SMSInboundWebhookView(APIView):
     """
     POST /api/sms/inbound/ — Webhook pour recevoir les SMS entrants.
-    Accepte les requêtes de Twilio (non authentifiées pour webhook).
+    Appelé par Twilio, sans JWT : l'authenticité est garantie par la
+    signature X-Twilio-Signature (voir signature_twilio_valide).
 
     Données attendues (form data Twilio):
     - From: numéro du citoyen (ex: +221770000000)
     - Body: contenu du SMS
     """
     permission_classes = [permissions.AllowAny]
+    authentication_classes = []
 
     def post(self, request):
+        if not signature_twilio_valide(request):
+            logger.warning("[SMS entrant] Signature Twilio absente ou invalide : requête refusée")
+            return Response({"erreur": "Signature invalide"}, status=403)
+
+        phone_number = request.data.get('From', '')
+        message_text = request.data.get('Body', '').strip()
+        message_sid = request.data.get('MessageSid', '')
+
+        if not phone_number or not message_text:
+            return Response(
+                {"erreur": "From et Body sont obligatoires"},
+                status=400
+            )
+
         try:
-            # Récupérer les données du webhook Twilio
-            phone_number = request.data.get('From', '')
-            message_text = request.data.get('Body', '').strip()
-            message_sid = request.data.get('MessageSid', '')
-
-            if not phone_number or not message_text:
-                return Response(
-                    {"erreur": "From et Body sont obligatoires"},
-                    status=400
-                )
-
-            # Traiter le SMS
             sms_sig = traiter_webhook_sms(
                 phone_number=phone_number,
                 message_text=message_text,
                 provider='twilio',
                 provider_id=message_sid
             )
+        except Exception:
+            logger.exception("[SMS entrant] Échec du traitement")
+            sms_sig = None
 
-            if sms_sig:
-                return Response({
-                    "statut": "accepté",
-                    "sms_id": sms_sig.id,
-                    "message": f"SMS de {phone_number} reçu et traité",
-                    "signalement_cree": sms_sig.signalement_cree_id,
-                })
-            else:
-                return Response(
-                    {"erreur": "Erreur lors du traitement du SMS"},
-                    status=500
-                )
-
-        except Exception as e:
-            return Response(
-                {"erreur": str(e)},
-                status=500
-            )
+        if not sms_sig:
+            return Response({"erreur": "Erreur lors du traitement du SMS"}, status=500)
+        return Response({
+            "statut": "accepté",
+            "sms_id": sms_sig.id,
+            "message": "SMS reçu et traité",
+            "signalement_cree": sms_sig.signalement_cree_id,
+        })
 
 
 @extend_schema(exclude=True)
