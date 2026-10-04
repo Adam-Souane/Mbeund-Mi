@@ -7,7 +7,7 @@ import { homeRouteForRole } from '../auth/RequireAuth';
 
 const ROLES = [
   { id: 'citoyen', label: 'Citoyen', fieldLabel: 'Identifiant', placeholder: 'jeandupont' },
-  { id: 'autorite', label: 'Autorite', fieldLabel: 'Identifiant', placeholder: 'jeandupont' },
+  { id: 'autorite', label: 'Autorité', fieldLabel: 'Identifiant', placeholder: 'jeandupont' },
 ];
 
 export default function LoginPage() {
@@ -38,8 +38,8 @@ export default function LoginPage() {
       if (selectedAutorite !== isAutoriteRole) {
         setError(
           isAutoriteRole
-            ? "Error: This is an Authority account. Select Authority tab."
-            : "Error: This is a Citizen account. Select Citizen tab."
+            ? 'Ce compte est un compte autorité : choisissez l’onglet Autorité.'
+            : 'Ce compte est un compte citoyen : choisissez l’onglet Citoyen.'
         );
         setIsSubmitting(false);
         return;
@@ -127,13 +127,17 @@ export default function LoginPage() {
               />
             </label>
 
-            {tab === 'citoyen' && (
-              <div className="text-right -mt-2">
+            {/* Une ligne de même hauteur sur les deux onglets : la carte ne
+                change pas de taille, rien ne bouge quand on passe de l'un à l'autre. */}
+            <div className="text-right -mt-2">
+              {tab === 'citoyen' ? (
                 <Link to="/forgot-password" className="text-xs font-semibold text-red cursor-pointer hover:underline">
-                  Mot de passe oublie ?
+                  Mot de passe oublié ?
                 </Link>
-              </div>
-            )}
+              ) : (
+                <span className="text-xs text-navy-500">Mot de passe perdu ? Contactez l’administrateur.</span>
+              )}
+            </div>
 
             {error && (
               <div className="px-3 py-2.5 rounded-md bg-red-50 dark:bg-red/15 text-red-900 dark:text-red-200 text-xs">
@@ -154,14 +158,18 @@ export default function LoginPage() {
               {isSubmitting ? 'Connexion...' : 'Se connecter'}
             </button>
 
-            {tab === 'citoyen' && (
-              <p className="text-center text-xs text-navy-600 dark:text-navy-200">
-                Pas encore de compte ?{' '}
-                <Link to="/signup?role=citoyen" className="font-bold text-red hover:underline">
-                  Creer un compte citoyen
-                </Link>
-              </p>
-            )}
+            <p className="text-center text-xs text-navy-600 dark:text-navy-200">
+              {tab === 'citoyen' ? (
+                <>
+                  Pas encore de compte ?{' '}
+                  <Link to="/signup?role=citoyen" className="font-bold text-red hover:underline">
+                    Créer un compte citoyen
+                  </Link>
+                </>
+              ) : (
+                'Les comptes autorité sont créés par l’administrateur.'
+              )}
+            </p>
           </form>
         </div>
 
