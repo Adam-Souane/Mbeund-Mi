@@ -2,7 +2,7 @@ services:
   - type: web
     name: mbeund-mi
     env: python
-    pythonVersion: "3.12"
+    pythonVersion: "3.11.9"
     plan: free
     rootDir: backend
     buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput --settings=mbeund_mi_backend.settings.prod

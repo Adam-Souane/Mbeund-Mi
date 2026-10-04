@@ -21,9 +21,10 @@ firebase-admin==6.5.0
 django-cors-headers==4.9.0
 requests==2.34.2
 # Dépendances indirectes épinglées pour leurs correctifs de sécurité :
-# PyJWT (jetons de connexion, via SimpleJWT) et urllib3 (via requests).
+# PyJWT (jetons de connexion, via SimpleJWT), urllib3 (via requests) et autobahn (WebSockets via daphne).
 PyJWT==2.15.1
 urllib3==2.8.0
+autobahn==24.4.2
 twilio==9.3.2
 drf-spectacular==0.30.0
 reportlab==4.2.4
@@ -47,6 +48,7 @@ pandas==2.3.3
 scikit-learn==1.7.2
 protobuf==6.33.5
 tensorflow==2.21.0
+keras==3.12.4
 
 # Détection satellite d'inondation (mbeund_mi_ia/gee/detection_inondation.py),
 # importée par alertes/tasks.py:analyse_gee_periodique. Nécessite en plus une
