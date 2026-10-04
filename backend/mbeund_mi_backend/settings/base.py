@@ -245,6 +245,23 @@ TWILIO_MESSAGING_SERVICE_SID = env('TWILIO_MESSAGING_SERVICE_SID', default='')
 # Firebase Configuration (Push Notifications – tout provient du .env)
 FIREBASE_CREDENTIALS_PATH = env('FIREBASE_CREDENTIALS_PATH', default=str(BASE_DIR / 'firebase_credentials.json'))
 
+# Email (codes OTP) — Gmail par défaut. EMAIL_HOST_PASSWORD est un « mot de passe
+# d'application » Google, jamais le mot de passe du compte. Tant que
+# EMAIL_HOST_USER n'est pas renseigné, les emails s'affichent dans la console
+# au lieu d'être envoyés (développement).
+EMAIL_HOST = env('EMAIL_HOST', default='smtp.gmail.com')
+EMAIL_PORT = env.int('EMAIL_PORT', default=587)
+EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
+EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
+EMAIL_TIMEOUT = 15
+EMAIL_BACKEND = env(
+    'EMAIL_BACKEND',
+    default='django.core.mail.backends.smtp.EmailBackend' if EMAIL_HOST_USER
+    else 'django.core.mail.backends.console.EmailBackend',
+)
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default=f'MBEUND MI <{EMAIL_HOST_USER or "no-reply@mbeund-mi.local"}>')
+
 # Mosquitto MQTT Configuration (IoT – tout provient du .env)
 MOSQUITTO_HOST = env('MOSQUITTO_HOST', default='localhost')
 MOSQUITTO_PORT = env.int('MOSQUITTO_PORT', default=1883)

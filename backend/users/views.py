@@ -4,14 +4,39 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth.models import User
 from django.db import transaction
-from django.core.cache import cache
 from django.utils import timezone
-from datetime import timedelta
 import secrets
 import string
+import logging
+
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
+
+from . import otp
 from .models import Profile, InviteCode, AuthorityTracking, AuthorityActivity
-from .serializers import UserSerializer, ProfileSerializer
-from api.services.sms_service import send_otp_whatsapp
+from .serializers import UserSerializer
+
+logger = logging.getLogger(__name__)
+
+
+def _trouver_compte(identifiant):
+    """
+    Retrouve un compte à partir d'un identifiant, d'un téléphone ou d'un email.
+    Renvoie None si aucun compte, ou plusieurs, correspondent (cas d'un numéro
+    partagé par deux anciens comptes : l'identifiant permet alors de trancher).
+    """
+    identifiant = (identifiant or '').strip()
+    if not identifiant:
+        return None
+    if '@' in identifiant:
+        candidats = User.objects.filter(email__iexact=identifiant)
+    else:
+        candidats = User.objects.filter(username=identifiant)
+        if not candidats.exists():
+            numeros = {identifiant, otp.normaliser_telephone(identifiant)} - {None}
+            candidats = User.objects.filter(profile__telephone__in=numeros)
+    trouves = list(candidats[:2])
+    return trouves[0] if len(trouves) == 1 else None
 
 
 def generate_username_options(first_name, last_name, max_options=3):
@@ -61,44 +86,62 @@ class UserViewSet(viewsets.ModelViewSet):
     def register(self, request):
         """
         POST /api/users/register/
-        Enregistre un nouvel utilisateur avec profil.
+        Inscription publique d'un citoyen. Les comptes autorité et admin sont
+        créés uniquement par un administrateur (create-authority, admin-register).
 
         Body:
         {
-            "email": "...",
-            "password": "...",
-            "first_name": "...",
-            "last_name": "...",
-            "telephone": "...",
-            "username": "...",
-            "role": "citoyen" ou "autorite"
+            "username": "...", "password": "...",
+            "first_name": "...", "last_name": "...",
+            "telephone": "...",          # obligatoire : sert aux alertes
+            "email": "...",              # facultatif
+            "canal_otp": "telephone"     # ou "email" (exige un email)
         }
         """
-        email = request.data.get('email')
+        email = (request.data.get('email') or '').strip()
         password = request.data.get('password')
         first_name = request.data.get('first_name', '')
         last_name = request.data.get('last_name', '')
-        telephone = request.data.get('telephone', '')
-        username = request.data.get('username', '')
-        role = request.data.get('role', 'citoyen')
+        telephone_saisi = request.data.get('telephone', '')
+        username = (request.data.get('username') or '').strip()
+        canal = request.data.get('canal_otp') or otp.CANAL_TELEPHONE
 
         # Validation
         if not password or len(password) < 8:
             return Response({'password': 'Mot de passe requis (min. 8 caractères)'}, status=status.HTTP_400_BAD_REQUEST)
-        if not telephone:
+        if not telephone_saisi:
             return Response({'telephone': 'Numéro de téléphone requis'}, status=status.HTTP_400_BAD_REQUEST)
+        telephone = otp.normaliser_telephone(telephone_saisi)
+        if not telephone:
+            return Response(
+                {'telephone': 'Numéro invalide. Exemple : 77 123 45 67 ou +221 77 123 45 67'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         if not username:
             return Response({'username': 'Identifiant requis'}, status=status.HTTP_400_BAD_REQUEST)
+        if canal not in otp.CANAUX:
+            return Response({'canal_otp': 'Canal inconnu : « telephone » ou « email »'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Email est facultatif, mais s'il est fourni, il doit être unique
-        if email and User.objects.filter(email=email).exists():
-            return Response({'email': 'Cet email est déjà utilisé'}, status=status.HTTP_400_BAD_REQUEST)
+        # Email facultatif, mais valide et unique s'il est fourni
+        if email:
+            try:
+                validate_email(email)
+            except ValidationError:
+                return Response({'email': 'Email invalide'}, status=status.HTTP_400_BAD_REQUEST)
+            if User.objects.filter(email__iexact=email).exists():
+                return Response({'email': 'Cet email est déjà utilisé'}, status=status.HTTP_400_BAD_REQUEST)
+        if canal == otp.CANAL_EMAIL and not email:
+            return Response(
+                {'canal_otp': 'Renseignez un email pour recevoir le code par email'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-        # Vérifier que l'username choisi est disponible
         if User.objects.filter(username=username).exists():
             return Response({'username': 'Cet identifiant est déjà pris. Veuillez en choisir un autre.'}, status=status.HTTP_400_BAD_REQUEST)
+        # Un numéro = un compte : c'est lui qui reçoit les alertes de la zone
+        if Profile.objects.filter(telephone=telephone).exists():
+            return Response({'telephone': 'Ce numéro est déjà utilisé par un autre compte'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Créer l'utilisateur et mettre à jour le profil
         try:
             with transaction.atomic():
                 user = User.objects.create_user(
@@ -108,33 +151,34 @@ class UserViewSet(viewsets.ModelViewSet):
                     first_name=first_name,
                     last_name=last_name,
                 )
-
-                # Mettre à jour le profil créé automatiquement par le signal post_save
+                # Profil créé par le signal post_save : le rôle n'est jamais lu
+                # dans la requête (sinon n'importe qui pourrait s'inscrire admin).
                 profile = user.profile
-                profile.role = role
+                profile.role = 'citoyen'
                 profile.telephone = telephone
                 profile.save()
+        except Exception:
+            logger.exception("Échec de la création du compte %s", username)
+            return Response({'detail': 'Impossible de créer le compte. Réessayez.'}, status=status.HTTP_400_BAD_REQUEST)
 
-                # Générer et stocker un code OTP (seulement pour citoyens)
-                otp = None
-                if role == 'citoyen':
-                    otp = self._generate_otp()
-                    cache_key = f'otp_{username}'
-                    cache.set(cache_key, otp, timeout=600)  # 10 minutes
-                    send_otp_whatsapp(telephone, otp)
+        code = otp.creer_code(otp.MOTIF_INSCRIPTION, user, canal)
+        otp.renvoi_trop_rapide(otp.MOTIF_INSCRIPTION, user)   # démarre le délai de renvoi
+        envoye = otp.envoyer_code(user, canal, code, otp.MOTIF_INSCRIPTION)
 
-            response_data = {
+        return Response(
+            {
                 'detail': 'Compte créé avec succès',
                 'user': UserSerializer(user).data,
-                'requires_otp': role == 'citoyen',
-            }
-
-            return Response(
-                response_data,
-                status=status.HTTP_201_CREATED,
-            )
-        except Exception as e:
-            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+                'requires_otp': True,
+                'otp': {
+                    'canal': canal,
+                    'destination': otp.destination(user, canal),
+                    'envoye': envoye,
+                    'email_disponible': bool(email),
+                },
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
     @action(detail=False, methods=['post'], permission_classes=[AllowAny], url_path='admin-register')
     def admin_register(self, request):
@@ -228,98 +272,70 @@ class UserViewSet(viewsets.ModelViewSet):
     def password_reset(self, request):
         """
         POST /api/users/password-reset/
-        Demande une réinitialisation de mot de passe.
+        Demande un code de réinitialisation du mot de passe.
 
-        Body (Citoyen): {"telephone": "..."}
+        Body: {"identifiant": "identifiant, téléphone ou email", "canal": "telephone" | "email"}
+        (anciens formats {"telephone": "..."} et {"email": "..."} acceptés)
 
-        Envoie un code de réinitialisation par SMS au citoyen.
+        La réponse est identique que le compte existe ou non, pour ne pas
+        révéler quels numéros ou emails sont inscrits.
         """
-        telephone = request.data.get('telephone')
+        identifiant = (
+            request.data.get('identifiant') or request.data.get('telephone') or request.data.get('email') or ''
+        ).strip()
+        if not identifiant:
+            return Response({'detail': 'Identifiant, téléphone ou email requis'}, status=status.HTTP_400_BAD_REQUEST)
+        canal = request.data.get('canal') or (otp.CANAL_EMAIL if '@' in identifiant else otp.CANAL_TELEPHONE)
+        if canal not in otp.CANAUX:
+            return Response({'canal': 'Canal inconnu : « telephone » ou « email »'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Chercher par téléphone (citoyen)
-        if telephone:
-            try:
-                profile = Profile.objects.get(telephone=telephone)
-                user = profile.user
-                reset_code = self._generate_otp()
-                cache_key = f'password_reset_{user.username}'
-                cache.set(cache_key, reset_code, timeout=600)  # 10 minutes
-                send_otp_whatsapp(telephone, reset_code)
-                return Response(
-                    {'detail': 'Code de réinitialisation envoyé par WhatsApp'},
-                    status=status.HTTP_200_OK,
-                )
-            except Profile.DoesNotExist:
-                # Ne pas révéler si le numéro existe (sécurité)
-                return Response(
-                    {'detail': 'Si ce numéro existe, vous recevrez un code par SMS'},
-                    status=status.HTTP_200_OK,
-                )
+        user = _trouver_compte(identifiant)
+        peut_envoyer = (
+            user is not None
+            and (canal == otp.CANAL_TELEPHONE or bool(user.email))
+            and not otp.renvoi_trop_rapide(otp.MOTIF_REINITIALISATION, user)
+        )
+        if peut_envoyer:
+            code = otp.creer_code(otp.MOTIF_REINITIALISATION, user, canal)
+            otp.envoyer_code(user, canal, code, otp.MOTIF_REINITIALISATION)
 
+        support = 'par email' if canal == otp.CANAL_EMAIL else 'par WhatsApp ou SMS'
         return Response(
-            {'detail': 'Téléphone requis'},
-            status=status.HTTP_400_BAD_REQUEST
+            {'detail': f'Si un compte correspond, un code vient de vous être envoyé {support}.', 'canal': canal},
+            status=status.HTTP_200_OK,
         )
 
     @action(detail=False, methods=['post'], permission_classes=[AllowAny], url_path='confirm-password-reset')
     def confirm_password_reset(self, request):
         """
         POST /api/users/confirm-password-reset/
-        Confirme le code de réinitialisation et change le mot de passe.
+        Vérifie le code et enregistre le nouveau mot de passe.
 
-        Body:
-        {
-            "username": "...",
-            "reset_code": "000000",
-            "new_password": "..."
-        }
+        Body: {"identifiant": "...", "code": "000000", "new_password": "..."}
+        (anciens noms acceptés : "username" et "reset_code")
         """
-        username = request.data.get('username')
-        reset_code = request.data.get('reset_code')
+        identifiant = (request.data.get('identifiant') or request.data.get('username') or '').strip()
+        code = request.data.get('code') or request.data.get('reset_code')
         new_password = request.data.get('new_password')
 
-        if not username or not reset_code or not new_password:
-            return Response(
-                {'detail': 'Username, reset_code et new_password requis'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
+        if not identifiant or not code or not new_password:
+            return Response({'detail': 'Identifiant, code et nouveau mot de passe requis'}, status=status.HTTP_400_BAD_REQUEST)
         if len(new_password) < 8:
+            return Response({'detail': 'Mot de passe requis (min. 8 caractères)'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = _trouver_compte(identifiant)
+        resultat = otp.verifier_code(otp.MOTIF_REINITIALISATION, user, code) if user else 'invalide'
+        if resultat == 'expire':
             return Response(
-                {'detail': 'Mot de passe requis (min. 8 caractères)'},
-                status=status.HTTP_400_BAD_REQUEST
+                {'detail': 'Code expiré ou trop de tentatives. Faites une nouvelle demande.'},
+                status=status.HTTP_400_BAD_REQUEST,
             )
+        if resultat != 'ok':
+            return Response({'detail': 'Code invalide'}, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            user = User.objects.get(username=username)
-            cache_key = f'password_reset_{username}'
-            stored_code = cache.get(cache_key)
-
-            if not stored_code:
-                return Response(
-                    {'detail': 'Code de réinitialisation expiré. Veuillez faire une nouvelle demande.'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            if str(reset_code) != str(stored_code):
-                return Response(
-                    {'detail': 'Code de réinitialisation invalide'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            user.set_password(new_password)
-            user.save()
-            cache.delete(cache_key)
-
-            return Response(
-                {'detail': 'Mot de passe réinitialisé avec succès'},
-                status=status.HTTP_200_OK,
-            )
-        except User.DoesNotExist:
-            return Response(
-                {'detail': 'Utilisateur non trouvé'},
-                status=status.HTTP_404_NOT_FOUND
-            )
+        user.set_password(new_password)
+        user.save()
+        return Response({'detail': 'Mot de passe réinitialisé avec succès'}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated], url_path='create-authority')
     def create_authority(self, request):
@@ -532,94 +548,87 @@ class UserViewSet(viewsets.ModelViewSet):
             )
 
     def _generate_otp(self):
-        """Génère un code OTP de 6 chiffres"""
-        return ''.join(secrets.choice(string.digits) for _ in range(6))
+        """Génère un code OTP de 6 chiffres (module secrets)."""
+        return otp.generer_code()
 
     @action(detail=False, methods=['post'], permission_classes=[AllowAny], url_path='verify-otp')
     def verify_otp(self, request):
         """
         POST /api/users/verify-otp/
-        Vérifie le code OTP fourni par l'utilisateur.
+        Vérifie le code reçu à l'inscription et marque le compte comme vérifié.
 
-        Body:
-        {
-            "username": "...",
-            "otp": "000000"
-        }
+        Body: {"username": "...", "otp": "000000"}
         """
         username = request.data.get('username')
-        otp = request.data.get('otp')
+        code = request.data.get('otp')
 
         if not username:
             return Response({'detail': 'Nom d\'utilisateur requis'}, status=status.HTTP_400_BAD_REQUEST)
-        if not otp:
+        if not code:
             return Response({'detail': 'Code OTP requis'}, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            user = User.objects.get(username=username)
-            cache_key = f'otp_{username}'
-            stored_otp = cache.get(cache_key)
-
-            if not stored_otp:
-                return Response(
-                    {'detail': 'Code OTP expiré. Veuillez renvoyer le code.'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            if str(otp) != str(stored_otp):
-                return Response(
-                    {'detail': 'Code OTP invalide'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            # OTP valide : marquer l'utilisateur comme vérifié
-            cache.delete(cache_key)
-            profile = user.profile
-            profile.is_verified = True
-            profile.save()
-
-            return Response(
-                {
-                    'detail': 'Vérification réussie',
-                    'user': UserSerializer(user).data,
-                },
-                status=status.HTTP_200_OK,
-            )
-        except User.DoesNotExist:
+        user = User.objects.filter(username=username).first()
+        if user is None:
             return Response({'detail': 'Utilisateur non trouvé'}, status=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        resultat = otp.verifier_code(otp.MOTIF_INSCRIPTION, user, code)
+        if resultat == 'expire':
+            return Response(
+                {'detail': 'Code expiré ou trop de tentatives. Demandez un nouveau code.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if resultat != 'ok':
+            return Response({'detail': 'Code OTP invalide'}, status=status.HTTP_400_BAD_REQUEST)
+
+        profile = user.profile
+        profile.is_verified = True
+        profile.save()
+        return Response(
+            {'detail': 'Vérification réussie', 'user': UserSerializer(user).data},
+            status=status.HTTP_200_OK,
+        )
 
     @action(detail=False, methods=['post'], permission_classes=[AllowAny], url_path='resend-otp')
     def resend_otp(self, request):
         """
         POST /api/users/resend-otp/
-        Renvoie un nouveau code OTP à l'utilisateur.
+        Renvoie un code d'inscription, sur le même canal ou sur l'autre.
 
-        Body:
-        {
-            "username": "..."
-        }
+        Body: {"username": "...", "canal": "telephone" | "email"}  (canal facultatif)
         """
         username = request.data.get('username')
-
         if not username:
             return Response({'detail': 'Nom d\'utilisateur requis'}, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            user = User.objects.get(username=username)
-            otp = self._generate_otp()
-            cache_key = f'otp_{username}'
-            cache.set(cache_key, otp, timeout=600)  # 10 minutes
-
-            send_otp_whatsapp(user.profile.telephone, otp)
-
-            return Response(
-                {'detail': 'Nouveau code OTP envoyé par WhatsApp'},
-                status=status.HTTP_200_OK,
-            )
-        except User.DoesNotExist:
+        user = User.objects.filter(username=username).first()
+        if user is None:
             return Response({'detail': 'Utilisateur non trouvé'}, status=status.HTTP_404_NOT_FOUND)
+        if user.profile.is_verified:
+            return Response({'detail': 'Ce compte est déjà vérifié'}, status=status.HTTP_400_BAD_REQUEST)
+
+        canal = request.data.get('canal') or otp.dernier_canal(otp.MOTIF_INSCRIPTION, user) or otp.CANAL_TELEPHONE
+        if canal not in otp.CANAUX:
+            return Response({'detail': 'Canal inconnu : « telephone » ou « email »'}, status=status.HTTP_400_BAD_REQUEST)
+        if canal == otp.CANAL_EMAIL and not user.email:
+            return Response({'detail': 'Aucun email associé à ce compte'}, status=status.HTTP_400_BAD_REQUEST)
+        if otp.renvoi_trop_rapide(otp.MOTIF_INSCRIPTION, user):
+            return Response(
+                {'detail': f'Patientez {otp.DELAI_RENVOI} secondes avant de demander un nouveau code'},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
+        code = otp.creer_code(otp.MOTIF_INSCRIPTION, user, canal)
+        envoye = otp.envoyer_code(user, canal, code, otp.MOTIF_INSCRIPTION)
+        support = 'par email' if canal == otp.CANAL_EMAIL else 'par WhatsApp ou SMS'
+        return Response(
+            {
+                'detail': f'Nouveau code envoyé {support}' if envoye else "L'envoi a échoué, réessayez dans une minute",
+                'canal': canal,
+                'destination': otp.destination(user, canal),
+                'envoye': envoye,
+            },
+            status=status.HTTP_200_OK if envoye else status.HTTP_502_BAD_GATEWAY,
+        )
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated], url_path='authority-stats')
     def authority_stats(self, request):
