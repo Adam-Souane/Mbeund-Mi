@@ -6,6 +6,7 @@ import RiskBadge from '../../shared/components/RiskBadge';
 import BarometreIAPredictive from '../components/BarometreIAPredictive';
 import { usePrevisions } from '../../shared/hooks/usePrevisions';
 import { useAlertesRecentes } from '../../shared/hooks/useAlertes';
+import EtatListe from '../../shared/components/EtatListe';
 
 const STATUT_LABELS = {
   en_attente: 'En attente',
@@ -45,11 +46,7 @@ export default function PrevisionsAlertesPage() {
           <CloudRain size={15} />
           Toutes les prévisions
         </h3>
-        {previsionsLoading ? (
-          <p className="text-sm text-navy-400">Chargement…</p>
-        ) : previsions.length === 0 ? (
-          <p className="text-sm text-navy-400">Aucune prévision météo enregistrée pour l’instant.</p>
-        ) : (
+        <EtatListe chargement={previsionsLoading} vide={previsions.length === 0} messageVide="Aucune prévision météo enregistrée pour l’instant.">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="text-navy-400 uppercase border-b border-navy-50 dark:border-navy-800">
@@ -78,7 +75,7 @@ export default function PrevisionsAlertesPage() {
               </tbody>
             </table>
           </div>
-        )}
+        </EtatListe>
       </div>
 
       <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5">
@@ -88,11 +85,7 @@ export default function PrevisionsAlertesPage() {
             Gérer les alertes
           </Link>
         </div>
-        {alertesLoading ? (
-          <p className="text-sm text-navy-400">Chargement…</p>
-        ) : alertes.length === 0 ? (
-          <p className="text-sm text-navy-400">Aucune alerte pour l’instant.</p>
-        ) : (
+        <EtatListe chargement={alertesLoading} vide={alertes.length === 0} messageVide="Aucune alerte pour l’instant.">
           <div className="flex flex-col gap-3">
             {alertes.map((a) => (
               <div key={a.id} className="flex items-start gap-3 pb-3 border-b border-navy-50 dark:border-navy-800 last:border-0 last:pb-0">
@@ -110,7 +103,7 @@ export default function PrevisionsAlertesPage() {
               </div>
             ))}
           </div>
-        )}
+        </EtatListe>
       </div>
       </div>
     </AutoriteShell>

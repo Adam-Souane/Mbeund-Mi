@@ -60,9 +60,18 @@ function getRiskLevel(score) {
   return { level: 'rouge', label: 'CRITIQUE', color: 'bg-red text-white' };
 }
 
+// Recommandation selon le score de risque (0-100), du plus grave au plus faible.
+const RECOMMANDATIONS = [
+  { min: 75, fond: 'bg-red/15', texte: 'Risque critique : Préparez les mesures d’évacuation d’urgence' },
+  { min: 50, fond: 'bg-risk-orange/15', texte: 'Risque élevé : Augmentez la vigilance et la préparation' },
+  { min: 25, fond: 'bg-risk-jaune/15', texte: 'Risque modéré : Maintenez une alerte active' },
+  { min: -Infinity, fond: 'bg-risk-vert/15', texte: 'Risque faible : Situation sous contrôle, continuez la surveillance' },
+];
+
 export default function BarometreIAPredictive({ previsions }) {
   const riskScore = calculateRiskScore(previsions);
   const riskInfo = getRiskLevel(riskScore);
+  const recommandation = RECOMMANDATIONS.find((r) => riskScore >= r.min);
 
   const predictions = [
     {
@@ -124,19 +133,9 @@ export default function BarometreIAPredictive({ previsions }) {
       </div>
 
       {/* Recommandation */}
-      <div className={`flex items-start gap-2.5 p-3 rounded-lg ${
-        riskScore >= 75 ? 'bg-red/15' :
-        riskScore >= 50 ? 'bg-risk-orange/15' :
-        riskScore >= 25 ? 'bg-risk-jaune/15' :
-        'bg-risk-vert/15'
-      }`}>
+      <div className={`flex items-start gap-2.5 p-3 rounded-lg ${recommandation.fond}`}>
         <AlertCircle size={14} className="flex-shrink-0 mt-0.5" />
-        <p className="text-xs font-semibold">
-          {riskScore >= 75 && "Risque critique : Préparez les mesures d'évacuation d'urgence"}
-          {riskScore >= 50 && riskScore < 75 && "Risque élevé : Augmentez la vigilance et la préparation"}
-          {riskScore >= 25 && riskScore < 50 && "Risque modéré : Maintenez une alerte active"}
-          {riskScore < 25 && "Risque faible : Situation sous contrôle, continuez la surveillance"}
-        </p>
+        <p className="text-xs font-semibold">{recommandation.texte}</p>
       </div>
     </div>
   );

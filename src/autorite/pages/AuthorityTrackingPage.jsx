@@ -6,6 +6,7 @@ import { useToast } from '../../shared/toast/ToastContext';
 import AutoriteShell from '../desktop/AutoriteShell';
 import client from '../../api/client';
 import { Users, Search, X, AlertCircle, Inbox, Bell, Clock, Eye } from 'lucide-react';
+import EtatListe from '../../shared/components/EtatListe';
 
 function AuthorityTrackingContent() {
   const { darkMode } = useTheme();
@@ -123,18 +124,23 @@ function AuthorityTrackingContent() {
         </div>
 
         {/* Tableau */}
-        {loading ? (
-          <div className="flex items-center justify-center p-8">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red mx-auto mb-2"></div>
-              <p className="text-navy-600 dark:text-navy-300">Chargement...</p>
+        <EtatListe
+          chargement={loading}
+          vide={filteredAuthorities.length === 0}
+          renduChargement={
+            <div className="flex items-center justify-center p-8">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red mx-auto mb-2"></div>
+                <p className="text-navy-600 dark:text-navy-300">Chargement...</p>
+              </div>
             </div>
-          </div>
-        ) : filteredAuthorities.length === 0 ? (
-          <div className="p-12 text-center text-navy-600 dark:text-navy-300">
-            Aucune autorité trouvée
-          </div>
-        ) : (
+          }
+          renduVide={
+            <div className="p-12 text-center text-navy-600 dark:text-navy-300">
+              Aucune autorité trouvée
+            </div>
+          }
+        >
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -192,7 +198,7 @@ function AuthorityTrackingContent() {
               </tbody>
             </table>
           </div>
-        )}
+        </EtatListe>
       </div>
 
       {/* Modal Détails */}
@@ -308,14 +314,19 @@ function AuthorityDetailModal({ authority, onClose, darkMode }) {
 
           {activeTab === 'activities' && (
             <div>
-              {activitiesLoading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red mx-auto mb-2"></div>
-                  <p className="text-navy-600 dark:text-navy-300 text-sm">Chargement...</p>
-                </div>
-              ) : activities.length === 0 ? (
-                <p className="text-center text-navy-600 dark:text-navy-300 py-8">Aucune activité enregistrée</p>
-              ) : (
+              <EtatListe
+                chargement={activitiesLoading}
+                vide={activities.length === 0}
+                renduChargement={
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red mx-auto mb-2"></div>
+                    <p className="text-navy-600 dark:text-navy-300 text-sm">Chargement...</p>
+                  </div>
+                }
+                renduVide={
+                  <p className="text-center text-navy-600 dark:text-navy-300 py-8">Aucune activité enregistrée</p>
+                }
+              >
                 <div className="space-y-3 max-h-96 overflow-y-auto">
                   {activities.map((activity) => (
                     <div
@@ -345,7 +356,7 @@ function AuthorityDetailModal({ authority, onClose, darkMode }) {
                     </div>
                   ))}
                 </div>
-              )}
+              </EtatListe>
             </div>
           )}
         </div>

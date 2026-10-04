@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { CheckCircle2, XCircle, ChevronLeft, ChevronRight, ImageOff, Droplets, Copy, User, Phone, MapPin } from 'lucide-react';
+import { CheckCircle2, XCircle, ImageOff, Droplets, Copy, User, Phone, MapPin } from 'lucide-react';
 import AutoriteShell from '../desktop/AutoriteShell';
 import { useSignalements, useValiderSignalement } from '../../shared/hooks/useSignalements';
 import { flattenApiErrors } from '../../shared/utils/apiErrors';
+import EtatListe from '../../shared/components/EtatListe';
+import Pagination from '../../shared/components/Pagination';
 
 const FILTERS = [
   { value: 'attente', label: 'En attente' },
@@ -175,36 +177,12 @@ export default function SignalementsTerrainPage() {
       </div>
 
       <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5 flex flex-col gap-3">
-        {isLoading ? (
-          <p className="text-sm text-navy-400">Chargement…</p>
-        ) : filtered.length === 0 ? (
-          <p className="text-sm text-navy-400">Aucun signalement dans cette catégorie.</p>
-        ) : (
-          filtered.map((feature) => <SignalementCard key={feature.id} feature={feature} />)
-        )}
+        <EtatListe chargement={isLoading} vide={filtered.length === 0} messageVide="Aucun signalement dans cette catégorie.">
+          {filtered.map((feature) => <SignalementCard key={feature.id} feature={feature} />)}
+        </EtatListe>
       </div>
 
-      {(data?.next || data?.previous) && (
-        <div className="flex items-center justify-center gap-3">
-          <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={!data?.previous}
-            className="flex items-center gap-1 text-sm font-bold text-navy-600 dark:text-navy-200 disabled:opacity-40"
-          >
-            <ChevronLeft size={14} />
-            Précédent
-          </button>
-          <span className="text-sm text-navy-400">Page {page}</span>
-          <button
-            onClick={() => setPage((p) => p + 1)}
-            disabled={!data?.next}
-            className="flex items-center gap-1 text-sm font-bold text-navy-600 dark:text-navy-200 disabled:opacity-40"
-          >
-            Suivant
-            <ChevronRight size={14} />
-          </button>
-        </div>
-      )}
+      <Pagination page={page} data={data} setPage={setPage} />
     </AutoriteShell>
   );
 }

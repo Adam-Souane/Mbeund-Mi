@@ -1,34 +1,33 @@
-import { Calendar, Cloud, Target, AlertCircle, CheckCircle, XCircle, Lock } from 'lucide-react';
+import { Calendar, Cloud, Target, CheckCircle, XCircle } from 'lucide-react';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 import AutoriteShell from '../desktop/AutoriteShell';
+import { AccesReserveAdmin, PageEnChargement, PageEnErreur, PageSansDonnees } from '../components/EtatsPage';
 import { useTheme } from '../../theme/ThemeContext';
 import { useAuth } from '../../auth/AuthContext';
 import { useBacktesting } from '../../shared/hooks/useBacktesting';
+
+// Carte et texte secondaire, clairs ou sombres selon le thème (variantes dark:).
+const CARTE = 'rounded-xl border bg-white border-navy-50 dark:bg-navy-800 dark:border-navy-700';
+const TEXTE_DISCRET = 'text-navy-500 dark:text-navy-300';
+
+// Pluie cumulée sur 72 h, en moyenne sur les épisodes analysés sans erreur.
+function pluieMoyenne(episodes) {
+  const valides = episodes.filter((e) => !e.erreur);
+  if (valides.length === 0) return '—';
+  const total = valides.reduce((somme, e) => somme + (e.pluie_cumulee_72h_mm || 0), 0);
+  return (total / valides.length).toFixed(0);
+}
 
 export default function BacktestingPage() {
   const { darkMode } = useTheme();
   const { role } = useAuth();
   const { data, loading, error } = useBacktesting();
 
-  // Vérifier que l'utilisateur est admin
-  if (role !== 'admin') {
-    return (
-      <AutoriteShell>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className={`text-center ${darkMode ? 'bg-navy' : 'bg-white'} p-12 rounded-xl border ${darkMode ? 'border-navy-800' : 'border-navy-50'}`}>
-            <Lock size={48} className="mx-auto mb-4 text-red-500" />
-            <h2 className="text-2xl font-bold text-navy dark:text-white mb-2">Accès réservé aux administrateurs</h2>
-            <p className="text-navy-600 dark:text-navy-300">Cette page n’est accessible que pour les administrateurs du système.</p>
-          </div>
-        </div>
-      </AutoriteShell>
-    );
-  }
+  if (role !== 'admin') return <AccesReserveAdmin />;
 
   const gridColor = darkMode ? '#2E4460' : '#EBF0F5';
   const axisColor = darkMode ? '#8AA0B8' : '#4A6480';
   const bgCard = darkMode ? '#1B2A40' : '#FFFFFF';
-  const textMuted = darkMode ? '#8AA0B8' : '#6B7280';
 
   const textColor = darkMode ? '#FFFFFF' : '#000000';
   const tooltipStyle = {
@@ -39,44 +38,11 @@ export default function BacktestingPage() {
     color: textColor,
   };
 
-  if (loading) {
-    return (
-      <AutoriteShell>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-navy-500 mx-auto mb-4"></div>
-            <p className="text-navy-600 dark:text-navy-200">Exécution du backtesting...</p>
-          </div>
-        </div>
-      </AutoriteShell>
-    );
-  }
+  if (loading) return <PageEnChargement message="Exécution du backtesting..." />;
 
-  if (error) {
-    return (
-      <AutoriteShell>
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6">
-          <div className="flex items-center gap-3">
-            <AlertCircle className="text-red-600 dark:text-red-400" size={20} />
-            <div>
-              <h3 className="font-bold text-red-900 dark:text-red-200">Erreur</h3>
-              <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
-            </div>
-          </div>
-        </div>
-      </AutoriteShell>
-    );
-  }
+  if (error) return <PageEnErreur message={error} />;
 
-  if (!data || !data.statistiques) {
-    return (
-      <AutoriteShell>
-        <div className="text-center text-navy-600 dark:text-navy-200">
-          {data?.message || 'Aucune donnée disponible'}
-        </div>
-      </AutoriteShell>
-    );
-  }
+  if (!data || !data.statistiques) return <PageSansDonnees message={data?.message} />;
 
   const stats = data.statistiques;
   const episodes = data.episodes || [];
@@ -136,43 +102,38 @@ export default function BacktestingPage() {
 
       {/* Métriques clés */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className={`rounded-xl p-5 border ${darkMode ? 'bg-navy-800 border-navy-700' : 'bg-white border-navy-50'}`}>
-          <p className={`text-xs font-medium ${textMuted}`}>Taux de détection</p>
+        <div className={`${CARTE} p-5`}>
+          <p className={`text-xs font-medium ${TEXTE_DISCRET}`}>Taux de détection</p>
           <p className={`text-4xl font-bold mt-2 ${tauxDetection >= 70 ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400'}`}>
             {tauxDetection.toFixed(1)}%
           </p>
-          <p className={`text-xs mt-2 ${textMuted}`}>
+          <p className={`text-xs mt-2 ${TEXTE_DISCRET}`}>
             {stats.nombre_episodes_detectes}/{stats.nombre_episodes_total} inondations détectées
           </p>
         </div>
 
-        <div className={`rounded-xl p-5 border ${darkMode ? 'bg-navy-800 border-navy-700' : 'bg-white border-navy-50'}`}>
-          <p className={`text-xs font-medium ${textMuted}`}>Épisodes d’inondation</p>
+        <div className={`${CARTE} p-5`}>
+          <p className={`text-xs font-medium ${TEXTE_DISCRET}`}>Épisodes d’inondation</p>
           <p className="text-4xl font-bold text-navy-900 dark:text-white mt-2">
             {stats.nombre_episodes_total}
           </p>
-          <p className={`text-xs mt-2 ${textMuted}`}>historiques analysés (2010-2024)</p>
+          <p className={`text-xs mt-2 ${TEXTE_DISCRET}`}>historiques analysés (2010-2024)</p>
         </div>
 
-        <div className={`rounded-xl p-5 border ${darkMode ? 'bg-navy-800 border-navy-700' : 'bg-white border-navy-50'}`}>
-          <p className={`text-xs font-medium ${textMuted}`}>Pluie moyenne pré-inondation</p>
+        <div className={`${CARTE} p-5`}>
+          <p className={`text-xs font-medium ${TEXTE_DISCRET}`}>Pluie moyenne pré-inondation</p>
           <p className="text-4xl font-bold text-navy-900 dark:text-white mt-2">
-            {episodes.length > 0
-              ? (
-                  episodes.filter((e) => !e.erreur).reduce((sum, e) => sum + (e.pluie_cumulee_72h_mm || 0), 0) /
-                  episodes.filter((e) => !e.erreur).length
-                ).toFixed(0)
-              : '—'}
+            {pluieMoyenne(episodes)}
             <span className="text-lg">mm</span>
           </p>
-          <p className={`text-xs mt-2 ${textMuted}`}>cumulée sur 72h</p>
+          <p className={`text-xs mt-2 ${TEXTE_DISCRET}`}>cumulée sur 72h</p>
         </div>
       </div>
 
       {/* Graphiques */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Détection */}
-        <div className={`rounded-xl p-5 border ${darkMode ? 'bg-navy-800 border-navy-700' : 'bg-white border-navy-50'}`}>
+        <div className={`${CARTE} p-5`}>
           <h3 className="text-base font-bold mb-4 flex items-center gap-2">
             <Target size={15} />
             Résultats de détection
@@ -195,7 +156,7 @@ export default function BacktestingPage() {
         </div>
 
         {/* Distribution des risques prédits */}
-        <div className={`rounded-xl p-5 border ${darkMode ? 'bg-navy-800 border-navy-700' : 'bg-white border-navy-50'}`}>
+        <div className={`${CARTE} p-5`}>
           <h3 className="text-base font-bold mb-4 flex items-center gap-2">
             <Cloud size={15} />
             Distribution des risques prédits
@@ -219,7 +180,7 @@ export default function BacktestingPage() {
       </div>
 
       {/* Tableau détaillé */}
-      <div className={`rounded-xl border ${darkMode ? 'bg-navy-800 border-navy-700' : 'bg-white border-navy-50'}`}>
+      <div className={`${CARTE}`}>
         <div className="p-5 border-b border-navy-200 dark:border-navy-700">
           <h3 className="text-base font-bold flex items-center gap-2">
             <Calendar size={15} />
@@ -229,7 +190,7 @@ export default function BacktestingPage() {
 
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className={`${darkMode ? 'bg-navy-900' : 'bg-navy-50'}`}>
+            <thead className="bg-navy-50 dark:bg-navy-900">
               <tr>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-navy-600 dark:text-navy-300">Date</th>
                 <th className="text-left px-5 py-3 text-xs font-semibold text-navy-600 dark:text-navy-300">Pluie 72h</th>
@@ -248,7 +209,7 @@ export default function BacktestingPage() {
                 </tr>
               ) : (
                 episodesTries.map((episode) => (
-                  <tr key={episode.id} className={darkMode ? 'hover:bg-navy-700/50' : 'hover:bg-navy-50'}>
+                  <tr key={episode.id} className="hover:bg-navy-50 dark:hover:bg-navy-700/50">
                     <td className="px-5 py-3 text-sm text-navy-900 dark:text-white">
                       {formatDate(episode.date_debut)}
                     </td>
@@ -290,12 +251,12 @@ export default function BacktestingPage() {
       </div>
 
       {/* Interprétation */}
-      <div className={`rounded-xl p-5 border ${darkMode ? 'bg-navy-800 border-navy-700' : 'bg-white border-navy-50'}`}>
+      <div className={`${CARTE} p-5`}>
         <div className="flex items-start gap-3">
           <CheckCircle className="text-blue-600 dark:text-blue-400 flex-shrink-0 mt-1" size={20} />
           <div>
             <h3 className="font-bold text-navy-900 dark:text-white mb-2">Interprétation</h3>
-            <ul className={`text-sm space-y-2 ${textMuted}`}>
+            <ul className={`text-sm space-y-2 ${TEXTE_DISCRET}`}>
               <li>
                 <strong>Taux de détection :</strong> Pourcentage d’inondations historiques que le modèle aurait correctement prédites
                 (risque ≥ jaune) en se basant sur les pluies observées dans les 72h précédentes.
@@ -315,7 +276,7 @@ export default function BacktestingPage() {
       </div>
 
       {/* Métadonnées */}
-      <div className={`rounded-xl p-4 text-xs ${textMuted}`}>
+      <div className={`rounded-xl p-4 text-xs ${TEXTE_DISCRET}`}>
         <p>
           Backtesting exécuté sur {stats.nombre_episodes_total} épisodes historiques. Données: Open-Meteo (pluies 2010-2024),
           Base de données locale (inondations observées). Dernière mise à jour: {new Date().toLocaleDateString('fr-FR')}.

@@ -2,6 +2,7 @@ import { Trash2, PhoneCall, ShieldAlert } from 'lucide-react';
 import AutoriteShell from '../desktop/AutoriteShell';
 import { useZones } from '../../shared/hooks/useZones';
 import { useContactsAlerte, useDeleteContactAlerte } from '../../shared/hooks/useContactsAlerte';
+import EtatListe from '../../shared/components/EtatListe';
 
 const NUMEROS_URGENCE = [
   { label: 'Sapeurs-pompiers', numero: '18' },
@@ -61,12 +62,8 @@ export default function ContactUrgencePage() {
 
       <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5 flex flex-col gap-2">
         <h3 className="text-base font-bold mb-1">Registre des contacts SMS</h3>
-        {isLoading ? (
-          <p className="text-sm text-navy-400">Chargement…</p>
-        ) : contacts.length === 0 ? (
-          <p className="text-sm text-navy-400">Aucun contact inscrit pour l’instant.</p>
-        ) : (
-          contacts.map((c) => (
+        <EtatListe chargement={isLoading} vide={contacts.length === 0} messageVide="Aucun contact inscrit pour l’instant.">
+          {contacts.map((c) => (
             <div key={c.id} className="flex items-center gap-3 p-3 border border-navy-50 dark:border-navy-800 rounded-md">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
@@ -86,8 +83,8 @@ export default function ContactUrgencePage() {
                 <Trash2 size={15} />
               </button>
             </div>
-          ))
-        )}
+          ))}
+        </EtatListe>
       </div>
     </AutoriteShell>
   );

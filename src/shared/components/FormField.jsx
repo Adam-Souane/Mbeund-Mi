@@ -1,5 +1,14 @@
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
 
+// Bordure et fond selon l'état du champ : erreur, valide ou neutre.
+function classeChamp(enErreur, valide) {
+  let etat = 'border-navy-200 dark:border-navy-800 bg-white dark:bg-navy';
+  if (enErreur) etat = 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20';
+  else if (valide) etat = 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20';
+  const anneau = enErreur ? 'focus:ring-red' : 'focus:ring-green-600';
+  return `w-full px-3.5 py-2.5 rounded-md border-[1.5px] transition ${etat} text-sm focus:ring-2 focus:ring-inset ${anneau} focus:border-transparent`;
+}
+
 /**
  * Composant de champ de formulaire avec validation inline
  * Affiche feedback en temps réel
@@ -22,6 +31,7 @@ export default function FormField({
   // Validation inline en temps réel
   const hasError = error || (validator && value && !validator(value));
   const showValid = isValid === true || (validator && value && validator(value));
+  const Champ = type === 'textarea' ? 'textarea' : 'input';
 
   return (
     <label className="block">
@@ -47,50 +57,19 @@ export default function FormField({
         </span>
       )}
 
-      {type === 'textarea' ? (
-        <textarea
-          id={id}
-          value={value}
-          onChange={onChange}
-          onBlur={onBlur}
-          placeholder={placeholder}
-          aria-labelledby={`${id}-label`}
-          aria-describedby={description ? `${id}-desc` : undefined}
-          aria-invalid={hasError}
-          className={`w-full px-3.5 py-2.5 rounded-md border-[1.5px] transition ${
-            hasError
-              ? 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20'
-              : showValid
-              ? 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20'
-              : 'border-navy-200 dark:border-navy-800 bg-white dark:bg-navy'
-          } text-sm focus:ring-2 focus:ring-inset ${
-            hasError ? 'focus:ring-red' : 'focus:ring-green-600'
-          } focus:border-transparent`}
-          {...props}
-        />
-      ) : (
-        <input
-          id={id}
-          type={type}
-          value={value}
-          onChange={onChange}
-          onBlur={onBlur}
-          placeholder={placeholder}
-          aria-labelledby={`${id}-label`}
-          aria-describedby={description ? `${id}-desc` : undefined}
-          aria-invalid={hasError}
-          className={`w-full px-3.5 py-2.5 rounded-md border-[1.5px] transition ${
-            hasError
-              ? 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20'
-              : showValid
-              ? 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20'
-              : 'border-navy-200 dark:border-navy-800 bg-white dark:bg-navy'
-          } text-sm focus:ring-2 focus:ring-inset ${
-            hasError ? 'focus:ring-red' : 'focus:ring-green-600'
-          } focus:border-transparent`}
-          {...props}
-        />
-      )}
+      <Champ
+        id={id}
+        type={type === 'textarea' ? undefined : type}
+        value={value}
+        onChange={onChange}
+        onBlur={onBlur}
+        placeholder={placeholder}
+        aria-labelledby={`${id}-label`}
+        aria-describedby={description ? `${id}-desc` : undefined}
+        aria-invalid={Boolean(hasError)}
+        className={classeChamp(hasError, showValid)}
+        {...props}
+      />
 
       {hasError && (
         <div className="flex items-start gap-2 mt-1.5">

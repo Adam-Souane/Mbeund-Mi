@@ -29,7 +29,7 @@ class DetecteurAnomalies:
 
     def _entrainer_modele_synthetique(self):
         """Entraîne un modèle sur des données synthétiques normales si pas de données réelles."""
-        print("Entraînement de l'IsolationForest sur données normales...")
+        logger_ano.info("Entraînement de l'IsolationForest sur données normales")
         np.random.seed(42)
         # Features : [valeur_cm, variation_1h, variation_3h, heure_journee, mois]
         valeur_cm = np.random.uniform(0, 100, 1000)

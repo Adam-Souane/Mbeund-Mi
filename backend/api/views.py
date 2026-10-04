@@ -111,7 +111,7 @@ class ChatView(APIView):
                     getattr(zone_risque, 'niveau_risque', None) if zone_risque else None, 'FAIBLE'
                 )
             except Exception as e:
-                print(f"[ChatView] Erreur récupération zone_risque: {e}")
+                logger.warning("[ChatView] Contexte zone_risque indisponible : %s", e)
                 niveau_risque = 'FAIBLE'
 
             try:
@@ -125,7 +125,7 @@ class ChatView(APIView):
                 else:
                     meteo_context = "Non disponible"
             except Exception as e:
-                print(f"[ChatView] Erreur récupération météo: {e}")
+                logger.warning("[ChatView] Contexte météo indisponible : %s", e)
                 meteo_context = "Non disponible"
 
             try:
@@ -133,7 +133,7 @@ class ChatView(APIView):
                 descriptions = [s.description[:120] for s in signalements if s.description]
                 signalements_context = " ; ".join(descriptions) if descriptions else "Aucun récent"
             except Exception as e:
-                print(f"[ChatView] Erreur récupération signalements: {e}")
+                logger.warning("[ChatView] Contexte signalements indisponible : %s", e)
                 signalements_context = "Aucun récent"
 
             # Utiliser le chatbot

@@ -5,6 +5,7 @@ import { useTheme } from '../../theme/ThemeContext';
 import { useCapteurs, useUpdateCapteur } from '../../shared/hooks/useCapteurs';
 import { useZones } from '../../shared/hooks/useZones';
 import { useMesuresRecentes } from '../../shared/hooks/useMesuresRecentes';
+import EtatListe from '../../shared/components/EtatListe';
 
 const STATUTS = [
   { value: 'actif', label: 'Actif' },
@@ -65,12 +66,8 @@ export default function AdminCapteursPage() {
       </div>
 
       <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5 flex flex-col gap-3">
-        {isLoading ? (
-          <p className="text-sm text-navy-400">Chargement…</p>
-        ) : capteurs.length === 0 ? (
-          <p className="text-sm text-navy-400">Aucun capteur enregistré pour l’instant.</p>
-        ) : (
-          capteurs.map((f) => (
+        <EtatListe chargement={isLoading} vide={capteurs.length === 0} messageVide="Aucun capteur enregistré pour l’instant.">
+          {capteurs.map((f) => (
             <div key={f.id} className="flex items-center gap-3 p-3.5 border border-navy-50 dark:border-navy-800 rounded-lg">
               <div className="w-10 h-10 rounded-lg bg-navy-50 dark:bg-navy-800 flex items-center justify-center flex-shrink-0 text-navy dark:text-navy-50">
                 {f.properties.type === 'pluviometre' ? <CloudRain size={17} /> : <Droplet size={17} />}
@@ -102,8 +99,8 @@ export default function AdminCapteursPage() {
                 ))}
               </select>
             </div>
-          ))
-        )}
+          ))}
+        </EtatListe>
       </div>
 
       <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5">

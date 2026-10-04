@@ -4,6 +4,7 @@ import WeatherWidget from '../../shared/components/WeatherWidget';
 import RiskBadge from '../../shared/components/RiskBadge';
 import { usePrevisions } from '../../shared/hooks/usePrevisions';
 import { useAlertesRecentes } from '../../shared/hooks/useAlertes';
+import EtatListe from '../../shared/components/EtatListe';
 
 const STATUT_LABELS = {
   en_attente: 'En attente',
@@ -41,11 +42,7 @@ export default function AlertesPrevisionsPageBody() {
           <CloudRain size={15} />
           Toutes les prévisions
         </h3>
-        {previsionsLoading ? (
-          <p className="text-xs text-navy-400">Chargement…</p>
-        ) : previsions.length === 0 ? (
-          <p className="text-xs text-navy-400">Aucune prévision météo enregistrée pour l’instant.</p>
-        ) : (
+        <EtatListe chargement={previsionsLoading} vide={previsions.length === 0} messageVide="Aucune prévision météo enregistrée pour l’instant." taille="xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="text-navy-400 uppercase border-b border-navy-50 dark:border-navy-800">
@@ -74,16 +71,12 @@ export default function AlertesPrevisionsPageBody() {
               </tbody>
             </table>
           </div>
-        )}
+        </EtatListe>
       </div>
 
       <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5">
         <h3 className="text-sm font-bold mb-3">Alertes</h3>
-        {alertesLoading ? (
-          <p className="text-xs text-navy-400">Chargement…</p>
-        ) : alertes.length === 0 ? (
-          <p className="text-xs text-navy-400">Aucune alerte pour l’instant.</p>
-        ) : (
+        <EtatListe chargement={alertesLoading} vide={alertes.length === 0} messageVide="Aucune alerte pour l’instant." taille="xs">
           <div className="flex flex-col gap-3">
             {alertes.map((a) => (
               <div key={a.id} className="flex items-start gap-3 pb-3 border-b border-navy-50 dark:border-navy-800 last:border-0 last:pb-0">
@@ -101,7 +94,7 @@ export default function AlertesPrevisionsPageBody() {
               </div>
             ))}
           </div>
-        )}
+        </EtatListe>
       </div>
       </div>
     </CitizenShell>

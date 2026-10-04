@@ -1,6 +1,10 @@
-import ee
+import logging
 import os
 import sys
+
+import ee
+
+logger = logging.getLogger(__name__)
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 try:
@@ -16,14 +20,13 @@ def init_gee():
             ee.Initialize(project=GEE_PROJECT_ID)
         else:
             ee.Initialize()
-        print("[SUCCES] Google Earth Engine initialisé avec succès.")
+        logger.info("Google Earth Engine initialisé")
         return True
     except Exception as e:
-        print("[ERREUR] Erreur d'initialisation GEE. Avez-vous authentifié ?")
-        print("Pour authentifier, tapez dans le terminal : earthengine authenticate")
+        conseil = "authentifiez-vous avec « earthengine authenticate »"
         if not GEE_PROJECT_ID:
-            print("Et vérifiez que GEE_PROJECT_ID est renseigné dans .env (obligatoire depuis les versions récentes de l'API Earth Engine).")
-        print(f"Détail de l'erreur : {e}")
+            conseil += " et renseignez GEE_PROJECT_ID dans .env"
+        logger.error("Initialisation de Google Earth Engine impossible (%s) : %s", conseil, e)
         return False
 
 # Coordonnées du centre de Thiaroye Sur Mer

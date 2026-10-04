@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Send, CheckCircle2, ChevronLeft, ChevronRight, Plus, AlertTriangle, Droplet, CornerDownRight, Phone, Clock, Save } from 'lucide-react';
+import { Send, CheckCircle2, Plus, AlertTriangle, Droplet, CornerDownRight, Phone, Clock, Save } from 'lucide-react';
 import AutoriteShell from '../desktop/AutoriteShell';
 import RiskBadge from '../../shared/components/RiskBadge';
 import A11yStatusMessage from '../../shared/components/A11yStatusMessage';
@@ -8,6 +8,8 @@ import { useZones } from '../../shared/hooks/useZones';
 import { useAlertesListe, useCreateAlerte, useUpdateAlerteStatut } from '../../shared/hooks/useAlertes';
 import { useEnregistrerTriageAppel } from '../../shared/hooks/useEnregistrerTriageAppel';
 import { flattenApiErrors } from '../../shared/utils/apiErrors';
+import EtatListe from '../../shared/components/EtatListe';
+import Pagination from '../../shared/components/Pagination';
 
 const NIVEAUX = [
   { value: 'vert', label: 'Vert' },
@@ -512,36 +514,12 @@ export default function GestionDeCrisePage() {
 
       <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5 flex flex-col gap-3">
         <h3 className="text-base font-bold">Toutes les alertes · {data?.count ?? 0}</h3>
-        {isLoading ? (
-          <p className="text-sm text-navy-400">Chargement…</p>
-        ) : alertes.length === 0 ? (
-          <p className="text-sm text-navy-400">Aucune alerte pour l’instant.</p>
-        ) : (
-          alertes.map((a) => <AlerteRow key={a.id} alerte={a} />)
-        )}
+        <EtatListe chargement={isLoading} vide={alertes.length === 0} messageVide="Aucune alerte pour l’instant.">
+          {alertes.map((a) => <AlerteRow key={a.id} alerte={a} />)}
+        </EtatListe>
       </div>
 
-      {(data?.next || data?.previous) && (
-        <div className="flex items-center justify-center gap-3">
-          <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={!data?.previous}
-            className="flex items-center gap-1 text-sm font-bold text-navy-600 dark:text-navy-200 disabled:opacity-40"
-          >
-            <ChevronLeft size={14} />
-            Précédent
-          </button>
-          <span className="text-sm text-navy-400">Page {page}</span>
-          <button
-            onClick={() => setPage((p) => p + 1)}
-            disabled={!data?.next}
-            className="flex items-center gap-1 text-sm font-bold text-navy-600 dark:text-navy-200 disabled:opacity-40"
-          >
-            Suivant
-            <ChevronRight size={14} />
-          </button>
-        </div>
-      )}
+      <Pagination page={page} data={data} setPage={setPage} />
     </AutoriteShell>
   );
 }

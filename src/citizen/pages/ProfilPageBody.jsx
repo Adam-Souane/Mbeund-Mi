@@ -19,6 +19,12 @@ const ROLE_LABELS = {
   admin: 'Administrateur',
 };
 
+// Pastille de catégorie dans l'historique des signalements.
+const COULEUR_CATEGORIE = {
+  Inondation: 'bg-navy-100 text-navy-800 dark:bg-navy-800 dark:text-navy-100',
+  Dégâts: 'bg-red/20 text-red',
+};
+
 const PROFIL_VIDE = {
   zone: '',
   personnes_agees: 0,
@@ -703,9 +709,7 @@ export default function ProfilPageBody() {
                       </span>
                     </div>
                     <span className={`inline-flex px-2.5 py-1 rounded text-xs font-bold flex-shrink-0 ${
-                      signalement.categorie_display === 'Inondation' ? 'bg-risk-bleu/20 text-risk-bleu' :
-                      signalement.categorie_display === 'Dégâts' ? 'bg-red/20 text-red' :
-                      'bg-navy-200 text-navy-600'
+                      COULEUR_CATEGORIE[signalement.categorie_display] ?? 'bg-navy-200 text-navy-600'
                     }`}>
                       {signalement.categorie_display}
                     </span>

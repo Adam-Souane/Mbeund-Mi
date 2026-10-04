@@ -1,6 +1,10 @@
-import ee
 import json
+import logging
 import os
+
+import ee
+
+logger = logging.getLogger(__name__)
 
 # Import relatif (utilisé quand importé comme gee.detection_inondation depuis
 # Django) avec repli en import absolu (exécution directe : python detection_inondation.py)
@@ -17,7 +21,7 @@ def detecter_zones_inondees(date_reference_debut, date_reference_fin, date_recen
     if not init_gee():
         return None
         
-    print(f"Analyse GEE de {date_recente_debut} à {date_recente_fin}...")
+    logger.info("Analyse GEE du %s au %s", date_recente_debut, date_recente_fin)
     zone = get_thiaroye_geometry()
     
     # Image de référence (ex: Janvier, saison sèche)
@@ -72,8 +76,7 @@ def detecter_zones_inondees(date_reference_debut, date_reference_fin, date_recen
     with open(out_file, 'w', encoding='utf-8') as f:
         json.dump(resultat, f, ensure_ascii=False, indent=2)
         
-    print(f"[SUCCES] Analyse GEE terminée : {surface_totale_ha:.2f} hectares inondés détectés à Thiaroye.")
-    print(f"GeoJSON exporté dans {out_file}")
+    logger.info("Analyse GEE terminée : %.2f ha inondés à Thiaroye, GeoJSON : %s", surface_totale_ha, out_file)
     
     return resultat
 

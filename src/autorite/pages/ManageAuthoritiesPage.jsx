@@ -238,7 +238,7 @@ function AuthoritiesManager() {
                       onChange={handleChange}
                       className="accent-red"
                     />
-                    <code className={`font-mono text-sm font-semibold ${usernameChoisi === option ? (darkMode ? 'text-white' : 'text-navy-900') : (darkMode ? 'text-navy-300' : 'text-navy-600')}`}>
+                    <code className={`font-mono text-sm font-semibold ${usernameChoisi === option ? 'text-navy-900 dark:text-white' : 'text-navy-600 dark:text-navy-300'}`}>
                       {option}
                     </code>
                   </label>

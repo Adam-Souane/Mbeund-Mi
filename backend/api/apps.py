@@ -1,4 +1,8 @@
+import logging
+
 from django.apps import AppConfig
+
+logger = logging.getLogger(__name__)
 
 
 class ApiConfig(AppConfig):
@@ -22,8 +26,8 @@ class ApiConfig(AppConfig):
                 cred = credentials.Certificate(settings.FIREBASE_CREDENTIALS_PATH)
             firebase_admin.initialize_app(cred)
         except FileNotFoundError:
-            print("[INFO] Firebase credentials file not found - skipping initialization")
+            logger.info("Identifiants Firebase absents : notifications push désactivées")
         except json.JSONDecodeError as e:
-            print(f"[ERREUR] Firebase JSON invalide: {e}")
+            logger.error("Identifiants Firebase illisibles (JSON invalide) : %s", e)
         except Exception as e:
-            print(f"[ERREUR] Échec de l'initialisation de Firebase: {e}")
+            logger.error("Échec de l'initialisation de Firebase : %s", e)

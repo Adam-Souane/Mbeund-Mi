@@ -5,6 +5,7 @@ import { useTheme } from '../../theme/ThemeContext';
 import { useZones } from '../../shared/hooks/useZones';
 import { useProfilsVulnerabilite } from '../../shared/hooks/useVulnerabilite';
 import { useRelaisQuartierListe, useVerifierRelais } from '../../shared/hooks/useRelaisQuartier';
+import EtatListe from '../../shared/components/EtatListe';
 
 function formatDate(iso) {
   if (!iso) return '—';
@@ -38,12 +39,8 @@ export default function RegistreCommunautairePage() {
             <HeartHandshake size={16} className="text-red" />
             Profils de vulnérabilité · {profilsData?.count ?? 0}
           </h3>
-          {profilsLoading ? (
-            <p className="text-sm text-navy-400">Chargement…</p>
-          ) : profils.length === 0 ? (
-            <p className="text-sm text-navy-400">Aucun profil déclaré pour l’instant.</p>
-          ) : (
-            profils.map((p) => (
+          <EtatListe chargement={profilsLoading} vide={profils.length === 0} messageVide="Aucun profil déclaré pour l’instant.">
+            {profils.map((p) => (
               <div key={p.id} className="flex items-start gap-3 p-3 border border-navy-50 dark:border-navy-800 rounded-md">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
@@ -64,8 +61,8 @@ export default function RegistreCommunautairePage() {
                   {p.notes && <p className="text-sm text-navy-600 dark:text-navy-200 mt-1.5">{p.notes}</p>}
                 </div>
               </div>
-            ))
-          )}
+            ))}
+          </EtatListe>
         </div>
 
         <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5 flex flex-col gap-2">
@@ -73,12 +70,8 @@ export default function RegistreCommunautairePage() {
             <Users2 size={16} className="text-red" />
             Relais de quartier · {relaisData?.count ?? 0}
           </h3>
-          {relaisLoading ? (
-            <p className="text-sm text-navy-400">Chargement…</p>
-          ) : relais.length === 0 ? (
-            <p className="text-sm text-navy-400">Aucun relais inscrit pour l’instant.</p>
-          ) : (
-            relais.map((r) => (
+          <EtatListe chargement={relaisLoading} vide={relais.length === 0} messageVide="Aucun relais inscrit pour l’instant.">
+            {relais.map((r) => (
               <div key={r.id} className="flex items-center gap-3 p-3 border border-navy-50 dark:border-navy-800 rounded-md">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
@@ -122,8 +115,8 @@ export default function RegistreCommunautairePage() {
                   {r.verifie ? 'Retirer la vérification' : 'Vérifier'}
                 </button>
               </div>
-            ))
-          )}
+            ))}
+          </EtatListe>
         </div>
       </div>
 

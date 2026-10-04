@@ -1,6 +1,7 @@
-import { BarChart3, TrendingUp, CheckCircle, AlertCircle, Lock } from 'lucide-react';
+import { BarChart3, TrendingUp, CheckCircle } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
 import AutoriteShell from '../desktop/AutoriteShell';
+import { AccesReserveAdmin, PageEnChargement, PageEnErreur, PageSansDonnees } from '../components/EtatsPage';
 import { useTheme } from '../../theme/ThemeContext';
 import { useAuth } from '../../auth/AuthContext';
 import { useModelReliability } from '../../shared/hooks/useModelReliability';
@@ -12,30 +13,20 @@ const RISK_COLORS = {
   rouge: '#DC2626',
 };
 
+// Carte et texte secondaire, clairs ou sombres selon le thème (variantes dark:).
+const CARTE = 'rounded-xl border bg-white border-navy-50 dark:bg-navy-800 dark:border-navy-700';
+const TEXTE_DISCRET = 'text-navy-500 dark:text-navy-300';
+
 export default function FiabiliteModelePage() {
   const { darkMode } = useTheme();
   const { role } = useAuth();
   const { data, loading, error } = useModelReliability({ enabled: role === 'admin' });
 
-  // Vérifier que l'utilisateur est admin
-  if (role !== 'admin') {
-    return (
-      <AutoriteShell>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className={`text-center ${darkMode ? 'bg-navy' : 'bg-white'} p-12 rounded-xl border ${darkMode ? 'border-navy-800' : 'border-navy-50'}`}>
-            <Lock size={48} className="mx-auto mb-4 text-red-500" />
-            <h2 className="text-2xl font-bold text-navy dark:text-white mb-2">Accès réservé aux administrateurs</h2>
-            <p className="text-navy-600 dark:text-navy-300">Cette page n’est accessible que pour les administrateurs du système.</p>
-          </div>
-        </div>
-      </AutoriteShell>
-    );
-  }
+  if (role !== 'admin') return <AccesReserveAdmin />;
 
   const gridColor = darkMode ? '#2E4460' : '#EBF0F5';
   const axisColor = darkMode ? '#8AA0B8' : '#4A6480';
   const bgCard = darkMode ? '#1B2A40' : '#FFFFFF';
-  const textMuted = darkMode ? '#8AA0B8' : '#6B7280';
 
   const textColor = darkMode ? '#FFFFFF' : '#000000';
   const tooltipStyle = {
@@ -46,44 +37,11 @@ export default function FiabiliteModelePage() {
     color: textColor,
   };
 
-  if (loading) {
-    return (
-      <AutoriteShell>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-navy-500 mx-auto mb-4"></div>
-            <p className="text-navy-600 dark:text-navy-200">Chargement des métriques...</p>
-          </div>
-        </div>
-      </AutoriteShell>
-    );
-  }
+  if (loading) return <PageEnChargement message="Chargement des métriques..." />;
 
-  if (error) {
-    return (
-      <AutoriteShell>
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6">
-          <div className="flex items-center gap-3">
-            <AlertCircle className="text-red-600 dark:text-red-400" size={20} />
-            <div>
-              <h3 className="font-bold text-red-900 dark:text-red-200">Erreur</h3>
-              <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
-            </div>
-          </div>
-        </div>
-      </AutoriteShell>
-    );
-  }
+  if (error) return <PageEnErreur message={error} />;
 
-  if (!data || !data.metriques) {
-    return (
-      <AutoriteShell>
-        <div className="text-center text-navy-600 dark:text-navy-200">
-          Aucune donnée disponible
-        </div>
-      </AutoriteShell>
-    );
-  }
+  if (!data || !data.metriques) return <PageSansDonnees message={data?.message} />;
 
   const metriques = data.metriques;
   const matriceConfusion = data.matrice_confusion;
@@ -119,42 +77,42 @@ export default function FiabiliteModelePage() {
 
       {/* Métriques clés */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className={`rounded-xl p-5 border ${darkMode ? 'bg-navy-800 border-navy-700' : 'bg-white border-navy-50'}`}>
-          <p className={`text-xs font-medium ${textMuted}`}>Accuracy (après calibration)</p>
+        <div className={`${CARTE} p-5`}>
+          <p className={`text-xs font-medium ${TEXTE_DISCRET}`}>Accuracy (après calibration)</p>
           <p className="text-2xl font-bold text-navy-900 dark:text-white mt-2">{metriques.accuracy_apres_percent.toFixed(1)}%</p>
           <p className={`text-xs mt-1 ${accuracyGain >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
             {accuracyGain >= 0 ? '+' : ''}{accuracyGain}% vs avant
           </p>
         </div>
 
-        <div className={`rounded-xl p-5 border ${darkMode ? 'bg-navy-800 border-navy-700' : 'bg-white border-navy-50'}`}>
-          <p className={`text-xs font-medium ${textMuted}`}>Brier Score (amélioration)</p>
+        <div className={`${CARTE} p-5`}>
+          <p className={`text-xs font-medium ${TEXTE_DISCRET}`}>Brier Score (amélioration)</p>
           <p className="text-2xl font-bold text-green-600 dark:text-green-400 mt-2">{improvementPercent.toFixed(1)}%</p>
-          <p className={`text-xs mt-1 ${textMuted}`}>{metriques.brier_score_avant.toFixed(4)} → {metriques.brier_score_apres.toFixed(4)}</p>
+          <p className={`text-xs mt-1 ${TEXTE_DISCRET}`}>{metriques.brier_score_avant.toFixed(4)} → {metriques.brier_score_apres.toFixed(4)}</p>
         </div>
 
-        <div className={`rounded-xl p-5 border ${darkMode ? 'bg-navy-800 border-navy-700' : 'bg-white border-navy-50'}`}>
-          <p className={`text-xs font-medium ${textMuted}`}>Log Loss (après)</p>
+        <div className={`${CARTE} p-5`}>
+          <p className={`text-xs font-medium ${TEXTE_DISCRET}`}>Log Loss (après)</p>
           <p className="text-2xl font-bold text-navy-900 dark:text-white mt-2">{metriques.log_loss_apres.toFixed(4)}</p>
-          <p className={`text-xs mt-1 ${textMuted}`}>{metriques.log_loss_avant.toFixed(4)} avant</p>
+          <p className={`text-xs mt-1 ${TEXTE_DISCRET}`}>{metriques.log_loss_avant.toFixed(4)} avant</p>
         </div>
 
-        <div className={`rounded-xl p-5 border ${darkMode ? 'bg-navy-800 border-navy-700' : 'bg-white border-navy-50'}`}>
-          <p className={`text-xs font-medium ${textMuted}`}>Échantillons de test</p>
+        <div className={`${CARTE} p-5`}>
+          <p className={`text-xs font-medium ${TEXTE_DISCRET}`}>Échantillons de test</p>
           <p className="text-2xl font-bold text-navy-900 dark:text-white mt-2">{data.nombre_echantillons_test}</p>
-          <p className={`text-xs mt-1 ${textMuted}`}>jours évalués</p>
+          <p className={`text-xs mt-1 ${TEXTE_DISCRET}`}>jours évalués</p>
         </div>
       </div>
 
       {/* Graphiques */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Courbe de calibration */}
-        <div className={`rounded-xl p-5 border ${darkMode ? 'bg-navy-800 border-navy-700' : 'bg-white border-navy-50'}`}>
+        <div className={`${CARTE} p-5`}>
           <h3 className="text-base font-bold mb-4 flex items-center gap-2">
             <TrendingUp size={15} />
             Courbe de calibration (Risque Rouge)
           </h3>
-          <p className={`text-xs ${textMuted} mb-4`}>Avant vs après calibration. La diagonale grise = parfaite calibration.</p>
+          <p className={`text-xs ${TEXTE_DISCRET} mb-4`}>Avant vs après calibration. La diagonale grise = parfaite calibration.</p>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={calibrationChartData} margin={{ top: 5, right: 10, left: -15, bottom: 0 }}>
@@ -172,7 +130,7 @@ export default function FiabiliteModelePage() {
         </div>
 
         {/* Matrice de confusion */}
-        <div className={`rounded-xl p-5 border ${darkMode ? 'bg-navy-800 border-navy-700' : 'bg-white border-navy-50'}`}>
+        <div className={`${CARTE} p-5`}>
           <h3 className="text-base font-bold mb-4 flex items-center gap-2">
             <BarChart3 size={15} />
             Matrice de confusion (Prédictions correctes par classe)
@@ -196,12 +154,12 @@ export default function FiabiliteModelePage() {
       </div>
 
       {/* Interprétation */}
-      <div className={`rounded-xl p-5 border ${darkMode ? 'bg-navy-800 border-navy-700' : 'bg-white border-navy-50'}`}>
+      <div className={`${CARTE} p-5`}>
         <div className="flex items-start gap-3">
           <CheckCircle className="text-green-600 dark:text-green-400 flex-shrink-0 mt-1" size={20} />
           <div>
             <h3 className="font-bold text-navy-900 dark:text-white mb-2">Interprétation</h3>
-            <ul className={`text-sm space-y-2 ${textMuted}`}>
+            <ul className={`text-sm space-y-2 ${TEXTE_DISCRET}`}>
               <li>
                 <strong>Brier Score :</strong> Mesure l’écart moyen entre les probabilités prédites et les vrais labels. Une amélioration de {improvementPercent.toFixed(1)}% confirme que la calibration rend les probabilités plus fiables.
               </li>
@@ -220,7 +178,7 @@ export default function FiabiliteModelePage() {
       </div>
 
       {/* Métadonnées */}
-      <div className={`rounded-xl p-4 text-xs ${textMuted}`}>
+      <div className={`rounded-xl p-4 text-xs ${TEXTE_DISCRET}`}>
         <p>
           Données extraites le {new Date().toLocaleDateString('fr-FR')}. Modèle : Random Forest ({data.nombre_echantillons_test} échantillons de test).
         </p>
