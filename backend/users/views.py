@@ -7,7 +7,7 @@ from django.db import transaction
 from django.core.cache import cache
 from django.utils import timezone
 from datetime import timedelta
-import random
+import secrets
 import string
 from .models import Profile, InviteCode, AuthorityTracking, AuthorityActivity
 from .serializers import UserSerializer, ProfileSerializer
@@ -373,7 +373,7 @@ class UserViewSet(viewsets.ModelViewSet):
             return Response({'username': 'Cet identifiant est déjà pris. Veuillez en choisir un autre.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Générer un mot de passe temporaire
-        temp_password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
+        temp_password = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(12))
 
         try:
             with transaction.atomic():
@@ -467,7 +467,7 @@ class UserViewSet(viewsets.ModelViewSet):
             user = User.objects.get(username=username)
 
             # Générer un nouveau mot de passe
-            new_password = ''.join(random.choices(string.ascii_letters + string.digits, k=12))
+            new_password = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(12))
             user.set_password(new_password)
             user.save()
 
@@ -533,7 +533,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def _generate_otp(self):
         """Génère un code OTP de 6 chiffres"""
-        return ''.join(random.choices(string.digits, k=6))
+        return ''.join(secrets.choice(string.digits) for _ in range(6))
 
     @action(detail=False, methods=['post'], permission_classes=[AllowAny], url_path='verify-otp')
     def verify_otp(self, request):

@@ -31,6 +31,7 @@ export default function AdminCapteursPage() {
   const { data: capteursData, isLoading } = useCapteurs();
   const { data: zonesData } = useZones();
   const { data: mesuresRecentes } = useMesuresRecentes();
+  const updateCapteur = useUpdateCapteur();
 
   // Vérifier que l'utilisateur est admin
   if (role !== 'admin') {
@@ -46,7 +47,6 @@ export default function AdminCapteursPage() {
       </AutoriteShell>
     );
   }
-  const updateCapteur = useUpdateCapteur();
 
   const zoneNameById = new Map((zonesData?.features ?? []).map((f) => [f.id, f.properties.quartier]));
   const releveCountByCapteur = new Map((mesuresRecentes ?? []).map((g) => [g.capteur.id, g.mesures.length]));

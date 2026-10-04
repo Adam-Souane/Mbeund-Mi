@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import client from '../../api/client';
 
-export function useModelReliability() {
+// `enabled` évite l'appel à l'API tant que l'utilisateur n'est pas administrateur.
+export function useModelReliability({ enabled = true } = {}) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    if (!enabled) return;
     const fetchReliability = async () => {
       try {
         setLoading(true);
@@ -22,7 +24,7 @@ export function useModelReliability() {
     };
 
     fetchReliability();
-  }, []);
+  }, [enabled]);
 
   return { data, loading, error };
 }

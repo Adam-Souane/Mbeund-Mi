@@ -1,8 +1,11 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
+  // Retire console.* et debugger du code de production uniquement
+  // (remplace drop_console de terser ; les messages restent visibles en développement).
+  esbuild: mode === 'production' ? { drop: ['console', 'debugger'] } : {},
   server: {
     port: 3000,
     open: true,
@@ -23,13 +26,9 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-      },
-      mangle: true,
-    },
+    // esbuild est intégré à Vite : terser et lightningcss n'étaient pas
+    // installés, ce qui faisait échouer la construction de production.
+    minify: 'esbuild',
     rollupOptions: {
       output: {
         manualChunks: {
@@ -40,7 +39,6 @@ export default defineConfig({
         },
       },
     },
-    cssMinify: 'lightningcss',
     reportCompressedSize: true,
   },
-});
+}));

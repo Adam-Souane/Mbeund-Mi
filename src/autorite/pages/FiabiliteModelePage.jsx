@@ -15,6 +15,7 @@ const RISK_COLORS = {
 export default function FiabiliteModelePage() {
   const { darkMode } = useTheme();
   const { role } = useAuth();
+  const { data, loading, error } = useModelReliability({ enabled: role === 'admin' });
 
   // Vérifier que l'utilisateur est admin
   if (role !== 'admin') {
@@ -30,7 +31,6 @@ export default function FiabiliteModelePage() {
       </AutoriteShell>
     );
   }
-  const { data, loading, error } = useModelReliability();
 
   const gridColor = darkMode ? '#2E4460' : '#EBF0F5';
   const axisColor = darkMode ? '#8AA0B8' : '#4A6480';

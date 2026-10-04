@@ -1,6 +1,8 @@
+import logging
 import os
 import sys
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.db.models import Subquery, OuterRef
 from django.http import FileResponse
 from rest_framework import viewsets
@@ -38,12 +40,17 @@ from api.serializers import (
     PointRefugeSerializer,
     SMSSignalementSerializer,
     TriageAppelSerializer,
+    SurvivalKitSerializer,
+    EmergencyContactSerializer,
+    SignalementHistoriqueSerializer,
 )
 from api.permissions import IsAutoriteOrAdmin, EstAdminOuAutorite
 from api.services.sms_inbound_service import traiter_webhook_sms
 from api.services.export_service import ExportService
 from api.services.pdf_export_service import PDFExportService
 from drf_spectacular.utils import extend_schema
+
+logger = logging.getLogger(__name__)
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -358,8 +365,19 @@ class SignalementCitoyenViewSet(viewsets.ModelViewSet):
         if not isinstance(valide, bool):
             return Response({"valide": ["Ce champ doit être un booléen (true ou false)."]}, status=400)
 
+        etait_valide = instance.valide
         instance.valide = valide
         instance.save()
+
+        # Journal d'activité de l'autorité qui valide (et non du citoyen auteur).
+        if valide and not etait_valide:
+            from users.models import AuthorityActivity
+            AuthorityActivity.objects.create(
+                authority=request.user,
+                action_type='request_handled',
+                description=f'Signalement validé : {instance.get_categorie_display()}',
+                zone='',
+            )
 
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
@@ -397,7 +415,7 @@ class ContactAlerteViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action == 'create':
             return [permissions.AllowAny()]
-        return [EstAdminOuAutorite]
+        return [EstAdminOuAutorite()]
 
 
 @extend_schema(exclude=True)
@@ -489,7 +507,7 @@ class RelaisQuartierViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action in ('list', 'verifier'):
-            return [EstAdminOuAutorite]
+            return [EstAdminOuAutorite()]
         return [permissions.IsAuthenticated()]
 
     def get_queryset(self):
@@ -799,8 +817,9 @@ class EnregistrerTriageAppelView(APIView):
     """
     POST /api/enregistrer-triage-appel/
     Enregistre un triage d'appel avec les réponses du citoyen.
+    Réservé aux autorités : c'est un outil de la page Gestion de crise.
     """
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAutoriteOrAdmin]
 
     def post(self, request):
         try:

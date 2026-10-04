@@ -128,6 +128,12 @@ celerybeat-schedule*
 *.pkl
 *.npy
 *.h5
+# Exceptions : fichiers lus en production (déploiement construit depuis git).
+# Sans eux, la tâche planifiée ne prédit rien et la page Fiabilité échoue.
+!backend/alertes/random_forest_flood_risk_model.pkl
+!mbeund_mi_ia/data/modele_rf_calibre.pkl
+!mbeund_mi_ia/data/X_test.pkl
+!mbeund_mi_ia/data/y_test.pkl
 
 # --- Logs spécifiques ---
 alertes.log
