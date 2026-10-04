@@ -2,9 +2,8 @@
 Service de notifications push temps réel via WebSocket.
 Envoie les alertes et signalements aux autorités et citoyens en temps réel.
 """
-import json
 import logging
-from typing import Dict, List
+from typing import Dict
 from django.utils import timezone
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync

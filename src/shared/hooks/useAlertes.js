@@ -3,11 +3,12 @@ import { getAlertes, createAlerte, updateAlerteStatut } from '../../api/endpoint
 
 // alertes/ est paginé — on ne demande que la première page pour un aperçu
 // "alertes récentes" sur les tableaux de bord et la page Prévisions.
-export function useAlertesRecentes(params = {}) {
+export function useAlertesRecentes(params = {}, options = {}) {
   return useQuery({
     queryKey: ['alertes', 'recentes', params],
     queryFn: () => getAlertes({ page: 1, ...params }),
     staleTime: 30_000,
+    ...options,
   });
 }
 

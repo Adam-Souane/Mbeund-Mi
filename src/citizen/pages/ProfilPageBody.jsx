@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Moon, LogOut, ShieldCheck, HeartHandshake, Users2, Loader2, CheckCircle2, Copy, Check, AlertCircle, Droplet, Utensils, Phone, Mail, MapPin, Clock, Layers } from 'lucide-react';
 import CitizenShell from '../shared/CitizenShell';
-import FormField from '../../shared/components/FormField';
 import ErrorMessage from '../../shared/components/ErrorMessage';
 import { useAuth } from '../../auth/AuthContext';
 import { useTheme } from '../../theme/ThemeContext';
@@ -12,6 +11,7 @@ import { flattenApiErrors } from '../../shared/utils/apiErrors';
 import { useSurvivalKit, useSaveSurvivalKit } from '../../shared/hooks/useSurvivalKit';
 import { useEmergencyContact, useSaveEmergencyContact } from '../../shared/hooks/useEmergencyContact';
 import { useMySignalements } from '../../shared/hooks/useMySignalements';
+import { useFormulaireDepuis } from '../../shared/hooks/useFormulaireDepuis';
 
 const ROLE_LABELS = {
   citoyen: 'Citoyen',
@@ -28,6 +28,30 @@ const PROFIL_VIDE = {
   notes: '',
 };
 
+const KIT_VIDE = {
+  eau_potable_litres: 0,
+  nourriture_jours: 0,
+  medicaments: false,
+  documents_importants: false,
+  lampe_torche: false,
+  batterie_portable: false,
+  trousse_premiers_secours: false,
+  vetements_secours: false,
+  plan_evacuation: '',
+  points_refuge_identifies: false,
+  voisins_contactes: false,
+  notes: '',
+};
+
+const CONTACT_VIDE = {
+  nom: '',
+  relation: 'famille',
+  telephone: '',
+  email: '',
+  adresse: '',
+  alerter_automatiquement: true,
+};
+
 export default function ProfilPageBody() {
   const { username, role, logout } = useAuth();
   const { darkMode, toggleTheme } = useTheme();
@@ -36,7 +60,7 @@ export default function ProfilPageBody() {
   // Profil Vulnérabilité
   const { data: monProfil } = useMonProfilVulnerabilite();
   const saveProfil = useSaveMonProfilVulnerabilite();
-  const [profilForm, setProfilForm] = useState(PROFIL_VIDE);
+  const [profilForm, setProfilForm] = useFormulaireDepuis(monProfil, PROFIL_VIDE);
 
   // Relais Quartier
   const { data: monRelais } = useMonRelais();
@@ -48,32 +72,12 @@ export default function ProfilPageBody() {
   // Kit de survie
   const { data: monSurvivalKit } = useSurvivalKit();
   const saveSurvivalKit = useSaveSurvivalKit();
-  const [survivalKitForm, setSurvivalKitForm] = useState({
-    eau_potable_litres: 0,
-    nourriture_jours: 0,
-    medicaments: false,
-    documents_importants: false,
-    lampe_torche: false,
-    batterie_portable: false,
-    trousse_premiers_secours: false,
-    vetements_secours: false,
-    plan_evacuation: '',
-    points_refuge_identifies: false,
-    voisins_contactes: false,
-    notes: '',
-  });
+  const [survivalKitForm, setSurvivalKitForm] = useFormulaireDepuis(monSurvivalKit, KIT_VIDE);
 
   // Contact d'urgence
   const { data: monContact } = useEmergencyContact();
   const saveEmergencyContact = useSaveEmergencyContact();
-  const [contactForm, setContactForm] = useState({
-    nom: '',
-    relation: 'famille',
-    telephone: '',
-    email: '',
-    adresse: '',
-    alerter_automatiquement: true,
-  });
+  const [contactForm, setContactForm] = useFormulaireDepuis(monContact, CONTACT_VIDE);
 
   // Historique des signalements
   const { data: mesSignalements } = useMySignalements();
@@ -81,51 +85,6 @@ export default function ProfilPageBody() {
   // Validation errors
   const [errors, setErrors] = useState({});
 
-  // Effects
-  useEffect(() => {
-    if (monProfil) {
-      setProfilForm({
-        zone: monProfil.zone ?? '',
-        personnes_agees: monProfil.personnes_agees ?? 0,
-        enfants_bas_age: monProfil.enfants_bas_age ?? 0,
-        personne_mobilite_reduite: monProfil.personne_mobilite_reduite ?? false,
-        femme_enceinte: monProfil.femme_enceinte ?? false,
-        notes: monProfil.notes ?? '',
-      });
-    }
-  }, [monProfil]);
-
-  useEffect(() => {
-    if (monSurvivalKit) {
-      setSurvivalKitForm({
-        eau_potable_litres: monSurvivalKit.eau_potable_litres ?? 0,
-        nourriture_jours: monSurvivalKit.nourriture_jours ?? 0,
-        medicaments: monSurvivalKit.medicaments ?? false,
-        documents_importants: monSurvivalKit.documents_importants ?? false,
-        lampe_torche: monSurvivalKit.lampe_torche ?? false,
-        batterie_portable: monSurvivalKit.batterie_portable ?? false,
-        trousse_premiers_secours: monSurvivalKit.trousse_premiers_secours ?? false,
-        vetements_secours: monSurvivalKit.vetements_secours ?? false,
-        plan_evacuation: monSurvivalKit.plan_evacuation ?? '',
-        points_refuge_identifies: monSurvivalKit.points_refuge_identifies ?? false,
-        voisins_contactes: monSurvivalKit.voisins_contactes ?? false,
-        notes: monSurvivalKit.notes ?? '',
-      });
-    }
-  }, [monSurvivalKit]);
-
-  useEffect(() => {
-    if (monContact) {
-      setContactForm({
-        nom: monContact.nom ?? '',
-        relation: monContact.relation ?? 'famille',
-        telephone: monContact.telephone ?? '',
-        email: monContact.email ?? '',
-        adresse: monContact.adresse ?? '',
-        alerter_automatiquement: monContact.alerter_automatiquement ?? true,
-      });
-    }
-  }, [monContact]);
 
   const copyUsername = () => {
     navigator.clipboard.writeText(username);
@@ -405,10 +364,10 @@ export default function ProfilPageBody() {
         <form onSubmit={handleSaveSurvivalKit} className="lg:col-span-2 bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5">
           <div className="flex items-center gap-2 mb-1">
             <AlertCircle size={16} className="text-risk-orange" />
-            <h3 className="text-sm font-bold">Kit de survie en cas d'inondation</h3>
+            <h3 className="text-sm font-bold">Kit de survie en cas d’inondation</h3>
           </div>
           <p className="text-xs text-navy-600 dark:text-navy-200 mb-4">
-            Préparez-vous pour les situations d'urgence en complétant votre kit de survie.
+            Préparez-vous pour les situations d’urgence en complétant votre kit de survie.
           </p>
 
           {errors.survivalKit && (
@@ -426,7 +385,7 @@ export default function ProfilPageBody() {
                 Eau potable (litres)
               </span>
               <span className="block text-xs text-navy-500 dark:text-navy-400 mb-1" id="eau-desc">
-                Quantité d'eau potable actuellement stockée
+                Quantité d’eau potable actuellement stockée
               </span>
               <input
                 type="number"
@@ -548,7 +507,7 @@ export default function ProfilPageBody() {
             </label>
 
             <label className="block sm:col-span-2">
-              <span className="block text-xs font-semibold mb-1.5">Plan d'évacuation</span>
+              <span className="block text-xs font-semibold mb-1.5">Plan d’évacuation</span>
               <textarea
                 rows={2}
                 value={survivalKitForm.plan_evacuation}
@@ -600,10 +559,10 @@ export default function ProfilPageBody() {
         <form onSubmit={handleSaveContact} className="lg:col-span-2 bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5">
           <div className="flex items-center gap-2 mb-1">
             <Phone size={16} className="text-risk-vert" />
-            <h3 className="text-sm font-bold">Contact d'urgence</h3>
+            <h3 className="text-sm font-bold">Contact d’urgence</h3>
           </div>
           <p className="text-xs text-navy-600 dark:text-navy-200 mb-4">
-            Indiquez une personne de confiance à contacter en cas d'urgence.
+            Indiquez une personne de confiance à contacter en cas d’urgence.
           </p>
 
           {errors.contact && (
@@ -690,7 +649,7 @@ export default function ProfilPageBody() {
                 onChange={(e) => setContactForm((f) => ({ ...f, alerter_automatiquement: e.target.checked }))}
                 className="accent-red w-4 h-4"
               />
-              M'alerter automatiquement en cas d'urgence
+              M’alerter automatiquement en cas d’urgence
             </label>
           </div>
 
@@ -766,7 +725,7 @@ export default function ProfilPageBody() {
             </div>
           ) : (
             <p className="text-sm text-navy-600 dark:text-navy-400 py-6 text-center">
-              Vous n'avez pas encore fait de signalements.
+              Vous n’avez pas encore fait de signalements.
             </p>
           )}
         </div>

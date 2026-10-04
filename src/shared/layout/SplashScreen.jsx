@@ -4,6 +4,7 @@ import logoDark from '../../assets/logo-dark.png';
 
 export default function SplashScreen() {
   const navigate = useNavigate();
+  const continuer = () => navigate('/login', { replace: true });
 
   useEffect(() => {
     const timer = setTimeout(() => navigate('/login', { replace: true }), 1800);
@@ -12,7 +13,13 @@ export default function SplashScreen() {
 
   return (
     <div
-      onClick={() => navigate('/login', { replace: true })}
+      role="button"
+      tabIndex={0}
+      aria-label="Accéder à la connexion"
+      onClick={continuer}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') continuer();
+      }}
       className="min-h-screen bg-navy flex flex-col items-center justify-center gap-4 cursor-pointer"
     >
       <img src={logoDark} alt="MBEUND MI" className="h-10" />

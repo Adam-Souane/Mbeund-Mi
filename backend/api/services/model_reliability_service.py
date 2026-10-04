@@ -2,7 +2,7 @@ import os
 import pickle
 import numpy as np
 from sklearn.calibration import calibration_curve
-from sklearn.metrics import log_loss, accuracy_score, confusion_matrix, classification_report
+from sklearn.metrics import log_loss, accuracy_score, confusion_matrix
 import logging
 
 logger = logging.getLogger('mbeund_mi_reliability')

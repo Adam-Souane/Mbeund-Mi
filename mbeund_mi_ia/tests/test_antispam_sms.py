@@ -20,7 +20,7 @@ def test_bloque_si_meme_niveau_recent(mock_datetime):
     maintenant = datetime(2026, 8, 15, 12, 0, 0)
     mock_datetime.now.return_value = maintenant
     
-    assert peut_envoyer_sms(1, 'orange') == True
+    assert peut_envoyer_sms(1, 'orange') is True
     HISTORIQUE_SMS[1] = {'niveau': 'orange', 'timestamp': maintenant}
     
     # 2. Simuler une 2ème alerte ORANGE à 12:05 (5 min plus tard)
@@ -28,7 +28,7 @@ def test_bloque_si_meme_niveau_recent(mock_datetime):
     mock_datetime.now.return_value = cinq_min_plus_tard
     
     # Vérifie que le SMS est bloqué
-    assert peut_envoyer_sms(1, 'orange') == False
+    assert peut_envoyer_sms(1, 'orange') is False
 
 @patch('apis.declencheur_alertes.datetime')
 def test_passe_si_niveau_empire(mock_datetime):
@@ -36,7 +36,7 @@ def test_passe_si_niveau_empire(mock_datetime):
     maintenant = datetime(2026, 8, 15, 12, 0, 0)
     mock_datetime.now.return_value = maintenant
     
-    assert peut_envoyer_sms(1, 'orange') == True
+    assert peut_envoyer_sms(1, 'orange') is True
     HISTORIQUE_SMS[1] = {'niveau': 'orange', 'timestamp': maintenant}
     
     # 2. Simuler une alerte ROUGE (empirement) à 12:05
@@ -44,7 +44,7 @@ def test_passe_si_niveau_empire(mock_datetime):
     mock_datetime.now.return_value = cinq_min_plus_tard
     
     # Vérifie que le SMS passe
-    assert peut_envoyer_sms(1, 'rouge') == True
+    assert peut_envoyer_sms(1, 'rouge') is True
 
 @patch('apis.declencheur_alertes.datetime')
 def test_passe_apres_2_heures(mock_datetime):
@@ -57,4 +57,4 @@ def test_passe_apres_2_heures(mock_datetime):
     mock_datetime.now.return_value = maintenant
     
     # Vérifie que le SMS passe car le délai de 2h est écoulé
-    assert peut_envoyer_sms(1, 'orange') == True
+    assert peut_envoyer_sms(1, 'orange') is True

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Copy, Check, Lock, Trash2, RefreshCw, Search, Loader2 } from 'lucide-react';
+import { Copy, Check, Lock, Trash2, RefreshCw, Search, Loader2 } from 'lucide-react';
 import AutoriteShell from '../desktop/AutoriteShell';
 import { useTheme } from '../../theme/ThemeContext';
 import { useAuth } from '../../auth/AuthContext';
@@ -43,7 +44,6 @@ function AuthoritiesManager() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [authorities, setAuthorities] = useState([]);
-  const [visiblePasswords, setVisiblePasswords] = useState({});
   const [copiedField, setCopiedField] = useState(null);
   const [deleteModal, setDeleteModal] = useState(null);
   const [regenerateConfirmModal, setRegenerateConfirmModal] = useState(null);
@@ -51,8 +51,6 @@ function AuthoritiesManager() {
   const [newPassword, setNewPassword] = useState(null);
   const [creationResultModal, setCreationResultModal] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [usernameOptions, setUsernameOptions] = useState([]);
-  const [loadingUsernames, setLoadingUsernames] = useState(false);
 
   // Filtrer les autorités selon la recherche
   const filteredAuthorities = authorities.filter((auth) => {
@@ -73,35 +71,18 @@ function AuthoritiesManager() {
     username: '',
   });
 
-  // Charger les options d'identifiant quand prénom/nom changent
-  useEffect(() => {
-    if (formData.first_name.trim() && formData.last_name.trim()) {
-      const fetchUsernameOptions = async () => {
-        setLoadingUsernames(true);
-        try {
-          const response = await client.get('/users/check-username/', {
-            params: {
-              first_name: formData.first_name,
-              last_name: formData.last_name,
-            },
-          });
-          setUsernameOptions(response.data.options || []);
-          // Sélectionner la première option par défaut
-          if (!formData.username && response.data.options?.length > 0) {
-            setFormData((prev) => ({ ...prev, username: response.data.options[0] }));
-          }
-        } catch (error) {
-          if (import.meta.env.DEV) console.error('Erreur lors du chargement des identifiants:', error);
-        } finally {
-          setLoadingUsernames(false);
-        }
-      };
-      fetchUsernameOptions();
-    } else {
-      setUsernameOptions([]);
-      setFormData((prev) => ({ ...prev, username: '' }));
-    }
-  }, [formData.first_name, formData.last_name]);
+  // Identifiants proposés pour le prénom et le nom saisis (requête React
+  // Query, relancée quand ils changent). L'identifiant retenu est celui choisi
+  // s'il fait partie des propositions, sinon la première proposition.
+  const prenom = formData.first_name.trim();
+  const nom = formData.last_name.trim();
+  const { data: usernameOptions = [], isFetching: loadingUsernames } = useQuery({
+    queryKey: ['check-username', prenom, nom],
+    queryFn: () =>
+      client.get('/users/check-username/', { params: { first_name: prenom, last_name: nom } }).then((r) => r.data.options || []),
+    enabled: Boolean(prenom && nom),
+  });
+  const usernameChoisi = usernameOptions.includes(formData.username) ? formData.username : (usernameOptions[0] ?? '');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -116,7 +97,7 @@ function AuthoritiesManager() {
 
     if (!formData.first_name.trim()) newErrors.first_name = 'Prénom requis';
     if (!formData.last_name.trim()) newErrors.last_name = 'Nom requis';
-    if (!formData.username) newErrors.username = 'Identifiant requis';
+    if (!usernameChoisi) newErrors.username = 'Identifiant requis';
     if (!formData.email.trim()) newErrors.email = 'Email requis';
     else if (!formData.email.includes('@')) newErrors.email = 'Email invalide';
     if (!formData.telephone.trim()) newErrors.telephone = 'Numéro de téléphone requis';
@@ -137,7 +118,7 @@ function AuthoritiesManager() {
         last_name: formData.last_name,
         email: formData.email,
         telephone: formData.telephone,
-        username: formData.username,
+        username: usernameChoisi,
       });
 
       setAuthorities([...authorities, response.data]);
@@ -163,10 +144,6 @@ function AuthoritiesManager() {
     setTimeout(() => setCopiedField(null), 2000);
   };
 
-  const togglePasswordVisibility = (id) => {
-    setVisiblePasswords((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
   const handleConfirmRegenerate = async () => {
     try {
       const response = await client.post('/users/regenerate-authority-password/', { username: regenerateConfirmModal });
@@ -174,7 +151,7 @@ function AuthoritiesManager() {
       setRegenerateConfirmModal(null);
       setRegenerateResultModal(response.data.username);
       showToast('Mot de passe régénéré avec succès !', 'success');
-    } catch (error) {
+    } catch {
       showToast('Erreur lors de la régénération du mot de passe', 'error');
       setRegenerateConfirmModal(null);
     }
@@ -186,7 +163,7 @@ function AuthoritiesManager() {
       setAuthorities(authorities.filter((a) => a.username !== username));
       setDeleteModal(null);
       showToast('Autorité supprimée avec succès !', 'success');
-    } catch (error) {
+    } catch {
       showToast('Erreur lors de la suppression', 'error');
     }
   };
@@ -217,8 +194,9 @@ function AuthoritiesManager() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-navy-700 dark:text-navy-200 mb-1">Prénom</label>
+              <label htmlFor="autorite-first-name" className="block text-sm font-medium text-navy-700 dark:text-navy-200 mb-1">Prénom</label>
               <input
+                id="autorite-first-name"
                 type="text"
                 name="first_name"
                 value={formData.first_name}
@@ -229,8 +207,9 @@ function AuthoritiesManager() {
               {errors.first_name && <p className="text-xs text-red-500 mt-1">{errors.first_name}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium text-navy-700 dark:text-navy-200 mb-1">Nom</label>
+              <label htmlFor="autorite-last-name" className="block text-sm font-medium text-navy-700 dark:text-navy-200 mb-1">Nom</label>
               <input
+                id="autorite-last-name"
                 type="text"
                 name="last_name"
                 value={formData.last_name}
@@ -245,7 +224,7 @@ function AuthoritiesManager() {
           {usernameOptions.length > 0 && (
             <div className={`px-4 py-3 rounded-lg ${darkMode ? 'bg-navy-800 border border-navy-700' : 'bg-navy-50 border border-navy-200'}`}>
               <div className="flex items-center gap-2 mb-2">
-                <p className={`text-xs font-medium ${darkMode ? 'text-navy-400' : 'text-navy-600'}`}>Choisissez l'identifiant</p>
+                <p className={`text-xs font-medium ${darkMode ? 'text-navy-400' : 'text-navy-600'}`}>Choisissez l’identifiant</p>
                 {loadingUsernames && <Loader2 size={12} className="animate-spin" />}
               </div>
               <div className="space-y-2">
@@ -255,11 +234,11 @@ function AuthoritiesManager() {
                       type="radio"
                       name="username"
                       value={option}
-                      checked={formData.username === option}
+                      checked={usernameChoisi === option}
                       onChange={handleChange}
                       className="accent-red"
                     />
-                    <code className={`font-mono text-sm font-semibold ${formData.username === option ? (darkMode ? 'text-white' : 'text-navy-900') : (darkMode ? 'text-navy-300' : 'text-navy-600')}`}>
+                    <code className={`font-mono text-sm font-semibold ${usernameChoisi === option ? (darkMode ? 'text-white' : 'text-navy-900') : (darkMode ? 'text-navy-300' : 'text-navy-600')}`}>
                       {option}
                     </code>
                   </label>
@@ -270,8 +249,9 @@ function AuthoritiesManager() {
           {errors.username && <p className="text-xs text-red-500">{errors.username}</p>}
 
           <div>
-            <label className="block text-sm font-medium text-navy-700 dark:text-navy-200 mb-1">Email</label>
+            <label htmlFor="autorite-email" className="block text-sm font-medium text-navy-700 dark:text-navy-200 mb-1">Email</label>
             <input
+              id="autorite-email"
               type="email"
               name="email"
               value={formData.email}
@@ -283,8 +263,9 @@ function AuthoritiesManager() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-navy-700 dark:text-navy-200 mb-1">Numéro de téléphone</label>
+            <label htmlFor="autorite-telephone" className="block text-sm font-medium text-navy-700 dark:text-navy-200 mb-1">Numéro de téléphone</label>
             <input
+              id="autorite-telephone"
               type="tel"
               name="telephone"
               value={formData.telephone}
@@ -399,7 +380,7 @@ function AuthoritiesManager() {
               Autorité créée avec succès
             </h3>
             <p className="text-sm text-navy-600 dark:text-navy-300 mb-4">
-              Voici les identifiants d'accès pour <strong>{creationResultModal.first_name} {creationResultModal.last_name}</strong>.
+              Voici les identifiants d’accès pour <strong>{creationResultModal.first_name} {creationResultModal.last_name}</strong>.
               <strong className="block mt-2">Copiez le mot de passe et partagez-le en personne.</strong>
             </p>
 
@@ -450,7 +431,7 @@ function AuthoritiesManager() {
             </h3>
             <p className="text-navy-600 dark:text-navy-300 mb-6">
               Êtes-vous sûr de vouloir régénérer le mot de passe pour <strong>{regenerateConfirmModal}</strong> ?
-              Un nouveau mot de passe sera généré et devra être partagé avec l'autorité.
+              Un nouveau mot de passe sera généré et devra être partagé avec l’autorité.
             </p>
 
             <div className="flex gap-3">
@@ -499,7 +480,7 @@ function AuthoritiesManager() {
               </div>
 
               <p className="text-xs text-navy-600 dark:text-navy-300">
-                Partagez ce mot de passe avec l'autorité en personne.
+                Partagez ce mot de passe avec l’autorité en personne.
               </p>
             </div>
 
@@ -524,7 +505,7 @@ function AuthoritiesManager() {
               Confirmer la suppression
             </h3>
             <p className="text-navy-600 dark:text-navy-300 mb-6">
-              Êtes-vous sûr de vouloir supprimer l'autorité <strong>{deleteModal}</strong> ?
+              Êtes-vous sûr de vouloir supprimer l’autorité <strong>{deleteModal}</strong> ?
               Cette action est irréversible.
             </p>
 

@@ -32,7 +32,7 @@ export class ErrorBoundary extends React.Component {
               Oups! Une erreur est survenue
             </h1>
             <p className="text-gray-600 text-center mb-6">
-              L'application a rencontré un problème inattendu. Veuillez recharger ou retourner à l'accueil.
+              L’application a rencontré un problème inattendu. Veuillez recharger ou retourner à l’accueil.
             </p>
             <div className="flex gap-3">
               <button

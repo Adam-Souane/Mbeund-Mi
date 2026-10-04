@@ -147,6 +147,6 @@ class CitoyenNotificationConsumer(AsyncWebsocketConsumer):
             if hasattr(user, 'profilvulnerabilite'):
                 zone = user.profilvulnerabilite.zone
                 return zone.id if zone else None
-        except:
+        except Exception:
             pass
         return None

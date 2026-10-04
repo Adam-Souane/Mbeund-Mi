@@ -12,7 +12,7 @@ except ImportError:
     IA_AVAILABLE = False
 
 try:
-    from apis.declencheur_alertes import envoyer_sms_urgence, Declencheur
+    from apis.declencheur_alertes import envoyer_sms_urgence, Declencheur  # noqa: F401  (test de disponibilité)
     SMS_AVAILABLE = True
 except ImportError:
     SMS_AVAILABLE = False
@@ -28,7 +28,6 @@ def executer_scenario(nom, niveau_eau_debut, pluie_mm, iter_count, step_eau):
     
     eau = niveau_eau_debut
     mesures = []
-    sms_envoye = False
     
     for i in range(iter_count):
         mesures.append({"pluie_mm": pluie_mm, "niveau_eau_cm": eau})
@@ -43,7 +42,6 @@ def executer_scenario(nom, niveau_eau_debut, pluie_mm, iter_count, step_eau):
                 # Envoie la requête simultanément à l'IA, Django, Firebase et SMS
                 print("   > 🔄 Synchronisation de l'alerte vers Django, Firebase et Twilio...")
                 declencheur.verifier_et_declencher(zone_id=1, mesures_recentes=mesures)
-                sms_envoye = True
         else:
             print("   > IA non disponible. Installez tensorflow pour voir la prédiction.")
             

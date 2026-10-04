@@ -1,7 +1,6 @@
 import requests
 import pandas as pd
 import os
-from datetime import datetime
 
 # Coordonnées de Thiaroye Sur Mer
 LAT = 14.742

@@ -1,10 +1,9 @@
 import { Calendar, Cloud, Target, AlertCircle, CheckCircle, XCircle, Lock } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 import AutoriteShell from '../desktop/AutoriteShell';
 import { useTheme } from '../../theme/ThemeContext';
 import { useAuth } from '../../auth/AuthContext';
 import { useBacktesting } from '../../shared/hooks/useBacktesting';
-import { riskInfo } from '../../shared/components/RiskBadge';
 
 export default function BacktestingPage() {
   const { darkMode } = useTheme();
@@ -19,7 +18,7 @@ export default function BacktestingPage() {
           <div className={`text-center ${darkMode ? 'bg-navy' : 'bg-white'} p-12 rounded-xl border ${darkMode ? 'border-navy-800' : 'border-navy-50'}`}>
             <Lock size={48} className="mx-auto mb-4 text-red-500" />
             <h2 className="text-2xl font-bold text-navy dark:text-white mb-2">Accès réservé aux administrateurs</h2>
-            <p className="text-navy-600 dark:text-navy-300">Cette page n'est accessible que pour les administrateurs du système.</p>
+            <p className="text-navy-600 dark:text-navy-300">Cette page n’est accessible que pour les administrateurs du système.</p>
           </div>
         </div>
       </AutoriteShell>
@@ -84,7 +83,6 @@ export default function BacktestingPage() {
 
   // Préparer les données pour le graphique de détection
   const tauxDetection = stats.taux_detection_percent || 0;
-  const tauxNonDetection = 100 - tauxDetection;
 
   const detectionChartData = [
     { name: 'Détectés', value: stats.nombre_episodes_detectes || 0, fill: '#10B981' },
@@ -149,7 +147,7 @@ export default function BacktestingPage() {
         </div>
 
         <div className={`rounded-xl p-5 border ${darkMode ? 'bg-navy-800 border-navy-700' : 'bg-white border-navy-50'}`}>
-          <p className={`text-xs font-medium ${textMuted}`}>Épisodes d'inondation</p>
+          <p className={`text-xs font-medium ${textMuted}`}>Épisodes d’inondation</p>
           <p className="text-4xl font-bold text-navy-900 dark:text-white mt-2">
             {stats.nombre_episodes_total}
           </p>
@@ -225,7 +223,7 @@ export default function BacktestingPage() {
         <div className="p-5 border-b border-navy-200 dark:border-navy-700">
           <h3 className="text-base font-bold flex items-center gap-2">
             <Calendar size={15} />
-            Détail par épisode d'inondation
+            Détail par épisode d’inondation
           </h3>
         </div>
 
@@ -245,7 +243,7 @@ export default function BacktestingPage() {
               {episodesTries.length === 0 ? (
                 <tr>
                   <td colSpan="6" className="text-center px-5 py-6 text-navy-500 dark:text-navy-400">
-                    Aucun épisode d'inondation enregistré
+                    Aucun épisode d’inondation enregistré
                   </td>
                 </tr>
               ) : (
@@ -299,17 +297,17 @@ export default function BacktestingPage() {
             <h3 className="font-bold text-navy-900 dark:text-white mb-2">Interprétation</h3>
             <ul className={`text-sm space-y-2 ${textMuted}`}>
               <li>
-                <strong>Taux de détection :</strong> Pourcentage d'inondations historiques que le modèle aurait correctement prédites
+                <strong>Taux de détection :</strong> Pourcentage d’inondations historiques que le modèle aurait correctement prédites
                 (risque ≥ jaune) en se basant sur les pluies observées dans les 72h précédentes.
               </li>
               <li>
                 <strong>Pluie 72h :</strong> Cumul des précipitations observées dans les 3 jours avant chaque inondation (données Open-Meteo réelles).
               </li>
               <li>
-                <strong>Risque prédit :</strong> Classification du modèle (Vert/Jaune/Orange/Rouge) basée sur la pluie et niveau d'eau estimé.
+                <strong>Risque prédit :</strong> Classification du modèle (Vert/Jaune/Orange/Rouge) basée sur la pluie et niveau d’eau estimé.
               </li>
               <li>
-                <strong>Verdict :</strong> "Détecté" si risque ≥ Jaune (alerte lancée), "Manqué" si prédiction trop optimiste (Vert).
+                <strong>Verdict :</strong> &quot;Détecté&quot; si risque ≥ Jaune (alerte lancée), &quot;Manqué&quot; si prédiction trop optimiste (Vert).
               </li>
             </ul>
           </div>

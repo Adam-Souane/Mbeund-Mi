@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTheme } from '../../theme/ThemeContext';
 import { useAuth } from '../../auth/AuthContext';
 import { useToast } from '../../shared/toast/ToastContext';
 import AutoriteShell from '../desktop/AutoriteShell';
 import client from '../../api/client';
-import { Users, Search, ChevronRight, X, AlertCircle, Inbox, Bell, Clock, TrendingUp, Eye } from 'lucide-react';
+import { Users, Search, X, AlertCircle, Inbox, Bell, Clock, Eye } from 'lucide-react';
 
 function AuthorityTrackingContent() {
   const { darkMode } = useTheme();
@@ -56,7 +57,6 @@ function AuthorityTrackingContent() {
     );
   }
 
-  const bgCard = darkMode ? 'bg-navy' : 'bg-white';
   const borderCard = darkMode ? 'border-navy-800' : 'border-navy-50';
   const bgTable = darkMode ? 'bg-navy-900' : 'bg-white';
   const hoverRow = darkMode ? 'hover:bg-navy-800/50' : 'hover:bg-navy-50/50';
@@ -226,19 +226,18 @@ function StatCard({ icon: Icon, title, value, suffix = '', color }) {
 
 function AuthorityDetailModal({ authority, onClose, darkMode }) {
   const [activeTab, setActiveTab] = useState('overview');
-  const [activities, setActivities] = useState([]);
-  const [activitiesLoading, setActivitiesLoading] = useState(false);
   const { showToast } = useToast();
 
-  useEffect(() => {
-    if (activeTab === 'activities') {
-      setActivitiesLoading(true);
-      client.get(`/users/authority-activities/${authority.id}/`)
-        .then(res => setActivities(res.data.activities || []))
-        .catch(err => showToast('Erreur lors du chargement des activités', 'error'))
-        .finally(() => setActivitiesLoading(false));
-    }
-  }, [activeTab, authority.id, showToast]);
+  // Chargées à la première ouverture de l'onglet « activités », puis gardées en cache.
+  const { data: activities = [], isLoading: activitiesLoading } = useQuery({
+    queryKey: ['authority-activities', authority.id],
+    queryFn: () =>
+      client.get(`/users/authority-activities/${authority.id}/`).then((res) => res.data.activities || []).catch((err) => {
+        showToast('Erreur lors du chargement des activités', 'error');
+        throw err;
+      }),
+    enabled: activeTab === 'activities',
+  });
 
   const bgModal = darkMode ? 'bg-navy-900' : 'bg-white';
   const borderModal = darkMode ? 'border-navy-800' : 'border-navy-50';

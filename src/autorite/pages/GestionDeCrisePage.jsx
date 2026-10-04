@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Send, CheckCircle2, ChevronLeft, ChevronRight, Plus, AlertTriangle, Droplet, CornerDownRight, Check, Phone, Clock, Save, X } from 'lucide-react';
+import { Send, CheckCircle2, ChevronLeft, ChevronRight, Plus, AlertTriangle, Droplet, CornerDownRight, Phone, Clock, Save } from 'lucide-react';
 import AutoriteShell from '../desktop/AutoriteShell';
 import RiskBadge from '../../shared/components/RiskBadge';
 import A11yStatusMessage from '../../shared/components/A11yStatusMessage';
@@ -350,7 +350,7 @@ function FilDeReflexe() {
               ID ou numéro citoyen
             </span>
             <span className="block text-xs text-navy-400 mb-1" id="citoyen-desc">
-              Entrez l'ID (ex: 123) ou le numéro de téléphone
+              Entrez l’ID (ex: 123) ou le numéro de téléphone
             </span>
             <input
               type="text"

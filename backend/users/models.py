@@ -109,7 +109,7 @@ class AuthorityActivity(models.Model):
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
         # Create profile with default role (citoyen)
-        profile = Profile.objects.create(user=instance)
+        Profile.objects.create(user=instance)
 
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):

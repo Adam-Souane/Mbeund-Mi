@@ -139,12 +139,13 @@ def test_create_signalement_computes_niveau_eau_estime(api_client):
 
 @pytest.mark.django_db
 def test_create_signalement_flags_doublon_on_identical_photo(api_client):
-    data = lambda photo: {
-        "localisation": "[-17.38, 14.75]",
-        "description": "Doublon potentiel",
-        "categorie": "inondation",
-        "photo": photo,
-    }
+    def data(photo):
+        return {
+            "localisation": "[-17.38, 14.75]",
+            "description": "Doublon potentiel",
+            "categorie": "inondation",
+            "photo": photo,
+        }
     first = api_client.post('/api/signalements/', data(generate_test_image(color='blue')), format='multipart')
     assert first.status_code == 201
     assert first.data['properties']['signalement_similaire'] is None
@@ -156,12 +157,13 @@ def test_create_signalement_flags_doublon_on_identical_photo(api_client):
 
 @pytest.mark.django_db
 def test_create_signalement_no_doublon_for_different_photo(api_client):
-    data = lambda photo: {
-        "localisation": "[-17.38, 14.75]",
-        "description": "Photo différente",
-        "categorie": "inondation",
-        "photo": photo,
-    }
+    def data(photo):
+        return {
+            "localisation": "[-17.38, 14.75]",
+            "description": "Photo différente",
+            "categorie": "inondation",
+            "photo": photo,
+        }
     first = api_client.post('/api/signalements/', data(generate_bicolor_image('blue', 'white')), format='multipart')
     assert first.status_code == 201
 

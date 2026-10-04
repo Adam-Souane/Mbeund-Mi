@@ -24,7 +24,7 @@ def test_zones_geojson_endpoint(auth_client):
         quartier="Medina",
         niveau_risque="vert"
     )
-    zone2 = ZoneRisque.objects.create(
+    ZoneRisque.objects.create(
         geom="POLYGON((1 1, 1 2, 2 2, 2 1, 1 1))",
         quartier="Pikine",
         niveau_risque="rouge"
@@ -58,12 +58,12 @@ def test_predictions_latest_per_zone(auth_client):
     now = timezone.now()
 
     # Predictions for Zone 1
-    p1_old = PredictionIA.objects.create(zone=zone1, probabilite=0.4, horizon_h=12, confiance=0.8, timestamp=now - timedelta(hours=5))
-    p1_latest = PredictionIA.objects.create(zone=zone1, probabilite=0.75, horizon_h=6, confiance=0.9, timestamp=now - timedelta(hours=1))
+    PredictionIA.objects.create(zone=zone1, probabilite=0.4, horizon_h=12, confiance=0.8, timestamp=now - timedelta(hours=5))
+    PredictionIA.objects.create(zone=zone1, probabilite=0.75, horizon_h=6, confiance=0.9, timestamp=now - timedelta(hours=1))
 
     # Predictions for Zone 2
-    p2_latest = PredictionIA.objects.create(zone=zone2, probabilite=0.9, horizon_h=3, confiance=0.95, timestamp=now - timedelta(minutes=10))
-    p2_old = PredictionIA.objects.create(zone=zone2, probabilite=0.6, horizon_h=12, confiance=0.85, timestamp=now - timedelta(hours=2))
+    PredictionIA.objects.create(zone=zone2, probabilite=0.9, horizon_h=3, confiance=0.95, timestamp=now - timedelta(minutes=10))
+    PredictionIA.objects.create(zone=zone2, probabilite=0.6, horizon_h=12, confiance=0.85, timestamp=now - timedelta(hours=2))
 
     # No predictions for Zone 3
 

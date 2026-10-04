@@ -48,7 +48,7 @@ def preparer_donnees():
     with open(os.path.join(data_dir, 'scaler.pkl'), 'wb') as f:
         pickle.dump(scaler, f)
         
-    print(f"Données préparées avec succès !")
+    print("Données préparées avec succès !")
     print(f"Shape X (séquences) : {X.shape}")
     print(f"Shape y (cibles) : {y.shape}")
     

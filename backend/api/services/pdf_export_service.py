@@ -7,12 +7,12 @@ import os
 from datetime import datetime
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import cm, mm
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image, PageBreak
-from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.units import cm
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
+from reportlab.lib.enums import TA_CENTER
 
-from alertes.models import Alerte, SignalementCitoyen, ZoneRisque
+from alertes.models import Alerte, SignalementCitoyen
 
 # Couleurs de la charte graphique Mbeund-Mi
 COLORS = {
@@ -85,14 +85,6 @@ class PDFExportService:
     def _generer_table_alertes(alertes):
         """Crée une table pour les alertes."""
         data = [['ID', 'Quartier', 'Niveau', 'Statut', 'Date', 'Message']]
-
-        # Couleurs de risque
-        level_colors = {
-            'vert': colors.HexColor('#3C9A5F'),
-            'jaune': colors.HexColor('#F59E0B'),
-            'orange': colors.HexColor('#E0792E'),
-            'rouge': colors.HexColor('#C0182A'),
-        }
 
         for alerte in alertes[:50]:  # Limiter à 50 pour lisibilité
             niveau = alerte.get_niveau_display()

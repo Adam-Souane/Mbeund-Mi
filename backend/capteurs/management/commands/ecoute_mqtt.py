@@ -144,7 +144,7 @@ class Command(BaseCommand):
 
         # Enregistrement en base de données
         try:
-            mesure = Mesure.objects.create(
+            Mesure.objects.create(
                 capteur=capteur,
                 valeur=valeur,
                 unite=unite,

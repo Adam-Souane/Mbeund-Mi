@@ -7,7 +7,7 @@ import re
 from typing import Optional, Tuple
 from django.utils import timezone
 from django.contrib.gis.geos import Point
-from alertes.models import SMSSignalement, SignalementCitoyen, ZoneRisque
+from alertes.models import SMSSignalement, SignalementCitoyen
 
 logger = logging.getLogger(__name__)
 

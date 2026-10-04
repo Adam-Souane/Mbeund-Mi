@@ -6,8 +6,6 @@ Charge le modèle entraîné et fournit des prédictions en temps réel
 import pickle
 import os
 import pandas as pd
-from django.conf import settings
-from django.core.cache import cache
 import logging
 
 logger = logging.getLogger(__name__)
@@ -43,7 +41,7 @@ class FloodRiskPredictor:
             with open(model_path, 'rb') as f:
                 self._model_data = pickle.load(f)
 
-            logger.info(f"Modèle Random Forest chargé avec succès")
+            logger.info("Modèle Random Forest chargé avec succès")
             return True
         except Exception as e:
             logger.error(f"Erreur lors du chargement du modèle: {e}")

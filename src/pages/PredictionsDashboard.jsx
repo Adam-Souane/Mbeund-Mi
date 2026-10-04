@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { useZones } from '../shared/hooks/useZones';
+import { usePrevisions } from '../shared/hooks/usePrevisions';
+import { useAlertesRecentes } from '../shared/hooks/useAlertes';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import './PredictionsDashboard.css';
 
 const COLORS = {
@@ -9,6 +11,8 @@ const COLORS = {
   rouge: '#dc3545'
 };
 
+const CINQ_MINUTES = 5 * 60 * 1000;
+
 const LEVEL_LABELS = {
   vert: '🟢 Vert - Risque Faible',
   jaune: '🟡 Jaune - Risque Moyen',
@@ -17,50 +21,18 @@ const LEVEL_LABELS = {
 };
 
 export default function PredictionsDashboard() {
-  const [zones, setZones] = useState([]);
-  const [weatherData, setWeatherData] = useState(null);
-  const [historicalData, setHistoricalData] = useState([]);
-  const [selectedZone, setSelectedZone] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [lastUpdate, setLastUpdate] = useState(null);
+  // Mêmes requêtes que le reste de l'espace autorité (client authentifié,
+  // cache React Query), rafraîchies toutes les 5 minutes.
+  const rafraichir = { refetchInterval: CINQ_MINUTES };
+  const zonesQuery = useZones(rafraichir);
+  const previsionsQuery = usePrevisions(rafraichir);
+  const alertesQuery = useAlertesRecentes({}, rafraichir);
 
-  // Récupérer les données toutes les 5 minutes
-  useEffect(() => {
-    fetchAllData();
-    const interval = setInterval(fetchAllData, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchAllData = async () => {
-    try {
-      setLoading(true);
-
-      // Récupérer zones
-      const zonesRes = await fetch('/api/zones-risque/');
-      const zonesData = await zonesRes.json();
-      setZones(zonesData);
-
-      // Récupérer météo
-      const weatherRes = await fetch('/api/previsions-meteo/');
-      const weatherDataResponse = await weatherRes.json();
-      if (weatherDataResponse.results) {
-        setWeatherData(weatherDataResponse.results[0]);
-      }
-
-      // Récupérer historique (derniers 7 jours)
-      const historicalRes = await fetch('/api/alertes/?limit=30');
-      const historicalDataResponse = await historicalRes.json();
-      if (historicalDataResponse.results) {
-        setHistoricalData(historicalDataResponse.results);
-      }
-
-      setLastUpdate(new Date());
-    } catch (error) {
-      if (import.meta.env.DEV) console.error('Erreur chargement données:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const zones = zonesQuery.data?.features?.map((f) => ({ id: f.id, ...f.properties })) ?? [];
+  const weatherData = previsionsQuery.data?.results?.[0] ?? null;
+  const historicalData = alertesQuery.data?.results ?? [];
+  const loading = zonesQuery.isLoading;
+  const lastUpdate = zonesQuery.dataUpdatedAt ? new Date(zonesQuery.dataUpdatedAt) : null;
 
   const getRiskStats = () => {
     const stats = {

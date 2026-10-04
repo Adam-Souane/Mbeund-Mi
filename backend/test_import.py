@@ -10,7 +10,7 @@ print(f'Path exists: {os.path.exists(mbeund_mi_ia_path)}')
 sys.path.insert(0, mbeund_mi_ia_path)
 
 try:
-    from ia.service_prediction import PredictionService
+    from ia.service_prediction import PredictionService  # noqa: F401  (script de diagnostic de l'import)
     print('SUCCESS: PredictionService imported')
 except Exception as e:
     print(f'ERROR: {type(e).__name__}: {e}')

@@ -1,28 +1,27 @@
-import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback } from 'react';
 import { obtainToken } from '../api/endpoints/auth';
 import { decodeJwt } from './jwt';
 import { getAccessToken, getRefreshToken, getUsername, setTokens, clearTokens } from './tokenStorage';
 
 const AuthContext = createContext(null);
 
-export function AuthProvider({ children }) {
-  const [accessToken, setAccessToken] = useState(null);
-  const [role, setRole] = useState(null);
-  const [username, setUsername] = useState(null);
-  const [isReady, setIsReady] = useState(false);
+// Reprend la session depuis localStorage si un token y est encore présent
+// (évite de renvoyer vers /login à chaque rechargement). Lu dès
+// l'initialisation de l'état, et non dans un effet : le premier rendu connaît
+// déjà la session, sans second rendu « déconnecté puis connecté ».
+function sessionEnregistree() {
+  const token = getAccessToken();
+  if (!token) return { accessToken: null, role: null, username: null };
+  return { accessToken: token, role: decodeJwt(token)?.role ?? null, username: getUsername() };
+}
 
-  // Au montage : reprend la session depuis localStorage si un token y est
-  // encore présent (évite de renvoyer vers /login à chaque rechargement).
-  useEffect(() => {
-    const token = getAccessToken();
-    if (token) {
-      const payload = decodeJwt(token);
-      setAccessToken(token);
-      setRole(payload?.role ?? null);
-      setUsername(getUsername());
-    }
-    setIsReady(true);
-  }, []);
+export function AuthProvider({ children }) {
+  const [session] = useState(sessionEnregistree);
+  const [accessToken, setAccessToken] = useState(session.accessToken);
+  const [role, setRole] = useState(session.role);
+  const [username, setUsername] = useState(session.username);
+  // La session est lue de façon synchrone : elle est prête dès le premier rendu.
+  const isReady = true;
 
   const login = useCallback(async ({ username, password }) => {
     const data = await obtainToken({ username, password });

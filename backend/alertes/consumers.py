@@ -85,7 +85,7 @@ class AlerteConsumer(AsyncWebsocketConsumer):
             access_token = AccessToken(token)
             user_id = access_token['user_id']
             return User.objects.get(id=user_id)
-        except:
+        except Exception:
             return None
 
     @database_sync_to_async
@@ -102,7 +102,7 @@ class AlerteConsumer(AsyncWebsocketConsumer):
             try:
                 zone = user.profilvulnerabilite.zone
                 return zone.id if zone else None
-            except:
+            except Exception:
                 pass
         return None
 

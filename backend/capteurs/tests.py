@@ -136,12 +136,12 @@ def test_mesures_recentes(auth_client):
     now = timezone.now()
     
     # Measurements in last 24h
-    m1 = Mesure.objects.create(capteur=cap1, valeur=10.0, unite="m", timestamp=now - timedelta(hours=2))
-    m2 = Mesure.objects.create(capteur=cap1, valeur=12.0, unite="m", timestamp=now - timedelta(hours=5))
-    m3 = Mesure.objects.create(capteur=cap2, valeur=30.0, unite="mm", timestamp=now - timedelta(hours=12))
+    Mesure.objects.create(capteur=cap1, valeur=10.0, unite="m", timestamp=now - timedelta(hours=2))
+    Mesure.objects.create(capteur=cap1, valeur=12.0, unite="m", timestamp=now - timedelta(hours=5))
+    Mesure.objects.create(capteur=cap2, valeur=30.0, unite="mm", timestamp=now - timedelta(hours=12))
     
     # Measurement older than 24h (should be ignored)
-    m_old = Mesure.objects.create(capteur=cap1, valeur=99.0, unite="m", timestamp=now - timedelta(hours=30))
+    Mesure.objects.create(capteur=cap1, valeur=99.0, unite="m", timestamp=now - timedelta(hours=30))
     
     response = auth_client.get('/api/mesures/recentes/')
     assert response.status_code == 200

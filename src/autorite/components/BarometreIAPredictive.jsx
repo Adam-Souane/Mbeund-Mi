@@ -1,4 +1,4 @@
-import { TrendingUp, AlertCircle, Save, Phone, Clock } from 'lucide-react';
+import { TrendingUp, AlertCircle } from 'lucide-react';
 
 /**
  * Baromètre IA prédictive pour estimer le risque d'inondation
@@ -89,7 +89,7 @@ export default function BarometreIAPredictive({ previsions }) {
         <h3 className="text-base font-bold">Baromètre IA prédictive</h3>
       </div>
       <p className="text-xs text-navy-600 dark:text-navy-200">
-        Prédiction intelligente du niveau de risque d'inondation basée sur la météo actuelle.
+        Prédiction intelligente du niveau de risque d’inondation basée sur la météo actuelle.
       </p>
 
       {/* Score principal */}

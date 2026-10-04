@@ -10,7 +10,7 @@ Usage:
 from django.core.management.base import BaseCommand
 from django.contrib.gis.geos import MultiPolygon, Polygon
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import timedelta
 import os
 from alertes.models import EpisodeInondation
 
@@ -99,7 +99,7 @@ class Command(BaseCommand):
             # More rain = larger affected area
             surface_ha = 30 + (pluie_mm / 2)
 
-            episode = EpisodeInondation.objects.create(
+            EpisodeInondation.objects.create(
                 date_debut=date_debut,
                 date_fin=date_fin,
                 surface_ha=round(surface_ha, 1),

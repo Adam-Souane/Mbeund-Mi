@@ -63,7 +63,6 @@ class PredictionService:
         """
         try:
             from django.utils import timezone
-            from django.db.models import F, Q
             from datetime import timedelta
             from capteurs.models import Mesure, Capteur
 
@@ -166,9 +165,6 @@ class PredictionService:
         if self.lstm_model and zone_id:
             historique_24j = self.recuperer_historique_24j(zone_id)
             if historique_24j and len(historique_24j) == 24:
-                # Ajouter la mesure actuelle comme le 25e jour pour extrapoler
-                historique_complet = historique_24j + [{"pluie_mm": pluie, "niveau_eau_cm": niveau_actuel}]
-
                 # Appeler LSTM pour les 3 prochains jours
                 pred_demain = self.predire_niveau_eau_lstm(historique_24j)
                 if pred_demain is not None:
@@ -203,9 +199,12 @@ class PredictionService:
             confiance = float(max(probabilites) * 100)
         else:
             # Fallback manuel si modèle non chargé
-            if niveau_actuel > 80: risque_code = 3
-            elif niveau_actuel > 50: risque_code = 2
-            elif niveau_actuel > 30: risque_code = 1
+            if niveau_actuel > 80:
+                risque_code = 3
+            elif niveau_actuel > 50:
+                risque_code = 2
+            elif niveau_actuel > 30:
+                risque_code = 1
         
         risque_final = self.risque_labels.get(risque_code, "vert")
         reco = generer_recommandation(zone_id, risque_final, round(niveau_actuel, 1), 12)

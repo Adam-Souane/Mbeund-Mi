@@ -1,0 +1,14 @@
+# Ruff : analyse du code Python (backend Django et modules IA).
+# Lancer depuis la racine : ruff check backend mbeund_mi_ia
+target-version = "py310"
+line-length = 120
+extend-exclude = ["env", "node_modules", "dist", "**/migrations"]
+
+[lint]
+# Règles par défaut (pyflakes + erreurs pycodestyle) ; le style de mise en
+# page n'est pas imposé.
+select = ["E4", "E7", "E9", "F"]
+
+[lint.per-file-ignores]
+# Les réglages Django s'empilent par `from .base import *`.
+"backend/mbeund_mi_backend/settings/*.py" = ["F403", "F405"]

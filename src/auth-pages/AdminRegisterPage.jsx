@@ -63,7 +63,7 @@ export default function AdminRegisterPage() {
 
     setLoading(true);
     try {
-      const response = await client.post('/users/admin-register/', {
+      await client.post('/users/admin-register/', {
         code: formData.code,
         email: formData.email,
         password: formData.password,
@@ -103,17 +103,18 @@ export default function AdminRegisterPage() {
           <div className={`flex items-start gap-3 p-4 rounded-lg mb-6 ${darkMode ? 'bg-red-900/20 border border-red-700' : 'bg-red-50 border border-red-200'}`}>
             <AlertCircle size={20} className="text-red-500 flex-shrink-0 mt-0.5" />
             <div className={`text-sm ${darkMode ? 'text-red-300' : 'text-red-700'}`}>
-              Accès réservé. Vous devez posséder un code d'invitation valide.
+              Accès réservé. Vous devez posséder un code d’invitation valide.
             </div>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className={`block text-sm font-medium ${darkMode ? 'text-navy-200' : 'text-navy-700'} mb-1`}>
-              Code d'invitation
+            <label htmlFor="admin-code" className={`block text-sm font-medium ${darkMode ? 'text-navy-200' : 'text-navy-700'} mb-1`}>
+              Code d’invitation
             </label>
             <input
+              id="admin-code"
               type="text"
               name="code"
               value={formData.code}
@@ -151,10 +152,11 @@ export default function AdminRegisterPage() {
           </div>
 
           <div>
-            <label className={`block text-sm font-medium ${darkMode ? 'text-navy-200' : 'text-navy-700'} mb-1`}>
+            <label htmlFor="admin-email" className={`block text-sm font-medium ${darkMode ? 'text-navy-200' : 'text-navy-700'} mb-1`}>
               Email <span className={`text-xs ${darkMode ? 'text-navy-400' : 'text-navy-500'}`}>(Requis)</span>
             </label>
             <input
+              id="admin-email"
               type="email"
               name="email"
               value={formData.email}

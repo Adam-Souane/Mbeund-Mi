@@ -19,7 +19,6 @@ def pytest_configure():
     django.setup()
 
     # Configure Celery for tests: execute tasks synchronously (eager mode)
-    from django.conf import settings
     settings.CELERY_TASK_ALWAYS_EAGER = True
     settings.CELERY_TASK_EAGER_PROPAGATES = True
 

@@ -1,4 +1,3 @@
-import pytest
 import sys
 import os
 
@@ -6,8 +5,8 @@ import os
 base_dir = os.path.dirname(os.path.dirname(__file__))
 sys.path.append(base_dir)
 
-from simulateur.capteurs import simuler_valeur
-from apis.service_meteo import analyser_previsions
+from simulateur.capteurs import simuler_valeur  # noqa: E402  (après l'ajout au sys.path)
+from apis.service_meteo import analyser_previsions  # noqa: E402
 
 def test_simulateur_bruit():
     valeur_base = 50.0

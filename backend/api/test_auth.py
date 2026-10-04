@@ -60,7 +60,7 @@ def test_jwt_obtain_pair_and_refresh(api_client, user_citoyen):
     assert 'access' in response.data
     assert 'refresh' in response.data
 
-    access_token = response.data['access']
+    assert 'access' in response.data
     refresh_token = response.data['refresh']
 
     # Refresh token

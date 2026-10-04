@@ -41,7 +41,7 @@ export default function AdminCapteursPage() {
           <div className={`text-center ${darkMode ? 'bg-navy' : 'bg-white'} p-12 rounded-xl border ${darkMode ? 'border-navy-800' : 'border-navy-50'}`}>
             <Lock size={48} className="mx-auto mb-4 text-red-500" />
             <h2 className="text-2xl font-bold text-navy dark:text-white mb-2">Accès réservé aux administrateurs</h2>
-            <p className="text-navy-600 dark:text-navy-300">Cette page n'est accessible que pour les administrateurs du système.</p>
+            <p className="text-navy-600 dark:text-navy-300">Cette page n’est accessible que pour les administrateurs du système.</p>
           </div>
         </div>
       </AutoriteShell>

@@ -1,5 +1,4 @@
 import paho.mqtt.client as mqtt
-import requests
 import json
 import logging
 import time

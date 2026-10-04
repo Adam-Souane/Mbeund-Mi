@@ -5,7 +5,6 @@ Améliore les prédictions Random Forest avec données météo en temps réel
 
 import requests
 import logging
-from datetime import datetime, timedelta
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)

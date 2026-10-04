@@ -1,7 +1,7 @@
 import logging
 import time
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 import sys
 import os
 from twilio.rest import Client
@@ -15,8 +15,6 @@ try:
     IA_AVAILABLE = True
 except ImportError:
     IA_AVAILABLE = False
-
-from datetime import timedelta
 
 # Configuration du logging (console + fichier alertes.log)
 logger = logging.getLogger('mbeund_mi_alerte')
@@ -57,7 +55,7 @@ def peut_envoyer_sms(zone_id, nouveau_niveau):
         
     return False
 
-from ia.config import (
+from ia.config import (  # noqa: E402
     TWILIO_ACCOUNT_SID,
     TWILIO_AUTH_TOKEN,
     TWILIO_MESSAGING_SERVICE_SID,

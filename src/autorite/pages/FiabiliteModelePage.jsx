@@ -1,5 +1,5 @@
 import { BarChart3, TrendingUp, CheckCircle, AlertCircle, Lock } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, BarChart, Bar, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, BarChart, Bar } from 'recharts';
 import AutoriteShell from '../desktop/AutoriteShell';
 import { useTheme } from '../../theme/ThemeContext';
 import { useAuth } from '../../auth/AuthContext';
@@ -25,7 +25,7 @@ export default function FiabiliteModelePage() {
           <div className={`text-center ${darkMode ? 'bg-navy' : 'bg-white'} p-12 rounded-xl border ${darkMode ? 'border-navy-800' : 'border-navy-50'}`}>
             <Lock size={48} className="mx-auto mb-4 text-red-500" />
             <h2 className="text-2xl font-bold text-navy dark:text-white mb-2">Accès réservé aux administrateurs</h2>
-            <p className="text-navy-600 dark:text-navy-300">Cette page n'est accessible que pour les administrateurs du système.</p>
+            <p className="text-navy-600 dark:text-navy-300">Cette page n’est accessible que pour les administrateurs du système.</p>
           </div>
         </div>
       </AutoriteShell>
@@ -203,13 +203,13 @@ export default function FiabiliteModelePage() {
             <h3 className="font-bold text-navy-900 dark:text-white mb-2">Interprétation</h3>
             <ul className={`text-sm space-y-2 ${textMuted}`}>
               <li>
-                <strong>Brier Score :</strong> Mesure l'écart moyen entre les probabilités prédites et les vrais labels. Une amélioration de {improvementPercent.toFixed(1)}% confirme que la calibration rend les probabilités plus fiables.
+                <strong>Brier Score :</strong> Mesure l’écart moyen entre les probabilités prédites et les vrais labels. Une amélioration de {improvementPercent.toFixed(1)}% confirme que la calibration rend les probabilités plus fiables.
               </li>
               <li>
                 <strong>Accuracy :</strong> Le modèle prédit correctement le niveau de risque dans {metriques.accuracy_apres_percent.toFixed(1)}% des cas (après calibration).
               </li>
               <li>
-                <strong>Courbe de calibration :</strong> Plus elle s'aligne avec la diagonale grise, plus les probabilités prédites correspondent à la réalité. Le modèle calibré est plus proche de l'idéal.
+                <strong>Courbe de calibration :</strong> Plus elle s’aligne avec la diagonale grise, plus les probabilités prédites correspondent à la réalité. Le modèle calibré est plus proche de l’idéal.
               </li>
               <li>
                 <strong>Matrice de confusion :</strong> Montre quels risques sont bien classés (diagonale) et lesquels sont confondus. Les valeurs élevées en diagonale indiquent une bonne classification.

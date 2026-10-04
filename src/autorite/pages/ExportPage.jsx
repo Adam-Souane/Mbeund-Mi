@@ -171,7 +171,7 @@ export default function ExportPage() {
           <Download size={20} className="text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
           <div>
             <h4 className="font-bold text-blue-900 dark:text-blue-200">
-              Astuces d'utilisation
+              Astuces d’utilisation
             </h4>
             <ul className="text-sm text-blue-800 dark:text-blue-300 mt-2 space-y-1">
               <li>• <strong>CSV :</strong> Format tabulaire, compatible Excel, Google Sheets, etc.</li>

@@ -30,7 +30,8 @@ const MORE_ITEMS = [
   { to: '/autorite/contact', label: 'Contact & urgence', icon: PhoneCall },
 ];
 
-function DropdownMenu({ label, icon: Icon, items, children }) {
+// État d'un menu déroulant, refermé par un clic en dehors de lui.
+function useMenuDeroulant() {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -43,6 +44,12 @@ function DropdownMenu({ label, icon: Icon, items, children }) {
     if (open) document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [open]);
+
+  return { open, setOpen, ref };
+}
+
+function DropdownMenu({ label, icon: Icon, items, children }) {
+  const { open, setOpen, ref } = useMenuDeroulant();
 
   return (
     <div ref={ref} className="relative">
@@ -81,18 +88,7 @@ function DropdownMenu({ label, icon: Icon, items, children }) {
 }
 
 function ProfileMenu({ isAdmin, logout }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    function handleClickOutside(e) {
-      if (ref.current && !ref.current.contains(e.target)) {
-        setOpen(false);
-      }
-    }
-    if (open) document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [open]);
+  const { open, setOpen, ref } = useMenuDeroulant();
 
   return (
     <div ref={ref} className="relative">

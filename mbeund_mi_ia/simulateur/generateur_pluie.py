@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
-import json
 
 def generer_donnees_pluie_anams(start_date="2026-04-01", nb_jours=214):
     """

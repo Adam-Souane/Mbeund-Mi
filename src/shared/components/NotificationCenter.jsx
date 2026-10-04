@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { X, Bell, AlertTriangle, MessageSquare, Smartphone, CheckCircle, AlertCircle } from 'lucide-react';
 import { useConnexionTempsReel } from '../../realtime/etatConnexion';
 import { useNotifications } from '../contexts/NotificationContext';
@@ -19,40 +19,18 @@ const NOTIFICATION_COLORS = {
 export default function NotificationCenter() {
   const isConnected = useConnexionTempsReel();
   const { notifications } = useNotifications();
-  const [visibleNotifications, setVisibleNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
+  // Numéro de la dernière notification vue (les numéros sont croissants) :
+  // le compteur se déduit de la liste, sans effet ni état à synchroniser.
+  const [derniereVue, setDerniereVue] = useState(0);
 
   // Les notifications incluent à la fois les WebSocket et les Toast (déjà fusionnées dans le contexte)
   const allNotifications = notifications;
-
-  // Ajouter les nouvelles notifications et les retirer après 10s
-  useEffect(() => {
-    if (allNotifications.length > 0) {
-      const latestNotif = allNotifications[0];
-
-      // Ajouter à la file d'affichage
-      setVisibleNotifications((prev) => [latestNotif, ...prev].slice(0, 5));
-      setUnreadCount((prev) => prev + 1);
-
-      // Retirer automatiquement après 10 secondes (sauf si sélectionné)
-      const timer = setTimeout(() => {
-        setVisibleNotifications((prev) => prev.filter((n) => n.id !== latestNotif.id));
-      }, 10000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [notifications]);
-
-  const handleClose = (id) => {
-    setVisibleNotifications((prev) => prev.filter((n) => n.id !== id));
-  };
+  const unreadCount = allNotifications.filter((n) => n.id > derniereVue).length;
 
   const handleOpenPanel = () => {
+    if (!isOpen) setDerniereVue(allNotifications[0]?.id ?? derniereVue);
     setIsOpen(!isOpen);
-    if (!isOpen) {
-      setUnreadCount(0);
-    }
   };
 
   const getNotificationIcon = (type) => {
@@ -63,40 +41,6 @@ export default function NotificationCenter() {
 
   return (
     <>
-      {/* Notifications pop-up (coin haut droit) */}
-      <div className="fixed top-4 right-4 z-[2000] space-y-2 pointer-events-none">
-        {visibleNotifications.map((notif) => {
-          const config = NOTIFICATION_COLORS[notif.type] || NOTIFICATION_COLORS.alerte;
-          return (
-            <div
-              key={notif.id}
-              className={`${config.bg} ${config.border} border rounded-lg p-3 shadow-lg pointer-events-auto flex gap-3 max-w-sm animate-slide-in-right`}
-            >
-              <div className="flex-shrink-0 pt-0.5">
-                {getNotificationIcon(notif.type)}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm text-gray-900 dark:text-gray-50">
-                  {notif.data?.titre || notif.type}
-                </p>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 line-clamp-2">
-                  {notif.data?.message || notif.data?.description}
-                </p>
-                <p className="text-[10px] text-gray-500 dark:text-gray-500 mt-1">
-                  {new Date(notif.timestamp).toLocaleTimeString()}
-                </p>
-              </div>
-              <button
-                onClick={() => handleClose(notif.id)}
-                className="flex-shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                <X size={16} />
-              </button>
-            </div>
-          );
-        })}
-      </div>
-
       {/* Badge de notification (header) */}
       <div className="relative">
         <button
@@ -144,7 +88,6 @@ export default function NotificationCenter() {
               ) : (
                 <div className="divide-y divide-gray-200 dark:divide-navy-700">
                   {allNotifications.slice(0, 10).map((notif) => {
-                    const config = NOTIFICATION_COLORS[notif.type] || NOTIFICATION_COLORS.alerte;
                     return (
                       <div key={notif.id} className="p-3 hover:bg-gray-50 dark:hover:bg-navy-800 cursor-pointer">
                         <div className="flex gap-2">

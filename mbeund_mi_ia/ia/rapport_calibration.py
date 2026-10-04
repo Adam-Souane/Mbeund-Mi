@@ -4,7 +4,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.calibration import calibration_curve
 from sklearn.metrics import log_loss, accuracy_score
-import sys
 
 def generer_rapport():
     base_dir = os.path.dirname(os.path.dirname(__file__))

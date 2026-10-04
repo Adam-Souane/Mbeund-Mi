@@ -1,7 +1,6 @@
 import json
 import os
 import sys
-import time
 from datetime import datetime, timedelta
 from celery import shared_task
 from celery.utils.log import get_task_logger
@@ -13,7 +12,7 @@ from alertes.models import ZoneRisque, Alerte, PredictionIA, EpisodeInondation, 
 from capteurs.models import Capteur, Mesure
 from api.services.sms_service import send_alert_sms
 from alertes.flood_risk_predictor import predict_zone_risk
-from alertes.weather_service import WeatherService, get_weather_features_for_prediction
+from alertes.weather_service import WeatherService
 
 logger = get_task_logger(__name__)
 
@@ -55,7 +54,6 @@ def _historique_journalier_zone(zone_id, jours=24):
     données (le modèle a besoin d'une séquence continue de 24 jours).
     """
     from django.db.models import Sum, Max
-    from django.db.models.functions import TruncDate
 
     capteurs_zone = Capteur.objects.filter(zone_id=zone_id)
     aujourdhui = timezone.now().date()
@@ -530,8 +528,6 @@ def mettre_a_jour_zones_depuis_gee(episode_inondation):
 
     Retourne la liste des zones affectées.
     """
-    from django.contrib.gis.geos import GEOSGeometry
-    from django.db.models import Q
 
     zones_affectees = []
 

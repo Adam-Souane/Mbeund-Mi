@@ -354,7 +354,10 @@ class ZoneRisqueGeoSerializer(HybridGeoFeatureModelSerializer):
     class Meta:
         model = ZoneRisque
         geo_field = 'geom'
-        fields = ('id', 'quartier', 'niveau_risque', 'description', 'score_risque_moyen', 'geom')
+        fields = (
+            'id', 'quartier', 'niveau_risque', 'description', 'score_risque_moyen',
+            'seuil_jaune', 'seuil_orange', 'seuil_rouge', 'geom',
+        )
 
 
 class PredictionIASerializer(serializers.ModelSerializer):

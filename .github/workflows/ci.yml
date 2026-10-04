@@ -1,0 +1,68 @@
+name: CI
+
+# Sur toutes les branches et toutes les pull requests. Aucun secret : les
+# tests tournent sur SQLite (USE_GIS=False) et aucun service externe
+# (Twilio, Orange, Groq, Gmail, base de production) n'est contacté.
+on:
+  push:
+  pull_request:
+
+jobs:
+  frontend:
+    name: Frontend (ESLint + build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - name: Build
+        run: npm run build
+        env:
+          VITE_API_URL: http://localhost:8000/api
+          VITE_WS_URL: ws://localhost:8000/ws/alertes/
+
+  python-lint:
+    name: Python (Ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install ruff==0.8.4
+      - run: ruff check backend mbeund_mi_ia
+
+  backend-tests:
+    name: Backend et IA (pytest)
+    runs-on: ubuntu-latest
+    env:
+      SECRET_KEY: cle-de-test-ci-sans-valeur
+      DEBUG: 'True'
+      USE_GIS: 'False'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          # Même version que la production (render.yaml)
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      # GEOS/GDAL : certains modules importent django.contrib.gis même sans PostGIS
+      - name: Dépendances système GDAL/GEOS
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y binutils libproj-dev gdal-bin libgdal-dev
+      - name: Dépendances Python
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+      - name: Tests backend
+        working-directory: backend
+        run: pytest -q
+      - name: Tests des modules IA
+        working-directory: mbeund_mi_ia
+        run: pytest -q tests

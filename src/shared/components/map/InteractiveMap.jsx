@@ -143,7 +143,7 @@ export default function InteractiveMap({ data = {}, height = 560, route }) {
             >
               <Popup>
                 <div className="text-xs space-y-1 min-w-[160px]">
-                  <div className="font-bold text-sm">Épisode d'inondation</div>
+                  <div className="font-bold text-sm">Épisode d’inondation</div>
                   <div>Début : {formatDate(f.properties.date_debut)}</div>
                   <div>Fin : {f.properties.date_fin ? formatDate(f.properties.date_fin) : 'En cours'}</div>
                   {f.properties.surface_ha != null && <div>Surface : {f.properties.surface_ha} ha</div>}

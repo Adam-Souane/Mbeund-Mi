@@ -18,7 +18,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mbeund_mi_backend.settings.dev'
 # is populated before importing code that may import ORM models.
 django_asgi_app = get_asgi_application()
 
-import alertes.routing
+import alertes.routing  # noqa: E402  (après get_asgi_application, qui charge les applications)
 
 application = ProtocolTypeRouter({
     "http": django_asgi_app,

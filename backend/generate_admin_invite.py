@@ -11,7 +11,7 @@ from django.utils import timezone
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mbeund_mi_backend.settings.dev')
 django.setup()
 
-from users.models import InviteCode
+from users.models import InviteCode  # noqa: E402  (après django.setup)
 
 # Générer un code qui expire dans 48 heures
 code = InviteCode.generate_code()
@@ -25,6 +25,6 @@ invite = InviteCode.objects.create(
 
 print("[OK] Code d'invitation genere avec succes !")
 print(f"Code: {code}")
-print(f"Expire dans 48 heures")
-print(f"\nURL d'inscription admin:")
+print("Expire dans 48 heures")
+print("\nURL d'inscription admin:")
 print(f"http://localhost:3000/admin-register?code={code}")

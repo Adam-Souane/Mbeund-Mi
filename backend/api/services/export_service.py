@@ -6,9 +6,7 @@ import csv
 import io
 import logging
 from datetime import datetime
-from decimal import Decimal
 
-from django.db.models import QuerySet
 from alertes.models import (
     Alerte, SignalementCitoyen, ZoneRisque, PredictionIA,
     EpisodeInondation, PointRefuge

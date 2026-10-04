@@ -3,7 +3,6 @@ import sys
 import pandas as pd
 from datetime import datetime, timedelta
 from django.conf import settings
-from django.contrib.gis.geos import GEOSGeometry
 from alertes.models import EpisodeInondation
 import logging
 

@@ -1,11 +1,15 @@
 import pytest
 from django.conf import settings
+import asyncio
+from channels.testing import WebsocketCommunicator
+from rest_framework_simplejwt.tokens import AccessToken
+from mbeund_mi_backend.asgi import application
 from datetime import timedelta
 from django.utils import timezone
 from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
-from alertes.models import ZoneRisque, Alerte, SegmentRue, PrevisionMeteo, HistoriqueRisque, PredictionIA
+from alertes.models import ZoneRisque, Alerte, SegmentRue, HistoriqueRisque, PredictionIA
 
 User = get_user_model()
 
@@ -76,8 +80,8 @@ def test_list_and_filter_alertes(auth_client, test_zone):
     )
     
     a1 = Alerte.objects.create(niveau="jaune", zone=test_zone, timestamp=timezone.now(), statut="en_attente")
-    a2 = Alerte.objects.create(niveau="rouge", zone=test_zone, timestamp=timezone.now(), statut="envoyee")
-    a3 = Alerte.objects.create(niveau="jaune", zone=zone2, timestamp=timezone.now(), statut="resolue")
+    Alerte.objects.create(niveau="rouge", zone=test_zone, timestamp=timezone.now(), statut="envoyee")
+    Alerte.objects.create(niveau="jaune", zone=zone2, timestamp=timezone.now(), statut="resolue")
 
     # List all (paginé : /api/alertes/ grossit en continu)
     response = auth_client.get('/api/alertes/')
@@ -176,11 +180,6 @@ def test_alerte_jaune_ne_declenche_pas_sms(test_zone):
     assert alerte.statut == "en_attente"
 
 
-import asyncio
-from channels.testing import WebsocketCommunicator
-from channels.db import database_sync_to_async
-from rest_framework_simplejwt.tokens import AccessToken
-from mbeund_mi_backend.asgi import application
 
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.skipif(
@@ -716,7 +715,8 @@ def test_historique_journalier_zone_incomplet_retourne_vide(test_zone):
 
 
 def test_predire_niveau_eau_lstm_rejette_historique_incomplet():
-    import sys, os
+    import sys
+    import os
     sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'mbeund_mi_ia'))
     from ia.service_prediction import PredictionService
 
@@ -726,7 +726,8 @@ def test_predire_niveau_eau_lstm_rejette_historique_incomplet():
 
 
 def test_predire_niveau_eau_lstm_valeur_coherente_avec_echelle_entrainement():
-    import sys, os
+    import sys
+    import os
     sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'mbeund_mi_ia'))
     from ia.service_prediction import PredictionService
 
