@@ -16,7 +16,7 @@ def send_otp_whatsapp(phone_number: str, otp_code: str) -> bool:
     phone_id = os.environ.get('WHATSAPP_PHONE_NUMBER_ID')
     access_token = os.environ.get('WHATSAPP_ACCESS_TOKEN')
 
-    # Format: +221779986828 → 221779986828 (WhatsApp format)
+    # Format: +221770000000 → 221770000000 (WhatsApp format)
     whatsapp_number = phone_number.lstrip('+') if phone_number.startswith('+') else phone_number
 
     if phone_id and access_token:

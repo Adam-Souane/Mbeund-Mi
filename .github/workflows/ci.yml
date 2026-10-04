@@ -41,7 +41,7 @@ jobs:
     name: Backend et IA (pytest)
     runs-on: ubuntu-latest
     env:
-      SECRET_KEY: cle-de-test-ci-sans-valeur
+      SECRET_KEY: cle-de-test-ci-sans-valeur-reelle-0123456789
       DEBUG: 'True'
       USE_GIS: 'False'
     steps:

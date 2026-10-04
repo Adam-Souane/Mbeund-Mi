@@ -77,7 +77,7 @@ django.setup()
 from api.services.sms_service import send_otp_whatsapp
 
 # Tester avec votre numéro
-result = send_otp_whatsapp("+221779986828", "123456")
+result = send_otp_whatsapp("+221770000000", "123456")
 print(f"✅ WhatsApp configuré!" if result else "❌ Erreur")
 EOF
 ```

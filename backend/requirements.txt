@@ -20,6 +20,10 @@ Pillow==12.3.0
 firebase-admin==6.5.0
 django-cors-headers==4.9.0
 requests==2.34.2
+# Dépendances indirectes épinglées pour leurs correctifs de sécurité :
+# PyJWT (jetons de connexion, via SimpleJWT) et urllib3 (via requests).
+PyJWT==2.15.1
+urllib3==2.8.0
 twilio==9.3.2
 drf-spectacular==0.30.0
 reportlab==4.2.4
