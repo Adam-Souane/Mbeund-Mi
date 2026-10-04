@@ -221,6 +221,12 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 
+# Mode synchrone (Option A) : exécute les tâches Celery (.delay()) directement
+# dans le processus Django sans exiger de worker Celery d'arrière-plan payant
+# (~7 $/mois sur Render). Garantit l'envoi immédiat des alertes et SMS.
+CELERY_TASK_ALWAYS_EAGER = env.bool('CELERY_TASK_ALWAYS_EAGER', default=True)
+CELERY_TASK_EAGER_PROPAGATES = env.bool('CELERY_TASK_EAGER_PROPAGATES', default=True)
+
 CELERY_BEAT_SCHEDULE = {
     'mettre-a-jour-previsions-meteo': {
         'task': 'alertes.tasks.mettre_a_jour_previsions_meteo',
