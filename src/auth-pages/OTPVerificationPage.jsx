@@ -8,7 +8,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { useAuth } from '../auth/AuthContext';
 import client from '../api/client';
 import { useToast } from '../shared/toast/ToastContext';
-import { BOUTON_PRINCIPAL, classeChamp, classeLienRenvoi, ton } from './styles';
+import { BOUTON_PRINCIPAL, CARTE, classeChamp, classeLienRenvoi, ton } from './styles';
 
 // Le serveur impose 60 s entre deux envois : le compte à rebours démarre
 // dès l'arrivée sur la page, puisque le premier code vient d'être envoyé.
@@ -76,8 +76,8 @@ export default function OTPVerificationPage() {
 
   if (!username) {
     return (
-      <AuthLayout variante="verification" className="p-4">
-        <div className="w-full max-w-md text-center">
+      <AuthLayout variante="verification" className="px-6 py-10">
+        <div className="w-full max-w-[480px] lg:max-w-[560px] text-center">
           <p className={`text-lg font-semibold ${ton(darkMode, 'text-navy-900', 'text-white')}`}>Erreur : données manquantes</p>
           <button onClick={() => navigate('/signup')} className="mt-4 text-navy-600 dark:text-navy-400 hover:underline">
             Retour à l’inscription
@@ -139,8 +139,8 @@ export default function OTPVerificationPage() {
   const peutChangerDeCanal = Boolean(etat.emailDisponible) && (autreCanal === 'email' || smsDisponible);
 
   return (
-    <AuthLayout variante="verification" className="p-4">
-      <div className="w-full max-w-md">
+    <AuthLayout variante="verification" className="px-6 py-10">
+      <div className="w-full max-w-[480px] lg:max-w-[560px]">
         <button
           onClick={() => navigate('/signup')}
           className={`flex items-center gap-2 mb-8 transition ${ton(darkMode, 'text-navy-600 hover:text-navy-900', 'text-navy-400 hover:text-navy-200')}`}
@@ -156,60 +156,62 @@ export default function OTPVerificationPage() {
           </h1>
         </div>
 
-        {reussi ? (
-          <VerificationReussie darkMode={darkMode} />
-        ) : (
-          <form onSubmit={handleSubmitOTP} className="space-y-4">
-            <CodeEnvoye darkMode={darkMode} canal={canal} destination={destination} />
+        <div className={CARTE}>
+          {reussi ? (
+            <VerificationReussie darkMode={darkMode} />
+          ) : (
+            <form onSubmit={handleSubmitOTP} className="space-y-4">
+              <CodeEnvoye darkMode={darkMode} canal={canal} destination={destination} />
 
-            <div>
-              <label htmlFor="otp-code" className={`block text-sm font-medium mb-2 ${ton(darkMode, 'text-navy-700', 'text-navy-200')}`}>
-                Code à 6 chiffres
-              </label>
-              <input
-                id="otp-code"
-                type="text"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                value={otp}
-                onChange={(e) => {
-                  setOtp(e.target.value.replace(/\D/g, '').slice(0, 6));
-                  setError('');
-                }}
-                placeholder="000000"
-                maxLength={6}
-                className={`${classeChamp(darkMode, Boolean(error))} py-3 text-center text-2xl tracking-widest font-mono`}
-              />
-              {error && <p className="text-xs text-red-500 mt-2" role="alert">{error}</p>}
-            </div>
+              <div>
+                <label htmlFor="otp-code" className={`block text-sm font-medium mb-2 ${ton(darkMode, 'text-navy-700', 'text-navy-200')}`}>
+                  Code à 6 chiffres
+                </label>
+                <input
+                  id="otp-code"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  value={otp}
+                  onChange={(e) => {
+                    setOtp(e.target.value.replace(/\D/g, '').slice(0, 6));
+                    setError('');
+                  }}
+                  placeholder="000000"
+                  maxLength={6}
+                  className={`${classeChamp(darkMode, Boolean(error))} py-3 text-center text-2xl tracking-widest font-mono`}
+                />
+                {error && <p className="text-xs text-red-500 mt-2" role="alert">{error}</p>}
+              </div>
 
-            <button type="submit" disabled={loading} className={BOUTON_PRINCIPAL}>
-              {loading ? 'Vérification...' : 'Vérifier le code'}
-            </button>
-
-            <div className="text-center pt-4 space-y-2">
-              <p className={`text-sm ${ton(darkMode, 'text-navy-600', 'text-navy-400')}`}>Vous n’avez pas reçu le code ?</p>
-              <button
-                type="button"
-                onClick={() => renvoyer(canal)}
-                disabled={enAttente || loading}
-                className={`block mx-auto text-sm font-semibold ${classeLienRenvoi(darkMode, enAttente)}`}
-              >
-                {enAttente ? `Renvoyer dans ${resendTimer} s` : 'Renvoyer le code'}
+              <button type="submit" disabled={loading} className={BOUTON_PRINCIPAL}>
+                {loading ? 'Vérification...' : 'Vérifier le code'}
               </button>
-              {peutChangerDeCanal && (
+
+              <div className="text-center pt-4 space-y-2">
+                <p className={`text-sm ${ton(darkMode, 'text-navy-600', 'text-navy-400')}`}>Vous n’avez pas reçu le code ?</p>
                 <button
                   type="button"
-                  onClick={() => renvoyer(autreCanal)}
+                  onClick={() => renvoyer(canal)}
                   disabled={enAttente || loading}
-                  className={`block mx-auto text-xs ${classeLienRenvoi(darkMode, enAttente)}`}
+                  className={`block mx-auto text-sm font-semibold ${classeLienRenvoi(darkMode, enAttente)}`}
                 >
-                  Recevoir plutôt le code {LIBELLE_CANAL[autreCanal]}
+                  {enAttente ? `Renvoyer dans ${resendTimer} s` : 'Renvoyer le code'}
                 </button>
-              )}
-            </div>
-          </form>
-        )}
+                {peutChangerDeCanal && (
+                  <button
+                    type="button"
+                    onClick={() => renvoyer(autreCanal)}
+                    disabled={enAttente || loading}
+                    className={`block mx-auto text-xs ${classeLienRenvoi(darkMode, enAttente)}`}
+                  >
+                    Recevoir plutôt le code {LIBELLE_CANAL[autreCanal]}
+                  </button>
+                )}
+              </div>
+            </form>
+          )}
+        </div>
       </div>
     </AuthLayout>
   );

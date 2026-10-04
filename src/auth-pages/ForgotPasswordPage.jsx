@@ -7,7 +7,7 @@ import useCanauxOtp from './useCanauxOtp';
 import { useTheme } from '../theme/ThemeContext';
 import client from '../api/client';
 import { useToast } from '../shared/toast/ToastContext';
-import { BOUTON_PRINCIPAL, classeChamp, classeEtiquette, classeLienRenvoi, classeOption, ton } from './styles';
+import { BOUTON_PRINCIPAL, CARTE, classeChamp, classeEtiquette, classeLienRenvoi, classeOption, ton } from './styles';
 
 const DELAI_RENVOI = 60;
 
@@ -107,7 +107,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <AuthLayout variante="motdepasse" className="px-6 py-10">
-      <div className="w-full max-w-[420px] lg:max-w-[460px]">
+      <div className="w-full max-w-[480px] lg:max-w-[560px]">
         <button
           onClick={() => (step === 2 ? setStep(1) : navigate('/login'))}
           className={`flex items-center gap-2 mb-5 text-sm font-semibold transition ${ton(darkMode, 'text-navy-600 hover:text-navy-900', 'text-navy-400 hover:text-navy-200')}`}
@@ -116,7 +116,7 @@ export default function ForgotPasswordPage() {
           Retour
         </button>
 
-        <div className="bg-white dark:bg-navy rounded-xl border border-navy-50 dark:border-navy-800 shadow-lg p-6 lg:p-8">
+        <div className={CARTE}>
         {/* Sur écran large, le logo figure déjà dans la bannière de gauche */}
         <div className="text-center mb-5">
           <Logo size="md" className="mb-3 lg:hidden" />

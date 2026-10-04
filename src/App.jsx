@@ -26,18 +26,19 @@ export default function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <ThemeProvider>
-            <NotificationProvider>
-              <ToastProvider>
-                <BrowserRouter>
+        {/* Le routeur englobe le thème : celui-ci dépend de la page affichée. */}
+        <BrowserRouter>
+          <AuthProvider>
+            <ThemeProvider>
+              <NotificationProvider>
+                <ToastProvider>
                   <RealtimeAlertes />
                   <AppRoutes />
-                </BrowserRouter>
-              </ToastProvider>
-            </NotificationProvider>
-          </ThemeProvider>
-        </AuthProvider>
+                </ToastProvider>
+              </NotificationProvider>
+            </ThemeProvider>
+          </AuthProvider>
+        </BrowserRouter>
       </QueryClientProvider>
     </ErrorBoundary>
   );

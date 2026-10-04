@@ -33,8 +33,15 @@ export function classeLienRenvoi(darkMode, enAttente) {
     : 'text-navy-600 dark:text-navy-400 hover:underline';
 }
 
+// Carte blanche qui regroupe le formulaire, la même sur toutes les pages
+// d'authentification (celles-ci restent toujours en mode clair).
+export const CARTE = 'bg-white rounded-xl border border-navy-50 shadow-lg p-7 lg:p-9';
+
+// Bouton principal, identique à « Se connecter ». La marge du haut l'écarte du
+// dernier champ comme sur la page de connexion (« ! » : elle doit l'emporter
+// sur l'espacement space-y des formulaires).
 export const BOUTON_PRINCIPAL =
-  'w-full bg-navy dark:bg-navy-800 text-white py-3 rounded-lg font-semibold hover:bg-navy-700 dark:hover:bg-navy-900 transition disabled:opacity-50';
+  'w-full !mt-6 lg:!mt-8 py-3 lg:py-3.5 rounded-md bg-navy text-white text-sm lg:text-base font-bold hover:bg-navy-700 transition disabled:opacity-60';
 
 // Vérification simple (sans expression régulière à retour arrière) :
 // une seule arobase, une partie locale, un domaine avec un point, aucun espace.

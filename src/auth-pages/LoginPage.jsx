@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import Logo from '../shared/components/Logo';
 import AuthLayout from './AuthLayout';
-import ThemeToggle from '../theme/ThemeToggle';
 import { useAuth } from '../auth/AuthContext';
 import { homeRouteForRole } from '../auth/RequireAuth';
 
@@ -70,9 +69,7 @@ export default function LoginPage() {
 
   return (
     <AuthLayout variante="connexion" className="px-6 py-12">
-      <ThemeToggle className="absolute top-7 right-8" />
-
-      <div className="w-full max-w-[420px] lg:max-w-[480px]">
+      <div className="w-full max-w-[480px] lg:max-w-[560px]">
         <div className="flex flex-col items-center mb-7 lg:mb-9">
           <Logo size="lg" className="lg:scale-125 lg:mb-2" withSlogan />
         </div>

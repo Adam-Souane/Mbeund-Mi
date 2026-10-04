@@ -7,7 +7,7 @@ import useCanauxOtp from './useCanauxOtp';
 import { useTheme } from '../theme/ThemeContext';
 import client from '../api/client';
 import { useToast } from '../shared/toast/ToastContext';
-import { BOUTON_PRINCIPAL, classeChamp, classeEtiquette, classeOption, emailValide, ton } from './styles';
+import { BOUTON_PRINCIPAL, CARTE, classeChamp, classeEtiquette, classeOption, emailValide, ton } from './styles';
 
 const CANAUX = [
   { value: 'telephone', label: 'SMS', Icon: MessageCircle },
@@ -161,104 +161,106 @@ export default function SignupPage() {
   };
 
   return (
-    <AuthLayout variante="inscription" className="p-4">
-      <div className="w-full max-w-md">
+    <AuthLayout variante="inscription" className="px-6 py-10">
+      <div className="w-full max-w-[480px] lg:max-w-[560px]">
         <div className="text-center mb-8">
           <Logo size="lg" />
           <p className={`text-sm mt-2 ${ton(darkMode, 'text-navy-600', 'text-navy-400')}`}>Créer un compte citoyen</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <input type="text" name="first_name" aria-label="Prénom" autoComplete="given-name" value={formData.first_name} onChange={handleChange} placeholder="Prénom" className={champ} />
-              {errors.first_name && <p className="text-xs text-red-500">{errors.first_name}</p>}
-            </div>
-            <div>
-              <input type="text" name="last_name" aria-label="Nom" autoComplete="family-name" value={formData.last_name} onChange={handleChange} placeholder="Nom" className={champ} />
-              {errors.last_name && <p className="text-xs text-red-500">{errors.last_name}</p>}
-            </div>
-          </div>
-
-          {usernameOptions.length > 0 && (
-            <fieldset className={encadre}>
-              <legend className={`flex items-center gap-2 px-1 text-xs font-medium ${ton(darkMode, 'text-navy-600', 'text-navy-400')}`}>
-                Choisissez votre identifiant
-                {loadingUsernames && <Loader2 size={12} className="animate-spin" aria-hidden="true" />}
-              </legend>
-              <div className="space-y-2">
-                {usernameOptions.map((option) => (
-                  <label key={option} className="flex items-center gap-2 cursor-pointer">
-                    <input type="radio" name="username" value={option} checked={formData.username === option} onChange={handleChange} className="accent-red" />
-                    <code className={`font-mono text-sm font-semibold ${classeIdentifiant(option)}`}>{option}</code>
-                  </label>
-                ))}
+        <div className={CARTE}>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <input type="text" name="first_name" aria-label="Prénom" autoComplete="given-name" value={formData.first_name} onChange={handleChange} placeholder="Prénom" className={champ} />
+                {errors.first_name && <p className="text-xs text-red-500">{errors.first_name}</p>}
               </div>
-            </fieldset>
-          )}
-          {errors.username && <p className="text-xs text-red-500">{errors.username}</p>}
+              <div>
+                <input type="text" name="last_name" aria-label="Nom" autoComplete="family-name" value={formData.last_name} onChange={handleChange} placeholder="Nom" className={champ} />
+                {errors.last_name && <p className="text-xs text-red-500">{errors.last_name}</p>}
+              </div>
+            </div>
 
-          <div>
-            <label htmlFor="signup-telephone" className={classeEtiquette(darkMode)}>
-              Téléphone <span className={`text-xs ${texteDiscret}`}>(obligatoire : vous y recevrez les alertes)</span>
-            </label>
-            <input id="signup-telephone" type="tel" name="telephone" autoComplete="tel" inputMode="tel" value={formData.telephone} onChange={handleChange} placeholder="77 123 45 67" className={champ} />
-            {errors.telephone && <p className="text-xs text-red-500">{errors.telephone}</p>}
-          </div>
-
-          <div>
-            <label htmlFor="signup-email" className={classeEtiquette(darkMode)}>
-              Email <span className={`text-xs ${texteDiscret}`}>{smsDisponible ? '(facultatif)' : '(obligatoire : vous y recevrez votre code)'}</span>
-            </label>
-            <input id="signup-email" type="email" name="email" autoComplete="email" value={formData.email} onChange={handleChange} placeholder="email@exemple.com" className={champ} />
-            {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
-          </div>
-
-          {!smsDisponible && errors.canal_otp && <p className="text-xs text-red-500">{errors.canal_otp}</p>}
-          {smsDisponible && (
-            <fieldset className={encadre}>
-              <legend className={`px-1 text-xs font-medium ${ton(darkMode, 'text-navy-600', 'text-navy-300')}`}>Recevoir mon code de vérification par</legend>
-              <div className="grid grid-cols-2 gap-2 mt-1">
-                {CANAUX.map(({ value, label, Icon }) => {
-                  const desactive = value === 'email' && !emailSaisi;
-                  return (
-                    <label key={value} className={classeOption(darkMode, canalEffectif === value, desactive)}>
-                      <input type="radio" name="canal_otp" value={value} checked={canalEffectif === value} disabled={desactive} onChange={() => setCanalOtp(value)} className="accent-red" />
-                      <Icon size={16} aria-hidden="true" />
-                      {label}
+            {usernameOptions.length > 0 && (
+              <fieldset className={encadre}>
+                <legend className={`flex items-center gap-2 px-1 text-xs font-medium ${ton(darkMode, 'text-navy-600', 'text-navy-400')}`}>
+                  Choisissez votre identifiant
+                  {loadingUsernames && <Loader2 size={12} className="animate-spin" aria-hidden="true" />}
+                </legend>
+                <div className="space-y-2">
+                  {usernameOptions.map((option) => (
+                    <label key={option} className="flex items-center gap-2 cursor-pointer">
+                      <input type="radio" name="username" value={option} checked={formData.username === option} onChange={handleChange} className="accent-red" />
+                      <code className={`font-mono text-sm font-semibold ${classeIdentifiant(option)}`}>{option}</code>
                     </label>
-                  );
-                })}
-              </div>
-              {!emailSaisi && <p className={`text-xs mt-2 ${texteDiscret}`}>Saisissez un email pour pouvoir recevoir le code par email.</p>}
-              {errors.canal_otp && <p className="text-xs text-red-500 mt-1">{errors.canal_otp}</p>}
-            </fieldset>
-          )}
+                  ))}
+                </div>
+              </fieldset>
+            )}
+            {errors.username && <p className="text-xs text-red-500">{errors.username}</p>}
 
-          <div className="relative">
-            <input type={showPassword ? 'text' : 'password'} name="password" aria-label="Mot de passe" autoComplete="new-password" value={formData.password} onChange={handleChange} placeholder="Mot de passe (min. 8 caractères)" className={`${champ} pr-10`} />
-            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-2.5" aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}>
-              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            <div>
+              <label htmlFor="signup-telephone" className={classeEtiquette(darkMode)}>
+                Téléphone <span className={`text-xs ${texteDiscret}`}>(obligatoire : vous y recevrez les alertes)</span>
+              </label>
+              <input id="signup-telephone" type="tel" name="telephone" autoComplete="tel" inputMode="tel" value={formData.telephone} onChange={handleChange} placeholder="77 123 45 67" className={champ} />
+              {errors.telephone && <p className="text-xs text-red-500">{errors.telephone}</p>}
+            </div>
+
+            <div>
+              <label htmlFor="signup-email" className={classeEtiquette(darkMode)}>
+                Email <span className={`text-xs ${texteDiscret}`}>{smsDisponible ? '(facultatif)' : '(obligatoire : vous y recevrez votre code)'}</span>
+              </label>
+              <input id="signup-email" type="email" name="email" autoComplete="email" value={formData.email} onChange={handleChange} placeholder="email@exemple.com" className={champ} />
+              {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
+            </div>
+
+            {!smsDisponible && errors.canal_otp && <p className="text-xs text-red-500">{errors.canal_otp}</p>}
+            {smsDisponible && (
+              <fieldset className={encadre}>
+                <legend className={`px-1 text-xs font-medium ${ton(darkMode, 'text-navy-600', 'text-navy-300')}`}>Recevoir mon code de vérification par</legend>
+                <div className="grid grid-cols-2 gap-2 mt-1">
+                  {CANAUX.map(({ value, label, Icon }) => {
+                    const desactive = value === 'email' && !emailSaisi;
+                    return (
+                      <label key={value} className={classeOption(darkMode, canalEffectif === value, desactive)}>
+                        <input type="radio" name="canal_otp" value={value} checked={canalEffectif === value} disabled={desactive} onChange={() => setCanalOtp(value)} className="accent-red" />
+                        <Icon size={16} aria-hidden="true" />
+                        {label}
+                      </label>
+                    );
+                  })}
+                </div>
+                {!emailSaisi && <p className={`text-xs mt-2 ${texteDiscret}`}>Saisissez un email pour pouvoir recevoir le code par email.</p>}
+                {errors.canal_otp && <p className="text-xs text-red-500 mt-1">{errors.canal_otp}</p>}
+              </fieldset>
+            )}
+
+            <div className="relative">
+              <input type={showPassword ? 'text' : 'password'} name="password" aria-label="Mot de passe" autoComplete="new-password" value={formData.password} onChange={handleChange} placeholder="Mot de passe (min. 8 caractères)" className={`${champ} pr-10`} />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-2.5" aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}>
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+            {errors.password && <p className="text-xs text-red-500">{errors.password}</p>}
+
+            <div className="relative">
+              <input type={showConfirm ? 'text' : 'password'} name="password_confirm" aria-label="Confirmer le mot de passe" autoComplete="new-password" value={formData.password_confirm} onChange={handleChange} placeholder="Confirmer le mot de passe" className={`${champ} pr-10`} />
+              <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-2.5" aria-label={showConfirm ? 'Masquer la confirmation' : 'Afficher la confirmation'}>
+                {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+            {errors.password_confirm && <p className="text-xs text-red-500">{errors.password_confirm}</p>}
+
+            <button type="submit" disabled={loading} className={BOUTON_PRINCIPAL}>
+              {loading ? 'Création...' : 'Créer un compte'}
             </button>
-          </div>
-          {errors.password && <p className="text-xs text-red-500">{errors.password}</p>}
+          </form>
 
-          <div className="relative">
-            <input type={showConfirm ? 'text' : 'password'} name="password_confirm" aria-label="Confirmer le mot de passe" autoComplete="new-password" value={formData.password_confirm} onChange={handleChange} placeholder="Confirmer le mot de passe" className={`${champ} pr-10`} />
-            <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-2.5" aria-label={showConfirm ? 'Masquer la confirmation' : 'Afficher la confirmation'}>
-              {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
-          </div>
-          {errors.password_confirm && <p className="text-xs text-red-500">{errors.password_confirm}</p>}
-
-          <button type="submit" disabled={loading} className={BOUTON_PRINCIPAL}>
-            {loading ? 'Création...' : 'Créer un compte'}
-          </button>
-        </form>
-
-        <p className={`text-center text-sm mt-6 ${ton(darkMode, 'text-navy-600', 'text-navy-400')}`}>
-          Vous avez déjà un compte ? <button onClick={() => navigate('/login')} className="font-semibold text-red hover:underline transition">Se connecter</button>
-        </p>
+          <p className={`text-center text-sm mt-6 ${ton(darkMode, 'text-navy-600', 'text-navy-400')}`}>
+            Vous avez déjà un compte ? <button onClick={() => navigate('/login')} className="font-semibold text-red hover:underline transition">Se connecter</button>
+          </p>
+        </div>
       </div>
     </AuthLayout>
   );
