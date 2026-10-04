@@ -11,6 +11,8 @@ services:
     # Render est derrière un proxy (vraie IP client, schéma https).
     startCommand: daphne --bind 0.0.0.0 --port $PORT --proxy-headers mbeund_mi_backend.asgi:application
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
       - key: DEBUG
         value: "False"
       - key: ENVIRONMENT
