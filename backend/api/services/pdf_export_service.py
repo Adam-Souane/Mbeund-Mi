@@ -28,17 +28,21 @@ COLORS = {
 class PDFExportService:
     """Service d'export PDF avec charte graphique et logo."""
 
-    # Chemin du logo relatif au settings.BASE_DIR
-    LOGO_PATH = 'dist/assets/logo-CNlNnHlF.jpg'
+    # Chemins candidats du logo (public ou assets sources) relatifs à BASE_DIR
+    LOGO_CANDIDATES = [
+        'public/logo-light.png',
+        'src/assets/logo-light.png',
+    ]
     PAGE_WIDTH, PAGE_HEIGHT = landscape(A4)
 
     @staticmethod
     def _get_logo_path():
-        """Récupère le chemin complet du logo."""
+        """Récupère le chemin complet du logo officiel s'il existe."""
         from django.conf import settings
-        logo_path = os.path.join(settings.BASE_DIR, '..', PDFExportService.LOGO_PATH)
-        if os.path.exists(logo_path):
-            return logo_path
+        for candidate in PDFExportService.LOGO_CANDIDATES:
+            logo_path = os.path.normpath(os.path.join(settings.BASE_DIR, '..', candidate))
+            if os.path.exists(logo_path):
+                return logo_path
         return None
 
     @staticmethod

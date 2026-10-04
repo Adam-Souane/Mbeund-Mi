@@ -330,3 +330,27 @@ def test_signalement_valider_action_non_boolean(api_client, user_autorite, signa
     response = api_client.patch(f'/api/signalements/{signalement_instance.id}/valider/', {'valide': 'oui'})
     assert response.status_code == 400
     assert 'valide' in response.data
+
+
+@pytest.mark.django_db
+def test_create_signalement_authentifie_associe_citoyen_et_mes_signalements(api_client, user_citoyen):
+    api_client.force_authenticate(user=user_citoyen)
+    data = {
+        "localisation": "[-17.38, 14.76]",
+        "description": "Signalement test par citoyen authentifié",
+        "categorie": "inondation",
+    }
+    response = api_client.post('/api/signalements/', data, format='multipart')
+    assert response.status_code == 201
+    sig_id = response.data['id']
+
+    # Vérifier que le modèle a bien l'utilisateur comme signale_par
+    sig = SignalementCitoyen.objects.get(id=sig_id)
+    assert sig.signale_par == user_citoyen
+
+    # Vérifier que l'endpoint mes-signalements retourne ce signalement pour le citoyen
+    mes_res = api_client.get('/api/mes-signalements/')
+    assert mes_res.status_code == 200
+    ids = [item['id'] for item in mes_res.data['results']]
+    assert sig_id in ids
+

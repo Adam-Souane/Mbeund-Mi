@@ -349,6 +349,10 @@ class SignalementCitoyenViewSet(viewsets.ModelViewSet):
             return [permissions.AllowAny()]
         return [IsAutoriteOrAdmin()]
 
+    def perform_create(self, serializer):
+        user = self.request.user if self.request.user.is_authenticated else None
+        serializer.save(signale_par=user)
+
     @action(detail=True, methods=['patch'], url_path='valider')
     def valider(self, request, pk=None):
         """

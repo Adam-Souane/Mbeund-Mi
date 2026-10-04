@@ -124,7 +124,6 @@ function AuthoritiesManager() {
       setAuthorities([...authorities, response.data]);
       setCreationResultModal(response.data);
       setFormData({ first_name: '', last_name: '', email: '', telephone: '', username: '' });
-      setUsernameOptions([]);
       showToast('Autorité créée avec succès !', 'success');
     } catch (error) {
       const errorData = error.response?.data || {};

@@ -40,6 +40,7 @@ export default function SignalerPageBody() {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['signalements'] });
+      queryClient.invalidateQueries({ queryKey: ['mes-signalements'] });
       setSubmitted(true);
     },
   });
