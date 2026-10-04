@@ -37,7 +37,7 @@ const CONTENUS = {
 };
 
 const ATOUTS = [
-  'Alertes par WhatsApp et SMS, même sans smartphone',
+  'Alertes par SMS, même sans smartphone',
   'Carte des risques et prévisions en temps réel',
   'Signalements des habitants vérifiés par les autorités',
 ];

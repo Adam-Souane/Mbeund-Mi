@@ -17,7 +17,7 @@ const TITRES = {
 };
 
 const CANAUX = [
-  { value: 'telephone', label: 'WhatsApp / SMS', Icon: MessageCircle },
+  { value: 'telephone', label: 'SMS', Icon: MessageCircle },
   { value: 'email', label: 'Email', Icon: Mail },
 ];
 
@@ -156,7 +156,7 @@ export default function ForgotPasswordPage() {
               </div>
               {canal === 'email' && (
                 <p className={`text-xs mt-2 ${ton(darkMode, 'text-navy-500', 'text-navy-400')}`}>
-                  L’email doit avoir été renseigné sur votre compte. Sinon, choisissez WhatsApp / SMS.
+                  L’email doit avoir été renseigné sur votre compte. Sinon, choisissez SMS.
                 </p>
               )}
             </fieldset>

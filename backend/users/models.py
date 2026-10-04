@@ -39,6 +39,12 @@ class Profile(models.Model):
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='citoyen')
     telephone = models.CharField(max_length=20, blank=True)
     is_verified = models.BooleanField(default=False, help_text="L'utilisateur a vérifié son identité via OTP")
+    # Vrai seulement pour les comptes créés par l'inscription publique depuis
+    # l'arrivée de l'OTP : les comptes existants restent connectables.
+    verification_requise = models.BooleanField(
+        default=False,
+        help_text="La connexion est refusée tant que le code OTP n'a pas été validé",
+    )
 
     class Meta:
         verbose_name = "Profil"

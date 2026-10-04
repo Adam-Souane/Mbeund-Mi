@@ -3,7 +3,7 @@ Codes à usage unique (OTP) : génération, stockage, vérification et envoi.
 
 Utilisé pour la vérification du compte à l'inscription et pour la
 réinitialisation du mot de passe. L'utilisateur choisit le canal :
-- « telephone » : WhatsApp, avec repli SMS (voir api/services/sms_service.py) ;
+- « telephone » : SMS via Twilio (api/services/sms_service.send_otp_sms) ;
 - « email » : email via le serveur SMTP configuré (Gmail en production).
 """
 import hmac
@@ -137,8 +137,8 @@ def envoyer_code(user, canal, code, motif):
     """Envoie le code sur le canal choisi. Renvoie True si l'envoi a été accepté."""
     if canal == CANAL_EMAIL:
         return _envoyer_email(user, code, motif)
-    from api.services.sms_service import send_otp_whatsapp
-    return bool(send_otp_whatsapp(user.profile.telephone, code))
+    from api.services.sms_service import send_otp_sms
+    return bool(send_otp_sms(user.profile.telephone, code))
 
 
 def _envoyer_email(user, code, motif):

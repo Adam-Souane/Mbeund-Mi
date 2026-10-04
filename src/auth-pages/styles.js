@@ -17,7 +17,7 @@ export function classeEtiquette(darkMode) {
   return `block text-sm font-medium mb-1 ${ton(darkMode, 'text-navy-700', 'text-navy-200')}`;
 }
 
-// Carte cliquable d'un choix exclusif (canal WhatsApp / SMS ou email).
+// Carte cliquable d'un choix exclusif (canal SMS ou email).
 export function classeOption(darkMode, actif, desactive = false) {
   const etat = actif
     ? 'border-navy bg-white dark:bg-navy-900 font-semibold'

@@ -63,33 +63,48 @@ def send_otp_whatsapp(phone_number: str, otp_code: str) -> bool:
     logger.info(f"[OTP WhatsApp SIMULATION] Destinataire: {phone_number}, Code: {otp_code}")
     return True
 
+def _masquer(numero: str) -> str:
+    """+221771234567 → +221*******67 (les journaux ne contiennent jamais le numéro complet)."""
+    numero = str(numero or '')
+    return numero[:4] + '*' * max(len(numero) - 6, 0) + numero[-2:] if len(numero) > 6 else '***'
+
+
 def send_otp_sms(phone_number: str, otp_code: str) -> bool:
     """
-    Envoie un code OTP par SMS pour l'authentification.
-    Utilise Twilio ou mode simulateur avec journalisation.
+    Envoie un code OTP par SMS via Twilio. Renvoie True seulement si Twilio a
+    accepté le message.
+
+    Sans identifiants Twilio, le code n'est affiché dans la console qu'en
+    développement (DEBUG) ; en production, la fonction renvoie False pour que
+    l'interface propose de renvoyer le code au lieu d'annoncer un envoi fictif.
+    En compte d'essai, Twilio n'accepte que les numéros vérifiés dans sa console.
     """
+    from django.conf import settings
+
     account_sid = os.environ.get('TWILIO_ACCOUNT_SID')
     auth_token = os.environ.get('TWILIO_AUTH_TOKEN')
-    from_number = os.environ.get('TWILIO_PHONE_NUMBER', '+1234567890')
+    from_number = os.environ.get('TWILIO_PHONE_NUMBER')
+    message = (
+        f"MBEUND MI : votre code de vérification est {otp_code}. "
+        "Valable 10 minutes. Ne le communiquez à personne."
+    )
 
-    formatted_message = f"[MBEUND-MI] Votre code OTP: {otp_code}. Valide 10 minutes."
-
-    if account_sid and auth_token:
-        try:
-            from twilio.rest import Client
-            client = Client(account_sid, auth_token)
-            msg = client.messages.create(
-                body=formatted_message,
-                from_=from_number,
-                to=phone_number
-            )
-            logger.info(f"[OTP SMS] Code OTP envoyé avec succès à {phone_number} (SID: {msg.sid})")
+    if not (account_sid and auth_token and from_number):
+        if settings.DEBUG:
+            logger.warning("[OTP SMS SIMULATION] %s : code %s", _masquer(phone_number), otp_code)
             return True
-        except Exception as e:
-            logger.warning(f"[OTP SMS] Échec d'envoi via Twilio ({e}). Passage en mode simulateur...")
+        logger.error("[OTP SMS] Twilio non configuré : code non envoyé à %s", _masquer(phone_number))
+        return False
 
-    logger.info(f"[OTP SMS SIMULATION] Destinataire: {phone_number}, Code: {otp_code}")
-    return True
+    try:
+        from twilio.rest import Client
+        msg = Client(account_sid, auth_token).messages.create(body=message, from_=from_number, to=phone_number)
+        logger.info("[OTP SMS] Code envoyé à %s (SID %s)", _masquer(phone_number), msg.sid)
+        return True
+    except Exception as e:
+        logger.error("[OTP SMS] Échec de l'envoi Twilio à %s : %s", _masquer(phone_number), e)
+        return False
+
 
 def send_alert_whatsapp(phone_number: str, message: str) -> bool:
     """

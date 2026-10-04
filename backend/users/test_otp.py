@@ -1,6 +1,6 @@
 """
 Tests de l'OTP (inscription, renvoi, mot de passe oublié) par téléphone ou email.
-Les emails partent dans django.core.mail.outbox ; l'envoi WhatsApp/SMS est intercepté.
+Les emails partent dans django.core.mail.outbox ; l'envoi SMS est intercepté.
 """
 import re
 
@@ -25,7 +25,7 @@ def cache_memoire(settings):
 def envois_telephone(monkeypatch):
     envois = []
     monkeypatch.setattr(
-        'api.services.sms_service.send_otp_whatsapp',
+        'api.services.sms_service.send_otp_sms',
         lambda numero, code: envois.append((numero, code)) or True,
     )
     return envois
@@ -234,3 +234,89 @@ def test_prenom_echappe_dans_l_email(envois_telephone):
     html = mail.outbox[0].alternatives[0][0]
     assert '<b>Awa</b>' not in html
     assert '&lt;b&gt;Awa&lt;/b&gt;' in html
+
+
+# --- Connexion des comptes non vérifiés -------------------------------------
+
+def connecter(client, username='awadiop', password='motdepasse123'):
+    return client.post('/api/token/', {'username': username, 'password': password}, format='json')
+
+
+@pytest.mark.django_db
+def test_connexion_refusee_tant_que_le_nouveau_compte_n_est_pas_verifie(envois_telephone):
+    client = APIClient()
+    inscrire(client)
+    reponse = connecter(client)
+    assert reponse.status_code == 403
+    assert reponse.data['code'] == 'compte_non_verifie'
+    assert reponse.data['username'] == 'awadiop'
+    assert 'access' not in reponse.data
+    # Le code d'inscription vient de partir : pas de second SMS immédiat
+    assert reponse.data['otp']['envoye'] is False
+    assert len(envois_telephone) == 1
+
+
+@pytest.mark.django_db
+def test_connexion_bloquee_renvoie_un_code_apres_le_delai(envois_telephone):
+    from django.core.cache import cache
+    client = APIClient()
+    inscrire(client)
+    cache.clear()   # délai de renvoi écoulé
+    reponse = connecter(client)
+    assert reponse.status_code == 403
+    assert reponse.data['otp']['envoye'] is True
+    _, code = envois_telephone[-1]
+    assert client.post('/api/users/verify-otp/', {'username': 'awadiop', 'otp': code}, format='json').status_code == 200
+    assert 'access' in connecter(client).data
+
+
+@pytest.mark.django_db
+def test_mauvais_mot_de_passe_ne_revele_pas_la_verification(envois_telephone):
+    client = APIClient()
+    inscrire(client)
+    reponse = connecter(client, password='mauvais-mot-de-passe')
+    assert reponse.status_code == 401
+    assert 'otp' not in reponse.data
+
+
+@pytest.mark.django_db
+def test_comptes_existants_non_bloques():
+    User.objects.create_user(username='ancien', password='motdepasse123')
+    assert 'access' in connecter(APIClient(), 'ancien').data
+
+
+# --- Envoi SMS ----------------------------------------------------------------
+
+def test_sms_sans_twilio_echoue_en_production(monkeypatch, settings):
+    from api.services import sms_service
+    monkeypatch.delenv('TWILIO_ACCOUNT_SID', raising=False)
+    settings.DEBUG = False
+    assert sms_service.send_otp_sms('+221771234567', '123456') is False
+    settings.DEBUG = True
+    assert sms_service.send_otp_sms('+221771234567', '123456') is True
+
+
+def test_sms_echec_twilio_signale(monkeypatch, settings):
+    from api.services import sms_service
+
+    class ClientEnPanne:
+        def __init__(self, *args):
+            raise RuntimeError('numéro non vérifié')
+
+    monkeypatch.setenv('TWILIO_ACCOUNT_SID', 'AC-test')
+    monkeypatch.setenv('TWILIO_AUTH_TOKEN', 'jeton-test')
+    monkeypatch.setenv('TWILIO_PHONE_NUMBER', '+15550000000')
+    monkeypatch.setattr('twilio.rest.Client', ClientEnPanne)
+    settings.DEBUG = True
+    assert sms_service.send_otp_sms('+221771234567', '123456') is False
+
+
+@pytest.mark.django_db
+def test_routes_publiques_ignorent_un_jeton_perime(envois_telephone):
+    # Un ancien jeton resté dans le navigateur ne doit pas bloquer la vérification.
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION='Bearer jeton.perime.invalide')
+    inscrire(client)
+    _, code = envois_telephone[-1]
+    reponse = client.post('/api/users/verify-otp/', {'username': 'awadiop', 'otp': code}, format='json')
+    assert reponse.status_code == 200

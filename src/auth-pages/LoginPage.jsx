@@ -47,7 +47,21 @@ export default function LoginPage() {
       }
 
       navigate(from || homeRouteForRole(actualRole), { replace: true });
-    } catch {
+    } catch (err) {
+      const refus = err.response?.data;
+      if (refus?.code === 'compte_non_verifie') {
+        // Nouveau compte dont l'OTP n'a pas été validé : on termine la vérification.
+        navigate('/otp-verify', {
+          state: {
+            username: refus.username,
+            password,
+            canal: refus.otp?.canal,
+            destination: refus.otp?.destination,
+            emailDisponible: refus.otp?.email_disponible,
+          },
+        });
+        return;
+      }
       setError('Identifiant ou mot de passe incorrect.');
     } finally {
       setIsSubmitting(false);

@@ -13,7 +13,7 @@ import { BOUTON_PRINCIPAL, classeChamp, classeLienRenvoi, ton } from './styles';
 // dès l'arrivée sur la page, puisque le premier code vient d'être envoyé.
 const DELAI_RENVOI = 60;
 
-const LIBELLE_CANAL = { telephone: 'par WhatsApp ou SMS', email: 'par email' };
+const LIBELLE_CANAL = { telephone: 'par SMS', email: 'par email' };
 
 function CodeEnvoye({ darkMode, canal, destination }) {
   return (

@@ -4,7 +4,7 @@ from io import BytesIO
 from PIL import Image, UnidentifiedImageError
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.conf import settings
-from rest_framework import serializers
+from rest_framework import exceptions, serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from drf_spectacular.utils import extend_schema_field
 from capteurs.models import Capteur, Mesure
@@ -29,6 +29,43 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         profile = getattr(user, 'profile', None)
         token['role'] = profile.role if profile else 'citoyen'
         return token
+
+    def validate(self, attrs):
+        # Le mot de passe est vérifié d'abord : un refus pour compte non vérifié
+        # ne révèle donc rien à qui ne connaît pas les identifiants.
+        data = super().validate(attrs)
+        profile = getattr(self.user, 'profile', None)
+        if profile and profile.verification_requise and not profile.is_verified:
+            raise CompteNonVerifie(self.user)
+        return data
+
+
+class CompteNonVerifie(exceptions.APIException):
+    """Connexion refusée à un nouveau compte dont l'OTP n'a pas été validé ;
+    un nouveau code est envoyé (si le délai de renvoi est écoulé)."""
+    status_code = 403
+    default_code = 'compte_non_verifie'
+
+    def __init__(self, user):
+        from users import otp
+        canal = otp.dernier_canal(otp.MOTIF_INSCRIPTION, user) or otp.CANAL_TELEPHONE
+        envoye = False
+        if not otp.renvoi_trop_rapide(otp.MOTIF_INSCRIPTION, user):
+            code = otp.creer_code(otp.MOTIF_INSCRIPTION, user, canal)
+            envoye = otp.envoyer_code(user, canal, code, otp.MOTIF_INSCRIPTION)
+        super().__init__()
+        # Assigné directement : APIException convertirait les booléens en texte.
+        self.detail = {
+            'detail': "Votre compte n'est pas encore vérifié. Saisissez le code reçu pour l'activer.",
+            'code': 'compte_non_verifie',
+            'username': user.username,
+            'otp': {
+                'canal': canal,
+                'destination': otp.destination(user, canal),
+                'envoye': envoye,
+                'email_disponible': bool(user.email),
+            },
+        }
 
 def wkt_to_geojson(wkt_str):
     if not isinstance(wkt_str, str):

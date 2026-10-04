@@ -63,7 +63,7 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
-    @action(detail=False, methods=['get'], permission_classes=[AllowAny], url_path='check-username')
+    @action(detail=False, methods=['get'], permission_classes=[AllowAny], authentication_classes=[], url_path='check-username')
     def check_username(self, request):
         """
         GET /api/users/check-username/?first_name=...&last_name=...
@@ -82,7 +82,7 @@ class UserViewSet(viewsets.ModelViewSet):
             'recommended': options[0] if options else None,
         })
 
-    @action(detail=False, methods=['post'], permission_classes=[AllowAny], url_path='register')
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny], authentication_classes=[], url_path='register')
     def register(self, request):
         """
         POST /api/users/register/
@@ -156,6 +156,7 @@ class UserViewSet(viewsets.ModelViewSet):
                 profile = user.profile
                 profile.role = 'citoyen'
                 profile.telephone = telephone
+                profile.verification_requise = True
                 profile.save()
         except Exception:
             logger.exception("Échec de la création du compte %s", username)
@@ -180,7 +181,7 @@ class UserViewSet(viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED,
         )
 
-    @action(detail=False, methods=['post'], permission_classes=[AllowAny], url_path='admin-register')
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny], authentication_classes=[], url_path='admin-register')
     def admin_register(self, request):
         """
         POST /api/users/admin-register/
@@ -268,7 +269,7 @@ class UserViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=False, methods=['post'], permission_classes=[AllowAny], url_path='password-reset')
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny], authentication_classes=[], url_path='password-reset')
     def password_reset(self, request):
         """
         POST /api/users/password-reset/
@@ -299,13 +300,13 @@ class UserViewSet(viewsets.ModelViewSet):
             code = otp.creer_code(otp.MOTIF_REINITIALISATION, user, canal)
             otp.envoyer_code(user, canal, code, otp.MOTIF_REINITIALISATION)
 
-        support = 'par email' if canal == otp.CANAL_EMAIL else 'par WhatsApp ou SMS'
+        support = 'par email' if canal == otp.CANAL_EMAIL else 'par SMS'
         return Response(
             {'detail': f'Si un compte correspond, un code vient de vous être envoyé {support}.', 'canal': canal},
             status=status.HTTP_200_OK,
         )
 
-    @action(detail=False, methods=['post'], permission_classes=[AllowAny], url_path='confirm-password-reset')
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny], authentication_classes=[], url_path='confirm-password-reset')
     def confirm_password_reset(self, request):
         """
         POST /api/users/confirm-password-reset/
@@ -551,7 +552,7 @@ class UserViewSet(viewsets.ModelViewSet):
         """Génère un code OTP de 6 chiffres (module secrets)."""
         return otp.generer_code()
 
-    @action(detail=False, methods=['post'], permission_classes=[AllowAny], url_path='verify-otp')
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny], authentication_classes=[], url_path='verify-otp')
     def verify_otp(self, request):
         """
         POST /api/users/verify-otp/
@@ -588,7 +589,7 @@ class UserViewSet(viewsets.ModelViewSet):
             status=status.HTTP_200_OK,
         )
 
-    @action(detail=False, methods=['post'], permission_classes=[AllowAny], url_path='resend-otp')
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny], authentication_classes=[], url_path='resend-otp')
     def resend_otp(self, request):
         """
         POST /api/users/resend-otp/
@@ -619,7 +620,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
         code = otp.creer_code(otp.MOTIF_INSCRIPTION, user, canal)
         envoye = otp.envoyer_code(user, canal, code, otp.MOTIF_INSCRIPTION)
-        support = 'par email' if canal == otp.CANAL_EMAIL else 'par WhatsApp ou SMS'
+        support = 'par email' if canal == otp.CANAL_EMAIL else 'par SMS'
         return Response(
             {
                 'detail': f'Nouveau code envoyé {support}' if envoye else "L'envoi a échoué, réessayez dans une minute",

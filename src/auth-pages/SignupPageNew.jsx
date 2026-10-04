@@ -9,7 +9,7 @@ import { useToast } from '../shared/toast/ToastContext';
 import { BOUTON_PRINCIPAL, classeChamp, classeEtiquette, classeOption, emailValide, ton } from './styles';
 
 const CANAUX = [
-  { value: 'telephone', label: 'WhatsApp / SMS', Icon: MessageCircle },
+  { value: 'telephone', label: 'SMS', Icon: MessageCircle },
   { value: 'email', label: 'Email', Icon: Mail },
 ];
 
