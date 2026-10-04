@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react';
 import Logo from '../shared/components/Logo';
+import AuthLayout from './AuthLayout';
 import { useTheme } from '../theme/ThemeContext';
 import client from '../api/client';
 import { useToast } from '../shared/toast/ToastContext';
@@ -89,7 +90,7 @@ export default function AdminRegisterPage() {
   };
 
   return (
-    <div className={`min-h-screen flex flex-col items-center justify-center ${darkMode ? 'bg-navy-950' : 'bg-navy-50'} p-4`}>
+    <AuthLayout variante="administration" className="p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Logo size="lg" />
@@ -223,6 +224,6 @@ export default function AdminRegisterPage() {
           </button>
         </form>
       </div>
-    </div>
+    </AuthLayout>
   );
 }

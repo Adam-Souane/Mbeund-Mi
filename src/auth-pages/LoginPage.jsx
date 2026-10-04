@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import Logo from '../shared/components/Logo';
+import AuthLayout from './AuthLayout';
 import ThemeToggle from '../theme/ThemeToggle';
 import { useAuth } from '../auth/AuthContext';
 import { homeRouteForRole } from '../auth/RequireAuth';
@@ -54,7 +55,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-6 py-12 bg-navy-50 dark:bg-navy-950 relative">
+    <AuthLayout variante="connexion" className="px-6 py-12">
       <ThemeToggle className="absolute top-7 right-8" />
 
       <div className="w-full max-w-[420px] lg:max-w-[480px]">
@@ -157,6 +158,6 @@ export default function LoginPage() {
           MBEUND MI - Thiaroye-sur-Mer
         </p>
       </div>
-    </div>
+    </AuthLayout>
   );
 }

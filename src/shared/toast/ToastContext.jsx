@@ -7,6 +7,8 @@ const ToastContext = createContext(null);
 
 let nextId = 1;
 
+const NIVEAU_PAR_TYPE = { success: 'vert', info: 'jaune', warning: 'orange', error: 'rouge' };
+
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
   const { addNotification } = useNotifications();
@@ -16,7 +18,13 @@ export function ToastProvider({ children }) {
   }, []);
 
   const showToast = useCallback(
-    (toast) => {
+    (entree, type) => {
+      // Deux formats acceptés : showToast({ title, message, niveau }) et
+      // showToast('Texte', 'success' | 'error' | 'warning' | 'info'). Avant,
+      // le second format affichait une notification vide.
+      const toast = typeof entree === 'string'
+        ? { title: entree, niveau: NIVEAU_PAR_TYPE[type] ?? 'vert' }
+        : entree;
       const id = nextId++;
       const toastData = { id, ...toast };
       setToasts((list) => [...list, toastData]);
