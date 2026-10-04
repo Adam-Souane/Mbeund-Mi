@@ -59,7 +59,11 @@ def generate_username_options(first_name, last_name, max_options=3):
   return options
 
 
-class UserViewSet(viewsets.ModelViewSet):
+class UserViewSet(viewsets.GenericViewSet):
+    # GenericViewSet et non ModelViewSet : seules les actions nommées ci-dessous
+    # existent. Les routes génériques (liste, détail, modification,
+    # suppression) laissaient tout utilisateur connecté lister tous les
+    # comptes et en supprimer n'importe lequel.
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
@@ -269,8 +273,9 @@ class UserViewSet(viewsets.ModelViewSet):
                 },
                 status=status.HTTP_201_CREATED,
             )
-        except Exception as e:
-            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception:
+            logger.exception("Échec de la création du compte administrateur")
+            return Response({'detail': 'Impossible de créer le compte. Réessayez.'}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['post'], permission_classes=[AllowAny], authentication_classes=[], url_path='password-reset')
     def password_reset(self, request):
@@ -433,8 +438,9 @@ class UserViewSet(viewsets.ModelViewSet):
                 },
                 status=status.HTTP_201_CREATED,
             )
-        except Exception as e:
-            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception:
+            logger.exception("Échec de la création du compte autorité %s", username)
+            return Response({'detail': 'Impossible de créer le compte. Réessayez.'}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated], url_path='list-authorities')
     def list_authorities(self, request):
@@ -486,7 +492,9 @@ class UserViewSet(viewsets.ModelViewSet):
             )
 
         try:
-            user = User.objects.get(username=username)
+            # Seulement les comptes autorité, comme pour la suppression : sinon
+            # un administrateur pourrait prendre la main sur n'importe quel compte.
+            user = User.objects.get(username=username, profile__role='autorite')
 
             # Générer un nouveau mot de passe
             new_password = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(12))

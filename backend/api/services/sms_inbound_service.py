@@ -145,14 +145,17 @@ class SMSInboundService:
         """
         Crée un SignalementCitoyen à partir des données du SMS.
         Le citoyen n'est pas connecté donc signale_par reste null.
+        Les signalements sont lisibles par tous les utilisateurs connectés : le
+        numéro y est masqué (il reste complet dans SMSSignalement).
         """
+        from users.otp import masquer_telephone
         # Si pas de localisation, utiliser le centre de Thiaroye
         if lat is None or lon is None:
             lat, lon = THIAROYE_CENTER
 
         signalement = SignalementCitoyen.objects.create(
             localisation=f"POINT({lon} {lat})",
-            description=f"[SMS de {phone_number}] {message_text}",
+            description=f"[SMS de {masquer_telephone(phone_number)}] {message_text}",
             categorie='inondation',
             valide=False,  # Nécessite validation par autorité
             signale_par=None,  # Citoyen non connecté

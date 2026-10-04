@@ -146,20 +146,18 @@ class ChatView(APIView):
                     niveau_risque=niveau_risque,
                 )
                 return Response({"reply": reply})
-            except Exception as e:
-                print(f"[ChatView] Erreur chatbot service: {e}")
-                import traceback
-                traceback.print_exc()
+            except Exception:
+                # Le détail (qui peut mentionner la clé ou le fournisseur) reste
+                # dans les journaux, pas dans la réponse.
+                logger.exception("[ChatView] Échec du service chatbot")
                 return Response(
-                    {"error": f"Erreur du service chatbot: {str(e)}"},
+                    {"error": "NDAM est momentanément indisponible. Réessayez dans un instant."},
                     status=500
                 )
-        except Exception as e:
-            print(f"[ChatView] Erreur générale: {e}")
-            import traceback
-            traceback.print_exc()
+        except Exception:
+            logger.exception("[ChatView] Erreur lors de la préparation du contexte")
             return Response(
-                {"error": f"Erreur générale: {str(e)}"},
+                {"error": "NDAM est momentanément indisponible. Réessayez dans un instant."},
                 status=500
             )
 
@@ -305,8 +303,9 @@ class PredictionIAViewSet(viewsets.ReadOnlyModelViewSet):
             service = ModelReliabilityService()
             rapport = service.generer_rapport()
             return Response(rapport)
-        except Exception as e:
-            return Response({"erreur": str(e)}, status=500)
+        except Exception:
+            logger.exception("Échec du calcul de fiabilité du modèle")
+            return Response({"erreur": "Le calcul de fiabilité a échoué."}, status=500)
 
 
 class EpisodeInondationViewSet(viewsets.ReadOnlyModelViewSet):
@@ -335,8 +334,9 @@ class EpisodeInondationViewSet(viewsets.ReadOnlyModelViewSet):
             service = BacktestingService()
             resultat = service.executer_backtesting(include_synthetic=include_synthetic)
             return Response(resultat)
-        except Exception as e:
-            return Response({"erreur": str(e)}, status=500)
+        except Exception:
+            logger.exception("Échec du backtesting")
+            return Response({"erreur": "Le backtesting a échoué."}, status=500)
 
 
 class SignalementCitoyenViewSet(viewsets.ModelViewSet):
@@ -709,18 +709,14 @@ class ExportCSVView(APIView):
                     status=400
                 )
 
-            # Retourner le fichier CSV
-            response = Response(bytes_io.getvalue())
-            response['Content-Type'] = 'text/csv; charset=utf-8'
-            response['Content-Disposition'] = f'attachment; filename="{filename}"'
-            return response
+            # FileResponse et non Response : DRF aurait rendu les octets du
+            # fichier en JSON (le téléchargement contenait une erreur).
+            bytes_io.seek(0)
+            return FileResponse(bytes_io, as_attachment=True, filename=filename, content_type='text/csv; charset=utf-8')
 
-        except Exception as e:
-            logger.error(f"Erreur export CSV {export_type}: {e}")
-            return Response(
-                {"erreur": str(e)},
-                status=500
-            )
+        except Exception:
+            logger.exception("Échec de l'export CSV %s", export_type)
+            return Response({"erreur": "L'export a échoué. Réessayez."}, status=500)
 
 
 @extend_schema(exclude=True)
@@ -759,9 +755,9 @@ class ExportPDFView(APIView):
             response = FileResponse(pdf_bytes, as_attachment=True, filename=filename, content_type='application/pdf')
             return response
 
-        except Exception as e:
-            logger.error(f"PDF {export_type}: {e}", exc_info=True)
-            return Response({"erreur": str(e)}, status=500)
+        except Exception:
+            logger.exception("Échec de l'export PDF %s", export_type)
+            return Response({"erreur": "L'export a échoué. Réessayez."}, status=500)
 
 
 @extend_schema(exclude=True)
@@ -866,6 +862,7 @@ class EnregistrerTriageAppelView(APIView):
             
             serializer = TriageAppelSerializer(triage)
             return Response(serializer.data, status=201)
-        
-        except Exception as e:
-            return Response({"error": str(e)}, status=400)
+
+        except Exception:
+            logger.exception("Échec de l'enregistrement du triage d'appel")
+            return Response({"error": "Enregistrement impossible : vérifiez les données envoyées."}, status=400)
