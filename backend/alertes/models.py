@@ -249,7 +249,7 @@ class HistoriqueRisque(models.Model):
         ordering = ['-date_calcul']
         constraints = [
             models.CheckConstraint(
-                check=(
+                condition=(
                     models.Q(zone__isnull=False, segment__isnull=True) |
                     models.Q(zone__isnull=True, segment__isnull=False)
                 ),

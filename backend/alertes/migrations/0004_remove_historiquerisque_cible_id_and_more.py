@@ -31,6 +31,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name='historiquerisque',
-            constraint=models.CheckConstraint(check=models.Q(models.Q(('segment__isnull', True), ('zone__isnull', False)), models.Q(('segment__isnull', False), ('zone__isnull', True)), _connector='OR'), name='historique_risque_une_seule_cible'),
+            constraint=models.CheckConstraint(condition=models.Q(models.Q(('segment__isnull', True), ('zone__isnull', False)), models.Q(('segment__isnull', False), ('zone__isnull', True)), _connector='OR'), name='historique_risque_une_seule_cible'),
         ),
     ]
