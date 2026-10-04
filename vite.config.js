@@ -34,7 +34,11 @@ export default defineConfig(({ mode }) => ({
         manualChunks: {
           react: ['react', 'react-dom', 'react-router-dom'],
           query: ['@tanstack/react-query'],
-          ui: ['lucide-react', 'leaflet', 'react-leaflet'],
+          // Séparés : la carte et les graphiques ne sont téléchargés qu'avec
+          // les pages qui les utilisent, pas dès l'écran de connexion.
+          ui: ['lucide-react'],
+          carte: ['leaflet', 'react-leaflet'],
+          graphiques: ['recharts'],
           axios: ['axios'],
         },
       },
