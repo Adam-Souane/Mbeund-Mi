@@ -41,4 +41,10 @@ export default defineConfig(({ mode }) => ({
     },
     reportCompressedSize: true,
   },
+  // Tests du frontend (npm test) : navigateur simulé par jsdom.
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.js'],
+    css: false,
+  },
 }));
