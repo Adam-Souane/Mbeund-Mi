@@ -13,6 +13,17 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        # Les index qui portent sur authority/zone doivent disparaître avant ces
+        # champs : SQLite reconstruit la table à chaque RemoveField et échoue
+        # sinon (FieldDoesNotExist), ce qui empêchait de créer la base de test.
+        migrations.RemoveIndex(
+            model_name='crisismanagement',
+            name='alertes_cri_authori_5b855f_idx',
+        ),
+        migrations.RemoveIndex(
+            model_name='crisismanagement',
+            name='alertes_cri_zone_id_79a5c9_idx',
+        ),
         migrations.RemoveField(
             model_name='crisismanagement',
             name='authority',

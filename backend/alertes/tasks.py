@@ -26,6 +26,10 @@ if _MBEUND_MI_IA_PATH not in sys.path:
 
 _prediction_service = None
 
+# Cumul de pluie sur 24 h sous lequel le Random Forest de flood_risk_predictor
+# n'est pas consulté : ses épisodes d'entraînement commencent à 35,8 mm.
+PLUIE_MIN_MODELE_MM = 30.0
+
 
 def _get_prediction_service():
     """Charge le service IA (modeles RandomForest/LSTM) une seule fois par worker."""
@@ -270,6 +274,17 @@ def predire_risques_avec_random_forest(self):
 
                 logger.debug(f"[RF Task] Zone {zone.quartier}: pluviométrie 24h = {pluie_24h:.1f}mm")
 
+                # Hors du domaine d'entraînement (aucun épisode sous 35,8 mm), le
+                # modèle renvoie un score constant qui laisserait certaines zones
+                # en jaune par temps sec : la zone reste au vert sans l'interroger.
+                if pluie_24h < PLUIE_MIN_MODELE_MM:
+                    if zone.niveau_risque != 'vert' or float(zone.score_risque_moyen) != 0:
+                        zone.niveau_risque = 'vert'
+                        zone.score_risque_moyen = 0
+                        zone.save()
+                    zones_updatées += 1
+                    continue
+
                 # Prédiction avec Random Forest
                 prediction = predict_zone_risk(zone.quartier, pluie_24h)
 
@@ -278,7 +293,10 @@ def predire_risques_avec_random_forest(self):
                     continue
 
                 ancien_niveau = zone.niveau_risque
-                score = float(prediction['score'])
+                # Gravité attendue (0 = faible certain, 1 = grave certain), et
+                # non la confiance du modèle dans sa classe : une prédiction
+                # « Faible » très sûre ne doit pas faire passer la zone au rouge.
+                score = float(prediction['score_risque'])
 
                 # Déterminer le niveau de risque basé sur les seuils configurables de la zone
                 if score >= float(zone.seuil_rouge):
@@ -333,8 +351,11 @@ def predire_risques_avec_random_forest(self):
 
                         logger.warning(f"[RF Task] Alerte créée pour {zone.quartier}: {nouveau_niveau}")
 
-                        # Envoyer SMS immédiatement
-                        envoyer_sms_alerte.delay(alerte.id)
+                        # Orange/rouge : le SMS part déjà via le signal post_save
+                        # (alertes/signals.py). On ne l'envoie ici que pour le
+                        # jaune, sinon les habitants le recevraient deux fois.
+                        if nouveau_niveau == 'jaune':
+                            envoyer_sms_alerte.delay(alerte.id)
 
             except Exception as e:
                 logger.error(f"[RF Task] Erreur traitement zone {zone.quartier}: {e}")

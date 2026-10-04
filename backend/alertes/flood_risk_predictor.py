@@ -76,8 +76,11 @@ class FloodRiskPredictor:
             return resultat
 
         # Adapter le format de retour pour être compatible avec PredictionService
+        # Le modèle classe en Faible/Moyen/Grave ; le reste du système attend
+        # les niveaux vert/jaune/orange (même correspondance que le backtesting).
+        niveaux = {'Faible': 'vert', 'Moyen': 'jaune', 'Grave': 'orange'}
         return {
-            "risque_global": resultat.get('risque', 'vert').lower(),
+            "risque_global": niveaux.get(resultat.get('risque'), 'vert'),
             "confiance": resultat.get('confiance', 0),
             "recommandation_fr": resultat.get('recommandation', ''),
             "details": resultat
@@ -150,11 +153,18 @@ class FloodRiskPredictor:
             # Score de confiance (probabilité du risque prédit)
             score = prediction_proba[prediction]
 
+            # Score de risque : gravité attendue sur [0, 1] (Faible = 0,
+            # Moyen = 0,5, Grave = 1), comparé aux seuils jaune/orange/rouge
+            # de la zone. Contrairement à `score`, il augmente avec le danger.
+            score_risque = 0.5 * prediction_proba[1] + 1.0 * prediction_proba[2]
+
             # Résultat
             return {
                 'zone': zone_name,
                 'risque': gravity_map_inv.get(prediction, 'Inconnu'),
                 'score': float(score),
+                'score_risque': float(score_risque),
+                'confiance': float(score) * 100,
                 'probabilites': {
                     'Faible': float(prediction_proba[0]),
                     'Moyen': float(prediction_proba[1]),

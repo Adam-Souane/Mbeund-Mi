@@ -21,7 +21,7 @@ def send_otp_whatsapp(phone_number: str, otp_code: str) -> bool:
 
     if phone_id and access_token:
         try:
-            url = f"https://graph.instagram.com/v18.0/{phone_id}/messages"
+            url = f"https://graph.facebook.com/v18.0/{phone_id}/messages"
 
             # Format du message avec template WhatsApp
             message_text = f"[MBEUND-MI]\nVotre code OTP: {otp_code}\nValide 10 minutes."
@@ -103,7 +103,7 @@ def send_alert_whatsapp(phone_number: str, message: str) -> bool:
 
     if phone_id and access_token:
         try:
-            url = f"https://graph.instagram.com/v18.0/{phone_id}/messages"
+            url = f"https://graph.facebook.com/v18.0/{phone_id}/messages"
 
             formatted_message = (
                 f"🚨 ALERTE MBEUND-MI 🚨\n\n{message}\n\n"
