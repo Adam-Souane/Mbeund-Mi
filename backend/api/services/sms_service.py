@@ -151,38 +151,49 @@ def _envoyer_sms_twilio(numero: str, message: str) -> None:
     )
 
 
-def send_otp_sms(phone_number: str, otp_code: str) -> bool:
+def _envoyer_sms(numero: str, message: str, nature: str, apercu: str) -> bool:
     """
-    Envoie un code OTP par SMS. Renvoie True seulement si le fournisseur a
-    accepté le message.
+    Envoie un SMS par le fournisseur configuré. Renvoie True seulement s'il a
+    accepté le message. `nature` (« OTP », « ALERTE ») sert aux journaux ;
+    `apercu` est ce que la simulation affiche en développement.
 
-    Sans fournisseur, le code n'est affiché dans la console qu'en développement
-    (DEBUG) ; en production, la fonction renvoie False pour que l'interface ne
-    prétende pas avoir envoyé un SMS.
+    Sans fournisseur, rien n'est envoyé : en développement (DEBUG) l'envoi est
+    simulé dans la console, en production la fonction renvoie False pour que
+    l'application ne prétende pas avoir prévenu quelqu'un.
     """
     from django.conf import settings
+    from users.otp import normaliser_telephone
 
-    message = (
-        f"MBEUND MI : votre code de vérification est {otp_code}. "
-        "Valable 10 minutes. Ne le communiquez à personne."
-    )
+    destinataire = normaliser_telephone(numero)
+    if destinataire is None:
+        logger.warning("[%s SMS] Numéro inexploitable ignoré : %s", nature, _masquer(numero))
+        return False
+
     fournisseur = fournisseur_sms()
-
     if fournisseur is None:
         if settings.DEBUG:
-            logger.warning("[OTP SMS SIMULATION] %s : code %s", _masquer(phone_number), otp_code)
+            logger.warning("[%s SMS SIMULATION] %s : %s", nature, _masquer(destinataire), apercu)
             return True
-        logger.error("[OTP SMS] Aucun fournisseur SMS configuré : code non envoyé à %s", _masquer(phone_number))
+        logger.error("[%s SMS] Aucun fournisseur SMS configuré : rien envoyé à %s", nature, _masquer(destinataire))
         return False
 
     envoyer = _envoyer_sms_orange if fournisseur == 'orange' else _envoyer_sms_twilio
     try:
-        envoyer(phone_number, message)
+        envoyer(destinataire, message)
     except Exception as e:
-        logger.error("[OTP SMS] Échec de l'envoi %s à %s : %s", fournisseur, _masquer(phone_number), e)
+        logger.error("[%s SMS] Échec de l'envoi %s à %s : %s", nature, fournisseur, _masquer(destinataire), e)
         return False
-    logger.info("[OTP SMS] Code envoyé par %s à %s", fournisseur, _masquer(phone_number))
+    logger.info("[%s SMS] Envoyé par %s à %s", nature, fournisseur, _masquer(destinataire))
     return True
+
+
+def send_otp_sms(phone_number: str, otp_code: str) -> bool:
+    """Envoie un code de vérification par SMS (voir _envoyer_sms)."""
+    message = (
+        f"MBEUND MI : votre code de vérification est {otp_code}. "
+        "Valable 10 minutes. Ne le communiquez à personne."
+    )
+    return _envoyer_sms(phone_number, message, 'OTP', f'code {otp_code}')
 
 
 def send_alert_whatsapp(phone_number: str, message: str) -> bool:
@@ -238,40 +249,8 @@ def send_alert_whatsapp(phone_number: str, message: str) -> bool:
 
 def send_alert_sms(phone_number: str, message: str) -> bool:
     """
-    Envoie un SMS d'alerte d'urgence d'inondation à un citoyen ou un agent sur le terrain.
-    Prend en charge la passerelle SMS Twilio / Infobip ou le mode simulateur avec journalisation.
+    Envoie un SMS d'alerte inondation à un citoyen inscrit ou à un agent, par
+    le même fournisseur que les codes de vérification (voir _envoyer_sms).
     """
-    account_sid = os.environ.get('TWILIO_ACCOUNT_SID')
-    auth_token = os.environ.get('TWILIO_AUTH_TOKEN')
-    from_number = os.environ.get('TWILIO_PHONE_NUMBER', '+1234567890')
-
-    print("=" * 65)
-    print("MBEUND-MI - PASSERELLE D'ALERTE SMS D'URGENCE")
-    print("=" * 65)
-
-    formatted_message = f"[ALERTE MBEUND-MI] {message}\nConsignes : Evitez les zones bas de Ndakhane & Thiaroye Gare."
-
-    if account_sid and auth_token:
-        try:
-            from twilio.rest import Client
-            client = Client(account_sid, auth_token)
-            msg = client.messages.create(
-                body=formatted_message,
-                from_=from_number,
-                to=phone_number
-            )
-            print(f"[SUCCESS] SMS d'urgence transmis avec succès via Twilio à {phone_number} (SID: {msg.sid})")
-            print("=" * 65)
-            return True
-        except Exception as e:
-            print(f"[WARN] Échec d'envoi via Twilio ({e}). Passage en mode simulateur...")
-
-    # Mode Simulateur SMS avec Journalisation Professionnelle
-    print(f"[SIMULATION SMS] Destinataire: {phone_number}")
-    print(f"[CONTENU SMS] : {formatted_message}")
-    print("STATUS: Transmis avec succès (Mode Simulation PFE)")
-    print("=" * 65)
-    return True
-
-if __name__ == '__main__':
-    send_alert_sms('+221770000002', 'Risque fort d\'inondation (8.5/10) détecté à Ndakhane suite à l\'orage.')
+    texte = f"[ALERTE MBEUND MI] {message}\nConsignes : Evitez les zones bas de Ndakhane & Thiaroye Gare."
+    return _envoyer_sms(phone_number, texte, 'ALERTE', texte)
