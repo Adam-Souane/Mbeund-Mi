@@ -242,6 +242,11 @@ TWILIO_AUTH_TOKEN = env('TWILIO_AUTH_TOKEN', default='')
 TWILIO_PHONE_NUMBER = env('TWILIO_PHONE_NUMBER', default='')
 TWILIO_MESSAGING_SERVICE_SID = env('TWILIO_MESSAGING_SERVICE_SID', default='')
 
+# Fournisseur des SMS de code OTP : « orange » (API SMS Sénégal), « twilio » ou
+# vide. Vide = pas de SMS : l'inscription exige alors un email et le code part
+# par email (en DEBUG, le code SMS est simulé dans la console).
+SMS_FOURNISSEUR = env('SMS_FOURNISSEUR', default='')
+
 # Firebase Configuration (Push Notifications – tout provient du .env)
 FIREBASE_CREDENTIALS_PATH = env('FIREBASE_CREDENTIALS_PATH', default=str(BASE_DIR / 'firebase_credentials.json'))
 

@@ -48,9 +48,11 @@ class CompteNonVerifie(exceptions.APIException):
 
     def __init__(self, user):
         from users import otp
-        canal = otp.dernier_canal(otp.MOTIF_INSCRIPTION, user) or otp.CANAL_TELEPHONE
+        canal = otp.dernier_canal(otp.MOTIF_INSCRIPTION, user)
+        if canal is None or (canal == otp.CANAL_TELEPHONE and not otp.sms_disponible()):
+            canal = otp.canal_par_defaut(user)
         envoye = False
-        if not otp.renvoi_trop_rapide(otp.MOTIF_INSCRIPTION, user):
+        if canal and not otp.renvoi_trop_rapide(otp.MOTIF_INSCRIPTION, user):
             code = otp.creer_code(otp.MOTIF_INSCRIPTION, user, canal)
             envoye = otp.envoyer_code(user, canal, code, otp.MOTIF_INSCRIPTION)
         super().__init__()
@@ -61,7 +63,7 @@ class CompteNonVerifie(exceptions.APIException):
             'username': user.username,
             'otp': {
                 'canal': canal,
-                'destination': otp.destination(user, canal),
+                'destination': otp.destination(user, canal) if canal else '',
                 'envoye': envoye,
                 'email_disponible': bool(user.email),
             },

@@ -22,7 +22,9 @@ def cache_memoire(settings):
 
 
 @pytest.fixture
-def envois_telephone(monkeypatch):
+def envois_telephone(monkeypatch, settings):
+    # Un fournisseur SMS est déclaré ; l'envoi lui-même est intercepté.
+    settings.SMS_FOURNISSEUR = 'orange'
     envois = []
     monkeypatch.setattr(
         'api.services.sms_service.send_otp_sms',
@@ -287,9 +289,9 @@ def test_comptes_existants_non_bloques():
 
 # --- Envoi SMS ----------------------------------------------------------------
 
-def test_sms_sans_twilio_echoue_en_production(monkeypatch, settings):
+def test_sms_sans_fournisseur_echoue_en_production(settings):
     from api.services import sms_service
-    monkeypatch.delenv('TWILIO_ACCOUNT_SID', raising=False)
+    settings.SMS_FOURNISSEUR = ''
     settings.DEBUG = False
     assert sms_service.send_otp_sms('+221771234567', '123456') is False
     settings.DEBUG = True
@@ -307,6 +309,7 @@ def test_sms_echec_twilio_signale(monkeypatch, settings):
     monkeypatch.setenv('TWILIO_AUTH_TOKEN', 'jeton-test')
     monkeypatch.setenv('TWILIO_PHONE_NUMBER', '+15550000000')
     monkeypatch.setattr('twilio.rest.Client', ClientEnPanne)
+    settings.SMS_FOURNISSEUR = 'twilio'
     settings.DEBUG = True
     assert sms_service.send_otp_sms('+221771234567', '123456') is False
 
@@ -320,3 +323,88 @@ def test_routes_publiques_ignorent_un_jeton_perime(envois_telephone):
     _, code = envois_telephone[-1]
     reponse = client.post('/api/users/verify-otp/', {'username': 'awadiop', 'otp': code}, format='json')
     assert reponse.status_code == 200
+
+
+def test_sms_par_orange(monkeypatch, settings):
+    from api.services import sms_service
+
+    class Reponse:
+        def __init__(self, code, donnees=None):
+            self.status_code, self._donnees, self.text = code, donnees or {}, ''
+
+        def json(self):
+            return self._donnees
+
+        def raise_for_status(self):
+            assert self.status_code < 400
+
+    appels = []
+
+    def faux_post(url, **kwargs):
+        appels.append((url, kwargs))
+        if url == sms_service.ORANGE_TOKEN_URL:
+            return Reponse(200, {'access_token': 'jeton', 'expires_in': 3600})
+        return Reponse(201)
+
+    monkeypatch.setenv('ORANGE_CLIENT_ID', 'id-test')
+    monkeypatch.setenv('ORANGE_CLIENT_SECRET', 'secret-test')
+    monkeypatch.setattr(sms_service.requests, 'post', faux_post)
+    monkeypatch.setitem(sms_service._jeton_orange, 'valeur', None)
+    settings.SMS_FOURNISSEUR = 'orange'
+
+    assert sms_service.send_otp_sms('+221771234567', '123456') is True
+    (url_jeton, _), (url_sms, envoi) = appels
+    assert url_jeton == sms_service.ORANGE_TOKEN_URL
+    assert url_sms.endswith('/outbound/tel%3A%2B2210000/requests')
+    requete = envoi['json']['outboundSMSMessageRequest']
+    assert requete['address'] == 'tel:+221771234567'
+    assert requete['senderAddress'] == 'tel:+2210000'
+    assert '123456' in requete['outboundSMSTextMessage']['message']
+    assert envoi['headers']['Authorization'] == 'Bearer jeton'
+
+
+# --- Sans fournisseur SMS : tout passe par l'email ----------------------------
+
+@pytest.fixture
+def sans_sms(settings):
+    settings.SMS_FOURNISSEUR = ''
+    settings.DEBUG = False
+
+
+@pytest.mark.django_db
+def test_canaux_annonces(sans_sms):
+    assert APIClient().get('/api/users/otp-canaux/').data == {'telephone': False, 'email': True}
+
+
+@pytest.mark.django_db
+def test_inscription_exige_un_email_sans_sms(sans_sms):
+    reponse = inscrire(APIClient())
+    assert reponse.status_code == 400
+    assert 'canal_otp' in reponse.data
+    assert not User.objects.filter(username='awadiop').exists()
+
+
+@pytest.mark.django_db
+def test_inscription_par_email_par_defaut_sans_sms(sans_sms):
+    reponse = inscrire(APIClient(), email='awa@example.com')
+    assert reponse.status_code == 201
+    assert reponse.data['otp']['canal'] == 'email'
+    assert len(mail.outbox) == 1
+
+
+@pytest.mark.django_db
+def test_mot_de_passe_oublie_par_sms_refuse_sans_sms(sans_sms):
+    reponse = APIClient().post('/api/users/password-reset/', {'identifiant': '771234567', 'canal': 'telephone'}, format='json')
+    assert reponse.status_code == 400
+
+
+@pytest.mark.django_db
+def test_connexion_bloquee_renvoie_le_code_par_email_sans_sms(sans_sms):
+    from django.core.cache import cache
+    client = APIClient()
+    inscrire(client, email='awa@example.com')
+    cache.clear()
+    reponse = connecter(client)
+    assert reponse.status_code == 403
+    assert reponse.data['otp']['canal'] == 'email'
+    assert reponse.data['otp']['envoye'] is True

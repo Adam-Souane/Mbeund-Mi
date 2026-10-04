@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, Clock } from 'lucide-react';
 import Logo from '../shared/components/Logo';
 import AuthLayout from './AuthLayout';
+import useCanauxOtp from './useCanauxOtp';
 import { useTheme } from '../theme/ThemeContext';
 import { useAuth } from '../auth/AuthContext';
 import client from '../api/client';
@@ -57,7 +58,7 @@ export default function OTPVerificationPage() {
 
   const etat = location.state || {};
   const username = etat.username || '';
-  const peutChangerDeCanal = Boolean(etat.emailDisponible);
+  const { smsDisponible } = useCanauxOtp();
 
   const [canal, setCanal] = useState(etat.canal || 'telephone');
   const [destination, setDestination] = useState(etat.destination || '');
@@ -135,6 +136,7 @@ export default function OTPVerificationPage() {
 
   const enAttente = resendTimer > 0;
   const autreCanal = canal === 'email' ? 'telephone' : 'email';
+  const peutChangerDeCanal = Boolean(etat.emailDisponible) && (autreCanal === 'email' || smsDisponible);
 
   return (
     <AuthLayout variante="verification" className="p-4">

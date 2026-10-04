@@ -104,7 +104,8 @@ class UserViewSet(viewsets.ModelViewSet):
         last_name = request.data.get('last_name', '')
         telephone_saisi = request.data.get('telephone', '')
         username = (request.data.get('username') or '').strip()
-        canal = request.data.get('canal_otp') or otp.CANAL_TELEPHONE
+        canal_defaut = otp.CANAL_TELEPHONE if otp.sms_disponible() else otp.CANAL_EMAIL
+        canal = request.data.get('canal_otp') or canal_defaut
 
         # Validation
         if not password or len(password) < 8:
@@ -121,6 +122,8 @@ class UserViewSet(viewsets.ModelViewSet):
             return Response({'username': 'Identifiant requis'}, status=status.HTTP_400_BAD_REQUEST)
         if canal not in otp.CANAUX:
             return Response({'canal_otp': 'Canal inconnu : « telephone » ou « email »'}, status=status.HTTP_400_BAD_REQUEST)
+        if canal == otp.CANAL_TELEPHONE and not otp.sms_disponible():
+            return Response({'canal_otp': "L'envoi par SMS n'est pas encore disponible : utilisez l'email."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Email facultatif, mais valide et unique s'il est fourni
         if email:
@@ -289,6 +292,8 @@ class UserViewSet(viewsets.ModelViewSet):
         canal = request.data.get('canal') or (otp.CANAL_EMAIL if '@' in identifiant else otp.CANAL_TELEPHONE)
         if canal not in otp.CANAUX:
             return Response({'canal': 'Canal inconnu : « telephone » ou « email »'}, status=status.HTTP_400_BAD_REQUEST)
+        if canal == otp.CANAL_TELEPHONE and not otp.sms_disponible():
+            return Response({'canal': "L'envoi par SMS n'est pas encore disponible : utilisez l'email."}, status=status.HTTP_400_BAD_REQUEST)
 
         user = _trouver_compte(identifiant)
         peut_envoyer = (
@@ -589,6 +594,15 @@ class UserViewSet(viewsets.ModelViewSet):
             status=status.HTTP_200_OK,
         )
 
+    @action(detail=False, methods=['get'], permission_classes=[AllowAny], authentication_classes=[], url_path='otp-canaux')
+    def otp_canaux(self, request):
+        """
+        GET /api/users/otp-canaux/
+        Canaux par lesquels un code peut être envoyé en ce moment, pour que les
+        formulaires ne proposent pas le SMS tant qu'aucun fournisseur n'est actif.
+        """
+        return Response({otp.CANAL_TELEPHONE: otp.sms_disponible(), otp.CANAL_EMAIL: True})
+
     @action(detail=False, methods=['post'], permission_classes=[AllowAny], authentication_classes=[], url_path='resend-otp')
     def resend_otp(self, request):
         """
@@ -607,9 +621,19 @@ class UserViewSet(viewsets.ModelViewSet):
         if user.profile.is_verified:
             return Response({'detail': 'Ce compte est déjà vérifié'}, status=status.HTTP_400_BAD_REQUEST)
 
-        canal = request.data.get('canal') or otp.dernier_canal(otp.MOTIF_INSCRIPTION, user) or otp.CANAL_TELEPHONE
+        canal = (
+            request.data.get('canal')
+            or otp.dernier_canal(otp.MOTIF_INSCRIPTION, user)
+            or otp.canal_par_defaut(user)
+            or otp.CANAL_TELEPHONE
+        )
         if canal not in otp.CANAUX:
             return Response({'detail': 'Canal inconnu : « telephone » ou « email »'}, status=status.HTTP_400_BAD_REQUEST)
+        if canal == otp.CANAL_TELEPHONE and not otp.sms_disponible():
+            return Response(
+                {'detail': "L'envoi par SMS n'est pas encore disponible : utilisez l'email."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         if canal == otp.CANAL_EMAIL and not user.email:
             return Response({'detail': 'Aucun email associé à ce compte'}, status=status.HTTP_400_BAD_REQUEST)
         if otp.renvoi_trop_rapide(otp.MOTIF_INSCRIPTION, user):

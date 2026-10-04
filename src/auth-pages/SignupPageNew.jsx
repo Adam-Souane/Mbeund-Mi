@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Loader2, MessageCircle, Mail } from 'lucide-react';
 import Logo from '../shared/components/Logo';
 import AuthLayout from './AuthLayout';
+import useCanauxOtp from './useCanauxOtp';
 import { useTheme } from '../theme/ThemeContext';
 import client from '../api/client';
 import { useToast } from '../shared/toast/ToastContext';
@@ -18,13 +19,15 @@ function identifiantDeSecours(prenom, nom) {
   return `${prenom.toLowerCase().slice(0, 3)}${nom.toLowerCase().slice(0, 3)}`;
 }
 
-function validerInscription(formData) {
+function validerInscription(formData, emailObligatoire) {
   const erreurs = {};
   if (!formData.first_name.trim()) erreurs.first_name = 'Prénom requis';
   if (!formData.last_name.trim()) erreurs.last_name = 'Nom requis';
   if (!formData.username) erreurs.username = 'Identifiant requis';
-  // Email facultatif ; téléphone obligatoire (il reçoit les alertes)
+  // Téléphone obligatoire (il reçoit les alertes) ; email facultatif, sauf
+  // tant que le code de vérification ne peut pas partir par SMS.
   if (formData.email.trim() && !emailValide(formData.email)) erreurs.email = 'Email invalide';
+  else if (emailObligatoire && !formData.email.trim()) erreurs.email = 'Email requis pour recevoir votre code de vérification';
   if (!formData.telephone.trim()) erreurs.telephone = 'Numéro de téléphone requis';
   else if (formData.telephone.replace(/\D/g, '').length < 8) erreurs.telephone = 'Numéro incomplet';
   if (formData.password.length < 8) erreurs.password = 'Min. 8 caractères';
@@ -38,6 +41,7 @@ export default function SignupPage() {
   const navigate = useNavigate();
   const { darkMode } = useTheme();
   const { showToast } = useToast();
+  const { smsDisponible } = useCanauxOtp();
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -60,7 +64,8 @@ export default function SignupPage() {
   // demandé (il reçoit les alertes), l'email n'est proposé que s'il est saisi.
   const [canalOtp, setCanalOtp] = useState('telephone');
   const emailSaisi = formData.email.trim() !== '';
-  const canalEffectif = canalOtp === 'email' && !emailSaisi ? 'telephone' : canalOtp;
+  let canalEffectif = canalOtp === 'email' && !emailSaisi ? 'telephone' : canalOtp;
+  if (!smsDisponible) canalEffectif = 'email';
   const champ = classeChamp(darkMode);
 
   // Proposer des identifiants dès que le prénom et le nom sont saisis
@@ -99,7 +104,7 @@ export default function SignupPage() {
   };
 
   const validateForm = () => {
-    const newErrors = validerInscription(formData);
+    const newErrors = validerInscription(formData, !smsDisponible);
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -203,29 +208,32 @@ export default function SignupPage() {
 
           <div>
             <label htmlFor="signup-email" className={classeEtiquette(darkMode)}>
-              Email <span className={`text-xs ${texteDiscret}`}>(facultatif)</span>
+              Email <span className={`text-xs ${texteDiscret}`}>{smsDisponible ? '(facultatif)' : '(obligatoire : vous y recevrez votre code)'}</span>
             </label>
             <input id="signup-email" type="email" name="email" autoComplete="email" value={formData.email} onChange={handleChange} placeholder="email@exemple.com" className={champ} />
             {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
           </div>
 
-          <fieldset className={encadre}>
-            <legend className={`px-1 text-xs font-medium ${ton(darkMode, 'text-navy-600', 'text-navy-300')}`}>Recevoir mon code de vérification par</legend>
-            <div className="grid grid-cols-2 gap-2 mt-1">
-              {CANAUX.map(({ value, label, Icon }) => {
-                const desactive = value === 'email' && !emailSaisi;
-                return (
-                  <label key={value} className={classeOption(darkMode, canalEffectif === value, desactive)}>
-                    <input type="radio" name="canal_otp" value={value} checked={canalEffectif === value} disabled={desactive} onChange={() => setCanalOtp(value)} className="accent-red" />
-                    <Icon size={16} aria-hidden="true" />
-                    {label}
-                  </label>
-                );
-              })}
-            </div>
-            {!emailSaisi && <p className={`text-xs mt-2 ${texteDiscret}`}>Saisissez un email pour pouvoir recevoir le code par email.</p>}
-            {errors.canal_otp && <p className="text-xs text-red-500 mt-1">{errors.canal_otp}</p>}
-          </fieldset>
+          {!smsDisponible && errors.canal_otp && <p className="text-xs text-red-500">{errors.canal_otp}</p>}
+          {smsDisponible && (
+            <fieldset className={encadre}>
+              <legend className={`px-1 text-xs font-medium ${ton(darkMode, 'text-navy-600', 'text-navy-300')}`}>Recevoir mon code de vérification par</legend>
+              <div className="grid grid-cols-2 gap-2 mt-1">
+                {CANAUX.map(({ value, label, Icon }) => {
+                  const desactive = value === 'email' && !emailSaisi;
+                  return (
+                    <label key={value} className={classeOption(darkMode, canalEffectif === value, desactive)}>
+                      <input type="radio" name="canal_otp" value={value} checked={canalEffectif === value} disabled={desactive} onChange={() => setCanalOtp(value)} className="accent-red" />
+                      <Icon size={16} aria-hidden="true" />
+                      {label}
+                    </label>
+                  );
+                })}
+              </div>
+              {!emailSaisi && <p className={`text-xs mt-2 ${texteDiscret}`}>Saisissez un email pour pouvoir recevoir le code par email.</p>}
+              {errors.canal_otp && <p className="text-xs text-red-500 mt-1">{errors.canal_otp}</p>}
+            </fieldset>
+          )}
 
           <div className="relative">
             <input type={showPassword ? 'text' : 'password'} name="password" aria-label="Mot de passe" autoComplete="new-password" value={formData.password} onChange={handleChange} placeholder="Mot de passe (min. 8 caractères)" className={`${champ} pr-10`} />

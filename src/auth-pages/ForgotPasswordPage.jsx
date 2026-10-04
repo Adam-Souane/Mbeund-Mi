@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, MessageCircle, Mail, Eye, EyeOff } from 'lucide-react';
 import Logo from '../shared/components/Logo';
 import AuthLayout from './AuthLayout';
+import useCanauxOtp from './useCanauxOtp';
 import { useTheme } from '../theme/ThemeContext';
 import client from '../api/client';
 import { useToast } from '../shared/toast/ToastContext';
@@ -31,7 +32,10 @@ export default function ForgotPasswordPage() {
 
   const [step, setStep] = useState(1);
   const [identifiant, setIdentifiant] = useState('');
-  const [canal, setCanal] = useState('telephone');
+  const [canalChoisi, setCanal] = useState('telephone');
+  // Tant que le SMS n'est pas disponible, le code part par email.
+  const { smsDisponible } = useCanauxOtp();
+  const canal = smsDisponible ? canalChoisi : 'email';
   const [code, setCode] = useState('');
   const [motDePasse, setMotDePasse] = useState('');
   const [confirmation, setConfirmation] = useState('');
@@ -140,26 +144,33 @@ export default function ForgotPasswordPage() {
                 className={champ}
               />
             </div>
-            <fieldset>
-              <legend className={etiquette}>Recevoir le code par</legend>
-              <div className="grid grid-cols-2 gap-2">
-                {CANAUX.map(({ value, label, Icon }) => (
-                  <label
-                    key={value}
-                    className={classeOption(darkMode, canal === value)}
-                  >
-                    <input type="radio" name="canal" value={value} checked={canal === value} onChange={() => setCanal(value)} className="accent-red" />
-                    <Icon size={16} aria-hidden="true" />
-                    {label}
-                  </label>
-                ))}
-              </div>
-              {canal === 'email' && (
-                <p className={`text-xs mt-2 ${ton(darkMode, 'text-navy-500', 'text-navy-400')}`}>
-                  L’email doit avoir été renseigné sur votre compte. Sinon, choisissez SMS.
-                </p>
-              )}
-            </fieldset>
+            {!smsDisponible && (
+              <p className={`text-xs ${ton(darkMode, 'text-navy-500', 'text-navy-400')}`}>
+                Le code sera envoyé à l’email renseigné sur votre compte.
+              </p>
+            )}
+            {smsDisponible && (
+              <fieldset>
+                <legend className={etiquette}>Recevoir le code par</legend>
+                <div className="grid grid-cols-2 gap-2">
+                  {CANAUX.map(({ value, label, Icon }) => (
+                    <label
+                      key={value}
+                      className={classeOption(darkMode, canal === value)}
+                    >
+                      <input type="radio" name="canal" value={value} checked={canal === value} onChange={() => setCanal(value)} className="accent-red" />
+                      <Icon size={16} aria-hidden="true" />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+                {canal === 'email' && (
+                  <p className={`text-xs mt-2 ${ton(darkMode, 'text-navy-500', 'text-navy-400')}`}>
+                    L’email doit avoir été renseigné sur votre compte. Sinon, choisissez SMS.
+                  </p>
+                )}
+              </fieldset>
+            )}
             {error && <p className="text-xs text-red-500" role="alert">{error}</p>}
             <button type="submit" disabled={loading} className={boutonPrincipal}>
               {loading ? 'Envoi...' : 'Recevoir le code'}

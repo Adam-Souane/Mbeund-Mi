@@ -3,7 +3,8 @@ Codes à usage unique (OTP) : génération, stockage, vérification et envoi.
 
 Utilisé pour la vérification du compte à l'inscription et pour la
 réinitialisation du mot de passe. L'utilisateur choisit le canal :
-- « telephone » : SMS via Twilio (api/services/sms_service.send_otp_sms) ;
+- « telephone » : SMS via le fournisseur configuré (SMS_FOURNISSEUR : Orange ou
+  Twilio) ; sans fournisseur, ce canal est fermé (sauf simulation en DEBUG) ;
 - « email » : email via le serveur SMTP configuré (Gmail en production).
 """
 import hmac
@@ -92,6 +93,20 @@ def creer_code(motif, user, canal):
     code = generer_code()
     cache.set(_cle(motif, user), {'code': code, 'canal': canal, 'essais': 0}, timeout=DUREE_VALIDITE)
     return code
+
+
+def sms_disponible():
+    """Le canal SMS est ouvert si un fournisseur est configuré (ou, en
+    développement, grâce à la simulation dans la console)."""
+    from api.services.sms_service import fournisseur_sms
+    return fournisseur_sms() is not None or settings.DEBUG
+
+
+def canal_par_defaut(user):
+    """SMS si possible, sinon email ; None si aucun canal n'est utilisable."""
+    if sms_disponible():
+        return CANAL_TELEPHONE
+    return CANAL_EMAIL if user.email else None
 
 
 def dernier_canal(motif, user):
