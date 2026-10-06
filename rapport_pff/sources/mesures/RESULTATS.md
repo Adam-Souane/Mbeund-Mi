@@ -24,3 +24,7 @@ Scripts dans ce dossier, exécutés avec l'environnement `env/` du projet, sans 
 - Matrice LOO (Faible, Moyen, Grave) : [[0,3,0],[0,13,2],[0,0,7]] → les 3 « Faible » sont classés « Moyen ».
 - Importances : pluie 46,5 %, perméabilité 21,6 %, altitude 19 %, pente 7,4 %, drainage 5,5 %.
 - Sous ~45 mm de pluie, le score est constant (aucun exemple d'entraînement) : garde-fou à 30 mm ajouté dans alertes/tasks.py.
+
+## Mesure du LSTM refaite le 6 octobre 2026
+- Résultat identique à celui du 3 octobre : LSTM MAE 8,01 cm, RMSE 11,52 cm ; persistance MAE 6,04 cm, RMSE 9,05 cm (modèle et données inchangés depuis le 9 septembre).
+- Niveau d'eau moyen de la validation : 7,73 cm ; un seul jour sur 38 à 30 cm ou plus (LSTM : erreur de 33,3 cm ; persistance : 18,5 cm).

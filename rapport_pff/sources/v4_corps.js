@@ -46,7 +46,7 @@ module.exports = (h) => {
   const PATCHES = {
     55: [['estimait à 360 000 le nombre de sinistrés directs dans la région de Dakar, pour des dommages et pertes évalués à 44,5 milliards de FCFA', "estimait à environ 360 000 le nombre de personnes directement touchées, pour un coût total d'environ 104 millions de dollars américains (56 millions de dommages et 48 millions de pertes), dont 82 millions pour les seules zones périurbaines de Dakar"]],
     57: [['supérieur à 118 % en 2024', 'supérieur à 127 % au premier trimestre 2024']],
-    126: [['compte exactement 18 032 473 habitants selon les résultats définitifs du cinquième', 'compte 18 032 473 habitants selon les résultats du cinquième'], ['concentre 4 011 027 habitants (soit 22,2 % de la population nationale)', "concentre près de 4 millions d'habitants (soit environ 22 % de la population nationale)"]],
+    126: [['compte exactement 18 032 473 habitants selon les résultats définitifs du cinquième', 'compte 18 032 473 habitants selon les résultats du cinquième'], ['concentre 4 011 027 habitants (soit 22,2 % de la population nationale)', 'concentre 3 896 564 habitants (soit environ 21,6 % de la population nationale)']],
   };
   const range = (a, z) => { const out = []; for (let i = a; i <= z; i++) out.push(...el(PATCHES[i] ? patch(BLOCKS[i], PATCHES[i]) : BLOCKS[i])); return out; };
   const one = (b) => el(b);
@@ -88,7 +88,7 @@ module.exports = (h) => {
   expect(53, 'INTRODUCTION'); expect(55, 'Chaque hivernage'); expect(84, 'Le chapitre I');
   const intro = [
     H1('Introduction générale', false),
-    Hc(2, 'Contexte général du projet', "Trois chiffres corrigés d'après les sources : le PDNA 2010 donne 360 000 personnes touchées et 104 millions de dollars de coût (et non 44,5 milliards de FCFA) ; le taux de pénétration mobile de l'ARTP est de 127 % au 1er trimestre 2024 (118 % date de 2021) ; la région de Dakar compte près de 4 millions d'habitants (3 896 564 ou 4 004 425 selon les publications de l'ANSD). Voir CORRECTIONS_RAPPORT.md."), ...range(55, 58),
+    Hc(2, 'Contexte général du projet', "Trois chiffres corrigés d'après les sources : le PDNA 2010 donne 360 000 personnes touchées et 104 millions de dollars de coût (et non 44,5 milliards de FCFA) ; le taux de pénétration mobile de l'ARTP est de 127 % au 1er trimestre 2024 (118 % date de 2021) ; la région de Dakar compte 3 896 564 habitants (ANSD, RGPH-5), soit 21,6 % de la population nationale. Voir CORRECTIONS_RAPPORT.md."), ...range(55, 58),
     H2('Problématique'), ...range(60, 60), H3('Questions de recherche'), ...range(62, 67),
     H2('Objectif général et objectifs spécifiques'), ...range(69, 69), H3('Hypothèses de recherche'), ...range(71, 74),
     H2('Méthodologie adoptée'), ...range(76, 82),
@@ -107,7 +107,9 @@ module.exports = (h) => {
     P("MBEUND MI est un projet interne à l'établissement : il n'a pas de commanditaire extérieur."),
     H2('1.2  Présentation du projet : origine, bénéficiaires, périmètre'),
     H3('1.2.1  Origine du projet'),
-    TODO("À COMPLÉTER PAR L'ÉQUIPE (≈ 0,5 page) : comment l'idée est née (inondations récurrentes de Thiaroye-sur-Mer, enquête de terrain du 15 mai 2026), qui a proposé le sujet et comment l'encadreur l'a validé"),
+    P("L'idée du projet est née de ce que les membres du groupe vivent eux-mêmes. Deux des auteures habitent Grand Yoff, où les séries de pluies provoquent de nombreuses inondations : des maisons sont abandonnées et des familles déménagent ailleurs. D'autres membres constatent, dans leur propre quartier, des inondations et des problèmes d'assainissement."),
+    P("À Thiaroye-sur-Mer, le constat est tout aussi réel : en 2025, une série d'inondations a poussé des habitants à quitter leur maison. Le Sénégal subit des inondations répétées depuis les années 1990 (voir 2.1.3), et chacune des auteures en voit les effets dans son quartier."),
+    P("Le groupe a donc choisi ce problème pour son projet de fin de formation, avec l'ambition de mettre les compétences de la filière Analyse de Performance Digital au service de sa résolution. Thiaroye-sur-Mer a été retenue comme cas d'étude, et l'enquête de terrain du 15 mai 2026 a confirmé le constat (voir 1.2.3)."),
     H3('1.2.2  La commune de Thiaroye-sur-Mer et ses quartiers à risque'), ...range(141, 149),
     H3('1.2.3  Causes et conséquences des inondations : les constats de terrain'), ...range(151, 161),
     H3('1.2.4  Bénéficiaires et périmètre'),
@@ -310,7 +312,7 @@ module.exports = (h) => {
     P(`Le Random Forest classe correctement ${pct(RF.accuracy)} des jours, et ${pct(RFC.accuracy)} après calibration. Ces valeurs sont toutefois dominées par la classe « vert », très majoritaire : le F1 macro, qui pèse chaque classe de la même façon, est de ${dec(RF.f1_macro)} (${dec(RFC.f1_macro)} après calibration), inférieur à celui de la simple persistance (${dec(PER.f1_macro)}). Les niveaux orange et rouge, les plus importants pour la sécurité, sont mal détectés : le modèle calibré ne reconnaît aucun des ${eff.orange} jours orange du jeu de test. Les effectifs de ces classes sont très faibles (${eff.orange} et ${eff.rouge} jours) : toute conclusion statistique y est fragile.`),
     P("Ces résultats montrent que le modèle, entraîné sur la seule pluie, n'apporte pas de gain démontré par rapport à une règle simple. Ils s'expliquent par le manque d'exemples de crues et par l'absence de mesures réelles de niveau d'eau. Ils justifient la collecte de mesures de terrain, présentée dans les perspectives."),
     Hc(3, '4.3.3  Évaluation du réseau LSTM et de la détection satellite', "Remplace MAE 4,2 cm / R² 0,891 par la mesure du 3 octobre (MAE 8,0 cm, moins bien que la référence naïve). Retiré : le Kappa de 0,81 sur le satellite, sans validation dans le dépôt."),
-    P("**Réseau LSTM.** Mesuré le 3 octobre 2026 sur 38 séquences de validation (190 séquences d'entraînement tirées de 214 jours de pluie simulée, 5 époques), le LSTM obtient une erreur absolue moyenne de 8,0 cm (erreur quadratique moyenne de 11,5 cm). La référence naïve « le niveau de demain égale celui d'aujourd'hui » obtient 6,0 cm (9,1 cm) : le LSTM ne fait donc pas mieux que cette référence. [[À REFAIRE : mesure à relancer avec les données et le modèle actuels]]"),
+    P("**Réseau LSTM.** Mesuré les 3 et 6 octobre 2026 (résultat identique : le modèle et les données n'ont pas changé depuis le 9 septembre) sur 38 séquences de validation (190 séquences d'entraînement tirées de 214 jours de pluie simulée, 5 époques), le LSTM obtient une erreur absolue moyenne de 8,0 cm (erreur quadratique moyenne de 11,5 cm). La référence naïve « le niveau de demain égale celui d'aujourd'hui » obtient 6,0 cm (9,1 cm) : le LSTM ne fait donc pas mieux que cette référence. Le niveau d'eau moyen de ces séquences n'est que de 7,7 cm et un seul des 38 jours dépasse 30 cm (erreur du LSTM de 33,3 cm ce jour-là, contre 18,5 cm pour la référence) : la mesure porte surtout sur de très faibles niveaux et reste fragile."),
     P("**Détection satellite.** La détection des zones nouvellement inondées par l'indice NDWI (seuil 0,3) est intégrée à la chaîne d'alerte et exécutée toutes les 12 heures. Elle n'a pas fait l'objet d'une validation quantitative contre des polygones d'inondation observés : aucune valeur de précision n'est donc annoncée."),
     H3("4.3.4  Essai de la chaîne complète avec les prévisions du 4 octobre 2026"),
     ...leadBody(clean(blk(259), [

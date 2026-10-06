@@ -1,6 +1,6 @@
 # Rapport v4 : ce qui a été repris, corrigé, retiré et reste à vérifier
 
-Fichier : `rapport_pff/Rapport_PFF_MBEUND_MI_v4.docx` (et sa version PDF), 64 pages. **Le document contient 18 commentaires Word** (auteur « Claude ») ancrés sur les titres des passages modifiés : chacun résume ce qui a changé et pourquoi.
+Fichier : `rapport_pff/Rapport_PFF_MBEUND_MI_v4.docx` (et sa version PDF), 65 pages. **Le document contient 18 commentaires Word** (auteur « Claude ») ancrés sur les titres des passages modifiés : chacun résume ce qui a changé et pourquoi.
 Source du contenu : `Rapport_PFF_MBEUND_MI.docx` (le rapport des auteures). Format : page de garde, plan et table des matières du modèle ISEP-AT n° 2 (« Page de garde, plan et sommaire »).
 
 ## 1. Ce qui a été fait
@@ -11,6 +11,8 @@ Source du contenu : `Rapport_PFF_MBEUND_MI.docx` (le rapport des auteures). Form
 - **Renvois renumérotés** : les « chapitre IV » deviennent « chapitre 4 », et les renvois aux figures et tableaux suivent le nouvel ordre.
 - **Chapitre 4 reconstruit** autour du plan officiel (4.1 à 4.5). La partie descriptive de l'ancien chapitre IV est conservée ; la partie « résultats » est reprise avec les valeurs mesurées.
 - **4.2.3 rédigé** à partir du script de démonstration : les trois scénarios ont été rejoués avec le vrai service IA (`rapport_pff/sources/mesures/rejeu_scenarios.py`).
+- **1.2.1 rédigé** d'après le récit des auteures (quartiers touchés, Grand Yoff, Thiaroye-sur-Mer en 2025, inondations depuis les années 1990).
+- **Mesure du LSTM refaite le 6 octobre 2026** : résultat identique (MAE 8,0 cm contre 6,0 cm pour la référence naïve), le modèle et les données n'ayant pas changé depuis le 9 septembre. Un seul des 38 jours de validation dépasse 30 cm : mesure fragile.
 - **Annexe 5 ajoutée** : mesures détaillées du modèle de risque (protocole, matrices de confusion).
 - **Résumé et abstract resserrés** à environ 224 mots (390 auparavant).
 
@@ -44,7 +46,7 @@ Chaque ligne a été vérifiée dans le code ou dans les mesures du dépôt.
 | 4.1.2 (ancien III) | « 50 arbres, isotonique, 80/20, 123 tests » | Valeurs actuelles (voir plus haut) ; 304 tests | `metriques_rf.json` |
 | Introduction | PDNA 2010 : 360 000 sinistrés dans la région de Dakar, 44,5 milliards de FCFA | Environ 360 000 personnes touchées, **104 millions de dollars** (56 de dommages, 48 de pertes), dont 82 millions pour les zones périurbaines de Dakar | [GFDRR, PDNA Sénégal 2009](https://www.gfdrr.org/en/senegal-2009-pdna-undertaken-after-2009-flooding) |
 | Introduction | Pénétration mobile supérieure à 118 % en 2024 | **127 %** au premier trimestre 2024 (118 % date du troisième trimestre 2021) | ARTP, via [Osiris](https://www.osiris.sn) ; rapport ARTP à citer directement |
-| 2.1.3 | Région de Dakar : 4 011 027 habitants (22,2 %) ; « résultats définitifs » | « Près de 4 millions d'habitants (environ 22 %) » ; les publications de l'ANSD donnent 3 896 564 ou 4 004 425 selon la version | [ANSD](https://www.ansd.sn) |
+| 2.1.3 | Région de Dakar : 4 011 027 habitants (22,2 %) ; « résultats définitifs » | **3 896 564 habitants (environ 21,6 %)**, chiffre retenu par les auteures ; d'autres publications de l'ANSD donnent 4 004 425 | [ANSD](https://www.ansd.sn) |
 | 2.1.5 et bibliographie | PROGEP : projet P122756, 2012-2020 | Projet **P122841**, 2012-2019 | Banque mondiale (PROGEP) |
 | 2.1.6 | FANFAR (2018-2022) | **2018-2021** | [SMHI](https://www.smhi.se/en/research/research-news/smhi-creates-flood-warning-system-in-west-africa-1.139523) |
 | Annexe 2 | Dictionnaire avec des tables et champs inexistants (`api_signalementcitoyen`, `geom`, `hauteur_eau`) | **Régénéré** à partir des modèles Django actuels ; les descriptions d'origine sont reprises quand le champ existe encore | Modèles Django |
@@ -72,7 +74,7 @@ Ces éléments ont été ajoutés dans le fichier d'origine à la place de marqu
 
 | Où | Élément |
 |---|---|
-| 2.1.3 | 18 032 473 habitants (RGPH-5, confirmé par la recherche) ; Dakar : 0,28 % du territoire (confirmé) ; choisir entre 3 896 564 et 4 004 425 habitants pour la région de Dakar |
+| 2.1.3 | 18 032 473 habitants (RGPH-5, confirmé par la recherche) ; Dakar : 0,28 % du territoire (confirmé) ; 3 896 564 habitants pour la région de Dakar (choix des auteures) |
 | 1.2.2 | Commune de 3,8 km², plus de 62 000 habitants, densité supérieure à 16 000 hab./km² ; relevés SRTM et ADM |
 | 1.2.2 | Nappe : 10 à 15 cm de remontée par an (DGPRE) ; bâti de 27 % à 88 % entre 1978 et 2012 (CSE, 2013) |
 | 2.1.3 | « Fall et al., 2014 » et « OMS, 2021 » : cités dans le texte, **absents de la bibliographie** |
@@ -80,15 +82,15 @@ Ces éléments ont été ajoutés dans le fichier d'origine à la place de marqu
 | Bibliographie | Toutes les dates de consultation et le numéro du projet PROGEP (P122756) |
 | 2.1.4 | Marqueur restant : « intitulé actuel à vérifier » |
 
-## 6. Marqueurs jaunes restants (31 dans le document)
+## 6. Marqueurs jaunes restants (29 dans le document)
 
 À traiter par l'équipe :
 
 | Responsable | Éléments |
 |---|---|
-| Équipe | 1.2.1 origine du projet ; 2.2 renvois ; 2.4 solutions envisagées (tableau comparatif) ; 2.5 diagramme de Gantt ; outil de communication du groupe |
+| Équipe | 2.2 renvois ; 2.4 solutions envisagées (tableau comparatif) ; 2.5 diagramme de Gantt ; outil de communication du groupe |
 | Ngoné | 4.2 : captures d'écran des écrans citoyens et autorité |
-| Maïmouna | Refaire la mesure du LSTM ; refaire les simulations de seuils du 4 octobre (seuil de 15 mm) ; origine du projet (1.2.1, avec l'équipe) |
+| Maïmouna | Refaire les simulations de seuils du 4 octobre (seuil de 15 mm) |
 | Mama Adam | 4.1.5 planification des tâches en production ; 4.4 coûts ; vérifier le journal d'exécution du 4 octobre |
 | Mame Diarra | Source du fichier de topographie ; mesure éventuelle du temps des requêtes spatiales ; descriptions de l'annexe 2 (tâche R28) |
 | Chacun | Dates de consultation de la bibliographie ; validation du tableau des difficultés (4.5) |
