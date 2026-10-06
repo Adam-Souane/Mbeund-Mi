@@ -115,13 +115,13 @@ Fichiers à elle : `src/`, `.env.example` (racine), `vite.config.js`, `eslint.co
 
 | Réf. | Statut | Détail |
 |---|---|---|
-| R01 | **À finir par Maïmouna** | Les 4 entrées de `.claude/settings.local.json` contenant le mot de passe Neon sont retirées. **Le mot de passe lui-même n'est pas changé** : à faire sur Neon puis dans Render |
+| R01 | Fait | Mot de passe base de données modifié sur Neon et mis à jour sur Render |
 | R07 | Fait | Limites du modèle rédigées dans le rapport v4 (4.3.2, résumé, conclusion) à partir de `metriques_rf.json` |
 | R20 | Fait | Les erreurs avalées de `service_prediction.py` sont journalisées |
 | R13a | Fait | `analyser_risque` (complexité 19) et `recuperer_historique_24j` (13) découpés en petites fonctions ; comportement inchangé (228 tests backend et 41 tests IA réussis) |
 | R16 | Fait | 30 tests ajoutés sur le service de prédiction (IA : 11 à 41 tests) |
 | LSTM | Fait | Réentraîné sur 15 ans de pluie avec la pluie prévue en entrée : erreur de 2,8 cm contre 5,0 cm pour la persistance (niveau d'eau reconstitué) ; service et tâche Celery adaptés |
-| R06, R00, R05b | À faire par Maïmouna | Orange SMS, accès Render de Mama Adam, application des réglages Render |
+| R06, R00, R05b | En attente | En attente de l'e-mail de Mama Adam (Render) et du retour d'Orange (SMS) |
 | Rapport | Fait | 3.4 (valeurs actuelles), 4.1.1, 4.1.4, 4.2.3 (scénarios rejoués), 4.3.2, conclusion, résumé resserré, annexe 5, chiffres externes de l'introduction vérifiés sur des sources |
 | Rapport | Fait | 1.2.1 origine du projet (récit des auteures), mesure du LSTM refaite le 6 octobre (résultat identique) |
 | Rapport | Fait | Introduction resserrée à 3 pages |
