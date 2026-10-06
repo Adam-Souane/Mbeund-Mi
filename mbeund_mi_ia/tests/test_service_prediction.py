@@ -181,6 +181,58 @@ def test_lstm_exige_modele_scaler_et_24_jours(service):
     assert service.predire_niveau_eau_lstm([{'pluie_mm': 0.0, 'niveau_eau_cm': 0.0}] * 23) is None  # fenêtre incomplète
 
 
+class LstmFactice:
+    """Modèle factice : mémorise l'entrée reçue et renvoie un niveau fixe."""
+
+    def __init__(self, niveau=42.0):
+        self.niveau, self.entree = niveau, None
+
+    def predict(self, entree, verbose=0):
+        self.entree = entree
+        return np.array([[self.niveau]])
+
+
+class ScalerIdentite:
+    def transform(self, df):
+        return df.to_numpy(dtype=float)
+
+
+def historique(pluie=2.0, niveau=10.0):
+    return [{'pluie_mm': pluie + i, 'niveau_eau_cm': niveau} for i in range(24)]
+
+
+def test_lstm_recoit_cinq_variables_dont_la_pluie_prevue(service):
+    service.lstm_model, service.scaler = LstmFactice(), ScalerIdentite()
+    assert service.predire_niveau_eau_lstm(historique(), pluie_prevue_j1=17.0) == 42.0
+    entree = service.lstm_model.entree
+    assert entree.shape == (1, 24, 5)
+    # dernière ligne : pluie du dernier jour, cumuls 24 h et 72 h, niveau, pluie prévue
+    assert entree[0, -1].tolist() == [25.0, 25.0, 23.0 + 24.0 + 25.0, 10.0, 17.0]
+    # chaque jour voit la pluie du lendemain réel dans la dernière colonne
+    assert entree[0, 0, 4] == 3.0
+
+
+def test_lstm_sans_prevision_suppose_la_pluie_de_la_veille(service):
+    service.lstm_model, service.scaler = LstmFactice(), ScalerIdentite()
+    service.predire_niveau_eau_lstm(historique())
+    assert service.lstm_model.entree[0, -1, 4] == 25.0
+
+
+def test_lstm_ne_renvoie_jamais_un_niveau_negatif(service):
+    service.lstm_model, service.scaler = LstmFactice(niveau=-8.0), ScalerIdentite()
+    assert service.predire_niveau_eau_lstm(historique()) == 0.0
+
+
+def test_analyse_du_risque_utilise_le_lstm_avec_la_pluie_prevue(service, monkeypatch):
+    service.lstm_model, service.scaler = LstmFactice(niveau=61.0), ScalerIdentite()
+    monkeypatch.setattr(PredictionService, 'recuperer_historique_24j', lambda self, zone_id: historique())
+    monkeypatch.setattr(PredictionService, '_previsions_pluie', staticmethod(lambda pluie: (3.0, 12.0, 30.0)))
+    r = service.analyser_risque(1, [mesure(niveau=10, pluie=2.0)])
+    assert r['source_predictions'] == 'LSTM'
+    assert r['predictions']['24h']['niveau_cm'] == 61.0
+    assert service.lstm_model.entree[0, -1, 4] == 12.0  # pluie prévue sur 24 h
+
+
 def test_niveaux_projetes_sans_lstm_sont_empiriques(service):
     n12, n24, n72, source = service._niveaux_projetes(1, 20.0, (10.0, 20.0, 30.0), None)
     assert (n12, n24, n72, source) == (24.0, 30.0, 32.0, 'empirique')

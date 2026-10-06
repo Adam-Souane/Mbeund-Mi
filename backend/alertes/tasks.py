@@ -6,7 +6,7 @@ from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.utils import timezone
-from django.db.models import Sum
+from django.db.models import Q, Sum
 from django.db.models.functions import TruncDate
 from alertes.models import ZoneRisque, Alerte, PredictionIA, EpisodeInondation, ContactAlerte, PrevisionMeteo
 from capteurs.models import Capteur, Mesure
@@ -28,6 +28,15 @@ _prediction_service = None
 # Cumul de pluie sur 24 h sous lequel la zone reste automatiquement au vert
 # (par temps sec ou pluies négligeables < 15 mm).
 PLUIE_MIN_MODELE_MM = 15.0
+
+
+def _pluie_prevue_lendemain(zone):
+    """Pluie prévue (mm) pour demain pour la zone (ou une prévision globale), ou None si absente.
+    Variable d'entrée du LSTM de niveau d'eau (voir mbeund_mi_ia/ia/preparation_donnees.py)."""
+    demain = (timezone.now() + timedelta(days=1)).date()
+    prevision = (PrevisionMeteo.objects.filter(date_prevision__date=demain)
+                 .filter(Q(zone=zone) | Q(zone__isnull=True)).order_by('-created_at').first())
+    return float(prevision.precipitation_mm) if prevision else None
 
 
 def _get_prediction_service():
@@ -137,7 +146,8 @@ def appel_modele_ia(self, zone_id):
     # ci-dessus. None tant que 24 jours d'historique continu ne sont pas réunis
     # pour la zone (cas normal en début de vie de l'application).
     historique = _historique_journalier_zone(zone_id)
-    niveau_eau_predit = service.predire_niveau_eau_lstm(historique) if historique else None
+    niveau_eau_predit = (service.predire_niveau_eau_lstm(historique, pluie_prevue_j1=_pluie_prevue_lendemain(zone))
+                         if historique else None)
 
     prediction = PredictionIA.objects.create(
         zone=zone,

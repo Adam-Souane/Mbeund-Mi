@@ -1,0 +1,37 @@
+{
+  "donnees": "pluie journalière Dakar 2010-2024 (Open-Meteo) ; niveau d'eau reconstitué (1,5 × cumul 72 h + bruit de 5 cm)",
+  "sequences": {
+    "apprentissage": 3817,
+    "validation": 818,
+    "test": 819
+  },
+  "epoques_effectuees": 80,
+  "niveau_moyen_test_cm": 6.15,
+  "jours_test_niveau_ge_30cm": 42,
+  "lstm": {
+    "mae": 2.82,
+    "rmse": 3.84
+  },
+  "persistance": {
+    "mae": 4.97,
+    "rmse": 10.07
+  },
+  "regle_empirique": {
+    "mae": 4.69,
+    "rmse": 8.97
+  },
+  "sur_les_jours_ge_30cm": {
+    "lstm": {
+      "mae": 6.56,
+      "rmse": 8.25
+    },
+    "persistance": {
+      "mae": 21.51,
+      "rmse": 32.42
+    },
+    "regle_empirique": {
+      "mae": 17.22,
+      "rmse": 25.96
+    }
+  }
+}

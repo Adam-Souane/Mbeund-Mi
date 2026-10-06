@@ -13,8 +13,8 @@ logger_pred = logging.getLogger('mbeund_mi_prediction')
 # Import conditionnel de TensorFlow : on capture Exception (pas seulement
 # ImportError) car un conflit de version protobuf entre paquets fait planter
 # l'import avec une VersionError, pas une ImportError. Le modèle LSTM chargé
-# ici n'est de toute façon pas encore utilisé dans analyser_risque() (seul
-# RandomForest l'est) — pas de perte fonctionnelle si TF est indisponible.
+# ici sert à prédire le niveau d'eau à 24 h ; sans lui, la règle empirique prend le
+# relais et RandomForest reste actif.
 try:
     import tensorflow as tf
     TF_AVAILABLE = True
@@ -178,7 +178,7 @@ class PredictionService:
         pluie_12h, pluie_24h, pluie_72h = previsions_pluie
         niveau_24h, source = None, "empirique"
         if self.lstm_model and historique_24j and len(historique_24j) == 24:
-            pred_lstm = self.predire_niveau_eau_lstm(historique_24j)
+            pred_lstm = self.predire_niveau_eau_lstm(historique_24j, pluie_prevue_j1=pluie_24h)
             if pred_lstm is not None:
                 niveau_24h, source = round(float(pred_lstm), 1), "LSTM"
                 logger_pred.info(f"Prédictions LSTM activées pour zone {zone_id}")
@@ -270,42 +270,40 @@ class PredictionService:
 
         return resultat
 
-    def predire_niveau_eau_lstm(self, historique_journalier):
+    def predire_niveau_eau_lstm(self, historique_journalier, pluie_prevue_j1=None):
         """
-        Prédit le niveau d'eau (cm) du jour suivant à partir des 24 derniers
-        jours d'historique pluie/niveau — modèle entraîné pour une fenêtre
-        glissante de 24 pas de temps journaliers (voir ia/modele_lstm.py et
-        ia/preparation_donnees.py).
+        Prédit le niveau d'eau (cm) du jour suivant à partir des 24 derniers jours
+        d'historique pluie/niveau et de la pluie prévue pour le jour à prédire
+        (voir ia/modele_lstm.py et ia/preparation_donnees.py).
 
         historique_journalier : liste ordonnée du plus ancien au plus récent,
         exactement 24 éléments, chacun {"pluie_mm": float, "niveau_eau_cm": float}
-        représentant un jour. Retourne None si le modèle ou le scaler ne sont
-        pas chargés, ou si l'historique fourni ne contient pas exactement 24 jours
-        (pas assez de données pour remplir la fenêtre glissante du modèle).
+        représentant un jour. pluie_prevue_j1 : pluie prévue (mm) pour les prochaines
+        24 h ; en son absence, on suppose une pluie identique à celle du dernier jour.
+        Retourne None si le modèle ou le scaler ne sont pas chargés, ou si l'historique
+        fourni ne contient pas exactement 24 jours.
         """
         if not (self.lstm_model and self.scaler):
             return None
         if len(historique_journalier) != 24:
             return None
 
-        # Reproduit exactement les features de ia/preparation_donnees.py :
-        # pluie_cumul_24h = pluie_mm du jour (rolling(1) est un no-op) ;
-        # pluie_cumul_72h = somme glissante des 3 derniers jours.
+        # Mêmes variables que ia/preparation_donnees.py (FEATURES_LSTM) :
+        # pluie du jour, cumul 24 h (= pluie du jour), cumul 72 h (3 derniers jours),
+        # niveau d'eau, et pluie du jour suivant (prévision pour la dernière ligne).
         pluies = [j["pluie_mm"] for j in historique_journalier]
+        if pluie_prevue_j1 is None:
+            pluie_prevue_j1 = pluies[-1]
+        pluies_suivantes = pluies[1:] + [float(pluie_prevue_j1)]
         lignes = []
         for i, jour in enumerate(historique_journalier):
-            pluie_cumul_24h = pluies[i]
-            fenetre_72h = pluies[max(0, i - 2):i + 1]
-            pluie_cumul_72h = sum(fenetre_72h)
-            lignes.append([jour["pluie_mm"], pluie_cumul_24h, pluie_cumul_72h, jour["niveau_eau_cm"]])
+            pluie_cumul_72h = sum(pluies[max(0, i - 2):i + 1])
+            lignes.append([jour["pluie_mm"], pluies[i], pluie_cumul_72h, jour["niveau_eau_cm"], pluies_suivantes[i]])
 
-        # Seules les features d'ENTRÉE (X) sont normalisées à l'entraînement
-        # (ia/preparation_donnees.py) ; la cible (y = niveau_eau_cm) est restée
-        # en échelle réelle. La sortie du modèle est donc déjà en cm, aucune
-        # dénormalisation supplémentaire à appliquer.
-        sequence = pd.DataFrame(lignes, columns=['pluie_mm', 'pluie_cumul_24h', 'pluie_cumul_72h', 'niveau_eau_cm'])
-        sequence_normalisee = self.scaler.transform(sequence)
-        entree = sequence_normalisee.reshape(1, 24, 4)
+        # Les variables d'ENTRÉE sont normalisées par le scaler ; la cible (niveau en cm)
+        # est restée en échelle réelle : la sortie du modèle est déjà en cm.
+        sequence = pd.DataFrame(lignes, columns=['pluie_mm', 'pluie_cumul_24h', 'pluie_cumul_72h', 'niveau_eau_cm', 'pluie_jour_suivant_mm'])
+        entree = self.scaler.transform(sequence).reshape(1, 24, 5)
 
         niveau_predit = float(self.lstm_model.predict(entree, verbose=0)[0][0])
 
