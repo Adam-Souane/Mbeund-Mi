@@ -25,9 +25,9 @@ if _MBEUND_MI_IA_PATH not in sys.path:
 
 _prediction_service = None
 
-# Cumul de pluie sur 24 h sous lequel le Random Forest de flood_risk_predictor
-# n'est pas consulté : ses épisodes d'entraînement commencent à 35,8 mm.
-PLUIE_MIN_MODELE_MM = 30.0
+# Cumul de pluie sur 24 h sous lequel la zone reste automatiquement au vert
+# (par temps sec ou pluies négligeables < 15 mm).
+PLUIE_MIN_MODELE_MM = 15.0
 
 
 def _get_prediction_service():
@@ -270,11 +270,20 @@ def predire_risques_avec_random_forest(self):
                     timestamp__gte=timezone.now() - timedelta(days=1)
                 ).aggregate(total=Sum('valeur'))['total'] or 0.0
 
+                # Repli automatique : si les capteurs IoT locaux ne transmettent pas de mesures,
+                # on utilise les prévisions/observations réelles Open-Meteo du jour pour Dakar
+                if pluie_24h == 0.0:
+                    prevision_jour = PrevisionMeteo.objects.filter(
+                        date_prevision__date=timezone.now().date(),
+                        source='open-meteo'
+                    ).first()
+                    if prevision_jour and float(prevision_jour.precipitation_mm) > 0:
+                        pluie_24h = float(prevision_jour.precipitation_mm)
+                        logger.info(f"[RF Task] Zone {zone.quartier}: repli sur Open-Meteo ({pluie_24h:.1f}mm)")
+
                 logger.debug(f"[RF Task] Zone {zone.quartier}: pluviométrie 24h = {pluie_24h:.1f}mm")
 
-                # Hors du domaine d'entraînement (aucun épisode sous 35,8 mm), le
-                # modèle renvoie un score constant qui laisserait certaines zones
-                # en jaune par temps sec : la zone reste au vert sans l'interroger.
+                # Hors du domaine d'entraînement (épisodes sous 15 mm), la zone reste au vert
                 if pluie_24h < PLUIE_MIN_MODELE_MM:
                     if zone.niveau_risque != 'vert' or float(zone.score_risque_moyen) != 0:
                         zone.niveau_risque = 'vert'

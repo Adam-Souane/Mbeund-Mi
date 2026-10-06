@@ -15,7 +15,7 @@ class ZoneRisque(models.Model):
     description = models.TextField(blank=True)
     score_risque_moyen = models.DecimalField(max_digits=4, decimal_places=2, default=0)
 
-    # Seuils d'alerte (configurables par zone)
+    # Seuils d'alerte (configurables par zone dans l'admin / SIG)
     seuil_jaune = models.DecimalField(max_digits=4, decimal_places=2, default=0.40, help_text="Score seuil pour alerte jaune (0-1)")
     seuil_orange = models.DecimalField(max_digits=4, decimal_places=2, default=0.65, help_text="Score seuil pour alerte orange (0-1)")
     seuil_rouge = models.DecimalField(max_digits=4, decimal_places=2, default=0.85, help_text="Score seuil pour alerte rouge (0-1)")

@@ -5,6 +5,7 @@ import os
 from datetime import datetime
 from .recommandations import generer_recommandation
 from .detecteur_anomalies import DetecteurAnomalies
+from .features_risque import features_depuis_pluies_recentes, classer_risque
 import logging
 
 logger_pred = logging.getLogger('mbeund_mi_prediction')
@@ -62,6 +63,20 @@ class PredictionService:
         Retourne None si impossible d'avoir 24 jours complets.
         """
         try:
+            import sys
+            import os
+            backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../backend'))
+            if backend_dir not in sys.path:
+                sys.path.insert(0, backend_dir)
+
+            import django
+            if not os.environ.get('DJANGO_SETTINGS_MODULE'):
+                os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mbeund_mi_backend.settings.dev')
+            try:
+                django.setup()
+            except Exception:
+                pass
+
             from django.utils import timezone
             from datetime import timedelta
             from capteurs.models import Mesure, Capteur
@@ -162,41 +177,74 @@ class PredictionService:
         niveau_pred_72h = None
         source_prediction = "empirique"
 
-        if self.lstm_model and zone_id:
-            historique_24j = self.recuperer_historique_24j(zone_id)
-            if historique_24j and len(historique_24j) == 24:
-                # Appeler LSTM pour les 3 prochains jours
-                pred_demain = self.predire_niveau_eau_lstm(historique_24j)
-                if pred_demain is not None:
-                    niveau_pred_12h = round(pred_demain * 0.5, 1)  # Approx 12h
-                    niveau_pred_24h = round(pred_demain, 1)  # Approx 24h
-                    niveau_pred_72h = round(pred_demain * 1.5, 1)  # Approx 72h (extrapolation)
-                    source_prediction = "LSTM"
-                    logger_pred.info(f"Prédictions LSTM activées pour zone {zone_id}")
+        historique_24j = self.recuperer_historique_24j(zone_id) if zone_id else None
 
-        # FALLBACK : formule empirique si LSTM non dispo/incomplet
-        if niveau_pred_12h is None:
-            niveau_pred_12h = niveau_actuel + (pluie * 0.2)
-            niveau_pred_24h = niveau_actuel + (pluie * 0.5)
-            niveau_pred_72h = niveau_actuel + (pluie * 0.8)
+        # Récupération des prévisions météo réelles pour les horizons 12h, 24h et 72h
+        pluie_prev_12h = pluie * 0.5
+        pluie_prev_24h = pluie * 1.0
+        pluie_prev_72h = pluie * 1.5
+
+        try:
+            from apis.service_meteo import get_previsions_open_meteo
+            meteo_hourly = get_previsions_open_meteo()
+            if meteo_hourly and 'hourly' in meteo_hourly and 'precipitation' in meteo_hourly['hourly']:
+                precips = meteo_hourly['hourly']['precipitation']
+                pluie_prev_12h = float(sum(precips[:12]))
+                pluie_prev_24h = float(sum(precips[:24]))
+                pluie_prev_72h = float(sum(precips[:72]))
+        except Exception:
+            pass
+
+        # Calcul hydrologique des niveaux projetés
+        if self.lstm_model and historique_24j and len(historique_24j) == 24:
+            pred_lstm = self.predire_niveau_eau_lstm(historique_24j)
+            if pred_lstm is not None:
+                niveau_pred_24h = round(float(pred_lstm), 1)
+                source_prediction = "LSTM"
+                logger_pred.info(f"Prédictions LSTM activées pour zone {zone_id}")
+
+        if niveau_pred_24h is None:
+            niveau_pred_24h = round(niveau_actuel + (pluie_prev_24h * 0.5), 1)
+
+        # Horizons 12h et 72h calculés selon l'apport pluvieux prévu et l'infiltration naturelle
+        taux_ruissellement = 0.4
+        niveau_pred_12h = round(niveau_actuel + (pluie_prev_12h * taux_ruissellement), 1)
+        niveau_pred_72h = round(niveau_actuel + (pluie_prev_72h * taux_ruissellement), 1)
         
         # RF classify
         confiance = 80.0
         risque_code = 0
         
         if self.rf_model:
-            # On utilise un DataFrame pandas au lieu de numpy pour éviter le warning rouge
-            import pandas as pd
-            features = pd.DataFrame([[
-                pluie,
-                pluie * 12, # cumul 24h estimé
-                pluie * 36, # cumul 72h estimé
-                niveau_actuel
-            ]], columns=['pluie_mm', 'pluie_cumul_24h', 'pluie_cumul_72h', 'niveau_eau_cm'])
-            
-            risque_code = self.rf_model.predict(features)[0]
+            # Mêmes features que l'entraînement (ia/features_risque.py) : pluie du jour
+            # (mesure courante) + pluies des 2 jours précédents issues de l'historique.
+            # Sans historique, on ne dispose que de la pluie du jour : cumul 72 h =
+            # borne basse, signalée dans la qualité des données.
+            if historique_24j and len(historique_24j) >= 2:
+                pluies_3j = [historique_24j[-2]["pluie_mm"], historique_24j[-1]["pluie_mm"], pluie]
+            else:
+                pluies_3j = [pluie]
+                qualite_donnees = "DEGRADEE" if qualite_donnees == "BONNE" else qualite_donnees
+                logger_pred.warning(f"Historique de pluie indisponible zone {zone_id} : cumuls 24h/72h limités à la mesure courante")
+            features = features_depuis_pluies_recentes(pluies_3j)
+
+            # Le modèle prédit la classe de risque du lendemain (J+1)
+            risque_code = int(self.rf_model.predict(features)[0])
             probabilites = self.rf_model.predict_proba(features)[0]
             confiance = float(max(probabilites) * 100)
+            # Calcul du risque hydrologique observé en temps réel (cumul 72h et niveau d'eau actuel)
+            cumul_72h_observe = float(sum(pluies_3j))
+            risque_actuel_code = int(classer_risque(cumul_72h_observe))
+            if niveau_actuel > 80:
+                risque_actuel_code = max(risque_actuel_code, 3)
+            elif niveau_actuel > 50:
+                risque_actuel_code = max(risque_actuel_code, 2)
+            elif niveau_actuel > 30:
+                risque_actuel_code = max(risque_actuel_code, 1)
+
+            # Vigilance opérationnelle (principe de sécurité civile) : retenir le niveau le plus critique
+            # entre la situation hydrologique immédiate et la prévision anticipée par l'IA à J+1
+            risque_code = max(risque_actuel_code, risque_code)
         else:
             # Fallback manuel si modèle non chargé
             if niveau_actuel > 80:

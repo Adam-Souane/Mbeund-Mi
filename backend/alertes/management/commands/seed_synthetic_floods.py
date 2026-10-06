@@ -108,14 +108,14 @@ class Command(BaseCommand):
             )
 
             self.stdout.write(
-                f'  {date_debut.strftime("%Y-%m-%d")}: {pluie_mm}mm rainfall → {surface_ha:.0f}ha flood area'
+                f'  {date_debut.strftime("%Y-%m-%d")}: {pluie_mm}mm rainfall -> {surface_ha:.0f}ha flood area'
             )
 
             created_count += 1
             last_date = date_debut
 
         self.stdout.write(
-            self.style.SUCCESS(f'\n✓ Successfully created {created_count} synthetic flood episodes')
+            self.style.SUCCESS(f'\n[OK] Successfully created {created_count} synthetic flood episodes')
         )
         self.stdout.write(
             self.style.WARNING(

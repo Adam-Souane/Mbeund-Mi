@@ -121,13 +121,36 @@ export default function InteractiveMap({ data = {}, height = 560, route }) {
                 pathOptions={{ color: hex, fillColor: hex, fillOpacity: 0.3, weight: 2 }}
               >
                 <Popup>
-                  <div className="text-xs space-y-1 min-w-[160px]">
-                    <div className="font-bold text-sm">{f.properties.quartier}</div>
-                    <div>
-                      Risque : <span className="font-semibold">{label}</span>
+                  <div className="text-xs space-y-2 min-w-[190px] p-0.5">
+                    <div className="flex items-center justify-between border-b border-navy-100 pb-1">
+                      <span className="font-bold text-sm text-navy-900">{f.properties.quartier}</span>
+                      <span
+                        className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                        style={{ backgroundColor: `${hex}20`, color: hex }}
+                      >
+                        {label}
+                      </span>
                     </div>
-                    <div>Score moyen : {f.properties.score_risque_moyen}</div>
-                    {f.properties.description && <p className="text-navy-600">{f.properties.description}</p>}
+                    <div>
+                      <div className="flex justify-between items-center text-[11px] mb-1">
+                        <span className="text-navy-600 font-medium">Indice de risque :</span>
+                        <span className="font-bold" style={{ color: hex }}>
+                          {Math.round(Number(f.properties.score_risque_moyen ?? 0) * 100)} %
+                        </span>
+                      </div>
+                      <div className="w-full bg-navy-100 rounded-full h-1.5 overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-300"
+                          style={{
+                            width: `${Math.min(100, Math.max(5, Math.round(Number(f.properties.score_risque_moyen ?? 0) * 100)))}%`,
+                            backgroundColor: hex,
+                          }}
+                        />
+                      </div>
+                    </div>
+                    {f.properties.description && (
+                      <p className="text-navy-600 text-[11px] leading-relaxed pt-0.5">{f.properties.description}</p>
+                    )}
                   </div>
                 </Popup>
               </Polygon>
@@ -153,21 +176,37 @@ export default function InteractiveMap({ data = {}, height = 560, route }) {
           ))}
 
         {visible.segments &&
-          segments.features.map((f) => (
-            <Polyline
-              key={`segment-${f.id}`}
-              positions={lineToLatLngs(f.geometry)}
-              pathOptions={{ color: segmentColor(f.properties.score_risque_actuel), weight: 4 }}
-            >
-              <Popup>
-                <div className="text-xs space-y-1 min-w-[160px]">
-                  <div className="font-bold text-sm">{f.properties.nom || 'Rue sans nom'}</div>
-                  <div>Drainage : {f.properties.etat_drainage}</div>
-                  <div>Score de risque : {f.properties.score_risque_actuel}</div>
-                </div>
-              </Popup>
-            </Polyline>
-          ))}
+          segments.features.map((f) => {
+            const segScore = Number(f.properties.score_risque_actuel ?? 0);
+            const segPct = Math.round(segScore * 100);
+            const color = segmentColor(segScore);
+            return (
+              <Polyline
+                key={`segment-${f.id}`}
+                positions={lineToLatLngs(f.geometry)}
+                pathOptions={{ color, weight: 4 }}
+              >
+                <Popup>
+                  <div className="text-xs space-y-1.5 min-w-[170px] p-0.5">
+                    <div className="font-bold text-sm text-navy-900">{f.properties.nom || 'Rue sans nom'}</div>
+                    <div className="text-[11px] text-navy-700">
+                      Drainage : <span className="font-medium">{f.properties.etat_drainage || 'Non renseigné'}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-[11px]">
+                      <span className="text-navy-600 font-medium">Vulnérabilité :</span>
+                      <span className="font-bold" style={{ color }}>{segPct} %</span>
+                    </div>
+                    <div className="w-full bg-navy-100 rounded-full h-1.5 overflow-hidden">
+                      <div
+                        className="h-full rounded-full"
+                        style={{ width: `${Math.min(100, Math.max(5, segPct))}%`, backgroundColor: color }}
+                      />
+                    </div>
+                  </div>
+                </Popup>
+              </Polyline>
+            );
+          })}
 
         {visible.capteurs &&
           capteurs.features.map((f) => {
