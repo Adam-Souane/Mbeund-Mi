@@ -1,0 +1,42 @@
+import matplotlib; matplotlib.use('Agg'); import matplotlib.pyplot as plt
+from matplotlib.patches import FancyBboxPatch
+ACC='#0f5d73'; SOFT='#e3f0f3'; INK='#14232c'; GREY='#7d8f99'; EXT='#f6f1e7'; EXTB='#9a6b2f'
+fig,ax=plt.subplots(figsize=(11.5,6.8),dpi=200); ax.set_xlim(0,112); ax.set_ylim(0,66); ax.axis('off')
+def band(x,y,w,h,title,right=False):
+    ax.add_patch(FancyBboxPatch((x,y),w,h,boxstyle='round,pad=0,rounding_size=1.2',fc='white',ec=GREY,lw=1.1,ls='--'))
+    ax.text(x+w-1.2 if right else x+1.2,y+h-1.0,title,fontsize=8.5,fontweight='bold',color=GREY,va='top',ha='right' if right else 'left')
+def box(x,y,w,h,t,s='',fc=SOFT,ec=ACC):
+    ax.add_patch(FancyBboxPatch((x,y),w,h,boxstyle='round,pad=0,rounding_size=0.8',fc=fc,ec=ec,lw=1.4))
+    ax.text(x+w/2,y+h/2+(1.2 if s else 0),t,ha='center',va='center',fontsize=8.3,fontweight='bold',color=INK)
+    if s: ax.text(x+w/2,y+h/2-1.5,s,ha='center',va='center',fontsize=7,color=INK)
+def arr(x1,y1,x2,y2,t='',both=False,dash=False,tx=None,ty=None,ha='left'):
+    ax.annotate('',xy=(x2,y2),xytext=(x1,y1),arrowprops=dict(arrowstyle='<|-|>' if both else '-|>',color='#444',lw=1.1,ls='--' if dash else '-',shrinkA=0,shrinkB=0,mutation_scale=10))
+    if t: ax.text(tx if tx is not None else (x1+x2)/2+0.8,ty if ty is not None else (y1+y2)/2,t,fontsize=6.9,color='#333',va='center',ha=ha)
+band(2,49,74,15,'COUCHE PRÉSENTATION'); band(2,20.5,74,25.5,'COUCHE APPLICATION (serveur)',right=True); band(2,2,74,15,'COUCHE DONNÉES'); band(80,2,30,62,'SERVICES EXTERNES')
+box(6,51,32,8.5,'Application web React','espaces citoyen et autorité')
+box(44,51,28,8.5,'Téléphone simple','signalement et alerte par SMS',fc='#ffffff')
+box(4,33,22,8,'API REST Django/DRF','JWT, rôles, OpenAPI')
+box(28,33,22,8,'Django Channels','WebSocket temps réel')
+box(52,33,22,8,'Celery Worker + Beat','tâches toutes les 3, 6 et 12 h')
+box(4,23,22,7.5,'Assistant NDAM','contexte fourni par l\'API')
+box(28,23,22,7.5,'Écouteur MQTT','réception des mesures')
+box(52,23,22,7.5,'Module IA','RF, LSTM, Isolation Forest')
+box(6,4,32,8.5,'PostgreSQL + PostGIS','données et géométries (Neon)')
+box(44,4,28,8.5,'Redis','cache, tâches, canaux (Upstash)')
+ext=[('Open-Meteo / OWM','prévisions météo',52),('Google Earth Engine','images Sentinel-2',43),('Groq','modèle de langage (NDAM)',34),('Twilio','envoi et réception de SMS',25),('Broker MQTT (HiveMQ)','messagerie des capteurs',15),('Simulateur IoT','capteurs simulés',4.5)]
+for t,s,y in ext: box(83,y,24,7.5,t,s,fc=EXT,ec=EXTB)
+arr(16,51,13,41,'HTTPS / JSON',tx=16,ty=47.5)
+arr(32,51,37,41,'WebSocket',both=True,dash=True,tx=36,ty=47.5)
+arr(15,33,15,30.5)
+arr(63,33,63,30.5)
+arr(48,30.5,55,33)
+ax.text(44.5,32.2,'déclenche',fontsize=6.9,color='#333')
+arr(22,20.5,22,12.5,'lecture / écriture',tx=23,ty=16.5)
+arr(58,20.5,58,12.5,'cache, files',tx=59,ty=16.5)
+arr(76,55.7,83,55.7,'météo',tx=79.5,ty=57,ha='center'); arr(76,46.7,83,46.7,'satellite',tx=79.5,ty=48,ha='center')
+arr(76,37.7,83,37.7,'NDAM',tx=79.5,ty=39,ha='center'); arr(76,28.7,83,28.7,'SMS',tx=79.5,ty=30,ha='center')
+arr(72,55,83,30.5,'',both=True,dash=True)
+arr(95,12,95,15)
+ax.annotate('',xy=(39,23),xytext=(83,18.5),arrowprops=dict(arrowstyle='-|>',color='#444',lw=1.1,shrinkA=0,shrinkB=0,mutation_scale=10))
+ax.text(66,21.2,'mesures',fontsize=6.9,color='#333')
+plt.savefig('fig/architecture.png',bbox_inches='tight',facecolor='white')

@@ -1,0 +1,44 @@
+@startuml
+!pragma layout smetana
+!include style.iuml
+skinparam defaultFontSize 13
+top to bottom direction
+package "Couche présentation" {
+  [Application web React\n(Vite, Tailwind, Leaflet)] as FE
+}
+package "Couche application" {
+  [API REST Django / DRF\n(JWT, rôles, OpenAPI)] as API
+  [Django Channels\n(WebSocket)] as WS
+  [Celery Worker et Beat\n(tâches planifiées)] as CEL
+  [Écouteur MQTT\n(ecoute_mqtt)] as MQL
+  [Module IA\n(Random Forest, LSTM,\nIsolation Forest)] as IA
+}
+package "Couche données" {
+  database "PostgreSQL + PostGIS\n(Neon)" as DB
+  database "Redis\n(Upstash)" as RD
+}
+package "Services externes" {
+  [Open-Meteo /\nOpenWeatherMap] as MET
+  [Google Earth Engine\n(Sentinel-2)] as GEE
+  [Groq (assistant NDAM)] as GROQ
+  [Twilio (SMS)] as TW
+  [Broker MQTT\n(HiveMQ Cloud)] as BRK
+  [Simulateur IoT] as SIM
+}
+FE --> API : HTTPS / JSON
+FE ..> WS : WebSocket
+API --> DB
+API --> RD : cache
+CEL --> RD : file de tâches
+CEL --> DB
+CEL --> IA
+CEL --> MET
+CEL --> GEE
+CEL --> TW
+API --> GROQ
+SIM --> BRK
+BRK --> MQL
+MQL --> DB
+MQL --> CEL
+WS --> RD
+@enduml

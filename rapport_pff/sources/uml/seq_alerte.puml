@@ -1,0 +1,27 @@
+@startuml
+!include style.iuml
+skinparam defaultFontSize 16
+autonumber
+participant "Celery Beat\n(toutes les 6 h)" as BEAT
+participant "Worker Celery" as W
+database "PostgreSQL /\nPostGIS" as DB
+participant "Modèle\nRandom Forest" as RF
+participant "Passerelle SMS\n(Twilio)" as SMS
+actor "Habitants inscrits\net personnel" as H
+BEAT -> W : predire_risques_avec_random_forest()
+loop pour chaque zone de risque
+  W -> DB : cumul de pluie des 24 dernières heures
+  W -> RF : prédire(pluie, altitude, pente,\nperméabilité, drainage)
+  RF --> W : score et probabilités par classe
+  W -> W : comparer le score aux seuils\njaune / orange / rouge de la zone
+  W -> DB : mettre à jour niveau et score de la zone
+  opt niveau ≥ jaune et aucune alerte dans l'heure
+    W -> DB : créer l'Alerte (statut « en attente »)
+    W -> W : envoyer_sms_alerte(alerte)
+    W -> DB : numéros du personnel et des\ncontacts inscrits de la zone
+    W -> SMS : envoyer le message
+    SMS -> H : SMS d'alerte
+    W -> DB : statut = « envoyée »
+  end
+end
+@enduml

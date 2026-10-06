@@ -1,0 +1,1219 @@
+{
+  "duplicates": [
+    {
+      "firstFile": {
+        "end": 23,
+        "endLoc": {
+          "column": 39,
+          "line": 23,
+          "position": 884
+        },
+        "name": "backend\\alertes\\admin.py",
+        "start": 16,
+        "startLoc": {
+          "column": 27,
+          "line": 16,
+          "position": 580
+        }
+      },
+      "format": "python",
+      "fragment": "    def niveau_risque_badge(self, obj):\n        colors = {\n            'vert': ('#d4edda', '#155724', 'Vert'),\n            'jaune': ('#fff3cd', '#856404', 'Jaune'),\n            'orange': ('#ffe8d6', '#a0522d', 'Orange'),\n            'rouge': ('#f8d7da', '#721c24', 'Rouge'),\n        }\n        bg, fg, label = colors.get(obj.niveau_risque, ('#e2e3e5', '#383d41', obj.niveau_risque))",
+      "isNew": false,
+      "kind": "exact",
+      "lines": 8,
+      "secondFile": {
+        "end": 45,
+        "endLoc": {
+          "column": 39,
+          "line": 45,
+          "position": 1884
+        },
+        "name": "backend\\alertes\\admin.py",
+        "start": 38,
+        "startLoc": {
+          "column": 20,
+          "line": 38,
+          "position": 1580
+        }
+      },
+      "tokens": 62
+    },
+    {
+      "firstFile": {
+        "end": 49,
+        "endLoc": {
+          "column": 9,
+          "line": 49,
+          "position": 1811
+        },
+        "name": "backend\\api\\fields.py",
+        "start": 37,
+        "startLoc": {
+          "column": 29,
+          "line": 37,
+          "position": 1329
+        }
+      },
+      "format": "python",
+      "fragment": "    class SpatialPolygonField(models.TextField):\n        def __init__(self, *args, **kwargs):\n            self.srid = kwargs.pop('srid', 4326)\n            self.spatial_index = kwargs.pop('spatial_index', True)\n            super().__init__(*args, **kwargs)\n\n        def deconstruct(self):\n            name, path, args, kwargs = super().deconstruct()\n            kwargs['srid'] = self.srid\n            kwargs['spatial_index'] = self.spatial_index\n            return name, path, args, kwargs\n\n    class SpatialMultiPolygonField(models.TextField):",
+      "isNew": false,
+      "kind": "exact",
+      "lines": 13,
+      "secondFile": {
+        "end": 61,
+        "endLoc": {
+          "column": 9,
+          "line": 61,
+          "position": 2318
+        },
+        "name": "backend\\api\\fields.py",
+        "start": 49,
+        "startLoc": {
+          "column": 34,
+          "line": 49,
+          "position": 1836
+        }
+      },
+      "tokens": 102
+    },
+    {
+      "firstFile": {
+        "end": 47,
+        "endLoc": {
+          "column": 43,
+          "line": 47,
+          "position": 1798
+        },
+        "name": "backend\\api\\fields.py",
+        "start": 37,
+        "startLoc": {
+          "column": 29,
+          "line": 37,
+          "position": 1329
+        }
+      },
+      "format": "python",
+      "fragment": "    class SpatialPolygonField(models.TextField):\n        def __init__(self, *args, **kwargs):\n            self.srid = kwargs.pop('srid', 4326)\n            self.spatial_index = kwargs.pop('spatial_index', True)\n            super().__init__(*args, **kwargs)\n\n        def deconstruct(self):\n            name, path, args, kwargs = super().deconstruct()\n            kwargs['srid'] = self.srid\n            kwargs['spatial_index'] = self.spatial_index\n            return name, path, args, kwargs",
+      "isNew": false,
+      "kind": "exact",
+      "lines": 11,
+      "secondFile": {
+        "end": 71,
+        "endLoc": {
+          "column": 43,
+          "line": 71,
+          "position": 2810
+        },
+        "name": "backend\\api\\fields.py",
+        "start": 61,
+        "startLoc": {
+          "column": 32,
+          "line": 61,
+          "position": 2341
+        }
+      },
+      "tokens": 101
+    },
+    {
+      "firstFile": {
+        "end": 165,
+        "endLoc": {
+          "column": 34,
+          "line": 165,
+          "position": 5786
+        },
+        "name": "backend\\api\\services\\pdf_export_service.py",
+        "start": 139,
+        "startLoc": {
+          "column": 78,
+          "line": 139,
+          "position": 5134
+        }
+      },
+      "format": "python",
+      "fragment": "        alertes = Alerte.objects.select_related('zone').order_by('-timestamp')[:100]\n\n        output = io.BytesIO()\n        doc = SimpleDocTemplate(\n            output,\n            pagesize=landscape(A4),\n            rightMargin=1*cm,\n            leftMargin=1*cm,\n            topMargin=1*cm,\n            bottomMargin=1*cm,\n        )\n\n        # Construire le contenu\n        elements = []\n\n        # En-tête\n        elements.extend(PDFExportService._get_header())\n\n        # Titre du rapport\n        title_style = ParagraphStyle(\n            'ReportTitle',\n            fontSize=16,\n            textColor=COLORS['navy'],\n            fontName='Helvetica-Bold',\n            spaceAfter=12,\n        )\n        elements.append(Paragraph('Rapport des Alertes', title_style))",
+      "isNew": false,
+      "kind": "exact",
+      "lines": 27,
+      "secondFile": {
+        "end": 239,
+        "endLoc": {
+          "column": 34,
+          "line": 239,
+          "position": 8209
+        },
+        "name": "backend\\api\\services\\pdf_export_service.py",
+        "start": 213,
+        "startLoc": {
+          "column": 31,
+          "line": 213,
+          "position": 7557
+        }
+      },
+      "tokens": 98
+    },
+    {
+      "firstFile": {
+        "end": 101,
+        "endLoc": {
+          "column": 58,
+          "line": 101,
+          "position": 4030
+        },
+        "name": "backend\\users\\views.py",
+        "start": 94,
+        "startLoc": {
+          "column": 21,
+          "line": 94,
+          "position": 3558
+        }
+      },
+      "format": "python",
+      "fragment": "        if email and User.objects.filter(email=email).exists():\n            return Response({'email': 'Cet email est déjà utilisé'}, status=status.HTTP_400_BAD_REQUEST)\n\n        # Vérifier que l'username choisi est disponible\n        if User.objects.filter(username=username).exists():\n            return Response({'username': 'Cet identifiant est déjà pris. Veuillez en choisir un autre.'}, status=status.HTTP_400_BAD_REQUEST)\n\n        # Créer l'utilisateur et mettre à jour le profil",
+      "isNew": false,
+      "kind": "exact",
+      "lines": 8,
+      "secondFile": {
+        "end": 375,
+        "endLoc": {
+          "column": 46,
+          "line": 375,
+          "position": 14817
+        },
+        "name": "backend\\users\\views.py",
+        "start": 368,
+        "startLoc": {
+          "column": 11,
+          "line": 368,
+          "position": 14357
+        }
+      },
+      "tokens": 62
+    },
+    {
+      "firstFile": {
+        "end": 467,
+        "endLoc": {
+          "column": 54,
+          "line": 467,
+          "position": 18152
+        },
+        "name": "backend\\users\\views.py",
+        "start": 448,
+        "startLoc": {
+          "column": 8,
+          "line": 448,
+          "position": 17592
+        }
+      },
+      "format": "python",
+      "fragment": "        Body:\n        {\n            \"username\": \"...\"\n        }\n        \"\"\"\n        if request.user.profile.role != 'admin':\n            return Response(\n                {'detail': 'Accès réservé aux administrateurs'},\n                status=status.HTTP_403_FORBIDDEN\n            )\n\n        username = request.data.get('username')\n        if not username:\n            return Response(\n                {'detail': 'Username requis'},\n                status=status.HTTP_400_BAD_REQUEST\n            )\n\n        try:\n            user = User.objects.get(username=username)",
+      "isNew": false,
+      "kind": "exact",
+      "lines": 20,
+      "secondFile": {
+        "end": 513,
+        "endLoc": {
+          "column": 54,
+          "line": 513,
+          "position": 19655
+        },
+        "name": "backend\\users\\views.py",
+        "start": 494,
+        "startLoc": {
+          "column": 8,
+          "line": 494,
+          "position": 19095
+        }
+      },
+      "tokens": 79
+    },
+    {
+      "firstFile": {
+        "end": 42,
+        "endLoc": {
+          "column": 18,
+          "line": 42,
+          "position": 1277
+        },
+        "name": "auth-pages\\AdminRegisterPage.jsx",
+        "start": 29,
+        "startLoc": {
+          "column": 3,
+          "line": 29,
+          "position": 980
+        }
+      },
+      "format": "jsx",
+      "fragment": "  });\n\n  const handleChange = (e) => {\n    const { name, value } = e.target;\n    setFormData((prev) => ({ ...prev, [name]: value }));\n    if (errors[name]) {\n      setErrors((prev) => ({ ...prev, [name]: '' }));\n    }\n  };\n\n  const validateForm = () => {\n    const newErrors = {};\n\n    if (!formData.code.trim()) newErrors.code = 'Code d\\'invitation requis';",
+      "isNew": false,
+      "kind": "exact",
+      "lines": 14,
+      "secondFile": {
+        "end": 80,
+        "endLoc": {
+          "column": 18,
+          "line": 80,
+          "position": 2947
+        },
+        "name": "auth-pages\\SignupPageNew.jsx",
+        "start": 67,
+        "startLoc": {
+          "column": 46,
+          "line": 67,
+          "position": 2650
+        }
+      },
+      "tokens": 90
+    },
+    {
+      "firstFile": {
+        "end": 65,
+        "endLoc": {
+          "column": 41,
+          "line": 65,
+          "position": 2269
+        },
+        "name": "auth-pages\\AdminRegisterPage.jsx",
+        "start": 47,
+        "startLoc": {
+          "column": 4,
+          "line": 47,
+          "position": 1636
+        }
+      },
+      "format": "jsx",
+      "fragment": "    if (!formData.telephone.trim()) newErrors.telephone = 'Numéro de téléphone requis';\n    if (!formData.password) newErrors.password = 'Mot de passe requis';\n    if (formData.password.length < 8) newErrors.password = 'Min. 8 caractères';\n    if (formData.password !== formData.password_confirm) {\n      newErrors.password_confirm = 'Les mots de passe ne correspondent pas';\n    }\n\n    setErrors(newErrors);\n    return Object.keys(newErrors).length === 0;\n  };\n\n  const handleSubmit = async (e) => {\n    e.preventDefault();\n\n    if (!validateForm()) return;\n\n    setLoading(true);\n    try {\n      const response = await client.post('/users/admin-register/', {",
+      "isNew": false,
+      "kind": "exact",
+      "lines": 19,
+      "secondFile": {
+        "end": 112,
+        "endLoc": {
+          "column": 41,
+          "line": 112,
+          "position": 4227
+        },
+        "name": "auth-pages\\SignupPageNew.jsx",
+        "start": 94,
+        "startLoc": {
+          "column": 4,
+          "line": 94,
+          "position": 3594
+        }
+      },
+      "tokens": 122
+    },
+    {
+      "firstFile": {
+        "end": 96,
+        "endLoc": {
+          "column": 88,
+          "line": 96,
+          "position": 3309
+        },
+        "name": "auth-pages\\AdminRegisterPage.jsx",
+        "start": 79,
+        "startLoc": {
+          "column": 4,
+          "line": 79,
+          "position": 2664
+        }
+      },
+      "format": "jsx",
+      "fragment": "    } catch (error) {\n      const errorData = error.response?.data || {};\n      if (typeof errorData === 'object') {\n        setErrors(errorData);\n      } else {\n        showToast(errorData.detail || 'Erreur lors de la création du compte', 'error');\n      }\n    } finally {\n      setLoading(false);\n    }\n  };\n\n  return (\n    <div className={`min-h-screen flex flex-col items-center justify-center ${darkMode ? 'bg-navy-950' : 'bg-navy-50'} p-4`}>\n      <div className=\"w-full max-w-md\">\n        <div className=\"text-center mb-8\">\n          <Logo size=\"lg\" />\n          <p className={`text-sm ${darkMode ? 'text-navy-400' : 'text-navy-600'} mt-2`}>",
+      "isNew": false,
+      "kind": "exact",
+      "lines": 18,
+      "secondFile": {
+        "end": 155,
+        "endLoc": {
+          "column": 88,
+          "line": 155,
+          "position": 5686
+        },
+        "name": "auth-pages\\SignupPageNew.jsx",
+        "start": 138,
+        "startLoc": {
+          "column": 4,
+          "line": 138,
+          "position": 5041
+        }
+      },
+      "tokens": 110
+    },
+    {
+      "firstFile": {
+        "end": 152,
+        "endLoc": {
+          "column": 10,
+          "line": 152,
+          "position": 5714
+        },
+        "name": "auth-pages\\AdminRegisterPage.jsx",
+        "start": 127,
+        "startLoc": {
+          "column": 10,
+          "line": 127,
+          "position": 4643
+        }
+      },
+      "format": "jsx",
+      "fragment": "          <div className=\"grid grid-cols-2 gap-3\">\n            <div>\n              <input\n                type=\"text\"\n                name=\"first_name\"\n                value={formData.first_name}\n                onChange={handleChange}\n                placeholder=\"Prénom\"\n                className={`w-full px-4 py-2 rounded-lg border ${darkMode ? 'border-navy-700 bg-navy-900 text-white' : 'border-navy-200 bg-white'}`}\n              />\n              {errors.first_name && <p className=\"text-xs text-red-500\">{errors.first_name}</p>}\n            </div>\n            <div>\n              <input\n                type=\"text\"\n                name=\"last_name\"\n                value={formData.last_name}\n                onChange={handleChange}\n                placeholder=\"Nom\"\n                className={`w-full px-4 py-2 rounded-lg border ${darkMode ? 'border-navy-700 bg-navy-900 text-white' : 'border-navy-200 bg-white'}`}\n              />\n              {errors.last_name && <p className=\"text-xs text-red-500\">{errors.last_name}</p>}\n            </div>\n          </div>\n\n          <div>",
+      "isNew": false,
+      "kind": "exact",
+      "lines": 26,
+      "secondFile": {
+        "end": 172,
+        "endLoc": {
+          "column": 10,
+          "line": 172,
+          "position": 6720
+        },
+        "name": "auth-pages\\SignupPageNew.jsx",
+        "start": 161,
+        "startLoc": {
+          "column": 10,
+          "line": 161,
+          "position": 5869
+        }
+      },
+      "tokens": 148
+    },
+    {
+      "firstFile": {
+        "end": 167,
+        "endLoc": {
+          "column": 11,
+          "line": 167,
+          "position": 6436
+        },
+        "name": "auth-pages\\AdminRegisterPage.jsx",
+        "start": 154,
+        "startLoc": {
+          "column": 111,
+          "line": 154,
+          "position": 5944
+        }
+      },
+      "format": "jsx",
+      "fragment": "              Email <span className={`text-xs ${darkMode ? 'text-navy-400' : 'text-navy-500'}`}>(Requis)</span>\n            </label>\n            <input\n              type=\"email\"\n              name=\"email\"\n              value={formData.email}\n              onChange={handleChange}\n              placeholder=\"email@exemple.com\"\n              className={`w-full px-4 py-2 rounded-lg border ${darkMode ? 'border-navy-700 bg-navy-900 text-white' : 'border-navy-200 bg-white'}`}\n            />\n            {errors.email && <p className=\"text-xs text-red-500\">{errors.email}</p>}\n          </div>\n\n          <div>",
+      "isNew": false,
+      "kind": "exact",
+      "lines": 14,
+      "secondFile": {
+        "end": 207,
+        "endLoc": {
+          "column": 11,
+          "line": 207,
+          "position": 8898
+        },
+        "name": "auth-pages\\SignupPageNew.jsx",
+        "start": 201,
+        "startLoc": {
+          "column": 233,
+          "line": 201,
+          "position": 8502
+        }
+      },
+      "tokens": 71
+    },
+    {
+      "firstFile": {
+        "end": 192,
+        "endLoc": {
+          "column": 13,
+          "line": 192,
+          "position": 7537
+        },
+        "name": "auth-pages\\AdminRegisterPage.jsx",
+        "start": 177,
+        "startLoc": {
+          "column": 16,
+          "line": 177,
+          "position": 6912
+        }
+      },
+      "format": "jsx",
+      "fragment": "          </div>\n\n          <div className=\"relative\">\n            <input\n              type={showPassword ? 'text' : 'password'}\n              name=\"password\"\n              value={formData.password}\n              onChange={handleChange}\n              placeholder=\"Mot de passe (min. 8 caractères)\"\n              className={`w-full px-4 py-2 pr-10 rounded-lg border ${darkMode ? 'border-navy-700 bg-navy-900 text-white' : 'border-navy-200 bg-white'}`}\n            />\n            <button\n              type=\"button\"\n              onClick={() => setShowPassword(!showPassword)}\n              className=\"absolute right-3 top-2.5\"\n            >",
+      "isNew": false,
+      "kind": "exact",
+      "lines": 16,
+      "secondFile": {
+        "end": 212,
+        "endLoc": {
+          "column": 118,
+          "line": 212,
+          "position": 9715
+        },
+        "name": "auth-pages\\SignupPageNew.jsx",
+        "start": 208,
+        "startLoc": {
+          "column": 90,
+          "line": 208,
+          "position": 9241
+        }
+      },
+      "tokens": 72
+    },
+    {
+      "firstFile": {
+        "end": 211,
+        "endLoc": {
+          "column": 13,
+          "line": 211,
+          "position": 8329
+        },
+        "name": "auth-pages\\AdminRegisterPage.jsx",
+        "start": 196,
+        "startLoc": {
+          "column": 16,
+          "line": 196,
+          "position": 7699
+        }
+      },
+      "format": "jsx",
+      "fragment": "          </div>\n\n          <div className=\"relative\">\n            <input\n              type={showConfirm ? 'text' : 'password'}\n              name=\"password_confirm\"\n              value={formData.password_confirm}\n              onChange={handleChange}\n              placeholder=\"Confirmer le mot de passe\"\n              className={`w-full px-4 py-2 pr-10 rounded-lg border ${darkMode ? 'border-navy-700 bg-navy-900 text-white' : 'border-navy-200 bg-white'}`}\n            />\n            <button\n              type=\"button\"\n              onClick={() => setShowConfirm(!showConfirm)}\n              className=\"absolute right-3 top-2.5\"\n            >",
+      "isNew": false,
+      "kind": "exact",
+      "lines": 16,
+      "secondFile": {
+        "end": 218,
+        "endLoc": {
+          "column": 116,
+          "line": 218,
+          "position": 10326
+        },
+        "name": "auth-pages\\SignupPageNew.jsx",
+        "start": 214,
+        "startLoc": {
+          "column": 88,
+          "line": 214,
+          "position": 9847
+        }
+      },
+      "tokens": 72
+    },
+    {
+      "firstFile": {
+        "end": 69,
+        "endLoc": {
+          "column": 25,
+          "line": 69,
+          "position": 2384
+        },
+        "name": "auth-pages\\ForgotPasswordPage.jsx",
+        "start": 59,
+        "startLoc": {
+          "column": 42,
+          "line": 59,
+          "position": 1954
+        }
+      },
+      "format": "jsx",
+      "fragment": "          onClick={() => navigate('/login')}\n          className={`flex items-center gap-2 mb-8 ${darkMode ? 'text-navy-400 hover:text-navy-200' : 'text-navy-600 hover:text-navy-900'} transition`}\n        >\n          <ArrowLeft size={18} />\n          Retour\n        </button>\n\n        <div className=\"text-center mb-8\">\n          <Logo size=\"lg\" />\n          <h1 className={`text-2xl font-bold mt-4 ${darkMode ? 'text-white' : 'text-navy-900'}`}>\n            {step === 1 ? 'Mot de passe oublié ?' : isCitoyen ? 'SMS envoyé' : 'Email envoyé'}",
+      "isNew": false,
+      "kind": "exact",
+      "lines": 11,
+      "secondFile": {
+        "end": 126,
+        "endLoc": {
+          "column": 25,
+          "line": 126,
+          "position": 4021
+        },
+        "name": "auth-pages\\OTPVerificationPage.jsx",
+        "start": 116,
+        "startLoc": {
+          "column": 43,
+          "line": 116,
+          "position": 3591
+        }
+      },
+      "tokens": 65
+    },
+    {
+      "firstFile": {
+        "end": 51,
+        "endLoc": {
+          "column": 103,
+          "line": 51,
+          "position": 2010
+        },
+        "name": "auth-pages\\SignupPageNew.jsx",
+        "start": 29,
+        "startLoc": {
+          "column": 13,
+          "line": 29,
+          "position": 1091
+        }
+      },
+      "format": "jsx",
+      "fragment": "    last_name: '',\n    username: '',\n  });\n\n  // Générer automatiquement un username quand prénom/nom changent\n  useEffect(() => {\n    if (formData.first_name.trim() && formData.last_name.trim()) {\n      const fetchUsernameOptions = async () => {\n        setLoadingUsernames(true);\n        try {\n          const response = await client.get('/users/check-username/', {\n            params: {\n              first_name: formData.first_name,\n              last_name: formData.last_name,\n            },\n          });\n          setUsernameOptions(response.data.options || []);\n          // Sélectionner la première option par défaut\n          if (!formData.username && response.data.options?.length > 0) {\n            setFormData((prev) => ({ ...prev, username: response.data.options[0] }));\n          }\n        } catch (error) {\n          if (import.meta.env.DEV) console.error('Erreur lors du chargement des identifiants:', error);",
+      "isNew": false,
+      "kind": "exact",
+      "lines": 23,
+      "secondFile": {
+        "end": 88,
+        "endLoc": {
+          "column": 103,
+          "line": 88,
+          "position": 3715
+        },
+        "name": "autorite\\pages\\ManageAuthoritiesPage.jsx",
+        "start": 66,
+        "startLoc": {
+          "column": 13,
+          "line": 66,
+          "position": 2800
+        }
+      },
+      "tokens": 162
+    },
+    {
+      "firstFile": {
+        "end": 85,
+        "endLoc": {
+          "column": 8,
+          "line": 85,
+          "position": 3243
+        },
+        "name": "auth-pages\\SignupPageNew.jsx",
+        "start": 58,
+        "startLoc": {
+          "column": 8,
+          "line": 58,
+          "position": 2398
+        }
+      },
+      "format": "jsx",
+      "fragment": "        } finally {\n          setLoadingUsernames(false);\n        }\n      };\n      fetchUsernameOptions();\n    } else {\n      setUsernameOptions([]);\n      setFormData((prev) => ({ ...prev, username: '' }));\n    }\n  }, [formData.first_name, formData.last_name]);\n\n  const handleChange = (e) => {\n    const { name, value } = e.target;\n    setFormData((prev) => ({ ...prev, [name]: value }));\n    if (errors[name]) {\n      setErrors((prev) => ({ ...prev, [name]: '' }));\n    }\n  };\n\n  const validateForm = () => {\n    const newErrors = {};\n\n    if (!formData.first_name.trim()) newErrors.first_name = 'Prénom requis';\n    if (!formData.last_name.trim()) newErrors.last_name = 'Nom requis';\n    if (!formData.username) newErrors.username = 'Identifiant requis';\n\n    // Pour les autorités, email est requis. Pour les citoyens, il est facultatif.\n    if (role === 'autorite') {",
+      "isNew": false,
+      "kind": "exact",
+      "lines": 28,
+      "secondFile": {
+        "end": 114,
+        "endLoc": {
+          "column": 8,
+          "line": 114,
+          "position": 4484
+        },
+        "name": "autorite\\pages\\ManageAuthoritiesPage.jsx",
+        "start": 89,
+        "startLoc": {
+          "column": 8,
+          "line": 89,
+          "position": 3724
+        }
+      },
+      "tokens": 188
+    },
+    {
+      "firstFile": {
+        "end": 175,
+        "endLoc": {
+          "column": 101,
+          "line": 175,
+          "position": 7057
+        },
+        "name": "auth-pages\\SignupPageNew.jsx",
+        "start": 168,
+        "startLoc": {
+          "column": 70,
+          "line": 168,
+          "position": 6648
+        }
+      },
+      "format": "jsx",
+      "fragment": "              {errors.last_name && <p className=\"text-xs text-red-500\">{errors.last_name}</p>}\n            </div>\n          </div>\n\n          {usernameOptions.length > 0 && (\n            <div className={`px-4 py-3 rounded-lg ${darkMode ? 'bg-navy-800 border border-navy-700' : 'bg-navy-50 border border-navy-200'}`}>\n              <div className=\"flex items-center gap-2 mb-2\">\n                <p className={`text-xs font-medium ${darkMode ? 'text-navy-400' : 'text-navy-600'}`}>Choisissez votre identifiant</p>",
+      "isNew": false,
+      "kind": "exact",
+      "lines": 8,
+      "secondFile": {
+        "end": 242,
+        "endLoc": {
+          "column": 101,
+          "line": 242,
+          "position": 9684
+        },
+        "name": "autorite\\pages\\ManageAuthoritiesPage.jsx",
+        "start": 235,
+        "startLoc": {
+          "column": 75,
+          "line": 235,
+          "position": 9275
+        }
+      },
+      "tokens": 66
+    },
+    {
+      "firstFile": {
+        "end": 200,
+        "endLoc": {
+          "column": 29,
+          "line": 200,
+          "position": 8185
+        },
+        "name": "auth-pages\\SignupPageNew.jsx",
+        "start": 175,
+        "startLoc": {
+          "column": 129,
+          "line": 175,
+          "position": 7085
+        }
+      },
+      "format": "jsx",
+      "fragment": "                <p className={`text-xs font-medium ${darkMode ? 'text-navy-400' : 'text-navy-600'}`}>Choisissez votre identifiant</p>\n                {loadingUsernames && <Loader2 size={12} className=\"animate-spin\" />}\n              </div>\n              <div className=\"space-y-2\">\n                {usernameOptions.map((option) => (\n                  <label key={option} className=\"flex items-center gap-2 cursor-pointer\">\n                    <input\n                      type=\"radio\"\n                      name=\"username\"\n                      value={option}\n                      checked={formData.username === option}\n                      onChange={handleChange}\n                      className=\"accent-red\"\n                    />\n                    <code className={`font-mono text-sm font-semibold ${formData.username === option ? (darkMode ? 'text-white' : 'text-navy-900') : (darkMode ? 'text-navy-300' : 'text-navy-600')}`}>\n                      {option}\n                    </code>\n                  </label>\n                ))}\n              </div>\n            </div>\n          )}\n          {errors.username && <p className=\"text-xs text-red-500\">{errors.username}</p>}\n\n          <div>\n            <label className={`block text-sm font-medium ${darkMode ? 'text-navy-200' : 'text-navy-700'} mb-1`}>",
+      "isNew": false,
+      "kind": "exact",
+      "lines": 26,
+      "secondFile": {
+        "end": 267,
+        "endLoc": {
+          "column": 29,
+          "line": 267,
+          "position": 10808
+        },
+        "name": "autorite\\pages\\ManageAuthoritiesPage.jsx",
+        "start": 242,
+        "startLoc": {
+          "column": 125,
+          "line": 242,
+          "position": 9708
+        }
+      },
+      "tokens": 179
+    },
+    {
+      "firstFile": {
+        "end": 51,
+        "endLoc": {
+          "column": 18,
+          "line": 51,
+          "position": 2196
+        },
+        "name": "autorite\\desktop\\AutoriteShell.jsx",
+        "start": 33,
+        "startLoc": {
+          "column": 59,
+          "line": 33,
+          "position": 1654
+        }
+      },
+      "format": "jsx",
+      "fragment": "function DropdownMenu({ label, icon: Icon, items, children }) {\n  const [open, setOpen] = useState(false);\n  const ref = useRef(null);\n\n  useEffect(() => {\n    function handleClickOutside(e) {\n      if (ref.current && !ref.current.contains(e.target)) {\n        setOpen(false);\n      }\n    }\n    if (open) document.addEventListener('mousedown', handleClickOutside);\n    return () => document.removeEventListener('mousedown', handleClickOutside);\n  }, [open]);\n\n  return (\n    <div ref={ref} className=\"relative\">\n      <button\n        onClick={() => setOpen(!open)}\n        className=\"flex items-center gap-1.5 px-3.5 py-2 rounded-md text-sm font-semibold text-navy-600 dark:text-navy-200 hover:bg-navy-50 dark:hover:bg-navy-800 transition-colors\"",
+      "isNew": false,
+      "kind": "exact",
+      "lines": 19,
+      "secondFile": {
+        "end": 101,
+        "endLoc": {
+          "column": 18,
+          "line": 101,
+          "position": 4004
+        },
+        "name": "autorite\\desktop\\AutoriteShell.jsx",
+        "start": 83,
+        "startLoc": {
+          "column": 39,
+          "line": 83,
+          "position": 3462
+        }
+      },
+      "tokens": 124
+    },
+    {
+      "firstFile": {
+        "end": 43,
+        "endLoc": {
+          "column": 52,
+          "line": 43,
+          "position": 1688
+        },
+        "name": "autorite\\pages\\AuthorityTrackingPage.jsx",
+        "start": 36,
+        "startLoc": {
+          "column": 22,
+          "line": 36,
+          "position": 1404
+        }
+      },
+      "format": "jsx",
+      "fragment": "  }, [role, showToast]);\n\n  const filteredAuthorities = authorities.filter((auth) => {\n    const query = searchQuery.toLowerCase();\n    return (\n      auth.first_name.toLowerCase().includes(query) ||\n      auth.last_name.toLowerCase().includes(query) ||\n      auth.username.toLowerCase().includes(query) ||",
+      "isNew": false,
+      "kind": "exact",
+      "lines": 8,
+      "secondFile": {
+        "end": 57,
+        "endLoc": {
+          "column": 52,
+          "line": 57,
+          "position": 2610
+        },
+        "name": "autorite\\pages\\ManageAuthoritiesPage.jsx",
+        "start": 49,
+        "startLoc": {
+          "column": 64,
+          "line": 49,
+          "position": 2279
+        }
+      },
+      "tokens": 64
+    },
+    {
+      "firstFile": {
+        "end": 29,
+        "endLoc": {
+          "column": 7,
+          "line": 29,
+          "position": 1398
+        },
+        "name": "autorite\\pages\\BacktestingPage.jsx",
+        "start": 12,
+        "startLoc": {
+          "column": 49,
+          "line": 12,
+          "position": 667
+        }
+      },
+      "format": "jsx",
+      "fragment": "  const { data, loading, error } = useBacktesting();\n\n  // Vérifier que l'utilisateur est admin\n  if (role !== 'admin') {\n    return (\n      <AutoriteShell>\n        <div className=\"flex items-center justify-center min-h-screen\">\n          <div className={`text-center ${darkMode ? 'bg-navy' : 'bg-white'} p-12 rounded-xl border ${darkMode ? 'border-navy-800' : 'border-navy-50'}`}>\n            <Lock size={48} className=\"mx-auto mb-4 text-red-500\" />\n            <h2 className=\"text-2xl font-bold text-navy dark:text-white mb-2\">Accès réservé aux administrateurs</h2>\n            <p className=\"text-navy-600 dark:text-navy-300\">Cette page n'est accessible que pour les administrateurs du système.</p>\n          </div>\n        </div>\n      </AutoriteShell>\n    );\n  }\n\n  const gridColor = darkMode ? '#2E4460' : '#EBF0F5';",
+      "isNew": false,
+      "kind": "exact",
+      "lines": 18,
+      "secondFile": {
+        "end": 33,
+        "endLoc": {
+          "column": 7,
+          "line": 33,
+          "position": 1399
+        },
+        "name": "autorite\\pages\\FiabiliteModelePage.jsx",
+        "start": 17,
+        "startLoc": {
+          "column": 26,
+          "line": 17,
+          "position": 669
+        }
+      },
+      "tokens": 99
+    },
+    {
+      "firstFile": {
+        "end": 49,
+        "endLoc": {
+          "column": 60,
+          "line": 49,
+          "position": 2178
+        },
+        "name": "autorite\\pages\\BacktestingPage.jsx",
+        "start": 29,
+        "startLoc": {
+          "column": 2,
+          "line": 29,
+          "position": 1393
+        }
+      },
+      "format": "jsx",
+      "fragment": "  const gridColor = darkMode ? '#2E4460' : '#EBF0F5';\n  const axisColor = darkMode ? '#8AA0B8' : '#4A6480';\n  const bgCard = darkMode ? '#1B2A40' : '#FFFFFF';\n  const textMuted = darkMode ? '#8AA0B8' : '#6B7280';\n\n  const textColor = darkMode ? '#FFFFFF' : '#000000';\n  const tooltipStyle = {\n    backgroundColor: bgCard,\n    borderColor: darkMode ? '#2E4460' : '#EBF0F5',\n    borderRadius: 8,\n    fontSize: 12,\n    color: textColor,\n  };\n\n  if (loading) {\n    return (\n      <AutoriteShell>\n        <div className=\"flex items-center justify-center min-h-screen\">\n          <div className=\"text-center\">\n            <div className=\"animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-navy-500 mx-auto mb-4\"></div>\n            <p className=\"text-navy-600 dark:text-navy-200\">Exécution du backtesting...</p>",
+      "isNew": false,
+      "kind": "exact",
+      "lines": 21,
+      "secondFile": {
+        "end": 55,
+        "endLoc": {
+          "column": 60,
+          "line": 55,
+          "position": 2238
+        },
+        "name": "autorite\\pages\\FiabiliteModelePage.jsx",
+        "start": 35,
+        "startLoc": {
+          "column": 2,
+          "line": 35,
+          "position": 1453
+        }
+      },
+      "tokens": 117
+    },
+    {
+      "firstFile": {
+        "end": 72,
+        "endLoc": {
+          "column": 21,
+          "line": 72,
+          "position": 2861
+        },
+        "name": "autorite\\pages\\BacktestingPage.jsx",
+        "start": 49,
+        "startLoc": {
+          "column": 88,
+          "line": 49,
+          "position": 2206
+        }
+      },
+      "format": "jsx",
+      "fragment": "            <p className=\"text-navy-600 dark:text-navy-200\">Exécution du backtesting...</p>\n          </div>\n        </div>\n      </AutoriteShell>\n    );\n  }\n\n  if (error) {\n    return (\n      <AutoriteShell>\n        <div className=\"bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6\">\n          <div className=\"flex items-center gap-3\">\n            <AlertCircle className=\"text-red-600 dark:text-red-400\" size={20} />\n            <div>\n              <h3 className=\"font-bold text-red-900 dark:text-red-200\">Erreur</h3>\n              <p className=\"text-sm text-red-700 dark:text-red-300\">{error}</p>\n            </div>\n          </div>\n        </div>\n      </AutoriteShell>\n    );\n  }\n\n  if (!data || !data.statistiques) {",
+      "isNew": false,
+      "kind": "exact",
+      "lines": 24,
+      "secondFile": {
+        "end": 78,
+        "endLoc": {
+          "column": 21,
+          "line": 78,
+          "position": 2921
+        },
+        "name": "autorite\\pages\\FiabiliteModelePage.jsx",
+        "start": 55,
+        "startLoc": {
+          "column": 88,
+          "line": 55,
+          "position": 2266
+        }
+      },
+      "tokens": 120
+    },
+    {
+      "firstFile": {
+        "end": 547,
+        "endLoc": {
+          "column": 1,
+          "line": 547,
+          "position": 22260
+        },
+        "name": "autorite\\pages\\GestionDeCrisePage.jsx",
+        "start": 520,
+        "startLoc": {
+          "column": 60,
+          "line": 520,
+          "position": 21328
+        }
+      },
+      "format": "jsx",
+      "fragment": "          alertes.map((a) => <AlerteRow key={a.id} alerte={a} />)\n        )}\n      </div>\n\n      {(data?.next || data?.previous) && (\n        <div className=\"flex items-center justify-center gap-3\">\n          <button\n            onClick={() => setPage((p) => Math.max(1, p - 1))}\n            disabled={!data?.previous}\n            className=\"flex items-center gap-1 text-sm font-bold text-navy-600 dark:text-navy-200 disabled:opacity-40\"\n          >\n            <ChevronLeft size={14} />\n            Précédent\n          </button>\n          <span className=\"text-sm text-navy-400\">Page {page}</span>\n          <button\n            onClick={() => setPage((p) => p + 1)}\n            disabled={!data?.next}\n            className=\"flex items-center gap-1 text-sm font-bold text-navy-600 dark:text-navy-200 disabled:opacity-40\"\n          >\n            Suivant\n            <ChevronRight size={14} />\n          </button>\n        </div>\n      )}\n    </AutoriteShell>\n  );\n}",
+      "isNew": false,
+      "kind": "exact",
+      "lines": 28,
+      "secondFile": {
+        "end": 210,
+        "endLoc": {
+          "column": 1,
+          "line": 210,
+          "position": 9005
+        },
+        "name": "autorite\\pages\\SignalementsTerrainPage.jsx",
+        "start": 183,
+        "startLoc": {
+          "column": 86,
+          "line": 183,
+          "position": 8073
+        }
+      },
+      "tokens": 161
+    },
+    {
+      "firstFile": {
+        "end": 21,
+        "endLoc": {
+          "column": 23,
+          "line": 21,
+          "position": 812
+        },
+        "name": "autorite\\pages\\PrevisionsAlertesPage.jsx",
+        "start": 6,
+        "startLoc": {
+          "column": 71,
+          "line": 6,
+          "position": 355
+        }
+      },
+      "format": "jsx",
+      "fragment": "import BarometreIAPredictive from '../components/BarometreIAPredictive';\nimport { usePrevisions } from '../../shared/hooks/usePrevisions';\nimport { useAlertesRecentes } from '../../shared/hooks/useAlertes';\n\nconst STATUT_LABELS = {\n  en_attente: 'En attente',\n  envoyee: 'Envoyée',\n  resolue: 'Résolue',\n};\n\nfunction formatDateTime(iso) {\n  if (!iso) return '—';\n  return new Date(iso).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });\n}\n\nexport default function PrevisionsAlertesPage() {",
+      "isNew": false,
+      "kind": "exact",
+      "lines": 16,
+      "secondFile": {
+        "end": 19,
+        "endLoc": {
+          "column": 23,
+          "line": 19,
+          "position": 675
+        },
+        "name": "citizen\\pages\\AlertesPrevisionsPageBody.jsx",
+        "start": 4,
+        "startLoc": {
+          "column": 57,
+          "line": 4,
+          "position": 233
+        }
+      },
+      "tokens": 81
+    },
+    {
+      "firstFile": {
+        "end": 22,
+        "endLoc": {
+          "column": 1,
+          "line": 22,
+          "position": 1060
+        },
+        "name": "autorite\\pages\\TableauDeBordPage.jsx",
+        "start": 9,
+        "startLoc": {
+          "column": 74,
+          "line": 9,
+          "position": 570
+        }
+      },
+      "format": "jsx",
+      "fragment": "import { useSignalementsApercu } from '../../shared/hooks/useSignalements';\n\nconst NIVEAU_RANK = { vert: 0, jaune: 1, orange: 2, rouge: 3 };\n\nfunction pickMostAtRiskZone(features) {\n  if (!features?.length) return null;\n  return [...features]\n    .map((f) => ({ id: f.id, ...f.properties }))\n    .sort((a, b) => {\n      const rankDiff = (NIVEAU_RANK[b.niveau_risque] ?? 0) - (NIVEAU_RANK[a.niveau_risque] ?? 0);\n      if (rankDiff !== 0) return rankDiff;\n      return Number(b.score_risque_moyen ?? 0) - Number(a.score_risque_moyen ?? 0);\n    })[0];\n}",
+      "isNew": false,
+      "kind": "exact",
+      "lines": 14,
+      "secondFile": {
+        "end": 23,
+        "endLoc": {
+          "column": 1,
+          "line": 23,
+          "position": 1114
+        },
+        "name": "citizen\\pages\\AccueilPageBody.jsx",
+        "start": 10,
+        "startLoc": {
+          "column": 64,
+          "line": 10,
+          "position": 637
+        }
+      },
+      "tokens": 135
+    },
+    {
+      "firstFile": {
+        "end": 24,
+        "endLoc": {
+          "column": 8,
+          "line": 24,
+          "position": 1072
+        },
+        "name": "autorite\\pages\\TableauDeBordPage.jsx",
+        "start": 9,
+        "startLoc": {
+          "column": 74,
+          "line": 9,
+          "position": 570
+        }
+      },
+      "format": "jsx",
+      "fragment": "import { useSignalementsApercu } from '../../shared/hooks/useSignalements';\n\nconst NIVEAU_RANK = { vert: 0, jaune: 1, orange: 2, rouge: 3 };\n\nfunction pickMostAtRiskZone(features) {\n  if (!features?.length) return null;\n  return [...features]\n    .map((f) => ({ id: f.id, ...f.properties }))\n    .sort((a, b) => {\n      const rankDiff = (NIVEAU_RANK[b.niveau_risque] ?? 0) - (NIVEAU_RANK[a.niveau_risque] ?? 0);\n      if (rankDiff !== 0) return rankDiff;\n      return Number(b.score_risque_moyen ?? 0) - Number(a.score_risque_moyen ?? 0);\n    })[0];\n}\n\nfunction KpiCard({ icon: Icon, label, value, caption, tone = 'navy' }) {",
+      "isNew": false,
+      "kind": "exact",
+      "lines": 16,
+      "secondFile": {
+        "end": 35,
+        "endLoc": {
+          "column": 8,
+          "line": 35,
+          "position": 1390
+        },
+        "name": "citizen\\pages\\ChatPageBody.jsx",
+        "start": 20,
+        "startLoc": {
+          "column": 1,
+          "line": 20,
+          "position": 903
+        }
+      },
+      "tokens": 136
+    },
+    {
+      "firstFile": {
+        "end": 14,
+        "endLoc": {
+          "column": 45,
+          "line": 14,
+          "position": 584
+        },
+        "name": "citizen\\components\\NeighborhoodRelaySection.jsx",
+        "start": 6,
+        "startLoc": {
+          "column": 110,
+          "line": 6,
+          "position": 346
+        }
+      },
+      "format": "jsx",
+      "fragment": "function NeighborhoodRelaySectionComponent({ monRelais, relaisZone, setRelaisZone, createRelais, deleteRelais }) {\n  const { data: zonesData } = useZones();\n\n  const zones = useMemo(\n    () => zonesData?.features?.map((f) => ({ id: f.id, quartier: f.properties.quartier })) ?? [],\n    [zonesData]\n  );\n\n  const handleZoneChange = useCallback((e) => setRelaisZone(e.target.value), [setRelaisZone]);",
+      "isNew": false,
+      "kind": "exact",
+      "lines": 9,
+      "secondFile": {
+        "end": 15,
+        "endLoc": {
+          "column": 10,
+          "line": 15,
+          "position": 576
+        },
+        "name": "citizen\\components\\VulnerabilityProfileSection.jsx",
+        "start": 6,
+        "startLoc": {
+          "column": 89,
+          "line": 6,
+          "position": 333
+        }
+      },
+      "tokens": 68
+    },
+    {
+      "firstFile": {
+        "end": 71,
+        "endLoc": {
+          "column": 7,
+          "line": 71,
+          "position": 2238
+        },
+        "name": "shared\\components\\FormField.jsx",
+        "start": 52,
+        "startLoc": {
+          "column": 16,
+          "line": 52,
+          "position": 1401
+        }
+      },
+      "format": "jsx",
+      "fragment": "          id={id}\n          value={value}\n          onChange={onChange}\n          onBlur={onBlur}\n          placeholder={placeholder}\n          aria-labelledby={`${id}-label`}\n          aria-describedby={description ? `${id}-desc` : undefined}\n          aria-invalid={hasError}\n          className={`w-full px-3.5 py-2.5 rounded-md border-[1.5px] transition ${\n            hasError\n              ? 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20'\n              : showValid\n              ? 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20'\n              : 'border-navy-200 dark:border-navy-800 bg-white dark:bg-navy'\n          } text-sm focus:ring-2 focus:ring-inset ${\n            hasError ? 'focus:ring-red' : 'focus:ring-green-600'\n          } focus:border-transparent`}\n          {...props}\n        />\n      ) : (",
+      "isNew": false,
+      "kind": "exact",
+      "lines": 20,
+      "secondFile": {
+        "end": 93,
+        "endLoc": {
+          "column": 7,
+          "line": 93,
+          "position": 3133
+        },
+        "name": "shared\\components\\FormField.jsx",
+        "start": 74,
+        "startLoc": {
+          "column": 20,
+          "line": 74,
+          "position": 2296
+        }
+      },
+      "tokens": 72
+    }
+  ],
+  "statistics": {
+    "detectionDate": "2026-10-03T21:45:47.677Z",
+    "formats": {
+      "css": {
+        "clones": 0,
+        "duplicatedLines": 0,
+        "duplicatedTokens": 0,
+        "lines": 393,
+        "newClones": 0,
+        "newDuplicatedLines": 0,
+        "percentage": 0.0,
+        "percentageTokens": 0.0,
+        "sources": 2,
+        "tokens": 2425
+      },
+      "csv": {
+        "clones": 0,
+        "duplicatedLines": 0,
+        "duplicatedTokens": 0,
+        "lines": 5729,
+        "newClones": 0,
+        "newDuplicatedLines": 0,
+        "percentage": 0.0,
+        "percentageTokens": 0.0,
+        "sources": 4,
+        "tokens": 40503
+      },
+      "javascript": {
+        "clones": 0,
+        "duplicatedLines": 0,
+        "duplicatedTokens": 0,
+        "lines": 1256,
+        "newClones": 0,
+        "newDuplicatedLines": 0,
+        "percentage": 0.0,
+        "percentageTokens": 0.0,
+        "sources": 32,
+        "tokens": 7238
+      },
+      "json": {
+        "clones": 0,
+        "duplicatedLines": 0,
+        "duplicatedTokens": 0,
+        "lines": 858,
+        "newClones": 0,
+        "newDuplicatedLines": 0,
+        "percentage": 0.0,
+        "percentageTokens": 0.0,
+        "sources": 1,
+        "tokens": 2141
+      },
+      "jsx": {
+        "clones": 23,
+        "duplicatedLines": 412,
+        "duplicatedTokens": 2522,
+        "lines": 8871,
+        "newClones": 0,
+        "newDuplicatedLines": 0,
+        "percentage": 4.644346747830008,
+        "percentageTokens": 4.502043949374319,
+        "sources": 58,
+        "tokens": 56019
+      },
+      "markdown": {
+        "clones": 0,
+        "duplicatedLines": 0,
+        "duplicatedTokens": 0,
+        "lines": 8,
+        "newClones": 0,
+        "newDuplicatedLines": 0,
+        "percentage": 0.0,
+        "percentageTokens": 0.0,
+        "sources": 1,
+        "tokens": 82
+      },
+      "python": {
+        "clones": 6,
+        "duplicatedLines": 87,
+        "duplicatedTokens": 504,
+        "lines": 9200,
+        "newClones": 0,
+        "newDuplicatedLines": 0,
+        "percentage": 0.9456521739130435,
+        "percentageTokens": 1.0112968276581658,
+        "sources": 63,
+        "tokens": 49837
+      },
+      "txt": {
+        "clones": 0,
+        "duplicatedLines": 0,
+        "duplicatedTokens": 0,
+        "lines": 20,
+        "newClones": 0,
+        "newDuplicatedLines": 0,
+        "percentage": 0.0,
+        "percentageTokens": 0.0,
+        "sources": 1,
+        "tokens": 119
+      }
+    },
+    "total": {
+      "clones": 29,
+      "duplicatedLines": 499,
+      "duplicatedTokens": 3026,
+      "lines": 26335,
+      "newClones": 0,
+      "newDuplicatedLines": 0,
+      "percentage": 1.894816783747864,
+      "percentageTokens": 1.9107878053092875,
+      "sources": 162,
+      "tokens": 158364
+    }
+  }
+}

@@ -1,0 +1,29 @@
+@startuml
+!include style.iuml
+skinparam defaultFontSize 16
+autonumber
+actor "Citoyen" as C
+participant "Interface React" as UI
+participant "API Django REST\n(SignalementSerializer)" as API
+participant "Service d'analyse\nphoto" as VIS
+database "PostgreSQL /\nPostGIS" as DB
+actor "Autorité" as AU
+C -> UI : choisit catégorie, description,\nphoto et point sur la carte
+UI -> API : POST /api/signalements/
+API -> API : distance au centre de Thiaroye\n(formule de Haversine)
+alt distance > 4 km
+  API --> UI : 400 « hors de la zone couverte »
+else dans la zone
+  API -> API : compression de la photo (Pillow)
+  API -> VIS : analyser_photo(photo)
+  VIS --> API : niveau d'eau estimé, hash perceptuel
+  API -> DB : enregistrer le signalement (valide = faux)
+  API -> DB : rechercher une photo similaire (doublon)
+  API --> UI : 201 Créé
+  UI --> C : confirmation
+end
+AU -> UI : consulte les signalements à valider
+UI -> API : PATCH /api/signalements/{id}/valider/
+API -> DB : valide = vrai
+API --> UI : signalement visible sur la carte\net dans le contexte de NDAM
+@enduml

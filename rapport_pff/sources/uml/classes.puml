@@ -1,0 +1,109 @@
+@startuml
+!pragma layout smetana
+!include style.iuml
+left to right direction
+skinparam defaultFontSize 17
+hide methods
+hide circle
+class "User (Django)" as User {
+  username
+  email
+}
+class Profile {
+  role : citoyen | agent | autorite | admin
+  telephone
+  is_verified
+}
+class ZoneRisque {
+  geom : Polygon
+  quartier
+  niveau_risque : vert..rouge
+  score_risque_moyen
+  seuil_jaune / orange / rouge
+}
+class SegmentRue {
+  geom : LineString
+  etat_drainage
+  score_risque_actuel
+}
+class Capteur {
+  type : eau | pluviometre
+  localisation : Point
+  statut
+}
+class Mesure {
+  valeur
+  unite
+  timestamp
+}
+class PredictionIA {
+  probabilite
+  confiance
+  niveau_eau_predit_cm
+  horizon_h
+}
+class Alerte {
+  niveau
+  message
+  canaux
+  statut
+}
+class PrevisionMeteo {
+  date_prevision
+  precipitation_mm
+  temperature_c
+}
+class SignalementCitoyen {
+  localisation : Point
+  categorie
+  photo
+  valide
+  niveau_eau_estime
+  photo_hash
+}
+class SMSSignalement {
+  telephone
+  contenu_sms
+  statut
+}
+class PointRefuge {
+  nom
+  type_refuge
+  localisation : Point
+  capacite
+}
+class ContactAlerte {
+  telephone
+  actif
+}
+class ProfilVulnerabilite {
+  personnes_agees
+  enfants_bas_age
+  personne_mobilite_reduite
+}
+class RelaisQuartier {
+  verifie
+  disponible
+}
+class EpisodeInondation {
+  geom : MultiPolygon
+  date_debut
+  is_synthetic
+}
+User "1" -- "1" Profile
+ZoneRisque "1" -- "0..*" SegmentRue
+ZoneRisque "1" -- "0..*" Capteur
+Capteur "1" -- "0..*" Mesure
+ZoneRisque "1" -- "0..*" PredictionIA
+ZoneRisque "1" -- "0..*" Alerte
+ZoneRisque "0..1" -- "0..*" PrevisionMeteo
+ZoneRisque "0..1" -- "0..*" PointRefuge
+ZoneRisque "1" -- "0..*" ContactAlerte
+User "0..1" -- "0..*" SignalementCitoyen : signale >
+SMSSignalement "0..*" -- "0..1" SignalementCitoyen : crée >
+SignalementCitoyen "0..*" -- "0..1" SignalementCitoyen : doublon de >
+User "1" -- "0..1" ProfilVulnerabilite
+User "1" -- "0..1" RelaisQuartier
+RelaisQuartier "0..*" -- "1" ZoneRisque
+User "0..1" -- "0..*" Alerte : crée >
+@enduml

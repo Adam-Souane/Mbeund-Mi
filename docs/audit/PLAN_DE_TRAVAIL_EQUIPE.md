@@ -112,29 +112,27 @@ Fichiers à elle : `src/`, `.env.example` (racine), `vite.config.js`, `eslint.co
 
 ## 4. Rapport PFF et soutenance (en parallèle du code)
 
-Le rapport est généré par `rapport_pff/sources/gen.js`. Pour que personne n'attende : **chacun écrit sa section dans un fichier Markdown à son nom** (`rapport_pff/sections/`), et Maïmouna les intègre à J9. Un brouillon avec les chiffres du 6 octobre se rédige dès J1 ; les chiffres se mettent à jour à J8 après l'audit.
+Le rapport suit désormais le **plan officiel de l'ISEP-AT** (page de garde et plan commun à tous les groupes). **Lire [ADAPTATION_RAPPORT_ISEP.md](ADAPTATION_RAPPORT_ISEP.md)** : il explique le nouveau plan, les contenus périmés à corriger et les décisions à prendre.
+Le rapport à jour est `Rapport_PFF_MBEUND_MI_v3.docx` (squelette de 49 pages, consignes surlignées en jaune).
 
-### Chapitre IV (≈ 11 pages), conclusion, annexes
+**Chacun écrit dans son propre fichier du dépôt : `docs/rapport/<prenom>.md`** (créés avec les titres à remplir). Maïmouna intègre le mercredi 14 octobre. Brouillon avec les chiffres du 6 octobre dès maintenant, version finale le mardi 13.
 
-| Section | Pages | Rédacteur | Fichier | Contenu |
-|---|---|---|---|---|
-| IV.1 Intelligence artificielle | 3 | Maïmouna | `chap4_ia.md` | Modèles, mesures du jeu de test, limites (R07), météo, satellite, chatbot |
-| IV.2 Backend, sécurité, déploiement | 3 | Mama Adam | `chap4_backend.md` | API, authentification et OTP, sécurité, tests et couverture, Render |
-| IV.3 Base de données | 2 | Mame Diarra | `chap4_bdd.md` | Modèle de données, PostGIS, index, jeu de démo |
-| IV.4 Frontend et tests utilisateur | 3 | Ngoné | `chap4_front.md` | Écrans, accessibilité, performance, tests, captures |
-| Conclusion | 2 | Maïmouna | `conclusion.md` | Bilan, limites, perspectives (dette notée dans l'audit) |
-| Annexes | — | Chacun la sienne | `annexe_<prenom>.md` | Maïmouna : mesures IA · Mama Adam : liste des endpoints · Mame Diarra : MCD et dictionnaire · Ngoné : captures d'écran |
-| Webographie | — | Chacun | `biblio_<prenom>.md` | Les sources qu'il a citées ; Maïmouna fusionne et trie |
+### Plan officiel et rédacteurs
 
-### 16 points à vérifier dans les chapitres déjà écrits (marqueurs jaunes `[[...]]`)
-Un point = une personne qui trouve la source et la note dans `rapport_pff/sections/verifications_<prenom>.md` ; Maïmouna remplace dans `chap*.js`.
+| Partie du rapport | Pages visées | Rédacteurs |
+|---|---|---|
+| Introduction générale | 2 à 3 | Maïmouna (resserrer) |
+| **1 Présentation du cadre du projet** | 4 à 6 | 1.1 ISEP-AT : Mame Diarra · 1.2.1 origine : Maïmouna · 1.3 outils : Mama Adam |
+| **2 Analyse de l'existant et cadrage** | 6 à 8 | 2.1 à condenser : Ngoné (2.1.1–2.1.2), Mame Diarra (2.1.3–2.1.4) · 2.2 critique : Ngoné · 2.4 solutions : Mama Adam · 2.5 Gantt : Mame Diarra |
+| **3 Conception de la solution** | 8 à 12 | Déjà rédigé ; **3.4 à corriger** : Maïmouna et Mama Adam |
+| **4 Réalisation, tests et résultats** | 8 à 12 (plafond) | 4.1.1, 4.1.4, 4.2.3, 4.3.2 : Maïmouna · 4.1.2 : Mame Diarra · 4.1.3, 4.3.1, 4.4 : Mama Adam · 4.1.5, 4.2.1, 4.2.2, 4.3.3 : Ngoné · 4.5 : chacun valide ses lignes |
+| Conclusion générale et perspectives | 1 à 2 | Maïmouna (rappel, bilan) ; chacun 3 à 4 lignes d'apports |
+| Annexes | — | Chacun la sienne (IA, API, données, captures) |
+| Bibliographie APA | — | Chacun ses sources ; Maïmouna fusionne |
 
-| Qui | Points |
-|---|---|
-| Maïmouna | `intro.js` : taux de pénétration mobile (ARTP) ; chiffre du PDNA 2010 · `chap1.js` : intitulé et période ; période et partenaires |
-| Mame Diarra | `chap2.js` : source de `topographie_thiaroye.csv` · bâti passé de 27 % à 88 % entre 1978 et 2012 · valeur d'environ 15 cm par an · chaque date et sa source |
-| Ngoné | `chap2.js` : superficie et population (ANSD, mairie) · effectif exact (ANSD, RGPH-5, 2023) · population et part nationale (RGPH-5) · liste officielle des quartiers |
-| Mama Adam | `chap2.js` : intitulé actuel · références de chaque acteur · une référence académique · une référence manquante |
+### Points surlignés des chapitres déjà écrits (16) et décisions
+
+Les 16 points « à vérifier » des anciens chapitres sont répartis, à raison de 4 par personne, dans les fichiers `docs/rapport/<prenom>.md` (section « Points surlignés »). Les décisions D1 à D5 (option de la filière, intitulé du thème, année académique, hypothèses, encadreur professionnel) sont dans le guide d'adaptation.
 
 ### Soutenance
 | Qui | Livrable | Quand |
@@ -157,8 +155,8 @@ Un point = une personne qui trouve la source et la note dans `rapport_pff/sectio
 | Deux personnes modifient le même fichier | Chaque fichier a un seul propriétaire (section 3). Fichier partagé nécessaire → on le demande au propriétaire, qui l'applique dans la journée |
 | README et DEPLOIEMENT.md se contredisent | Deux fichiers, deux propriétaires : README (Mame Diarra), DEPLOIEMENT (Mama Adam). Chacun écrit son propre sujet sans lire l'autre |
 | Le chapitre IV a besoin des mesures de tous | Chacun rédige avec les chiffres du **6 octobre** déjà dans ce plan et les met à jour à J8 |
-| Le rapport a besoin des captures d'écran | Les rédacteurs écrivent avec un emplacement `[[figure]]` ; Ngoné dépose les captures à J6 |
-| Intégration du rapport | Chacun écrit **dans son propre fichier** ; Maïmouna assemble à J9. Personne ne modifie `gen.js` ni `chap*.js` avant |
+| Le rapport a besoin des captures d'écran | Les rédacteurs écrivent avec un emplacement `[[figure]]` ; Ngoné dépose les captures dans `docs/rapport/captures/` à J6 |
+| Intégration du rapport | Chacun écrit **dans son propre fichier** `docs/rapport/<prenom>.md` (suivi par Git) ; Maïmouna assemble à J9. Personne d'autre ne modifie le fichier Word |
 | Relecture qui bloque la fusion | **La relecture ne bloque jamais** : on fusionne dès que la CI est verte, la relecture se fait après, dans les 24 h |
 | Audit R04 qui attend la fin des autres | Chacun audite **sa partie seule** à J7–J8 ; les audits ne se lisent pas entre eux |
 | Démonstration qui dépend de la base de démo | Mame Diarra la livre à J4 (R32) : tous les autres l'utilisent à partir de J5, avant cela ils utilisent les `seed_*` existants |

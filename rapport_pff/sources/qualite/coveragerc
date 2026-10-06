@@ -1,0 +1,16 @@
+[run]
+source = .
+omit =
+    */migrations/*
+    */tests.py
+    */test_*.py
+    */tests/*
+    conftest.py
+    manage.py
+    */wsgi.py
+    */asgi.py
+    */settings/*
+    test_import.py
+    test_pdf.py
+    generate_admin_invite.py
+    */env/*

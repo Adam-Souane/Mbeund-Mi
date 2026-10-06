@@ -1,0 +1,61 @@
+// Chapitre II : contexte de l'étude (cible : 7 pages)
+module.exports = ({ H1, H2, H3, H4, P, B, figure, tableBlock }) => [
+  H1('CHAPITRE II : CONTEXTE DE L\'ÉTUDE'),
+  P("Ce chapitre situe le projet dans son territoire : d'abord le Sénégal, son exposition aux inondations et son cadre institutionnel ; ensuite la commune de Thiaroye-sur-Mer, ses caractéristiques, puis les causes et les conséquences des inondations, éclairées par notre enquête de terrain."),
+
+  H2('Section 1 : Contexte général'),
+  H3('Sous-section 1 : Présentation du Sénégal et problématique nationale des inondations'),
+  P("Situé à l'extrémité ouest de l'Afrique, sur la façade atlantique, le Sénégal couvre 196 722 km² et compte environ 18 millions d'habitants [[À VÉRIFIER : effectif exact, ANSD, RGPH-5, 2023]]. Son climat soudano-sahélien alterne une longue saison sèche et une saison des pluies, l'**hivernage**, de juin à octobre environ, avec des précipitations croissantes du nord vers le sud. La région de Dakar, sur la presqu'île du Cap-Vert, est la plus petite du pays mais concentre une part considérable de sa population et de son activité [[À COMPLÉTER : population et part nationale, ANSD, RGPH-5]]."),
+  P("Pour caractériser l'aléa, nous avons analysé la série de pluie journalière sur Dakar utilisée par notre module de prédiction : 5 479 jours, de 2010 à 2024, issus de l'archive Open-Meteo. Ces données de réanalyse, reconstituées par un modèle et non relevées en station, sous-estiment probablement les cumuls, mais décrivent fidèlement la saison (figure 2). La pluie est **très concentrée** : juillet à septembre apportent 92 % du cumul annuel moyen, et août à lui seul près de la moitié (153 mm). Elle est **très variable** : de 138 mm en 2014 à 502 mm en 2013, pour une moyenne de 326 mm. Quelques **journées exceptionnelles** suffisent à créer une crise : 110 mm le 30 août 2013, soit un tiers d'une année moyenne en un jour. Un système d'alerte doit donc être très réactif sur une fenêtre de quelques semaines."),
+  ...figure('pluie_dakar.png', 600, 198, 'Figure', 'Pluviométrie à Dakar, 2010-2024 : a) cumul annuel ; b) moyenne mensuelle (hivernage en bleu)', 'Open-Meteo, archive historique (réanalyse) ; traitement des auteures.'),
+  P("Pendant la longue sécheresse sahélienne commencée à la fin des années 1960, de nombreuses dépressions de la banlieue dakaroise (cuvettes, niayes) se sont asséchées et ont été loties, souvent informellement, sous l'effet de l'exode rural. Le retour de pluies plus abondantes à partir des années 1990 a remis en eau ces zones désormais habitées, tandis que la nappe remontait [[À COMPLÉTER : une référence académique]]. Les inondations sont depuis devenues récurrentes : 2005, avec le plan Jaxaay de relogement des sinistrés ; 2009, avec une évaluation conjointe des besoins post-catastrophe ; 2012, suivie d'un programme décennal de gestion des inondations ; puis 2020 et 2022 [[À VÉRIFIER : chaque date et sa source]]. Au-delà des dégâts matériels, elles entraînent déplacements de population, pertes de revenus pour les activités informelles, interruptions de la scolarité et risques sanitaires liés aux eaux stagnantes."),
+
+  H3('Sous-section 2 : Cadre institutionnel sénégalais de gestion des inondations'),
+  P("La gestion des inondations mobilise de nombreux acteurs, présentés dans le tableau 5 avec leur rôle et leur principale limite à l'échelle d'un quartier.", { keepNext: true }),
+  ...tableBlock('Tableau', 'Principaux acteurs de la gestion des inondations au Sénégal',
+    ['Acteur', 'Rôle principal', 'Limite à l\'échelle locale'],
+    [
+      ['Ministère chargé de l\'assainissement [[intitulé actuel à vérifier]]', 'Politique d\'assainissement et de gestion des eaux pluviales ; tutelle de l\'ONAS.', 'Pilotage national, peu de remontée de terrain.'],
+      ['ONAS', 'Réseaux d\'assainissement, stations de pompage, ouvrages de drainage urbains.', 'Données non publiques ; quartiers spontanés mal couverts.'],
+      ['ADM', 'Exécution de projets urbains, dont le PROGEP (canaux, bassins).', 'Logique de projet, dépendante des financements.'],
+      ['Direction de la Protection Civile', 'Prévention, coordination des secours, plan ORSEC.', 'Activée au moment de la crise ; outils surtout manuels.'],
+      ['Sapeurs-pompiers (BNSP)', 'Secours, évacuation, pompage d\'urgence.', 'Intervient après coup, sur signalements tardifs.'],
+      ['ANACIM', 'Observation, prévisions et bulletins météorologiques.', 'Alertes nationales ou régionales.'],
+      ['Collectivités territoriales', 'Environnement et cadre de vie (Acte III de la décentralisation) ; premier interlocuteur des habitants.', 'Moyens limités ; pas d\'outil de suivi consolidé.'],
+      ['Acteurs communautaires', 'Mobilisation des riverains, curage, évacuation de l\'eau.', 'Action dispersée, peu reliée aux autorités.'],
+    ], [2500, 3600, 2970], 'compilation des auteures [[À COMPLÉTER : références de chaque acteur]].'),
+  P("Trois constats s'en dégagent : la **multiplicité des acteurs** complique la coordination, chacun détenant une partie de l'information ; le dispositif est surtout **réactif** ; le **maillon local** (commune, quartier, habitants) est le moins outillé alors qu'il observe le premier la montée des eaux. C'est sur ce maillon que se positionne MBEUND MI, non pour remplacer les institutions, mais pour leur fournir, comme aux habitants, une information partagée, localisée et rapide."),
+
+  H2('Section 2 : Contexte spécifique'),
+  H3('Sous-section 1 : Présentation de la commune de Thiaroye-sur-Mer et de ses quartiers à risque'),
+  P("Thiaroye-sur-Mer est une commune de l'arrondissement de Thiaroye, département de Pikine, région de Dakar. Elle s'étend sur le littoral sud de la presqu'île du Cap-Vert, face à la baie de Hann, entre Pikine à l'ouest et Mbao à l'est ; au nord, la Route nationale 1 et la voie ferrée la bordent (figure 3) [[À COMPLÉTER : superficie et population, ANSD et mairie]]."),
+  ...figure('carte_localisation.png', 470, 299, 'Figure', 'Localisation de la zone d\'enquête dans la région de Dakar', '© contributeurs OpenStreetMap ; réalisation des auteures.'),
+  P("La commune est très basse : les données topographiques compilées pour le projet situent la zone entre 0,2 m et 2,5 m d'altitude, pour une médiane proche de 1,4 m [[À VÉRIFIER : source du fichier topographie_thiaroye.csv]]. Cordons sableux et dépressions interdunaires y créent de nombreux points bas sans exutoire naturel. La **nappe phréatique**, très proche de la surface, est remontée depuis plusieurs décennies [[À VÉRIFIER : valeur d'environ 15 cm par an citée dans la première version, et sa source]] : quand le sol est saturé, la pluie stagne. La **mer**, enfin, limite l'évacuation par gravité. L'urbanisation s'est fortement densifiée, souvent sur d'anciennes zones humides remblayées [[À VÉRIFIER : bâti passé de 27 % à 88 % de la surface entre 1978 et 2012, source à retrouver]], juxtaposant noyau villageois, lotissements planifiés et habitat spontané moins bien assaini."),
+  P("Notre enquête a porté sur la partie ouest de la commune, dans la bande littorale comprise entre la voie ferrée et la plage, à l'ouest du village de Mbatal (figure 4). Les trois lieux d'entretien sont distants de 200 à 270 m et situés à 150-350 m du rivage : ils cumulent altitude minimale, nappe affleurante et caniveaux longtemps incomplets. Le quartier Ibra Ndoye, cité par un enquêté, n'apparaît pas dans les bases cartographiques publiques ; nous retenons le nom employé par les habitants [[À COMPLÉTER : liste officielle des quartiers et quartiers les plus touchés selon la mairie]]."),
+  ...figure('carte_points_enquete.png', 470, 325, 'Figure', 'Localisation des trois entretiens de l\'enquête du 15 mai 2026', '© contributeurs OpenStreetMap ; relevés GPS et réalisation des auteures.'),
+
+  H3('Sous-section 2 : Analyse des causes et conséquences des inondations à Thiaroye-sur-Mer'),
+  P("Le tableau 6 synthétise les trois entretiens du 15 mai 2026, dont les propos sont restitués de manière fidèle mais reformulée.", { keepNext: true }),
+  ...tableBlock('Tableau', 'Synthèse des entretiens de terrain (15 mai 2026)',
+    ['Enquêté et lieu', 'Situation décrite', 'Cause perçue', 'Réponse apportée'],
+    [
+      ['**Mor Gueye**, 52 ans, gérant de boulangerie ; quartier Ibra Ndoye (point 1)', 'Il y a environ deux ans, l\'eau arrivait presque au-dessus des genoux.', 'Absence de caniveaux.', 'La réparation des caniveaux a réglé le problème.'],
+      ['**Habitants** près de Mbatal (point 2)', 'Inondations récurrentes pendant l\'hivernage.', 'Ouvrages d\'évacuation insuffisants.', 'Solutions trouvées par les habitants ; mouvement de quartier dirigé par **M. Papa Yalli**.'],
+      ['**Monsieur Gueye**, habitant (point 3)', 'Nombreux problèmes lors des épisodes importants.', 'Canaux d\'évacuation insuffisants ; manque de moyens.', 'Évacuation de l\'eau par les habitants vers un terrain de football voisin.'],
+    ], [2400, 2300, 1900, 2470], 'enquête de terrain des auteures, Thiaroye-sur-Mer, 15 mai 2026.'),
+  P("Les **causes naturelles** tiennent au site et à l'aléa : pluies concentrées et parfois très intenses, altitude proche du niveau de la mer, nappe affleurante empêchant l'infiltration, rivage proche limitant l'écoulement. Les **causes anthropiques** sont celles que les habitants citent en premier : les trois entretiens convergent vers l'**absence ou l'insuffisance des caniveaux et canaux d'évacuation**, à laquelle s'ajoutent l'urbanisation dense des zones basses et l'imperméabilisation des sols."),
+  P("Les **conséquences** sont multiples : une eau à hauteur de genou rend la circulation dangereuse et coupe l'accès aux logements ; les commerces de proximité, comme la boulangerie de M. Mor Gueye, subissent pertes et fermetures ; l'évacuation de l'eau vers un terrain de football transforme un espace de loisirs en bassin de fortune ; les eaux stagnantes favorisent moustiques et maladies hydriques [[À COMPLÉTER : référence]]."),
+  P("L'enquête montre aussi que des **réponses locales** fonctionnent : la réfection des caniveaux a supprimé le problème chez M. Mor Gueye, et le mouvement animé par M. Papa Yalli témoigne d'une forte mobilisation. Mais ces réponses restent isolées : l'information sur les secteurs inondés, les besoins en pompage ou les ouvrages défaillants ne circule pas de manière organisée. Le tableau 7 montre comment ces constats ont orienté la conception de MBEUND MI.", { keepNext: true }),
+  ...tableBlock('Tableau', 'Des constats de terrain aux fonctionnalités de MBEUND MI',
+    ['Constat de terrain', 'Réponse de MBEUND MI'],
+    [
+      ['Les habitants voient monter l\'eau les premiers, mais l\'information ne remonte pas.', 'Signalement géolocalisé avec photo, par l\'application ou par SMS, validé par l\'autorité.'],
+      ['Les points noirs (caniveaux absents ou obstrués) ne sont pas cartographiés.', 'Carte des zones à risque et des tronçons de rue, avec état du drainage.'],
+      ['Des mouvements de quartier se mobilisent déjà.', 'Fonction de relais de quartier dans le profil citoyen.'],
+      ['L\'alerte n\'arrive pas à l\'échelle du quartier.', 'Prévision du risque par zone et alertes multicanal aux inscrits de la zone.'],
+      ['Les autorités manquent d\'une vision consolidée.', 'Tableau de bord, gestion de crise, statistiques et exports.'],
+    ], [4300, 4770]),
+
+  H3('Conclusion du chapitre'),
+  P("Le Sénégal fait face à des inondations devenues structurelles, portées par une pluie courte, concentrée et variable, et par l'urbanisation de zones basses. Le cadre institutionnel est riche mais fragmenté, et son maillon le plus faible est local. À Thiaroye-sur-Mer, commune littorale très basse, l'enquête confirme le rôle décisif des ouvrages d'évacuation et révèle des habitants mobilisés mais peu outillés. Ce double constat justifie une plateforme reliant données, habitants et autorités, dont le chapitre III présente la conception."),
+];

@@ -1,0 +1,29 @@
+@startuml
+!pragma layout smetana
+!include style.iuml
+left to right direction
+skinparam defaultFontSize 14
+actor "Citoyen" as C
+actor "Agent de terrain" as AG
+AG -|> C
+rectangle "MBEUND MI : espace citoyen" {
+    usecase "S'authentifier (inscription, OTP)" as UC0
+    usecase "Consulter la carte des risques" as UC1
+    usecase "Consulter alertes et prévisions" as UC2
+    usecase "Signaler une inondation (application ou SMS)" as UC3
+    usecase "Obtenir un itinéraire d'évacuation" as UC4
+    usecase "Gérer son profil (vulnérabilité, kit, contact)" as UC5
+    usecase "Dialoguer avec l'assistant NDAM" as UC6
+    usecase "S'inscrire aux alertes SMS de sa zone" as UC7
+    usecase "Recevoir les SMS d'alerte du personnel" as UC8
+}
+C --> UC0
+C --> UC1
+C --> UC2
+C --> UC3
+C --> UC4
+C --> UC5
+C --> UC6
+C --> UC7
+AG --> UC8
+@enduml

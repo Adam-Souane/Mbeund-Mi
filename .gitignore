@@ -120,7 +120,6 @@ desktop.ini
 temp.zip
 docx_out
 temp_docx
-rapport_pff/
 
 # --- État local Celery Beat (scheduler par défaut, régénéré à chaque lancement) ---
 celerybeat-schedule*

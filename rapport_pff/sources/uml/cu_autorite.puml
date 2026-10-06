@@ -1,0 +1,26 @@
+@startuml
+!pragma layout smetana
+!include style.iuml
+left to right direction
+skinparam defaultFontSize 14
+actor "Autorité" as AU
+actor "Administrateur" as AD
+actor "Planificateur (Celery)" as SYS
+AD -|> AU
+rectangle "MBEUND MI : espace autorité" {
+    usecase "Superviser le tableau de bord" as UC9
+    usecase "Valider les signalements" as UC10
+    usecase "Émettre une alerte" as UC11
+    usecase "Gérer la crise (triage des appels)" as UC12
+    usecase "Analyser : statistiques, fiabilité,\nbacktesting, exports" as UC13
+    usecase "Gérer les comptes autorité\net les capteurs" as UC14
+    usecase "Mettre à jour météo, prédictions\net analyse satellite" as UC15
+}
+AU --> UC9
+AU --> UC10
+AU --> UC11
+AU --> UC12
+AU --> UC13
+AD --> UC14
+SYS --> UC15
+@enduml

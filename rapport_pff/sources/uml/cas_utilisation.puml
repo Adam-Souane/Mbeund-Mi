@@ -1,0 +1,51 @@
+@startuml
+!pragma layout smetana
+!include style.iuml
+left to right direction
+skinparam defaultFontSize 14
+actor "Citoyen" as C
+actor "Agent de terrain" as AG
+actor "Autorité" as AU
+actor "Administrateur" as AD
+actor "Planificateur\n(tâches Celery)" as SYS
+AG -|> C
+rectangle "Plateforme MBEUND MI" {
+  package "Espace citoyen" {
+    usecase "S'authentifier (inscription, OTP)" as UC0
+    usecase "Consulter la carte des risques" as UC1
+    usecase "Consulter alertes et prévisions" as UC2
+    usecase "Signaler une inondation (application ou SMS)" as UC3
+    usecase "Obtenir un itinéraire d'évacuation" as UC4
+    usecase "Gérer son profil (vulnérabilité, kit, contact)" as UC5
+    usecase "Dialoguer avec l'assistant NDAM" as UC6
+    usecase "S'inscrire aux alertes SMS de sa zone" as UC7
+    usecase "Recevoir les SMS d'alerte du personnel" as UC8
+  }
+  package "Espace autorité" {
+    usecase "Superviser le tableau de bord" as UC9
+    usecase "Valider les signalements" as UC10
+    usecase "Émettre une alerte" as UC11
+    usecase "Gérer la crise (triage des appels)" as UC12
+    usecase "Analyser : statistiques, fiabilité, backtesting, exports" as UC13
+    usecase "Gérer les comptes autorité et les capteurs" as UC14
+    usecase "Mettre à jour météo, prédictions, analyse satellite" as UC15
+  }
+}
+C --> UC0
+C --> UC1
+C --> UC2
+C --> UC3
+C --> UC4
+C --> UC5
+C --> UC6
+C --> UC7
+AG --> UC8
+UC9 <-- AU
+UC10 <-- AU
+UC11 <-- AU
+UC12 <-- AU
+UC13 <-- AU
+UC14 <-- AD
+UC15 <-- SYS
+AD -|> AU
+@enduml
