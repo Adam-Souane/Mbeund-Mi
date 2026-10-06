@@ -1,6 +1,6 @@
 # Rapport v4 : ce qui a été repris, corrigé, retiré et reste à vérifier
 
-Fichier : `rapport_pff/Rapport_PFF_MBEUND_MI_v4.docx` (et sa version PDF), 65 pages. **Le document contient 18 commentaires Word** (auteur « Claude ») ancrés sur les titres des passages modifiés : chacun résume ce qui a changé et pourquoi.
+Fichier : `rapport_pff/Rapport_PFF_MBEUND_MI_v4.docx` (et sa version PDF), 66 pages. **Le document contient 18 commentaires Word** (auteur « Claude ») ancrés sur les titres des passages modifiés : chacun résume ce qui a changé et pourquoi.
 Source du contenu : `Rapport_PFF_MBEUND_MI.docx` (le rapport des auteures). Format : page de garde, plan et table des matières du modèle ISEP-AT n° 2 (« Page de garde, plan et sommaire »).
 
 ## 1. Ce qui a été fait
@@ -11,8 +11,8 @@ Source du contenu : `Rapport_PFF_MBEUND_MI.docx` (le rapport des auteures). Form
 - **Renvois renumérotés** : les « chapitre IV » deviennent « chapitre 4 », et les renvois aux figures et tableaux suivent le nouvel ordre.
 - **Chapitre 4 reconstruit** autour du plan officiel (4.1 à 4.5). La partie descriptive de l'ancien chapitre IV est conservée ; la partie « résultats » est reprise avec les valeurs mesurées.
 - **4.2.3 rédigé** à partir du script de démonstration : les trois scénarios ont été rejoués avec le vrai service IA (`rapport_pff/sources/mesures/rejeu_scenarios.py`).
-- **1.2.1 rédigé** d'après le récit des auteures (quartiers touchés, Grand Yoff, Thiaroye-sur-Mer en 2025, inondations depuis les années 1990).
-- **Mesure du LSTM refaite le 6 octobre 2026** : résultat identique (MAE 8,0 cm contre 6,0 cm pour la référence naïve), le modèle et les données n'ayant pas changé depuis le 9 septembre. Un seul des 38 jours de validation dépasse 30 cm : mesure fragile.
+- **1.2.1 rédigé** d'après le récit des auteures (Grand Yoff cité comme lieu de constat, sans attribution personnelle ; Thiaroye-sur-Mer en 2025 ; inondations depuis les années 1990).
+- **LSTM refait** : la mesure du 6 octobre sur le modèle livré était identique à celle du 3 octobre (8,0 cm contre 6,0 cm). Le modèle a donc été réentraîné (voir le tableau) ; le rapport donne les nouveaux résultats avec leurs réserves (niveau d'eau reconstitué, pluie prévue supposée parfaite à l'évaluation).
 - **Annexe 5 ajoutée** : mesures détaillées du modèle de risque (protocole, matrices de confusion).
 - **Résumé et abstract resserrés** à environ 224 mots (390 auparavant).
 
@@ -22,7 +22,7 @@ Chaque ligne a été vérifiée dans le code ou dans les mesures du dépôt.
 
 | Où | Le fichier disait | Valeur retenue | Preuve |
 |---|---|---|---|
-| Résumé, abstract, conclusion | Exactitude de 87,4 %, erreur LSTM de 4,2 cm, −38 % d'exposition, 153 tests, couverture 82,1 %, « test in-situ » | Exactitude 93,5 % (95,3 % calibré), F1 macro 0,54 (0,48) ; LSTM 8,0 cm contre 6,0 cm pour la référence naïve ; 304 tests, couverture backend 78 % ; aucun chiffre sur les −38 % | `mbeund_mi_ia/data/metriques_rf.json` ; `rapport_pff/sources/mesures/RESULTATS.md` ; pytest du 6 oct. |
+| Résumé, abstract, conclusion | Exactitude de 87,4 %, erreur LSTM de 4,2 cm, −38 % d'exposition, 153 tests, couverture 82,1 %, « test in-situ » | Exactitude 93,5 % (95,3 % calibré), F1 macro 0,54 (0,48) ; LSTM 8,0 cm contre 6,0 cm pour la référence naïve ; 308 tests, couverture backend 78 % ; aucun chiffre sur les −38 % | `mbeund_mi_ia/data/metriques_rf.json` ; `rapport_pff/sources/mesures/RESULTATS.md` ; pytest du 6 oct. |
 | Mots-clés | 9 | 6 | Le plan impose 4 à 6 |
 | 4.1.3 Zones | Guinaw Rail, Route de Rufisque, Ibra Ndoye, Mbatal, Cité Sam-Sam, Médina Fass… | Thiaroye Gare, Camp Militaire, Thiaroye sur Mer, CEM Thiaroye 44, Djida Thiaroye Kaw, Pikine Zone, Zone Côtière Yoff | `backend/alertes/topographie_thiaroye.csv` |
 | 4.1.3 Topographie | Altitude 4,8 à 7,2 m, pente 0,32 à 0,65 %, perméabilité 30 à 65, nappe de 0,5 à 1,8 m | Altitude 0,1 à 9,4 m, pente 0,20 à 1,49 %, perméabilité 10 à 65 %, drainage de « Bon » à « Très mauvais » ; la profondeur de nappe n'est pas dans le fichier | même fichier |
@@ -30,7 +30,7 @@ Chaque ligne a été vérifiée dans le code ou dans les mesures du dépôt.
 | 4.1.3 Anomalies | Fichier `detection_anomalies.py`, drapeau `is_anomaly` | `detecteur_anomalies.py`, action « EXCLURE_DU_CALCUL », règles sur les valeurs négatives et supérieures à 500 cm | `mbeund_mi_ia/ia/detecteur_anomalies.py` |
 | 4.1.4 Random Forest | 50 arbres, calibration isotonique, 2010-2024, variables d'altitude, pente, perméabilité, drainage ; Brier de 0,162 à 0,084 | 300 arbres, calibration sigmoïde avec validation temporelle en 3 plis, apprentissage 2010-2021 et test 2022-2024, trois variables de pluie (jour, 24 h, 72 h) ; Brier non recalculé | `metriques_rf.json` |
 | 4.1.4 Seuil de pluie | 30 mm | **15 mm** | `backend/alertes/tasks.py`, ligne 30 |
-| 4.1.4 LSTM | Activation ReLU sur la couche LSTM ; 100 époques avec arrêt précoce ; MAE 4,2 cm, RMSE 5,8 cm, R² 0,891 | Pas d'activation ReLU sur la couche LSTM ; script d'entraînement de 5 époques ; MAE 8,0 cm, RMSE 11,5 cm (mesure du 3 octobre), moins bon que la référence naïve (6,0 cm) | `ia/modele_lstm.py` ; `mesures/RESULTATS.md` |
+| 4.1.4 et 4.3.3 LSTM | Activation ReLU sur la couche LSTM ; 100 époques ; MAE 4,2 cm, RMSE 5,8 cm, R² 0,891 | Pas d'activation ReLU. Le LSTM livré (190 séquences, 5 époques) était moins bon que la persistance (8,0 cm contre 6,0 cm) : il a été **réentraîné** le 6 octobre (15 ans de pluie, 5 454 séquences, pluie prévue en entrée, arrêt précoce, test chronologique) : **2,8 cm contre 5,0 cm** pour la persistance et 4,7 cm pour la règle empirique | `ia/modele_lstm.py` ; `data/metriques_lstm.json` |
 | 4.1.4 NDWI | Seuil NDWI > 0,1 | Seuil **0,3** | `mbeund_mi_ia/gee/config_gee.py` |
 | 4.3.3 Détection satellite | Concordance Kappa de 0,81 avec les polygones de l'ONAS et du PDNA de 2020 et 2022 | Aucune validation quantitative n'a été faite : texte remplacé | Aucun code ni mesure dans le dépôt |
 | 4.1.5 Itinéraire | Pénalité proportionnelle à la hauteur d'eau, coût infini en cas de danger | Coût = longueur × (1 + 5 × score de risque) : au maximum six fois la longueur | `api/services/routing_service.py` |
@@ -38,7 +38,7 @@ Chaque ligne a été vérifiée dans le code ou dans les mesures du dépôt.
 | 4.1.5 PDF | « Logo officiel de la commune » | Logo et charte graphique de MBEUND MI | `api/services/pdf_export_service.py` |
 | 4.2.1 Interface citoyenne | Bouton flottant, hauteur d'eau avec repères anatomiques, bandeau d'urgence en alerte rouge, « 90 % de smartphones » | Écran « Signaler » (position, description, photo) ; itinéraire proposé depuis l'écran « Carte » ; le chiffre de 90 % n'a pas de source : retiré | `src/citizen/pages/` |
 | 4.2.2 Console des autorités | 6 indicateurs, dont l'état des motopompes et le remplissage des bassins | 4 indicateurs réels : zones à risque élevé, prédiction à 24 h, score de risque moyen, alertes émises ; aucune donnée sur les motopompes ni les bassins | `src/autorite/pages/TableauDeBordPage.jsx` |
-| 4.3.1 Tests | 153 tests backend, 31 tests Vitest, couverture 82,1 % | 228 (backend), 37 (IA, dont 26 nouveaux sur le service de prédiction), 39 (interface), soit 304 ; couverture backend 78 % | Exécution du 6 octobre 2026 |
+| 4.3.1 Tests | 153 tests backend, 31 tests Vitest, couverture 82,1 % | 228 (backend), 41 (IA, dont 30 nouveaux sur le service de prédiction), 39 (interface), soit 308 ; couverture backend 78 % | Exécution du 6 octobre 2026 |
 | 4.3.4 Essai du 4 octobre | « Validation in-situ en conditions réelles » | « Essai de la chaîne » sur des prévisions réelles ; marqueurs jaunes sur les valeurs à confirmer | Pas d'inondation ni de capteur ce jour-là |
 | 4.3.5 Hypothèses | Trois hypothèses (H1, H2, H3) toutes « CONFIRMÉE », différentes de celles de l'introduction | Les quatre hypothèses H1 à H4 de l'introduction, avec une conclusion honnête pour chacune | Tableau 1 de l'introduction |
 | Conclusion | « validé », « capacité inédite », « système autonome », « garantissant que l'alerte parvienne à chaque chef de famille », « technologie souveraine » | Formulations ramenées à ce qui est démontré | — |
@@ -65,7 +65,7 @@ Latence réseau inférieure à 120 ms ; requêtes spatiales sous 15 ms ; répons
 - L'envoi **réel de SMS au Sénégal n'est pas validé** (identifiants Orange en attente).
 - Les tâches planifiées doivent encore être déclenchées en production (tâche R02 du plan de travail).
 - Le modèle de classification **ne fait pas mieux qu'une règle de persistance** sur le F1 macro ; les niveaux orange et rouge sont mal détectés (10 et 3 jours dans le jeu de test).
-- Le LSTM **ne dépasse pas la référence naïve** (mesure du 3 octobre, à refaire).
+- Le LSTM est évalué sur un niveau d'eau **reconstitué** à partir de la pluie, avec une pluie prévue supposée parfaite : il reste à valider sur des mesures de capteurs réels.
 - Les hypothèses ne sont **pas vérifiées empiriquement** : faisabilité démontrée, effet non mesuré.
 
 ## 5. À vérifier par l'équipe (non vérifiable depuis le dépôt)

@@ -11,6 +11,7 @@ const BLOCKS = JSON.parse(fs.readFileSync(path.join(__dirname, 'import', 'rappor
 const METRIQUES = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'mbeund_mi_ia', 'data', 'metriques_rf.json'), 'utf8'));
 const pct = (x, d = 1) => (x * 100).toFixed(d).replace('.', ',') + ' %';
 const dec = (x, d = 2) => x.toFixed(d).replace('.', ',');
+const LSTM = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'mbeund_mi_ia', 'data', 'metriques_lstm.json'), 'utf8'));
 const SCENARIOS = JSON.parse(fs.readFileSync(path.join(__dirname, 'import', 'scenarios.json'), 'utf8'));
 
 module.exports = (h) => {
@@ -107,9 +108,8 @@ module.exports = (h) => {
     P("MBEUND MI est un projet interne à l'établissement : il n'a pas de commanditaire extérieur."),
     H2('1.2  Présentation du projet : origine, bénéficiaires, périmètre'),
     H3('1.2.1  Origine du projet'),
-    P("L'idée du projet est née de ce que les membres du groupe vivent eux-mêmes. Deux des auteures habitent Grand Yoff, où les séries de pluies provoquent de nombreuses inondations : des maisons sont abandonnées et des familles déménagent ailleurs. D'autres membres constatent, dans leur propre quartier, des inondations et des problèmes d'assainissement."),
-    P("À Thiaroye-sur-Mer, le constat est tout aussi réel : en 2025, une série d'inondations a poussé des habitants à quitter leur maison. Le Sénégal subit des inondations répétées depuis les années 1990 (voir 2.1.3), et chacune des auteures en voit les effets dans son quartier."),
-    P("Le groupe a donc choisi ce problème pour son projet de fin de formation, avec l'ambition de mettre les compétences de la filière Analyse de Performance Digital au service de sa résolution. Thiaroye-sur-Mer a été retenue comme cas d'étude, et l'enquête de terrain du 15 mai 2026 a confirmé le constat (voir 1.2.3)."),
+    P("L'idée du projet est née d'un constat vécu. À Dakar, et notamment à Grand Yoff, chaque série de pluies provoque de nombreuses inondations : des maisons sont abandonnées et des familles déménagent ailleurs. À Thiaroye-sur-Mer, le constat est tout aussi réel : en 2025, une série d'inondations a poussé des habitants à quitter leur maison."),
+    P("Le Sénégal subit des inondations répétées depuis les années 1990 (voir 2.1.3). Ce problème, que nous observons autour de nous, nous a semblé un sujet utile pour notre projet de fin de formation : mettre les compétences acquises en Analyse de Performance Digital au service de sa résolution. Thiaroye-sur-Mer a été retenue comme cas d'étude, et l'enquête de terrain du 15 mai 2026 a confirmé le constat (voir 1.2.3)."),
     H3('1.2.2  La commune de Thiaroye-sur-Mer et ses quartiers à risque'), ...range(141, 149),
     H3('1.2.3  Causes et conséquences des inondations : les constats de terrain'), ...range(151, 161),
     H3('1.2.4  Bénéficiaires et périmètre'),
@@ -206,7 +206,7 @@ module.exports = (h) => {
       ["une forêt aléatoire de 50 arbres, calibrée par régression isotonique, entraînée sur 15 ans de pluie journalière (80 % des données pour l'apprentissage, 20 % pour le test). Faute de mesures historiques, le niveau d'eau est ", "une forêt aléatoire de 300 arbres, calibrée par une méthode sigmoïde avec validation croisée temporelle en 3 plis, entraînée sur la pluie journalière de 2010 à 2021 et testée sur 2022-2024. Elle prend en entrée la pluie du jour et les cumuls sur 24 h et 72 h, et prédit la classe de risque du lendemain, définie par des seuils sur le cumul de 72 h (20, 45 et 75 mm). Faute de mesures historiques de niveau d'eau, le niveau utilisé par le LSTM est "],
     ])),
     ...one(clean(blk(222), [
-      ["Le logiciel est vérifié par 123 fonctions de test automatisées (112 pour le backend, 11 pour le module IA), exécutées en intégration continue sur GitHub Actions à chaque modification du backend,", "Le logiciel est vérifié par 304 tests automatisés (228 pour le backend, 37 pour le module IA et 39 pour l'interface), exécutés en intégration continue sur GitHub Actions à chaque modification,"],
+      ["Le logiciel est vérifié par 123 fonctions de test automatisées (112 pour le backend, 11 pour le module IA), exécutées en intégration continue sur GitHub Actions à chaque modification du backend,", "Le logiciel est vérifié par 308 tests automatisés (228 pour le backend, 41 pour le module IA et 39 pour l'interface), exécutés en intégration continue sur GitHub Actions à chaque modification,"],
     ])),
     Hc(3, '4.1.3  Données et prétraitement', "Corrigé d'après le code : sept zones du fichier topographie_thiaroye.csv (et non les quartiers cités avant), niveau d'eau du signalement estimé par la photo (et non choisi par l'utilisateur), nom du fichier du détecteur d'anomalies. Retiré : le temps de requête de 15 ms, non mesuré."),
     ...one(blk(228)),
@@ -230,14 +230,14 @@ module.exports = (h) => {
       ["Entraîné sur des distributions plausibles de montée d'eau et de pluviométrie sahélienne, l'algorithme", "Des règles simples (valeur négative, niveau supérieur à 500 cm) complètent l'algorithme, qui"],
     ])),
 
-    Hc(3, "4.1.4  Modèles d'intelligence artificielle", "Random Forest : 300 arbres, calibration sigmoïde, 3 variables de pluie, test 2022-2024 (metriques_rf.json). Seuil d'activation : 15 mm (tasks.py), pas 30. NDWI : seuil 0,3 (config_gee.py), pas 0,1. LSTM : pas d'activation ReLU sur la couche LSTM, entraînement de démonstration de 5 époques."),
+    Hc(3, "4.1.4  Modèles d'intelligence artificielle", "Random Forest : 300 arbres, calibration sigmoïde, 3 variables de pluie, test 2022-2024 (metriques_rf.json). Seuil d'activation : 15 mm (tasks.py), pas 30. NDWI : seuil 0,3 (config_gee.py), pas 0,1. LSTM : pas d'activation ReLU sur la couche LSTM ; entraînement sur 15 ans de pluie avec 5 variables dont la pluie prévue."),
     ...leadBody({ ...blk(238), runs: [
       { ...blk(238).runs[0], x: 'a) Classification du risque par forêt aléatoire (Random Forest) :' }, { br: 'line' },
       { ...blk(238).runs[0], x: `Le cœur prédictif repose sur un classifieur Random Forest (scikit-learn) de 300 arbres, entraîné sur la pluie journalière de Dakar de 2010 à 2021 et testé sur 2022-2024 (${nTest.toLocaleString('fr-FR')} jours). Il prend en entrée trois variables : la pluie du jour et les cumuls sur 24 h et 72 h. La classe à prédire est le niveau de risque du lendemain (vert, jaune, orange, rouge), défini par des seuils sur le cumul de 72 h (20, 45 et 75 mm). Pour fournir des probabilités exploitables, le classifieur est calibré par une méthode sigmoïde avec validation croisée temporelle en 3 plis. Un seuil d'activation de 15 mm de pluie sur 24 heures (PLUIE_MIN_MODELE_MM) est appliqué dans la tâche planifiée : en dessous, le modèle n'est pas invoqué et la zone reste au vert, car ces faibles pluies sont hors du domaine d'entraînement.` },
     ] }),
     ...leadBody(clean(blk(239), [
       [" de 64 unités avec fonction d'activation ReLU et retour des séquences", " de 64 unités avec retour des séquences"],
-      [" Le modèle s'alimente d'une fenêtre temporelle glissante de 24 jours consécutifs combinant le cumul de pluie journalier et le niveau d'eau maximal relevé.", " Le modèle s'alimente d'une fenêtre temporelle glissante de 24 jours consécutifs combinant le cumul de pluie journalier et le niveau d'eau. Le script d'entraînement fourni (modele_lstm.py) réalise un entraînement de démonstration de 5 époques."],
+      [" Le modèle s'alimente d'une fenêtre temporelle glissante de 24 jours consécutifs combinant le cumul de pluie journalier et le niveau d'eau maximal relevé.", " Le modèle s'alimente d'une fenêtre glissante de 24 jours consécutifs de cinq variables : pluie du jour, cumuls sur 24 h et 72 h, niveau d'eau et pluie prévue pour le jour à prédire. Il est entraîné sur 15 ans de pluie journalière de Dakar (5 454 séquences, découpage chronologique 70 %, 15 % et 15 %, arrêt précoce sur la validation). Faute de mesures, le niveau d'eau est reconstitué à partir de la pluie ; à l'entraînement, la pluie prévue est la pluie réellement tombée, alors qu'en production elle provient d'une prévision Open-Meteo."],
     ])),
     ...leadBody(clean(blk(240), [
       ["un masque binaire d'eau libre (NDWI > 0,1) est généré", "un masque binaire d'eau libre (NDWI > 0,3) est généré, puis les pixels d'eau absents de l'image de référence sont retenus comme nouvellement inondés"],
@@ -296,7 +296,7 @@ module.exports = (h) => {
       ['Contrôle', 'Résultat'],
       [
         ['Tests du backend (pytest)', '228 tests réussis, 0 échec ; couverture des lignes de code : 78 % (3 556 instructions)'],
-        ["Tests du module d'intelligence artificielle", '37 tests réussis (dont 26 sur le service de prédiction)'],
+        ["Tests du module d'intelligence artificielle", '41 tests réussis (dont 30 sur le service de prédiction)'],
         ["Tests de l'interface (Vitest)", '39 tests réussis dans 7 fichiers ; couverture non mesurée'],
         ['Contrôle du style et des défauts', 'ESLint : 0 erreur, 0 avertissement ; Ruff : 0 erreur'],
         ["Compilation de l'interface", 'Réussie'],
@@ -311,8 +311,15 @@ module.exports = (h) => {
       [2470, 1100, 1000, 1000, 1000, 1250, 1250], 'mbeund_mi_ia/data/metriques_rf.json ; calculs des auteures'),
     P(`Le Random Forest classe correctement ${pct(RF.accuracy)} des jours, et ${pct(RFC.accuracy)} après calibration. Ces valeurs sont toutefois dominées par la classe « vert », très majoritaire : le F1 macro, qui pèse chaque classe de la même façon, est de ${dec(RF.f1_macro)} (${dec(RFC.f1_macro)} après calibration), inférieur à celui de la simple persistance (${dec(PER.f1_macro)}). Les niveaux orange et rouge, les plus importants pour la sécurité, sont mal détectés : le modèle calibré ne reconnaît aucun des ${eff.orange} jours orange du jeu de test. Les effectifs de ces classes sont très faibles (${eff.orange} et ${eff.rouge} jours) : toute conclusion statistique y est fragile.`),
     P("Ces résultats montrent que le modèle, entraîné sur la seule pluie, n'apporte pas de gain démontré par rapport à une règle simple. Ils s'expliquent par le manque d'exemples de crues et par l'absence de mesures réelles de niveau d'eau. Ils justifient la collecte de mesures de terrain, présentée dans les perspectives."),
-    Hc(3, '4.3.3  Évaluation du réseau LSTM et de la détection satellite', "Remplace MAE 4,2 cm / R² 0,891 par la mesure du 3 octobre (MAE 8,0 cm, moins bien que la référence naïve). Retiré : le Kappa de 0,81 sur le satellite, sans validation dans le dépôt."),
-    P("**Réseau LSTM.** Mesuré les 3 et 6 octobre 2026 (résultat identique : le modèle et les données n'ont pas changé depuis le 9 septembre) sur 38 séquences de validation (190 séquences d'entraînement tirées de 214 jours de pluie simulée, 5 époques), le LSTM obtient une erreur absolue moyenne de 8,0 cm (erreur quadratique moyenne de 11,5 cm). La référence naïve « le niveau de demain égale celui d'aujourd'hui » obtient 6,0 cm (9,1 cm) : le LSTM ne fait donc pas mieux que cette référence. Le niveau d'eau moyen de ces séquences n'est que de 7,7 cm et un seul des 38 jours dépasse 30 cm (erreur du LSTM de 33,3 cm ce jour-là, contre 18,5 cm pour la référence) : la mesure porte surtout sur de très faibles niveaux et reste fragile."),
+    Hc(3, '4.3.3  Évaluation du réseau LSTM et de la détection satellite', "Le MAE de 4,2 cm et le R² de 0,891 d'origine n'étaient pas reproductibles. Le LSTM a été réentraîné le 6 octobre 2026 (15 ans de pluie, pluie prévue en entrée) et évalué sur un jeu de test chronologique : 2,8 cm contre 5,0 cm pour la persistance. Retiré : le Kappa de 0,81 sur le satellite, sans validation dans le dépôt."),
+    P(`**Réseau LSTM.** Le LSTM est évalué sur ${LSTM.sequences.test} séquences de test (les 15 % de jours les plus récents, jamais vus à l'entraînement), contre deux références : la persistance (le niveau de demain égale celui d'aujourd'hui) et la règle empirique de repli du service (niveau actuel plus la moitié de la pluie prévue).`),
+    ...tableBlock('Tableau', 'Erreur de prévision du niveau d\'eau à 24 h sur le jeu de test (en cm)',
+      ['Modèle', 'Erreur absolue moyenne', 'Erreur quadratique moyenne', `Erreur absolue moyenne, ${LSTM.jours_test_niveau_ge_30cm} jours à 30 cm ou plus`],
+      [['LSTM', 'lstm'], ['Persistance', 'persistance'], ['Règle empirique', 'regle_empirique']].map(([n, k]) => [n, dec(LSTM[k].mae, 1), dec(LSTM[k].rmse, 1), dec(LSTM.sur_les_jours_ge_30cm[k].mae, 1)]),
+      [2400, 2000, 2200, 2470], "mbeund_mi_ia/data/metriques_lstm.json ; calculs des auteures, 6 octobre 2026"),
+    P(`Le LSTM réduit l'erreur moyenne à ${dec(LSTM.lstm.mae, 1)} cm, contre ${dec(LSTM.persistance.mae, 1)} cm pour la persistance et ${dec(LSTM.regle_empirique.mae, 1)} cm pour la règle empirique. L'écart est surtout net sur les jours de hauts niveaux, où l'erreur tombe à ${dec(LSTM.sur_les_jours_ge_30cm.lstm.mae, 1)} cm contre ${dec(LSTM.sur_les_jours_ge_30cm.persistance.mae, 1)} et ${dec(LSTM.sur_les_jours_ge_30cm.regle_empirique.mae, 1)} cm.`),
+    P("**Réserves.** Ces résultats portent sur un niveau d'eau *reconstitué* à partir de la pluie, faute de capteurs : ils montrent que le modèle sait prévoir ce niveau, pas un niveau mesuré à Thiaroye-sur-Mer. De plus, à l'évaluation, la pluie prévue pour le lendemain est la pluie réellement tombée ; en production elle provient d'une prévision, moins précise. Une validation sur des mesures de capteurs réels reste nécessaire."),
+    P("**Historique.** Une première version, entraînée sur 190 séquences seulement et sans pluie prévue, ne dépassait pas la persistance (erreur de 8,0 cm contre 6,0 cm, mesure du 3 octobre 2026). Ce constat a conduit au réentraînement du 6 octobre, qui utilise les 15 ans de pluie disponibles et la pluie prévue comme variable d'entrée."),
     P("**Détection satellite.** La détection des zones nouvellement inondées par l'indice NDWI (seuil 0,3) est intégrée à la chaîne d'alerte et exécutée toutes les 12 heures. Elle n'a pas fait l'objet d'une validation quantitative contre des polygones d'inondation observés : aucune valeur de précision n'est donc annoncée."),
     H3("4.3.4  Essai de la chaîne complète avec les prévisions du 4 octobre 2026"),
     ...leadBody(clean(blk(259), [
@@ -383,7 +390,7 @@ module.exports = (h) => {
       ['Objectif', 'Statut', 'Justification'],
       [
         ["OS1 : collecter et géoréférencer les données météorologiques, satellitaires, de capteurs et de signalements", 'Atteint en grande partie', 'Les quatre sources sont intégrées dans la base spatiale ; les capteurs sont simulés'],
-        ["OS2 : entraîner et évaluer des modèles de classification du risque et de prédiction du niveau d'eau", 'Partiellement atteint', "Modèles entraînés et évalués ; performances limitées sur les niveaux rares et LSTM sans gain sur la référence naïve"],
+        ["OS2 : entraîner et évaluer des modèles de classification du risque et de prédiction du niveau d'eau", 'Partiellement atteint', "Modèles entraînés et évalués ; classifieur limité sur les niveaux rares ; LSTM meilleur que les références sur un niveau d'eau reconstitué"],
         ['OS3 : mettre en place une alerte multicanal et un canal de signalement accessible sans smartphone', 'Partiellement atteint', "Canaux réalisés et testés ; envoi réel de SMS au Sénégal non validé"],
         ["OS4 : offrir aux autorités un tableau de bord, des outils de gestion de crise et des itinéraires d'évacuation", 'Atteint', "Fonctions réalisées et testées ; évaluation auprès des autorités à faire"],
       ], [3700, 1700, 3670], 'analyse des auteures. [[À valider par l\'équipe]]'),

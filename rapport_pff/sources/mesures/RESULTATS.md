@@ -28,3 +28,8 @@ Scripts dans ce dossier, exécutés avec l'environnement `env/` du projet, sans 
 ## Mesure du LSTM refaite le 6 octobre 2026
 - Résultat identique à celui du 3 octobre : LSTM MAE 8,01 cm, RMSE 11,52 cm ; persistance MAE 6,04 cm, RMSE 9,05 cm (modèle et données inchangés depuis le 9 septembre).
 - Niveau d'eau moyen de la validation : 7,73 cm ; un seul jour sur 38 à 30 cm ou plus (LSTM : erreur de 33,3 cm ; persistance : 18,5 cm).
+
+## LSTM réentraîné le 6 octobre 2026 (`ia/preparation_donnees.py`, `ia/modele_lstm.py`)
+- 5 454 séquences (15 ans de pluie de Dakar), découpage chronologique 3 817 / 818 / 819 ; 5 variables dont la pluie du jour suivant ; niveau d'eau reconstitué (1,5 × cumul 72 h + bruit de 5 cm, graine fixée).
+- Test (819 séquences, 42 jours à 30 cm ou plus) : LSTM MAE 2,82 cm, RMSE 3,84 ; persistance 4,97 / 10,07 ; règle empirique 4,69 / 8,97. Sur les jours à 30 cm ou plus : 6,56 contre 21,51 et 17,22 cm.
+- Réserves : cible reconstituée, pluie prévue = pluie réelle à l'évaluation. Détail : `mbeund_mi_ia/data/metriques_lstm.json`.
