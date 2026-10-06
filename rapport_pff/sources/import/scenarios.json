@@ -1,0 +1,152 @@
+[
+ {
+  "scenario": "Hivernage normal",
+  "releves": [
+   {
+    "releve": 1,
+    "eau_cm": 25.0,
+    "pluie_mm": 5.0,
+    "risque": "vert",
+    "confiance": 90.0,
+    "niveau_24h_cm": 27.5,
+    "qualite": "DEGRADEE"
+   },
+   {
+    "releve": 2,
+    "eau_cm": 25.0,
+    "pluie_mm": 5.0,
+    "risque": "vert",
+    "confiance": 90.0,
+    "niveau_24h_cm": 27.5,
+    "qualite": "DEGRADEE"
+   },
+   {
+    "releve": 3,
+    "eau_cm": 25.0,
+    "pluie_mm": 5.0,
+    "risque": "vert",
+    "confiance": 90.0,
+    "niveau_24h_cm": 27.5,
+    "qualite": "DEGRADEE"
+   },
+   {
+    "releve": 4,
+    "eau_cm": 25.0,
+    "pluie_mm": 5.0,
+    "risque": "vert",
+    "confiance": 90.0,
+    "niveau_24h_cm": 27.5,
+    "qualite": "DEGRADEE"
+   },
+   {
+    "releve": 5,
+    "eau_cm": 25.0,
+    "pluie_mm": 5.0,
+    "risque": "vert",
+    "confiance": 90.0,
+    "niveau_24h_cm": 27.5,
+    "qualite": "DEGRADEE"
+   }
+  ]
+ },
+ {
+  "scenario": "Pluie intense",
+  "releves": [
+   {
+    "releve": 1,
+    "eau_cm": 35.0,
+    "pluie_mm": 45.0,
+    "risque": "orange",
+    "confiance": 43.2,
+    "niveau_24h_cm": 57.5,
+    "qualite": "DEGRADEE"
+   },
+   {
+    "releve": 2,
+    "eau_cm": 43.0,
+    "pluie_mm": 45.0,
+    "risque": "orange",
+    "confiance": 43.2,
+    "niveau_24h_cm": 65.5,
+    "qualite": "DEGRADEE"
+   },
+   {
+    "releve": 3,
+    "eau_cm": 51.0,
+    "pluie_mm": 45.0,
+    "risque": "orange",
+    "confiance": 43.2,
+    "niveau_24h_cm": 73.5,
+    "qualite": "DEGRADEE"
+   },
+   {
+    "releve": 4,
+    "eau_cm": 59.0,
+    "pluie_mm": 45.0,
+    "risque": "orange",
+    "confiance": 43.2,
+    "niveau_24h_cm": 81.5,
+    "qualite": "DEGRADEE"
+   },
+   {
+    "releve": 5,
+    "eau_cm": 67.0,
+    "pluie_mm": 45.0,
+    "risque": "orange",
+    "confiance": 43.2,
+    "niveau_24h_cm": 89.5,
+    "qualite": "DEGRADEE"
+   }
+  ]
+ },
+ {
+  "scenario": "Inondation critique",
+  "releves": [
+   {
+    "releve": 1,
+    "eau_cm": 85.0,
+    "pluie_mm": 80.0,
+    "risque": "rouge",
+    "confiance": 42.0,
+    "niveau_24h_cm": 125.0,
+    "qualite": "DEGRADEE"
+   },
+   {
+    "releve": 2,
+    "eau_cm": 97.0,
+    "pluie_mm": 80.0,
+    "risque": "rouge",
+    "confiance": 42.0,
+    "niveau_24h_cm": 137.0,
+    "qualite": "DEGRADEE"
+   },
+   {
+    "releve": 3,
+    "eau_cm": 109.0,
+    "pluie_mm": 80.0,
+    "risque": "rouge",
+    "confiance": 42.0,
+    "niveau_24h_cm": 149.0,
+    "qualite": "DEGRADEE"
+   },
+   {
+    "releve": 4,
+    "eau_cm": 121.0,
+    "pluie_mm": 80.0,
+    "risque": "rouge",
+    "confiance": 42.0,
+    "niveau_24h_cm": 161.0,
+    "qualite": "DEGRADEE"
+   },
+   {
+    "releve": 5,
+    "eau_cm": 133.0,
+    "pluie_mm": 80.0,
+    "risque": "rouge",
+    "confiance": 42.0,
+    "niveau_24h_cm": 173.0,
+    "qualite": "DEGRADEE"
+   }
+  ]
+ }
+]

@@ -1,0 +1,595 @@
+{
+ "capteurs_capteur": {
+  "modele": "Capteur",
+  "fields": [
+   {
+    "name": "id",
+    "type": "BigAutoField",
+    "null": false,
+    "pk": true,
+    "verbose": "ID"
+   },
+   {
+    "name": "nom",
+    "type": "CharField(100)",
+    "null": false,
+    "pk": false,
+    "verbose": "nom"
+   },
+   {
+    "name": "type",
+    "type": "CharField(20)",
+    "null": false,
+    "pk": false,
+    "verbose": "type"
+   },
+   {
+    "name": "localisation",
+    "type": "CharField(255)",
+    "null": false,
+    "pk": false,
+    "verbose": "localisation"
+   },
+   {
+    "name": "code_identifiant",
+    "type": "CharField(50)",
+    "null": true,
+    "pk": false,
+    "verbose": "code identifiant"
+   },
+   {
+    "name": "zone_id",
+    "type": "ForeignKey(ZoneRisque)",
+    "null": true,
+    "pk": false,
+    "verbose": "zone"
+   },
+   {
+    "name": "statut",
+    "type": "CharField(20)",
+    "null": false,
+    "pk": false,
+    "verbose": "statut"
+   },
+   {
+    "name": "dernier_releve",
+    "type": "DateTimeField",
+    "null": true,
+    "pk": false,
+    "verbose": "dernier releve"
+   },
+   {
+    "name": "date_installation",
+    "type": "DateField",
+    "null": false,
+    "pk": false,
+    "verbose": "date installation"
+   }
+  ]
+ },
+ "capteurs_mesure": {
+  "modele": "Mesure",
+  "fields": [
+   {
+    "name": "id",
+    "type": "BigAutoField",
+    "null": false,
+    "pk": true,
+    "verbose": "ID"
+   },
+   {
+    "name": "capteur_id",
+    "type": "ForeignKey(Capteur)",
+    "null": false,
+    "pk": false,
+    "verbose": "capteur"
+   },
+   {
+    "name": "valeur",
+    "type": "FloatField",
+    "null": false,
+    "pk": false,
+    "verbose": "valeur"
+   },
+   {
+    "name": "unite",
+    "type": "CharField(20)",
+    "null": false,
+    "pk": false,
+    "verbose": "unite"
+   },
+   {
+    "name": "timestamp",
+    "type": "DateTimeField",
+    "null": false,
+    "pk": false,
+    "verbose": "timestamp"
+   }
+  ]
+ },
+ "alertes_zonerisque": {
+  "modele": "ZoneRisque",
+  "fields": [
+   {
+    "name": "id",
+    "type": "BigAutoField",
+    "null": false,
+    "pk": true,
+    "verbose": "ID"
+   },
+   {
+    "name": "geom",
+    "type": "TextField",
+    "null": false,
+    "pk": false,
+    "verbose": "geom"
+   },
+   {
+    "name": "quartier",
+    "type": "CharField(100)",
+    "null": false,
+    "pk": false,
+    "verbose": "quartier"
+   },
+   {
+    "name": "niveau_risque",
+    "type": "CharField(20)",
+    "null": false,
+    "pk": false,
+    "verbose": "niveau risque"
+   },
+   {
+    "name": "description",
+    "type": "TextField",
+    "null": false,
+    "pk": false,
+    "verbose": "description"
+   },
+   {
+    "name": "score_risque_moyen",
+    "type": "DecimalField",
+    "null": false,
+    "pk": false,
+    "verbose": "score risque moyen"
+   },
+   {
+    "name": "seuil_jaune",
+    "type": "DecimalField",
+    "null": false,
+    "pk": false,
+    "verbose": "seuil jaune"
+   },
+   {
+    "name": "seuil_orange",
+    "type": "DecimalField",
+    "null": false,
+    "pk": false,
+    "verbose": "seuil orange"
+   },
+   {
+    "name": "seuil_rouge",
+    "type": "DecimalField",
+    "null": false,
+    "pk": false,
+    "verbose": "seuil rouge"
+   }
+  ]
+ },
+ "alertes_alerte": {
+  "modele": "Alerte",
+  "fields": [
+   {
+    "name": "id",
+    "type": "BigAutoField",
+    "null": false,
+    "pk": true,
+    "verbose": "ID"
+   },
+   {
+    "name": "niveau",
+    "type": "CharField(20)",
+    "null": false,
+    "pk": false,
+    "verbose": "niveau"
+   },
+   {
+    "name": "zone_id",
+    "type": "ForeignKey(ZoneRisque)",
+    "null": false,
+    "pk": false,
+    "verbose": "zone"
+   },
+   {
+    "name": "message",
+    "type": "TextField",
+    "null": false,
+    "pk": false,
+    "verbose": "message"
+   },
+   {
+    "name": "timestamp",
+    "type": "DateTimeField",
+    "null": false,
+    "pk": false,
+    "verbose": "timestamp"
+   },
+   {
+    "name": "date_expiration",
+    "type": "DateTimeField",
+    "null": true,
+    "pk": false,
+    "verbose": "date expiration"
+   },
+   {
+    "name": "canaux",
+    "type": "CharField(100)",
+    "null": false,
+    "pk": false,
+    "verbose": "canaux"
+   },
+   {
+    "name": "statut",
+    "type": "CharField(20)",
+    "null": false,
+    "pk": false,
+    "verbose": "statut"
+   },
+   {
+    "name": "created_by_id",
+    "type": "ForeignKey(User)",
+    "null": true,
+    "pk": false,
+    "verbose": "created by"
+   }
+  ]
+ },
+ "alertes_pointrefuge": {
+  "modele": "PointRefuge",
+  "fields": [
+   {
+    "name": "id",
+    "type": "BigAutoField",
+    "null": false,
+    "pk": true,
+    "verbose": "ID"
+   },
+   {
+    "name": "nom",
+    "type": "CharField(200)",
+    "null": false,
+    "pk": false,
+    "verbose": "nom"
+   },
+   {
+    "name": "type_refuge",
+    "type": "CharField(50)",
+    "null": false,
+    "pk": false,
+    "verbose": "type refuge"
+   },
+   {
+    "name": "localisation",
+    "type": "CharField(255)",
+    "null": false,
+    "pk": false,
+    "verbose": "localisation"
+   },
+   {
+    "name": "zone_id",
+    "type": "ForeignKey(ZoneRisque)",
+    "null": true,
+    "pk": false,
+    "verbose": "zone"
+   },
+   {
+    "name": "adresse",
+    "type": "CharField(300)",
+    "null": false,
+    "pk": false,
+    "verbose": "adresse"
+   },
+   {
+    "name": "quartier",
+    "type": "CharField(100)",
+    "null": false,
+    "pk": false,
+    "verbose": "quartier"
+   },
+   {
+    "name": "capacite",
+    "type": "IntegerField",
+    "null": true,
+    "pk": false,
+    "verbose": "capacite"
+   },
+   {
+    "name": "contact",
+    "type": "CharField(50)",
+    "null": false,
+    "pk": false,
+    "verbose": "contact"
+   },
+   {
+    "name": "hauteur_etage",
+    "type": "IntegerField",
+    "null": true,
+    "pk": false,
+    "verbose": "hauteur etage"
+   },
+   {
+    "name": "notes",
+    "type": "TextField",
+    "null": false,
+    "pk": false,
+    "verbose": "notes"
+   },
+   {
+    "name": "actif",
+    "type": "BooleanField",
+    "null": false,
+    "pk": false,
+    "verbose": "actif"
+   },
+   {
+    "name": "date_ajout",
+    "type": "DateTimeField",
+    "null": false,
+    "pk": false,
+    "verbose": "date ajout"
+   }
+  ]
+ },
+ "alertes_signalementcitoyen": {
+  "modele": "SignalementCitoyen",
+  "fields": [
+   {
+    "name": "id",
+    "type": "BigAutoField",
+    "null": false,
+    "pk": true,
+    "verbose": "ID"
+   },
+   {
+    "name": "localisation",
+    "type": "CharField(255)",
+    "null": false,
+    "pk": false,
+    "verbose": "localisation"
+   },
+   {
+    "name": "description",
+    "type": "TextField",
+    "null": false,
+    "pk": false,
+    "verbose": "description"
+   },
+   {
+    "name": "photo",
+    "type": "FileField",
+    "null": true,
+    "pk": false,
+    "verbose": "photo"
+   },
+   {
+    "name": "valide",
+    "type": "BooleanField",
+    "null": false,
+    "pk": false,
+    "verbose": "valide"
+   },
+   {
+    "name": "date_creation",
+    "type": "DateTimeField",
+    "null": false,
+    "pk": false,
+    "verbose": "date creation"
+   },
+   {
+    "name": "categorie",
+    "type": "CharField(20)",
+    "null": false,
+    "pk": false,
+    "verbose": "categorie"
+   },
+   {
+    "name": "signale_par_id",
+    "type": "ForeignKey(User)",
+    "null": true,
+    "pk": false,
+    "verbose": "signale par"
+   },
+   {
+    "name": "niveau_eau_estime",
+    "type": "CharField(20)",
+    "null": false,
+    "pk": false,
+    "verbose": "niveau eau estime"
+   },
+   {
+    "name": "score_eau_estime",
+    "type": "FloatField",
+    "null": true,
+    "pk": false,
+    "verbose": "score eau estime"
+   },
+   {
+    "name": "photo_hash",
+    "type": "CharField(16)",
+    "null": false,
+    "pk": false,
+    "verbose": "photo hash"
+   },
+   {
+    "name": "signalement_similaire_id",
+    "type": "ForeignKey(SignalementCitoyen)",
+    "null": true,
+    "pk": false,
+    "verbose": "signalement similaire"
+   }
+  ]
+ },
+ "alertes_segmentrue": {
+  "modele": "SegmentRue",
+  "fields": [
+   {
+    "name": "id",
+    "type": "BigAutoField",
+    "null": false,
+    "pk": true,
+    "verbose": "ID"
+   },
+   {
+    "name": "nom",
+    "type": "CharField(150)",
+    "null": false,
+    "pk": false,
+    "verbose": "nom"
+   },
+   {
+    "name": "geom",
+    "type": "TextField",
+    "null": false,
+    "pk": false,
+    "verbose": "geom"
+   },
+   {
+    "name": "zone_id",
+    "type": "ForeignKey(ZoneRisque)",
+    "null": true,
+    "pk": false,
+    "verbose": "zone"
+   },
+   {
+    "name": "altitude_moyenne",
+    "type": "DecimalField",
+    "null": true,
+    "pk": false,
+    "verbose": "altitude moyenne"
+   },
+   {
+    "name": "pente",
+    "type": "DecimalField",
+    "null": true,
+    "pk": false,
+    "verbose": "pente"
+   },
+   {
+    "name": "etat_drainage",
+    "type": "CharField(20)",
+    "null": false,
+    "pk": false,
+    "verbose": "etat drainage"
+   },
+   {
+    "name": "score_risque_actuel",
+    "type": "DecimalField",
+    "null": false,
+    "pk": false,
+    "verbose": "score risque actuel"
+   },
+   {
+    "name": "created_at",
+    "type": "DateTimeField",
+    "null": false,
+    "pk": false,
+    "verbose": "created at"
+   }
+  ]
+ },
+ "alertes_previsionmeteo": {
+  "modele": "PrevisionMeteo",
+  "fields": [
+   {
+    "name": "id",
+    "type": "BigAutoField",
+    "null": false,
+    "pk": true,
+    "verbose": "ID"
+   },
+   {
+    "name": "zone_id",
+    "type": "ForeignKey(ZoneRisque)",
+    "null": true,
+    "pk": false,
+    "verbose": "zone"
+   },
+   {
+    "name": "date_prevision",
+    "type": "DateTimeField",
+    "null": false,
+    "pk": false,
+    "verbose": "date prevision"
+   },
+   {
+    "name": "date_fin",
+    "type": "DateTimeField",
+    "null": true,
+    "pk": false,
+    "verbose": "date fin"
+   },
+   {
+    "name": "temperature_c",
+    "type": "DecimalField",
+    "null": true,
+    "pk": false,
+    "verbose": "temperature c"
+   },
+   {
+    "name": "temperature_max_c",
+    "type": "DecimalField",
+    "null": true,
+    "pk": false,
+    "verbose": "temperature max c"
+   },
+   {
+    "name": "temperature_min_c",
+    "type": "DecimalField",
+    "null": true,
+    "pk": false,
+    "verbose": "temperature min c"
+   },
+   {
+    "name": "precipitation_mm",
+    "type": "DecimalField",
+    "null": false,
+    "pk": false,
+    "verbose": "precipitation mm"
+   },
+   {
+    "name": "humidity_percent",
+    "type": "DecimalField",
+    "null": true,
+    "pk": false,
+    "verbose": "humidity percent"
+   },
+   {
+    "name": "vitesse_vent",
+    "type": "DecimalField",
+    "null": true,
+    "pk": false,
+    "verbose": "vitesse vent"
+   },
+   {
+    "name": "weather_code",
+    "type": "IntegerField",
+    "null": true,
+    "pk": false,
+    "verbose": "weather code"
+   },
+   {
+    "name": "source",
+    "type": "CharField(100)",
+    "null": false,
+    "pk": false,
+    "verbose": "source"
+   },
+   {
+    "name": "created_at",
+    "type": "DateTimeField",
+    "null": false,
+    "pk": false,
+    "verbose": "created at"
+   }
+  ]
+ }
+}

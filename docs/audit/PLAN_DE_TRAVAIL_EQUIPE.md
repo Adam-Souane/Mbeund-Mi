@@ -72,6 +72,7 @@ Fichiers à elle : `mbeund_mi_ia/`, `backend/.env`, comptes Render / Neon / Oran
 | R16 | J4–J6 | Tests IA : service de prédiction, chatbot, GEE simulé (11 tests aujourd'hui) | Couverture IA mesurée et notée |
 | R05b | J6 | Appliquer dans le tableau de bord Render ce que Mama Adam a fusionné (`render.yaml`, cron) | Services en ligne conformes au dépôt |
 
+
 ### Mama Adam SOUANE — Backend, déploiement, CI
 Fichiers à lui : `backend/` (sauf `migrations/`), `render.yaml`, `runtime.txt`, `ruff.toml`, `.github/`, `docs/DEPLOIEMENT.md`, `backend/requirements.txt`.
 
@@ -107,6 +108,22 @@ Fichiers à elle : `src/`, `.env.example` (racine), `vite.config.js`, `eslint.co
 | R17 | J2–J4 | Installer `@vitest/coverage-v8`, viser 50 % ; tester d'abord la carte, le signalement avec photo, les exports, la crise, le chat | Rapport de couverture ≥ 50 % |
 | R30 | J4–J5 | Passage d'accessibilité manuel (clavier, lecteur d'écran) sur les 6 écrans citoyens | Défauts listés et corrigés |
 | R33 | J5–J6 | **Scénario de test manuel de bout en bout** (inscription → OTP → signalement → alerte reçue) écrit sous forme de liste de vérification ; exécuter sur la base de démo ; **captures d'écran** des 21 écrans pour le rapport et le diaporama | Liste exécutée, captures déposées dans `rapport_pff/sources/fig/` |
+
+---
+
+## 3 bis. Avancement de Maïmouna (6 octobre 2026)
+
+| Réf. | Statut | Détail |
+|---|---|---|
+| R01 | **À finir par Maïmouna** | Les 4 entrées de `.claude/settings.local.json` contenant le mot de passe Neon sont retirées. **Le mot de passe lui-même n'est pas changé** : à faire sur Neon puis dans Render |
+| R07 | Fait | Limites du modèle rédigées dans le rapport v4 (4.3.2, résumé, conclusion) à partir de `metriques_rf.json` |
+| R20 | Fait | Les erreurs avalées de `service_prediction.py` sont journalisées |
+| R13a | Fait | `analyser_risque` (complexité 19) et `recuperer_historique_24j` (13) découpés en petites fonctions ; comportement inchangé (228 tests backend et 37 tests IA réussis) |
+| R16 | Fait | 26 tests ajoutés sur le service de prédiction (IA : 11 à 37 tests) |
+| R06, R00, R05b | À faire par Maïmouna | Orange SMS, accès Render de Mama Adam, application des réglages Render |
+| Rapport | Fait | 3.4 (valeurs actuelles), 4.1.1, 4.1.4, 4.2.3 (scénarios rejoués), 4.3.2, conclusion, résumé resserré, annexe 5, chiffres externes de l'introduction vérifiés sur des sources |
+| Rapport | À faire | 1.2.1 origine du projet (faits à donner par l'équipe), refaire la mesure du LSTM, introduction à resserrer |
+| R23, R27 | Reportés | Après la soutenance |
 
 ---
 

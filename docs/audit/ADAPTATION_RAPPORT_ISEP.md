@@ -1,3 +1,5 @@
+> **Mise à jour du 6 octobre 2026 : le rapport v4 remplace le v3.** Il reprend le contenu des auteures dans le modèle ISEP-AT n° 2 (page de garde avec drapeau et logo). Lire d'abord `docs/rapport/CORRECTIONS_RAPPORT.md`. Le présent guide reste valable pour le plan officiel et la répartition ; les numéros de sections du chapitre 4 ont changé (voir le rapport v4).
+
 # Adaptation du rapport au modèle officiel de l'ISEP-AT
 
 Document à lire par **toute l'équipe**. Il explique ce qui a changé dans le rapport, ce que chacun doit rédiger, et dans quel fichier.
