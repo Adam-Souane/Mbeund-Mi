@@ -1,0 +1,412 @@
+{
+ "seuil_activation_mm": 15.0,
+ "seuils_zone": {
+  "jaune": 0.4,
+  "orange": 0.65,
+  "rouge": 0.85
+ },
+ "resultats": [
+  {
+   "pluie_24h_mm": 5,
+   "zones": {
+    "Thiaroye Gare": {
+     "niveau": "vert",
+     "score": 0.0,
+     "modele_appele": false
+    },
+    "Camp Militaire": {
+     "niveau": "vert",
+     "score": 0.0,
+     "modele_appele": false
+    },
+    "Thiaroye sur Mer": {
+     "niveau": "vert",
+     "score": 0.0,
+     "modele_appele": false
+    },
+    "CEM Thiaroye 44": {
+     "niveau": "vert",
+     "score": 0.0,
+     "modele_appele": false
+    },
+    "Djida Thiaroye Kaw": {
+     "niveau": "vert",
+     "score": 0.0,
+     "modele_appele": false
+    },
+    "Pikine Zone": {
+     "niveau": "vert",
+     "score": 0.0,
+     "modele_appele": false
+    },
+    "Zone Côtière Yoff": {
+     "niveau": "vert",
+     "score": 0.0,
+     "modele_appele": false
+    }
+   }
+  },
+  {
+   "pluie_24h_mm": 10,
+   "zones": {
+    "Thiaroye Gare": {
+     "niveau": "vert",
+     "score": 0.0,
+     "modele_appele": false
+    },
+    "Camp Militaire": {
+     "niveau": "vert",
+     "score": 0.0,
+     "modele_appele": false
+    },
+    "Thiaroye sur Mer": {
+     "niveau": "vert",
+     "score": 0.0,
+     "modele_appele": false
+    },
+    "CEM Thiaroye 44": {
+     "niveau": "vert",
+     "score": 0.0,
+     "modele_appele": false
+    },
+    "Djida Thiaroye Kaw": {
+     "niveau": "vert",
+     "score": 0.0,
+     "modele_appele": false
+    },
+    "Pikine Zone": {
+     "niveau": "vert",
+     "score": 0.0,
+     "modele_appele": false
+    },
+    "Zone Côtière Yoff": {
+     "niveau": "vert",
+     "score": 0.0,
+     "modele_appele": false
+    }
+   }
+  },
+  {
+   "pluie_24h_mm": 14,
+   "zones": {
+    "Thiaroye Gare": {
+     "niveau": "vert",
+     "score": 0.0,
+     "modele_appele": false
+    },
+    "Camp Militaire": {
+     "niveau": "vert",
+     "score": 0.0,
+     "modele_appele": false
+    },
+    "Thiaroye sur Mer": {
+     "niveau": "vert",
+     "score": 0.0,
+     "modele_appele": false
+    },
+    "CEM Thiaroye 44": {
+     "niveau": "vert",
+     "score": 0.0,
+     "modele_appele": false
+    },
+    "Djida Thiaroye Kaw": {
+     "niveau": "vert",
+     "score": 0.0,
+     "modele_appele": false
+    },
+    "Pikine Zone": {
+     "niveau": "vert",
+     "score": 0.0,
+     "modele_appele": false
+    },
+    "Zone Côtière Yoff": {
+     "niveau": "vert",
+     "score": 0.0,
+     "modele_appele": false
+    }
+   }
+  },
+  {
+   "pluie_24h_mm": 15,
+   "zones": {
+    "Thiaroye Gare": {
+     "niveau": "vert",
+     "score": 0.29,
+     "classe_rf": "Moyen",
+     "modele_appele": true
+    },
+    "Camp Militaire": {
+     "niveau": "vert",
+     "score": 0.14,
+     "classe_rf": "Faible",
+     "modele_appele": true
+    },
+    "Thiaroye sur Mer": {
+     "niveau": "jaune",
+     "score": 0.51,
+     "classe_rf": "Moyen",
+     "modele_appele": true
+    },
+    "CEM Thiaroye 44": {
+     "niveau": "vert",
+     "score": 0.14,
+     "classe_rf": "Faible",
+     "modele_appele": true
+    },
+    "Djida Thiaroye Kaw": {
+     "niveau": "vert",
+     "score": 0.14,
+     "classe_rf": "Faible",
+     "modele_appele": true
+    },
+    "Pikine Zone": {
+     "niveau": "vert",
+     "score": 0.31,
+     "classe_rf": "Moyen",
+     "modele_appele": true
+    },
+    "Zone Côtière Yoff": {
+     "niveau": "jaune",
+     "score": 0.61,
+     "classe_rf": "Grave",
+     "modele_appele": true
+    }
+   }
+  },
+  {
+   "pluie_24h_mm": 20,
+   "zones": {
+    "Thiaroye Gare": {
+     "niveau": "vert",
+     "score": 0.29,
+     "classe_rf": "Moyen",
+     "modele_appele": true
+    },
+    "Camp Militaire": {
+     "niveau": "vert",
+     "score": 0.14,
+     "classe_rf": "Faible",
+     "modele_appele": true
+    },
+    "Thiaroye sur Mer": {
+     "niveau": "jaune",
+     "score": 0.51,
+     "classe_rf": "Moyen",
+     "modele_appele": true
+    },
+    "CEM Thiaroye 44": {
+     "niveau": "vert",
+     "score": 0.14,
+     "classe_rf": "Faible",
+     "modele_appele": true
+    },
+    "Djida Thiaroye Kaw": {
+     "niveau": "vert",
+     "score": 0.14,
+     "classe_rf": "Faible",
+     "modele_appele": true
+    },
+    "Pikine Zone": {
+     "niveau": "vert",
+     "score": 0.31,
+     "classe_rf": "Moyen",
+     "modele_appele": true
+    },
+    "Zone Côtière Yoff": {
+     "niveau": "jaune",
+     "score": 0.61,
+     "classe_rf": "Grave",
+     "modele_appele": true
+    }
+   }
+  },
+  {
+   "pluie_24h_mm": 30,
+   "zones": {
+    "Thiaroye Gare": {
+     "niveau": "vert",
+     "score": 0.29,
+     "classe_rf": "Moyen",
+     "modele_appele": true
+    },
+    "Camp Militaire": {
+     "niveau": "vert",
+     "score": 0.14,
+     "classe_rf": "Faible",
+     "modele_appele": true
+    },
+    "Thiaroye sur Mer": {
+     "niveau": "jaune",
+     "score": 0.51,
+     "classe_rf": "Moyen",
+     "modele_appele": true
+    },
+    "CEM Thiaroye 44": {
+     "niveau": "vert",
+     "score": 0.14,
+     "classe_rf": "Faible",
+     "modele_appele": true
+    },
+    "Djida Thiaroye Kaw": {
+     "niveau": "vert",
+     "score": 0.14,
+     "classe_rf": "Faible",
+     "modele_appele": true
+    },
+    "Pikine Zone": {
+     "niveau": "vert",
+     "score": 0.31,
+     "classe_rf": "Moyen",
+     "modele_appele": true
+    },
+    "Zone Côtière Yoff": {
+     "niveau": "jaune",
+     "score": 0.61,
+     "classe_rf": "Grave",
+     "modele_appele": true
+    }
+   }
+  },
+  {
+   "pluie_24h_mm": 45,
+   "zones": {
+    "Thiaroye Gare": {
+     "niveau": "jaune",
+     "score": 0.4,
+     "classe_rf": "Moyen",
+     "modele_appele": true
+    },
+    "Camp Militaire": {
+     "niveau": "vert",
+     "score": 0.28,
+     "classe_rf": "Moyen",
+     "modele_appele": true
+    },
+    "Thiaroye sur Mer": {
+     "niveau": "jaune",
+     "score": 0.61,
+     "classe_rf": "Moyen",
+     "modele_appele": true
+    },
+    "CEM Thiaroye 44": {
+     "niveau": "vert",
+     "score": 0.27,
+     "classe_rf": "Moyen",
+     "modele_appele": true
+    },
+    "Djida Thiaroye Kaw": {
+     "niveau": "vert",
+     "score": 0.27,
+     "classe_rf": "Moyen",
+     "modele_appele": true
+    },
+    "Pikine Zone": {
+     "niveau": "jaune",
+     "score": 0.42,
+     "classe_rf": "Moyen",
+     "modele_appele": true
+    },
+    "Zone Côtière Yoff": {
+     "niveau": "orange",
+     "score": 0.71,
+     "classe_rf": "Grave",
+     "modele_appele": true
+    }
+   }
+  },
+  {
+   "pluie_24h_mm": 65,
+   "zones": {
+    "Thiaroye Gare": {
+     "niveau": "jaune",
+     "score": 0.5,
+     "classe_rf": "Moyen",
+     "modele_appele": true
+    },
+    "Camp Militaire": {
+     "niveau": "vert",
+     "score": 0.36,
+     "classe_rf": "Moyen",
+     "modele_appele": true
+    },
+    "Thiaroye sur Mer": {
+     "niveau": "orange",
+     "score": 0.67,
+     "classe_rf": "Moyen",
+     "modele_appele": true
+    },
+    "CEM Thiaroye 44": {
+     "niveau": "vert",
+     "score": 0.38,
+     "classe_rf": "Moyen",
+     "modele_appele": true
+    },
+    "Djida Thiaroye Kaw": {
+     "niveau": "vert",
+     "score": 0.38,
+     "classe_rf": "Moyen",
+     "modele_appele": true
+    },
+    "Pikine Zone": {
+     "niveau": "jaune",
+     "score": 0.5,
+     "classe_rf": "Moyen",
+     "modele_appele": true
+    },
+    "Zone Côtière Yoff": {
+     "niveau": "orange",
+     "score": 0.76,
+     "classe_rf": "Grave",
+     "modele_appele": true
+    }
+   }
+  },
+  {
+   "pluie_24h_mm": 80,
+   "zones": {
+    "Thiaroye Gare": {
+     "niveau": "orange",
+     "score": 0.68,
+     "classe_rf": "Moyen",
+     "modele_appele": true
+    },
+    "Camp Militaire": {
+     "niveau": "jaune",
+     "score": 0.54,
+     "classe_rf": "Moyen",
+     "modele_appele": true
+    },
+    "Thiaroye sur Mer": {
+     "niveau": "rouge",
+     "score": 0.92,
+     "classe_rf": "Grave",
+     "modele_appele": true
+    },
+    "CEM Thiaroye 44": {
+     "niveau": "jaune",
+     "score": 0.56,
+     "classe_rf": "Moyen",
+     "modele_appele": true
+    },
+    "Djida Thiaroye Kaw": {
+     "niveau": "jaune",
+     "score": 0.56,
+     "classe_rf": "Moyen",
+     "modele_appele": true
+    },
+    "Pikine Zone": {
+     "niveau": "orange",
+     "score": 0.68,
+     "classe_rf": "Moyen",
+     "modele_appele": true
+    },
+    "Zone Côtière Yoff": {
+     "niveau": "rouge",
+     "score": 0.98,
+     "classe_rf": "Grave",
+     "modele_appele": true
+    }
+   }
+  }
+ ]
+}

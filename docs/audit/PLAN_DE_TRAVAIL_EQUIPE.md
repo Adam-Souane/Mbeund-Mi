@@ -124,7 +124,8 @@ Fichiers à elle : `src/`, `.env.example` (racine), `vite.config.js`, `eslint.co
 | R06, R00, R05b | À faire par Maïmouna | Orange SMS, accès Render de Mama Adam, application des réglages Render |
 | Rapport | Fait | 3.4 (valeurs actuelles), 4.1.1, 4.1.4, 4.2.3 (scénarios rejoués), 4.3.2, conclusion, résumé resserré, annexe 5, chiffres externes de l'introduction vérifiés sur des sources |
 | Rapport | Fait | 1.2.1 origine du projet (récit des auteures), mesure du LSTM refaite le 6 octobre (résultat identique) |
-| Rapport | À faire | Introduction à resserrer (4 pages pour 2 à 3), simulations de seuils du 4 octobre à refaire avec le seuil de 15 mm |
+| Rapport | Fait | Introduction resserrée à 3 pages |
+| Rapport | Fait | Simulations de seuils refaites avec le seuil de 15 mm (tableau 17 du rapport) |
 | R23, R27 | Reportés | Après la soutenance |
 
 ---

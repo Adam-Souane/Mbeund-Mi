@@ -39,7 +39,7 @@ Chaque ligne a été vérifiée dans le code ou dans les mesures du dépôt.
 | 4.2.1 Interface citoyenne | Bouton flottant, hauteur d'eau avec repères anatomiques, bandeau d'urgence en alerte rouge, « 90 % de smartphones » | Écran « Signaler » (position, description, photo) ; itinéraire proposé depuis l'écran « Carte » ; le chiffre de 90 % n'a pas de source : retiré | `src/citizen/pages/` |
 | 4.2.2 Console des autorités | 6 indicateurs, dont l'état des motopompes et le remplissage des bassins | 4 indicateurs réels : zones à risque élevé, prédiction à 24 h, score de risque moyen, alertes émises ; aucune donnée sur les motopompes ni les bassins | `src/autorite/pages/TableauDeBordPage.jsx` |
 | 4.3.1 Tests | 153 tests backend, 31 tests Vitest, couverture 82,1 % | 228 (backend), 41 (IA, dont 30 nouveaux sur le service de prédiction), 39 (interface), soit 308 ; couverture backend 78 % | Exécution du 6 octobre 2026 |
-| 4.3.4 Essai du 4 octobre | « Validation in-situ en conditions réelles » | « Essai de la chaîne » sur des prévisions réelles ; marqueurs jaunes sur les valeurs à confirmer | Pas d'inondation ni de capteur ce jour-là |
+| 4.3.4 Essai du 4 octobre | « Validation in-situ en conditions réelles » ; « jaune dès 45 mm (score 0,40) et orange dès 65 mm (score 0,50) » | « Essai de la chaîne » sur des prévisions réelles. **Simulations refaites le 6 octobre avec le seuil de 15 mm** pour 9 cumuls de pluie et les 7 zones (tableau 17) : 45 mm donne bien le jaune pour Thiaroye Gare (0,40), mais 65 mm reste **jaune** (score 0,50, le seuil orange est à 0,65) | `rapport_pff/sources/mesures/rejeu_seuils.py` ; pas d'inondation ni de capteur le 4 octobre |
 | 4.3.5 Hypothèses | Trois hypothèses (H1, H2, H3) toutes « CONFIRMÉE », différentes de celles de l'introduction | Les quatre hypothèses H1 à H4 de l'introduction, avec une conclusion honnête pour chacune | Tableau 1 de l'introduction |
 | Conclusion | « validé », « capacité inédite », « système autonome », « garantissant que l'alerte parvienne à chaque chef de famille », « technologie souveraine » | Formulations ramenées à ce qui est démontré | — |
 | Perspectives | « Évolution vers MBEUND BI » | « Extension à la planification urbaine » (le nom du projet est MBEUND MI) | — |
@@ -82,7 +82,7 @@ Ces éléments ont été ajoutés dans le fichier d'origine à la place de marqu
 | Bibliographie | Toutes les dates de consultation et le numéro du projet PROGEP (P122756) |
 | 2.1.4 | Marqueur restant : « intitulé actuel à vérifier » |
 
-## 6. Marqueurs jaunes restants (29 dans le document)
+## 6. Marqueurs jaunes restants (28 dans le document)
 
 À traiter par l'équipe :
 
@@ -90,14 +90,14 @@ Ces éléments ont été ajoutés dans le fichier d'origine à la place de marqu
 |---|---|
 | Équipe | 2.2 renvois ; 2.4 solutions envisagées (tableau comparatif) ; 2.5 diagramme de Gantt ; outil de communication du groupe |
 | Ngoné | 4.2 : captures d'écran des écrans citoyens et autorité |
-| Maïmouna | Refaire les simulations de seuils du 4 octobre (seuil de 15 mm) |
+| Maïmouna | Confirmer les valeurs météo du 4 octobre (0,3 mm/h, 9,2 mm) avec le journal d'exécution |
 | Mama Adam | 4.1.5 planification des tâches en production ; 4.4 coûts ; vérifier le journal d'exécution du 4 octobre |
 | Mame Diarra | Source du fichier de topographie ; mesure éventuelle du temps des requêtes spatiales ; descriptions de l'annexe 2 (tâche R28) |
 | Chacun | Dates de consultation de la bibliographie ; validation du tableau des difficultés (4.5) |
 
 ## 7. Autres remarques de forme
 
-- **Introduction** : 4 pages pour 2 à 3 attendues (non resserrée : le texte est celui des auteures) ; **chapitre 2** : 11 pages pour 6 à 8 ; **conclusion** : 4 pages pour 1 à 2.
+- **Introduction** : resserrée à 3 pages (575 mots au lieu de 854), conformément à la version courte validée (`INTRODUCTION_VERSION_COURTE.md`) ; **chapitre 2** : 11 pages pour 6 à 8 ; **conclusion** : 4 pages pour 1 à 2.
 - **Titre de la page de garde** raccourci à deux lignes comme l'impose le modèle : « MBEUND MI : plateforme intelligente de prévention des inondations à Thiaroye-sur-Mer ». À faire valider par l'encadreur.
 - **Année académique** : 2025 – 2026, comme le modèle.
 - **Police** : la page de garde utilise Century Gothic ; pour imprimer, utiliser le PDF fourni.
