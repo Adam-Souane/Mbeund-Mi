@@ -1,4 +1,4 @@
-# Rapport PFF — contributions de Maïmouna SALL
+T# Rapport PFF — contributions de Maïmouna SALL
 
 Mode d'emploi : remplacez chaque consigne `> ...` par votre texte, **dans ce fichier**. Gardez les titres.
 Brouillon avec les chiffres du 6 octobre dès maintenant ; **version finale le mardi 13 octobre 2026**. Maïmouna intègre le mercredi 14.

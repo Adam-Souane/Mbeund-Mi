@@ -216,10 +216,14 @@ class MesureViewSet(viewsets.ModelViewSet):
 
 
 class AlerteViewSet(viewsets.ModelViewSet):
-    queryset = Alerte.objects.all().select_related('zone')
+    queryset = Alerte.objects.all().select_related('zone').order_by('-timestamp')
     serializer_class = AlerteSerializer
-    permission_classes = [IsAutoriteOrAdmin]
     pagination_class = PageNumberPagination
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [permissions.AllowAny()]
+        return [IsAutoriteOrAdmin()]
 
     def get_queryset(self):
         queryset = self.queryset
@@ -394,10 +398,14 @@ class SegmentRueViewSet(viewsets.ModelViewSet):
 
 
 class PrevisionMeteoViewSet(viewsets.ModelViewSet):
-    queryset = PrevisionMeteo.objects.all()
+    queryset = PrevisionMeteo.objects.all().order_by('date_prevision')
     serializer_class = PrevisionMeteoSerializer
-    permission_classes = [IsAutoriteOrAdmin]
     pagination_class = PageNumberPagination
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [permissions.AllowAny()]
+        return [IsAutoriteOrAdmin()]
 
 
 class HistoriqueRisqueViewSet(viewsets.ReadOnlyModelViewSet):

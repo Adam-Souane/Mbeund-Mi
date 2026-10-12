@@ -31,6 +31,24 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return token
 
     def validate(self, attrs):
+        # Permet la connexion par identifiant (username), numéro de téléphone ou email
+        identifiant = (attrs.get('username') or '').strip()
+        if identifiant:
+            from django.contrib.auth.models import User
+            if not User.objects.filter(username=identifiant).exists():
+                from users.models import Profile
+                from users.otp import normaliser_telephone
+                tel_norm = normaliser_telephone(identifiant)
+                user_trouve = None
+                if tel_norm:
+                    profile = Profile.objects.filter(telephone=tel_norm).first()
+                    if profile:
+                        user_trouve = profile.user
+                if not user_trouve and '@' in identifiant:
+                    user_trouve = User.objects.filter(email__iexact=identifiant).first()
+                if user_trouve:
+                    attrs['username'] = user_trouve.username
+
         # Le mot de passe est vérifié d'abord : un refus pour compte non vérifié
         # ne révèle donc rien à qui ne connaît pas les identifiants.
         data = super().validate(attrs)

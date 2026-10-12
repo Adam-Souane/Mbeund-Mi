@@ -2,6 +2,8 @@ from .base import *
 
 # Development settings
 DEBUG = True
+ALLOWED_HOSTS = ['*']
+CORS_ALLOW_ALL_ORIGINS = True
 
 # Database configuration (PostGIS if USE_GIS=True, otherwise SQLite)
 if USE_GIS:
