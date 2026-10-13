@@ -94,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (data: RegisterData) => {
     try {
-      const response = await axios.post(`${API_URL}/users/register/`, data);
+      const response = await axios.post(`${API_URL}/users/register/`, data, { timeout: 30000 });
       return response.data;
     } catch (error) {
       console.error("Erreur lors de l'inscription:", error);
