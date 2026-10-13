@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Loader2, MessageCircle, Mail } from 'lucide-react';
+import { Eye, EyeOff, Loader2, MessageCircle, Mail, AlertTriangle } from 'lucide-react';
 import Logo from '../shared/components/Logo';
 import AuthLayout from './AuthLayout';
 import useCanauxOtp from './useCanauxOtp';
@@ -57,6 +57,7 @@ export default function SignupPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [globalError, setGlobalError] = useState('');
   const [usernameOptions, setUsernameOptions] = useState([]);
   // Prénom|nom pour lesquels les identifiants proposés ont été chargés
   const [identifiantsChargesPour, setIdentifiantsChargesPour] = useState('');
@@ -111,6 +112,7 @@ export default function SignupPage() {
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: '' }));
     }
+    if (globalError) setGlobalError('');
   };
 
   const validateForm = () => {
@@ -127,14 +129,17 @@ export default function SignupPage() {
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) {
       const firstError = Object.values(newErrors)[0];
+      setGlobalError(firstError);
       showToast(firstError, 'error');
       return false;
     }
+    setGlobalError('');
     return true;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setGlobalError('');
 
     if (!validateForm()) return;
 
@@ -168,15 +173,16 @@ export default function SignupPage() {
       });
     } catch (error) {
       const errorData = error.response?.data || {};
+      let messageErreur = 'Erreur lors de la création du compte';
       if (typeof errorData === 'object' && !Array.isArray(errorData)) {
         setErrors(errorData);
         const errorValues = Object.values(errorData).flat();
-        const premierMessage = errorValues[0] || 'Erreur lors de la création du compte';
-        showToast(premierMessage, 'error');
+        messageErreur = errorValues[0] || messageErreur;
       } else {
-        const message = error.response?.data?.detail || error.message || 'Erreur lors de la création du compte';
-        showToast(message, 'error');
+        messageErreur = error.response?.data?.detail || error.userMessage || error.message || messageErreur;
       }
+      setGlobalError(messageErreur);
+      showToast(messageErreur, 'error');
     } finally {
       setLoading(false);
     }
@@ -305,8 +311,28 @@ export default function SignupPage() {
             </div>
             {errors.password_confirm && <p className="text-xs text-red-500">{errors.password_confirm}</p>}
 
+            {globalError && (
+              <div
+                className="p-3.5 rounded-lg border-2 border-red-500 bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-200 text-sm flex items-start gap-2.5 shadow-sm"
+                role="alert"
+              >
+                <AlertTriangle size={18} className="flex-shrink-0 text-red-600 dark:text-red-400 mt-0.5" />
+                <div className="flex-1">
+                  <p className="font-bold text-red-800 dark:text-red-100 mb-0.5">Vérification requise :</p>
+                  <p className="font-medium text-xs leading-relaxed">{globalError}</p>
+                </div>
+              </div>
+            )}
+
             <button type="submit" disabled={loading} className={BOUTON_PRINCIPAL}>
-              {loading ? 'Création...' : 'Créer un compte'}
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Loader2 size={18} className="animate-spin" />
+                  <span>Création du compte en cours...</span>
+                </span>
+              ) : (
+                'Créer un compte'
+              )}
             </button>
           </form>
 
