@@ -31,7 +31,7 @@ const BacktestingPage = lazy(() => import('./autorite/pages/BacktestingPage'));
 const ManageAuthoritiesPage = lazy(() => import('./autorite/pages/ManageAuthoritiesPage'));
 const AuthorityTrackingPage = lazy(() => import('./autorite/pages/AuthorityTrackingPage'));
 const ExportPage = lazy(() => import('./autorite/pages/ExportPage'));
-const PredictionsDashboard = lazy(() => import('./pages/PredictionsDashboard'));
+const PredictionsDashboard = lazy(() => import('./autorite/pages/PredictionsDashboard'));
 
 function ChargementPage() {
   return (

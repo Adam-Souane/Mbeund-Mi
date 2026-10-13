@@ -1,6 +1,6 @@
-import { useZones } from '../shared/hooks/useZones';
-import { usePrevisions } from '../shared/hooks/usePrevisions';
-import { useAlertesRecentes } from '../shared/hooks/useAlertes';
+import { useZones } from '../../shared/hooks/useZones';
+import { usePrevisions } from '../../shared/hooks/usePrevisions';
+import { useAlertesRecentes } from '../../shared/hooks/useAlertes';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import './PredictionsDashboard.css';
 

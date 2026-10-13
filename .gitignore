@@ -84,6 +84,8 @@ media/
 */media/
 
 # --- Tests & couverture de code ---
+coverage/
+*/coverage/
 .coverage
 .coverage.*
 htmlcov/
