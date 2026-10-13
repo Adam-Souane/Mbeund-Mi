@@ -114,9 +114,23 @@ export default function SignupPage() {
   };
 
   const validateForm = () => {
-    const newErrors = validerInscription(formData, !smsDisponible);
+    let dataToValidate = { ...formData };
+    if (!dataToValidate.username.trim() && dataToValidate.first_name.trim() && dataToValidate.last_name.trim()) {
+      const secours = identifiantDeSecours(dataToValidate.first_name, dataToValidate.last_name);
+      if (secours.length > 0) {
+        dataToValidate.username = secours[0];
+        setFormData((prev) => ({ ...prev, username: secours[0] }));
+      }
+    }
+
+    const newErrors = validerInscription(dataToValidate, !smsDisponible);
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    if (Object.keys(newErrors).length > 0) {
+      const firstError = Object.values(newErrors)[0];
+      showToast(firstError, 'error');
+      return false;
+    }
+    return true;
   };
 
   const handleSubmit = async (e) => {
@@ -126,13 +140,14 @@ export default function SignupPage() {
 
     setLoading(true);
     try {
+      const payloadUsername = formData.username.trim() || identifiantDeSecours(formData.first_name, formData.last_name)[0];
       const response = await client.post('/users/register/', {
-        email: formData.email,
+        email: formData.email.trim(),
         password: formData.password,
-        first_name: formData.first_name,
-        last_name: formData.last_name,
-        telephone: formData.telephone,
-        username: formData.username,
+        first_name: formData.first_name.trim(),
+        last_name: formData.last_name.trim(),
+        telephone: formData.telephone.trim(),
+        username: payloadUsername,
         canal_otp: canalEffectif,
       });
 
@@ -144,7 +159,7 @@ export default function SignupPage() {
       }
       navigate('/otp-verify', {
         state: {
-          username: formData.username,
+          username: payloadUsername,
           password: formData.password,
           canal: infosOtp.canal || canalEffectif,
           destination: infosOtp.destination || '',
@@ -153,10 +168,14 @@ export default function SignupPage() {
       });
     } catch (error) {
       const errorData = error.response?.data || {};
-      if (typeof errorData === 'object') {
+      if (typeof errorData === 'object' && !Array.isArray(errorData)) {
         setErrors(errorData);
+        const errorValues = Object.values(errorData).flat();
+        const premierMessage = errorValues[0] || 'Erreur lors de la création du compte';
+        showToast(premierMessage, 'error');
       } else {
-        showToast(errorData.detail || 'Erreur lors de la création du compte', 'error');
+        const message = error.response?.data?.detail || error.message || 'Erreur lors de la création du compte';
+        showToast(message, 'error');
       }
     } finally {
       setLoading(false);
