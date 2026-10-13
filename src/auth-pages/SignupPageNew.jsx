@@ -172,15 +172,27 @@ export default function SignupPage() {
         },
       });
     } catch (error) {
-      const errorData = error.response?.data || {};
-      let messageErreur = 'Erreur lors de la création du compte';
-      if (typeof errorData === 'object' && !Array.isArray(errorData)) {
+      const errorData = error.response?.data;
+      let messageErreur = '';
+
+      if (errorData && typeof errorData === 'object' && !Array.isArray(errorData)) {
         setErrors(errorData);
         const errorValues = Object.values(errorData).flat();
-        messageErreur = errorValues[0] || messageErreur;
-      } else {
-        messageErreur = error.response?.data?.detail || error.userMessage || error.message || messageErreur;
+        messageErreur = errorValues[0] || errorData.detail || '';
+      } else if (typeof errorData === 'string' && errorData.trim()) {
+        messageErreur = errorData.length < 120 ? errorData : 'Erreur interne du serveur.';
       }
+
+      if (!messageErreur) {
+        if (error.code === 'ECONNABORTED') {
+          messageErreur = 'Le serveur met du temps à répondre. Veuillez patienter et réessayer.';
+        } else if (error.message === 'Network Error') {
+          messageErreur = 'Erreur réseau ou de communication avec le serveur.';
+        } else {
+          messageErreur = error.userMessage || error.message || 'Impossible de créer le compte. Veuillez réessayer.';
+        }
+      }
+
       setGlobalError(messageErreur);
       showToast(messageErreur, 'error');
     } finally {
