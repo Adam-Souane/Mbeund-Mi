@@ -208,11 +208,14 @@ export default function SignupPage() {
   };
 
   return (
-    <AuthLayout variante="inscription" className="px-6 py-10">
+    <AuthLayout variante="inscription" className="px-6 py-6 lg:py-10">
       <div className="w-full max-w-[480px] lg:max-w-[560px]">
-        <div className="text-center mb-8">
-          <Logo size="lg" />
-          <p className={`text-sm mt-2 ${ton(darkMode, 'text-navy-600', 'text-navy-400')}`}>Créer un compte citoyen</p>
+        <div className="text-center mb-5 lg:mb-4">
+          <div className="lg:hidden mb-3">
+            <Logo size="lg" />
+          </div>
+          <h1 className={`text-xl lg:text-2xl font-bold ${ton(darkMode, 'text-navy-900', 'text-white')}`}>Créer un compte citoyen</h1>
+          <p className={`text-xs lg:text-sm mt-1 ${ton(darkMode, 'text-navy-600', 'text-navy-400')}`}>Recevez les alertes et signalez les inondations en temps réel</p>
         </div>
 
         <div className={CARTE}>

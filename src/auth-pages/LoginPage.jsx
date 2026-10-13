@@ -68,10 +68,10 @@ export default function LoginPage() {
   }
 
   return (
-    <AuthLayout variante="connexion" className="px-6 py-12">
+    <AuthLayout variante="connexion" className="px-6 py-8 lg:py-12">
       <div className="w-full max-w-[480px] lg:max-w-[560px]">
-        <div className="flex flex-col items-center mb-7 lg:mb-9">
-          <Logo size="lg" className="lg:scale-125 lg:mb-2" withSlogan />
+        <div className="flex flex-col items-center mb-6 lg:hidden">
+          <Logo size="lg" withSlogan />
         </div>
 
         <div className="bg-white dark:bg-navy rounded-xl border border-navy-50 dark:border-navy-800 shadow-lg p-7 lg:p-9">

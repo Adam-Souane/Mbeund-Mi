@@ -72,12 +72,12 @@ function Banniere({ variante }) {
         </div>
       </div>
 
-      <div className="relative flex-1 flex flex-col justify-center max-w-xl py-10">
-        <p className="text-xs xl:text-sm font-bold tracking-[0.2em] uppercase text-red-300 mb-5">{surtitre}</p>
-        <h2 className="text-5xl xl:text-6xl font-extrabold leading-[1.05] tracking-tight text-white mb-6">
+      <div className="relative flex-1 flex flex-col justify-start max-w-xl pt-10 xl:pt-14 pb-8">
+        <p className="text-xs xl:text-sm font-bold tracking-[0.2em] uppercase text-red-300 mb-4">{surtitre}</p>
+        <h2 className="text-4xl xl:text-5xl font-extrabold leading-[1.08] tracking-tight text-white mb-5">
           {titre}
         </h2>
-        <p className="text-base xl:text-lg text-navy-200 mb-9 max-w-md">{texte}</p>
+        <p className="text-base xl:text-lg text-navy-200 mb-8 max-w-md">{texte}</p>
         <ul className="flex flex-col gap-3.5">
           {ATOUTS.map((atout) => (
             <li key={atout} className="flex items-center gap-3 text-sm xl:text-base font-semibold text-white">
@@ -90,7 +90,7 @@ function Banniere({ variante }) {
         </ul>
       </div>
 
-      <p className="relative text-xs text-navy-200">
+      <p className="relative text-xs text-navy-200 mt-auto pt-6">
         Plateforme de prévention des inondations · Commune de Thiaroye-sur-Mer
       </p>
     </aside>

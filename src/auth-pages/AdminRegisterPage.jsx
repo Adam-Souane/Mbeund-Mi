@@ -89,12 +89,15 @@ export default function AdminRegisterPage() {
   };
 
   return (
-    <AuthLayout variante="administration" className="px-6 py-10">
+    <AuthLayout variante="administration" className="px-6 py-8 lg:py-10">
       <div className="w-full max-w-[480px] lg:max-w-[560px]">
-        <div className="text-center mb-8">
-          <Logo size="lg" />
-          <p className={`text-sm text-navy-600 mt-2`}>
-            Créer un compte administrateur
+        <div className="text-center mb-6 lg:mb-4">
+          <div className="lg:hidden mb-3">
+            <Logo size="lg" />
+          </div>
+          <h1 className="text-2xl font-bold text-navy">Compte Administrateur</h1>
+          <p className="text-sm text-navy-600 mt-1">
+            Créer un compte administrateur avec un code d'invitation
           </p>
         </div>
 

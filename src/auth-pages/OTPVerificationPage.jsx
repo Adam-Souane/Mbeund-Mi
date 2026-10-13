@@ -149,9 +149,11 @@ export default function OTPVerificationPage() {
           Retour
         </button>
 
-        <div className="text-center mb-8">
-          <Logo size="lg" />
-          <h1 className={`text-2xl font-bold mt-4 ${ton(darkMode, 'text-navy-900', 'text-white')}`}>
+        <div className="text-center mb-6 lg:mb-5">
+          <div className="lg:hidden mb-3">
+            <Logo size="lg" />
+          </div>
+          <h1 className={`text-2xl font-bold ${ton(darkMode, 'text-navy-900', 'text-white')}`}>
             {reussi ? 'Vérification réussie' : 'Vérifier votre identité'}
           </h1>
         </div>
