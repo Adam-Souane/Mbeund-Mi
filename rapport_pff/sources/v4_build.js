@@ -127,7 +127,29 @@ function assemble() {
   const text = R.text;
 
   // ---------- pages liminaires ----------
-  const dedicaces = [Unnumbered('DÉDICACES'), ...range(13, 21)];
+  const dedicaces = [
+    Unnumbered('DÉDICACES'),
+    P("Dédicaces personnelles des membres du groupe de projet :", { spacing: { after: 180 } }),
+
+    // Maïmouna SALL
+    P("Je rends avant tout grâce au Seigneur, Dieu Tout-Puissant, pour la vie, la santé, la force et la persévérance qu'Il m'a accordées tout au long de ce parcours de formation. Je dédie ce travail avec une profonde gratitude à toute ma famille. À mon père, El Hadji SALL, pour son soutien constant et inestimable tout au long de mon parcours scolaire, depuis le CI jusqu'à ce jour. À la mémoire de ma chère mère, Awa GAYE, pour son amour bienveillant et ses précieux conseils ; j'aurais tant aimé qu'elle partage cette nouvelle étape de ma vie, et je prie Allah de l'accueillir en Son paradis éternel. À mes frères et sœurs, mes cousins et à l'ensemble de mes proches pour leur présence rassurante et leurs encouragements.", { spacing: { before: 140 } }),
+    P("*— Maïmouna SALL*", { align: AlignmentType.RIGHT, spacing: { after: 200 } }),
+
+    // Mame Diarra DIANE
+    P("Je dédie ce mémoire à ma famille bien-aimée qui a toujours cru en mes capacités, à mes amis pour leur soutien sans faille, et à toutes les familles courageuses de Thiaroye qui affrontent les inondations chaque hivernage.", { spacing: { before: 140 } }),
+    P("*— Mame Diarra DIANE*", { align: AlignmentType.RIGHT, spacing: { after: 200 } }),
+
+    // Ngoné GUEYE
+    P("Je tiens à exprimer ma profonde gratitude à toutes les personnes qui m’ont soutenue et encouragée tout au long de mon parcours de formation et dans la réalisation de ce Projet de Fin de Formation. Leur soutien, leurs conseils et leurs encouragements ont été pour moi une véritable source de motivation.", { spacing: { before: 140 } }),
+    P("Je remercie particulièrement ma famille pour son amour, sa patience, ses sacrifices et son soutien moral, qui m’ont permis de poursuivre mes études avec courage et détermination. Sa présence à mes côtés a été essentielle dans les moments de doute comme dans les moments de réussite."),
+    P("J’adresse également mes sincères remerciements à toutes les personnes qui, de près ou de loin, m’ont apporté leur aide, leurs conseils et leur confiance durant cette étape importante de ma vie. Je ne pourrais pas citer tout le monde, car vous avez été très nombreux à m’apporter votre soutien."),
+    P("Enfin, je remercie le Seigneur pour la force, la santé et la persévérance qu’Il m’a accordées tout au long de ce parcours. À toutes ces personnes, j’exprime du fond du cœur ma reconnaissance et mes sincères remerciements."),
+    P("*— Ngoné GUEYE*", { align: AlignmentType.RIGHT, spacing: { after: 200 } }),
+
+    // Mama Adam SOUANE
+    P("Je dédie ce projet de fin de formation à mes parents pour leur bienveillance constante, leur éducation exemplaire et leurs conseils avisés, ainsi qu'à mes camarades de promotion pour cette belle aventure humaine et technique.", { spacing: { before: 140 } }),
+    P("*— Mama Adam SOUANE*", { align: AlignmentType.RIGHT, spacing: { after: 200 } }),
+  ];
   const remerciements = [
     Unnumbered('REMERCIEMENTS'),
     ...range(23, 24),

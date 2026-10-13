@@ -1,11 +1,11 @@
-T# Rapport PFF — contributions de Maïmouna SALL
+# Rapport PFF — contributions de Maïmouna SALL
 
 Mode d'emploi : remplacez chaque consigne `> ...` par votre texte, **dans ce fichier**. Gardez les titres.
 Brouillon avec les chiffres du 6 octobre dès maintenant ; **version finale le mardi 13 octobre 2026**. Maïmouna intègre le mercredi 14.
 Lisez d'abord `docs/audit/ADAPTATION_RAPPORT_ISEP.md`. Écrivez au format Markdown simple : titres, paragraphes, listes, tableaux.
 
 ## Dédicace (3 à 6 lignes personnelles, signées)
-Je dédie ce travail avec une profonde gratitude à toute ma famille. À mon père, El Hadji SALL, pour son soutien constant et inestimable tout au long de mon parcours scolaire, depuis le CI jusqu'à ce jour. À la mémoire de ma chère mère, Awa GAYE, pour son amour bienveillant et ses précieux conseils ; j'aurais tant aimé qu'elle partage cette nouvelle étape de ma vie, et je prie Allah de l'accueillir en Son paradis éternel. À mes frères et sœurs, mes cousins et à l'ensemble de mes proches pour leur présence rassurante et leurs encouragements.
+Je rends avant tout grâce au Seigneur, Dieu Tout-Puissant, pour la vie, la santé, la force et la persévérance qu'Il m'a accordées tout au long de ce parcours de formation. Je dédie ce travail avec une profonde gratitude à toute ma famille. À mon père, El Hadji SALL, pour son soutien constant et inestimable tout au long de mon parcours scolaire, depuis le CI jusqu'à ce jour. À la mémoire de ma chère mère, Awa GAYE, pour son amour bienveillant et ses précieux conseils ; j'aurais tant aimé qu'elle partage cette nouvelle étape de ma vie, et je prie Allah de l'accueillir en Son paradis éternel. À mes frères et sœurs, mes cousins et à l'ensemble de mes proches pour leur présence rassurante et leurs encouragements.
 
 *— Maïmouna SALL*
 

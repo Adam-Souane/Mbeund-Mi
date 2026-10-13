@@ -4,8 +4,18 @@ Mode d'emploi : remplacez chaque consigne `> ...` par votre texte, **dans ce fic
 Brouillon avec les chiffres du 6 octobre dès maintenant ; **version finale le mardi 13 octobre 2026**. Maïmouna intègre le mercredi 14.
 Lisez d'abord `docs/audit/ADAPTATION_RAPPORT_ISEP.md`. Écrivez au format Markdown simple : titres, paragraphes, listes, tableaux.
 
-## Dédicace (3 à 6 lignes personnelles, signées)
-> À écrire.
+## Dédicace et Remerciements personnels (signés)
+Je tiens à exprimer ma profonde gratitude à toutes les personnes qui m’ont soutenue et encouragée tout au long de mon parcours de formation et dans la réalisation de ce Projet de Fin de Formation. Leur soutien, leurs conseils et leurs encouragements ont été pour moi une véritable source de motivation.
+
+Je remercie particulièrement ma famille pour son amour, sa patience, ses sacrifices et son soutien moral, qui m’ont permis de poursuivre mes études avec courage et détermination. Sa présence à mes côtés a été essentielle dans les moments de doute comme dans les moments de réussite.
+
+J’adresse également mes sincères remerciements à toutes les personnes qui, de près ou de loin, m’ont apporté leur aide, leurs conseils et leur confiance durant cette étape importante de ma vie. Je ne pourrais pas citer tout le monde, car vous avez été très nombreux à m’apporter votre soutien.
+
+Enfin, je remercie le Seigneur pour la force, la santé et la persévérance qu’Il m’a accordées tout au long de ce parcours.
+
+À toutes ces personnes, j’exprime du fond du cœur ma reconnaissance et mes sincères remerciements.
+
+*— Ngoné GUEYE*
 
 ## 2.1.1 et 2.1.2 : version condensée (2 pages au total)
 > « Les inondations urbaines et côtières » et « La GRC et les systèmes d'alerte précoce » : proposer ici le texte raccourci ; Maïmouna le remplacera dans le rapport.
