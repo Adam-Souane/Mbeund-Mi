@@ -8,6 +8,8 @@ from django.utils import timezone
 import secrets
 import string
 import logging
+import re
+import unicodedata
 
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
@@ -39,10 +41,17 @@ def _trouver_compte(identifiant):
     return trouves[0] if len(trouves) == 1 else None
 
 
+def _nettoyer_texte(texte):
+    if not texte:
+        return ''
+    sans_accents = unicodedata.normalize('NFKD', str(texte)).encode('ASCII', 'ignore').decode('utf-8')
+    return re.sub(r'[^a-zA-Z0-9]', '', sans_accents).lower()
+
+
 def generate_username_options(first_name, last_name, max_options=3):
   """Génère des suggestions intelligentes d'identifiants disponibles (ex: maimounasall, msall, maimouna.sall)."""
-  clean_first = re.sub(r'[^a-zA-Z0-9]', '', first_name or '').lower()
-  clean_last = re.sub(r'[^a-zA-Z0-9]', '', last_name or '').lower()
+  clean_first = _nettoyer_texte(first_name)
+  clean_last = _nettoyer_texte(last_name)
   options = []
 
   # Option 1 : prénom + nom complet (ex: maimounasall)
