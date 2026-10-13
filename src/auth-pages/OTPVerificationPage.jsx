@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, Clock } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Clock, RotateCw, Mail } from 'lucide-react';
 import Logo from '../shared/components/Logo';
 import AuthLayout from './AuthLayout';
 import useCanauxOtp from './useCanauxOtp';
@@ -18,16 +18,16 @@ const LIBELLE_CANAL = { telephone: 'par SMS', email: 'par email' };
 
 function CodeEnvoye({ darkMode, canal, destination }) {
   return (
-    <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
-      <div className="flex gap-2">
-        <Clock size={20} className="text-blue-600 dark:text-blue-400 flex-shrink-0" />
-        <div>
-          <p className={`text-sm font-medium ${ton(darkMode, 'text-blue-900', 'text-blue-400')}`}>
-            Code envoyé {LIBELLE_CANAL[canal]}
+    <div className="bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6 shadow-sm">
+      <div className="flex gap-3">
+        <Clock size={22} className="text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+        <div className="flex-1">
+          <p className={`text-sm font-bold ${ton(darkMode, 'text-blue-900', 'text-blue-200')}`}>
+            Code de validation envoyé {LIBELLE_CANAL[canal]}
           </p>
           {destination && (
-            <p className={`text-xs mt-1 ${ton(darkMode, 'text-blue-700', 'text-blue-300')}`}>
-              {canal === 'email' ? `Adresse : ${destination} (pensez à regarder dans les spams)` : `Numéro : ${destination}`}
+            <p className={`text-xs mt-1 font-mono font-medium ${ton(darkMode, 'text-blue-800', 'text-blue-300')}`}>
+              {canal === 'email' ? `Envoyé à : ${destination} (pensez aux courriers indésirables)` : `Envoyé au numéro : ${destination}`}
             </p>
           )}
         </div>
@@ -190,26 +190,52 @@ export default function OTPVerificationPage() {
                 {loading ? 'Vérification...' : 'Vérifier le code'}
               </button>
 
-              <div className="text-center pt-4 space-y-2">
-                <p className={`text-sm ${ton(darkMode, 'text-navy-600', 'text-navy-400')}`}>Vous n’avez pas reçu le code ?</p>
-                <button
-                  type="button"
-                  onClick={() => renvoyer(canal)}
-                  disabled={enAttente || loading}
-                  className={`block mx-auto text-sm font-semibold ${classeLienRenvoi(darkMode, enAttente)}`}
-                >
-                  {enAttente ? `Renvoyer dans ${resendTimer} s` : 'Renvoyer le code'}
-                </button>
-                {peutChangerDeCanal && (
+              <div className="pt-5 border-t border-navy-100 dark:border-navy-800 mt-6 space-y-3">
+                <p className={`text-xs font-semibold uppercase tracking-wider text-center ${ton(darkMode, 'text-navy-500', 'text-navy-400')}`}>
+                  Vous n’avez pas reçu le code ?
+                </p>
+
+                <div className="flex flex-col sm:flex-row gap-2.5">
                   <button
                     type="button"
-                    onClick={() => renvoyer(autreCanal)}
+                    onClick={() => renvoyer(canal)}
                     disabled={enAttente || loading}
-                    className={`block mx-auto text-xs ${classeLienRenvoi(darkMode, enAttente)}`}
+                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border text-sm font-semibold transition shadow-sm ${
+                      enAttente
+                        ? 'bg-navy-50 dark:bg-navy-800/50 text-navy-400 border-navy-200 dark:border-navy-700 cursor-not-allowed'
+                        : 'bg-navy text-white hover:bg-navy-700 border-navy cursor-pointer'
+                    }`}
                   >
-                    Recevoir plutôt le code {LIBELLE_CANAL[autreCanal]}
+                    <RotateCw size={15} className={enAttente ? 'animate-spin' : ''} />
+                    <span>{enAttente ? `Renvoyer (${resendTimer} s)` : 'Renvoyer le code'}</span>
                   </button>
-                )}
+
+                  {peutChangerDeCanal && (
+                    <button
+                      type="button"
+                      onClick={() => renvoyer(autreCanal)}
+                      disabled={enAttente || loading}
+                      className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border text-sm font-semibold transition shadow-sm ${
+                        enAttente
+                          ? 'bg-navy-50 dark:bg-navy-800/50 text-navy-400 border-navy-200 dark:border-navy-700 cursor-not-allowed'
+                          : 'bg-red-500 text-white hover:bg-red-600 border-red-500 cursor-pointer'
+                      }`}
+                    >
+                      <Mail size={15} />
+                      <span>Recevoir par Email</span>
+                    </button>
+                  )}
+                </div>
+
+                <div className="text-center pt-2">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/signup')}
+                    className="text-xs text-navy-500 hover:text-navy-900 dark:hover:text-navy-200 underline inline-flex items-center gap-1 font-medium transition"
+                  >
+                    <span>Numéro incorrect ou faute de frappe ? Modifier mes informations</span>
+                  </button>
+                </div>
               </div>
             </form>
           )}
