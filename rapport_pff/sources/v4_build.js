@@ -93,12 +93,11 @@ const floatImg = (file, wPx, hPx, x, y, behind) => new ImageRun({
     behindDocument: behind, allowOverlap: true, lockAnchor: false, wrap: { type: TextWrappingType.NONE },
   },
 });
-// drapeau 180×120 px et logo 190×134 px, centres alignés, écart de 0,5 pouce
+// Page de garde conforme au modèle officiel ISEP-AT n° 2 : logo centré sans drapeau
 const pageDeGarde = [
   new Paragraph({ children: [
     floatImg('cover2_fond.png', 794, 1123, 0, 0, true),
-    floatImg('drapeau.png', 180, 120, 1790000, 1694307, false),
-    floatImg('logo_isep_modele.png', 190, 134, 3961700, 1627632, false),
+    floatImg('logo_isep_modele.png', 190, 134, 2990088, 1645920, false),
   ] }),
   fp(F_ENTETE, [cr('RÉPUBLIQUE DU SÉNÉGAL', { bold: true, color: BRUN, sp: 30, size: 24 })], { align: AlignmentType.CENTER, after: 40 }),
   fp(F_ENTETE, [cr('Un Peuple – Un But – Une Foi', { italics: true, color: BRUN2, size: 18 })], { align: AlignmentType.CENTER, after: 100 }),
@@ -109,7 +108,7 @@ const pageDeGarde = [
   fp(F_TITRE, [cr('RAPPORT DE PROJET DE FIN DE FORMATION', { bold: true, color: BRUN, sp: 20, size: 34 })], { align: AlignmentType.CENTER, line: 480, after: 80 }),
   fp(F_TITRE, [cr('en vue de l’obtention du Diplôme de l’ISEP (DISEP)', { italics: true, color: BRUN2, size: 19 })], { align: AlignmentType.CENTER }),
   fp(F_THEME, [cr('Thème', { bold: true, color: OR, sp: 40, size: 18 })], { align: AlignmentType.CENTER, after: 160 }),
-  fp(F_THEME, [cr('« MBEUND MI : plateforme intelligente de prévention des inondations à Thiaroye-sur-Mer »', { bold: true, color: BRUN, size: 28 })], { align: AlignmentType.CENTER, line: 440 }),
+  fp(F_THEME, [cr('« MBEUND MI : Conception et développement d’une plateforme intelligente de prévention des inondations à Dakar : cas Thiaroye-sur-Mer »', { bold: true, color: BRUN, size: 24 })], { align: AlignmentType.CENTER, line: 400 }),
   fp(F_AUT, [cr('Présenté par', { bold: true, color: OR, sp: 20, size: 18 })], { after: 140 }),
   ...['Maïmouna SALL', 'Mame Diarra DIANE', 'Ngoné GUEYE', 'Mama Adam SOUANE'].map((n, i, a) => fp(F_AUT, [cr(n, { color: BRUN, size: 20 })], { after: i === a.length - 1 ? 0 : 60 })),
   fp(F_ENC, [cr('Sous l’encadrement de', { bold: true, color: OR, sp: 20, size: 18 })], { align: AlignmentType.RIGHT, after: 140 }),
@@ -129,7 +128,12 @@ function assemble() {
 
   // ---------- pages liminaires ----------
   const dedicaces = [Unnumbered('DÉDICACES'), ...range(13, 21)];
-  const remerciements = [Unnumbered('REMERCIEMENTS'), ...range(23, 27)];
+  const remerciements = [
+    Unnumbered('REMERCIEMENTS'),
+    ...range(23, 24),
+    P("Nous tenons à exprimer un hommage tout particulier et notre sincère reconnaissance à notre responsable de filière, **M. Pape Ibrahima NIANG**. Présent à nos côtés avec une sollicitude constante tout au long de notre cursus à l'ISEP Amadou Traware, il a été bien plus qu'un responsable pédagogique : un mentor, un guide et une figure paternelle bienveillante. Par son humilité, son écoute attentive et les cercles d'échange chaleureux qu'il a instaurés — permettant à chacun de s'exprimer librement dans les moments de doute comme dans les moments heureux —, il a su insuffler un esprit de fraternité et transformer notre promotion APD en une véritable famille soudée. Qu'il trouve ici l'expression de notre profonde gratitude et de notre respectueux attachement."),
+    ...range(25, 27),
+  ];
   const resumeFr = [
     Uc('RÉSUMÉ', "Résumé resserré (environ 230 mots au lieu de 390, le plan en demande 200) et mis à jour : les chiffres 87,4 %, 4,2 cm, 153 tests et le « test in-situ » sont remplacés par les mesures du dépôt. Voir CORRECTIONS_RAPPORT.md."),
     P("La commune de Thiaroye-sur-Mer, sur le littoral sud de la presqu'île du Cap-Vert (département de Pikine), subit des inondations récurrentes à chaque saison des pluies : faible altitude, proximité de la mer et de la nappe phréatique, ouvrages d'évacuation insuffisants. Les alertes disponibles sont nationales ou régionales et n'anticipent pas la situation à l'échelle d'un quartier."),

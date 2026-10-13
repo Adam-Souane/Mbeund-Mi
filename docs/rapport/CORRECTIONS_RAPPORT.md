@@ -5,7 +5,7 @@ Source du contenu : `Rapport_PFF_MBEUND_MI.docx` (le rapport des auteures). Form
 
 ## 1. Ce qui a été fait
 
-- **Page de garde du modèle n° 2**, avec le **drapeau du Sénégal** et le **logo de l'ISEP-AT** côte à côte, en évidence sous l'en-tête officiel. Département TIC et métier APD sont repris du modèle.
+- **Page de garde du modèle officiel n° 2** : reproduction fidèle du gabarit imposé par l'encadreur, avec le **logo de l'ISEP-AT centré** (sans drapeau) sous l'en-tête officiel. Département TIC et métier APD sont repris du modèle.
 - **Plan officiel** : Introduction, quatre chapitres, conclusion et perspectives, bibliographie APA, annexes, table des matières détaillée. Le sommaire est à deux niveaux.
 - **Tout le contenu du rapport a été repris** : introduction, anciens chapitres I à III (redistribués dans les chapitres 1 à 3), dédicaces, remerciements, sigles, tableaux, 9 figures, bibliographie. Contrôle : les 325 cellules de tableaux et les 9 figures du fichier d'origine sont présentes.
 - **Renvois renumérotés** : les « chapitre IV » deviennent « chapitre 4 », et les renvois aux figures et tableaux suivent le nouvel ordre.
@@ -90,7 +90,7 @@ Ces éléments ont été ajoutés dans le fichier d'origine à la place de marqu
 |---|---|
 | Équipe | 2.2 renvois ; 2.4 solutions envisagées (tableau comparatif) ; 2.5 diagramme de Gantt ; outil de communication du groupe |
 | Ngoné | 4.2 : captures d'écran des écrans citoyens et autorité |
-| Maïmouna | Confirmer les valeurs météo du 4 octobre (0,3 mm/h, 9,2 mm) avec le journal d'exécution |
+| Maïmouna | Valeurs météo du 4 octobre confirmées (0,3 mm/h, 9,2 mm) et intégrées dans le rapport v4 |
 | Mama Adam | 4.1.5 planification des tâches en production ; 4.4 coûts ; vérifier le journal d'exécution du 4 octobre |
 | Mame Diarra | Source du fichier de topographie ; mesure éventuelle du temps des requêtes spatiales ; descriptions de l'annexe 2 (tâche R28) |
 | Chacun | Dates de consultation de la bibliographie ; validation du tableau des difficultés (4.5) |
@@ -98,6 +98,6 @@ Ces éléments ont été ajoutés dans le fichier d'origine à la place de marqu
 ## 7. Autres remarques de forme
 
 - **Introduction** : resserrée à 3 pages (575 mots au lieu de 854), conformément à la version courte validée (`INTRODUCTION_VERSION_COURTE.md`) ; **chapitre 2** : 11 pages pour 6 à 8 ; **conclusion** : 4 pages pour 1 à 2.
-- **Titre de la page de garde** raccourci à deux lignes comme l'impose le modèle : « MBEUND MI : plateforme intelligente de prévention des inondations à Thiaroye-sur-Mer ». À faire valider par l'encadreur.
+- **Titre de la page de garde** : validé et fixé selon l'exigence de l'encadreur : « MBEUND MI : Conception et développement d'une plateforme intelligente de prévention des inondations à Dakar : cas Thiaroye-sur-Mer ». Page de garde conforme au modèle officiel ISEP-AT n° 2 (logo ISEP centré, sans drapeau).
 - **Année académique** : 2025 – 2026, comme le modèle.
 - **Police** : la page de garde utilise Century Gothic ; pour imprimer, utiliser le PDF fourni.

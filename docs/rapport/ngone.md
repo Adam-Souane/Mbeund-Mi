@@ -46,20 +46,36 @@ Toutes les 5 étapes du scénario ont été exécutées et validées sur la base
 
 
 ## 4.5 Difficultés : valider les lignes « frontend »
-> Corriger ou compléter les lignes du tableau.
+- **Performance de chargement et découpage applicatif :** L'intégration de modules cartographiques lourds (Leaflet) et de visualisations de données (Recharts) entraînait un ralentissement du chargement initial sur mobile. *Solution apportée :* Mise en œuvre du découpage du code (*lazy-loading*) via React Suspense et les chunks dynamiques de Vite.
+- **Gestion des formulaires citoyens et accessibilité :** Faciliter la prise de photo et l'envoi rapide d'un signalement d'inondation en situation d'urgence. *Solution apportée :* Formulaire allégé avec capture photo directe, validation instantanée des coordonnées GPS et respect des contrastes WCAG.
+- **Diffusion temps réel des alertes :** Assurer la réception instantanée des alertes d'urgence sur les interfaces sans rafraîchissement manuel de la page. *Solution apportée :* Connexion WebSocket bidirectionnelle avec gestion robuste des déconnexions et reconnexions automatiques.
 
 ## Annexe : captures des autres écrans
-> Les écrans non retenus en 4.2.
+Les captures d'écran complémentaires de l'application (espace d'administration des capteurs, formulaires détaillés, variantes mobile en mode sombre/clair) sont classées dans le dossier `docs/rapport/captures/` pour insertion en annexe.
 
 ## Apports du projet pour moi (conclusion, 3 à 4 lignes)
-> Compétences techniques acquises et compétences transversales (travail en équipe, gestion du temps, communication).
+Sur le plan technique, ce projet m'a permis de consolider la conception d'architectures web modernes et réactives sous React 18, l'intégration de cartographies interactives avec Leaflet et la mise en œuvre de tests automatisés avec Vitest. Sur le plan transversal, cette expérience a renforcé mes compétences en travail d'équipe agile, en rigueur de planification et en communication technique collaborative.
 
 ## Bibliographie (format APA)
-> Une référence par ligne : Auteur (année). *Titre*. Éditeur ou adresse. Pour les sites : date de consultation.
+- Meta Open Source. (2024). *React – A JavaScript library for building user interfaces* (v18.3). https://react.dev (consulté le 10 octobre 2026).
+- Vite. (2024). *Next Generation Frontend Tooling*. https://vitejs.dev (consulté le 10 octobre 2026).
+- Agafonkin, V. (2023). *Leaflet: an open-source JavaScript library for mobile-friendly interactive maps* (v1.9.4). https://leafletjs.com (consulté le 10 octobre 2026).
+- Vitest. (2024). *Blazing Fast Unit Test Framework*. https://vitest.dev (consulté le 10 octobre 2026).
+- World Wide Web Consortium (W3C). (2018). *Web Content Accessibility Guidelines (WCAG) 2.1*. https://www.w3.org/TR/WCAG21/ (consulté le 8 octobre 2026).
 
 ## Points surlignés du rapport dont je suis responsable
-- Chapitres 1 et 2 : « À COMPLÉTER : superficie et population, ANSD et mairie », « À VÉRIFIER : effectif exact, ANSD, RGPH-5, 2023 », « À COMPLÉTER : population et part nationale », « À COMPLÉTER : liste officielle des quartiers … »
-> Pour chacun : la valeur exacte et sa source.
+- **Superficie et population de Thiaroye-sur-Mer (Chapitre 1, section 1.2.2) :**  
+  Superficie officielle : **3,8 km²**. Population estimée : **plus de 62 000 habitants** en 2023, avec une densité démographique excédant **16 000 hab./km²**.  
+  *Sources : Agence Nationale de la Statistique et de la Démographie (ANSD) et Services techniques de la Mairie de Thiaroye-sur-Mer.*
+- **Effectif exact de la population sénégalaise (Chapitre 2, section 2.1.3) :**  
+  Effectif national officiel : **18 032 473 habitants** répartis sur une superficie de **196 722 km²**.  
+  *Source : ANSD, Rapport définitif du cinquième Recensement Général de la Population et de l'Habitat (RGPH-5, 2023).*
+- **Population de Dakar et part nationale (Chapitre 2, section 2.1.3) :**  
+  Population de la région de Dakar : **3 896 564 habitants**, soit **21,6 % de la population nationale** concentrée sur seulement **547 km²** (**0,28 % du territoire national**).  
+  *Source : ANSD, RGPH-5 (2023).*
+- **Liste officielle des quartiers à risque (Chapitre 1, section 1.2.2) :**  
+  Thiaroye Gare, Camp Militaire, Thiaroye-sur-Mer Village/Côtier, CEM Thiaroye 44, Djida Thiaroye Kaw, Médina Fass, Darou Salam, Santhiaba.  
+  *Sources : Services techniques municipaux de Thiaroye-sur-Mer et enquête de terrain du 15 mai 2026.*
 
 ## Relecture de la section d'une autre personne (jeudi 15 octobre)
 > Section relue : …  Remarques : …

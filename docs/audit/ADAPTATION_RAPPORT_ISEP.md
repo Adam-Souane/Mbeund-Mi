@@ -59,7 +59,7 @@ Total visé : 30 à 50 pages hors annexes. Le rapport sera à environ 40 pages u
 | # | Question | Pourquoi | Proposition |
 |---|---|---|---|
 | D1 | **Option** de la filière (page de garde) | Le modèle demande « Filière » et « Option » ; l'option n'est écrite nulle part dans nos documents | Maïmouna ou l'encadreur la donne ; case surlignée sur la page de garde |
-| D2 | **Intitulé du thème** | Le modèle limite à **deux lignes**. L'ancien intitulé en faisait trois | Version actuelle : « MBEUND MI : plateforme intelligente de prévention des inondations à Thiaroye-sur-Mer ». À faire valider par l'encadreur |
+| D2 | **Intitulé du thème** | Le modèle limite à **deux lignes**. Exigence formulée par l'encadreur | Intitulé officiel retenu : « MBEUND MI : Conception et développement d'une plateforme intelligente de prévention des inondations à Dakar : cas Thiaroye-sur-Mer » |
 | D3 | **Année académique** | Le modèle officiel indique « 2025 – 2026 » ; notre v2 portait « 2024-2025 / 2025-2026 » | **2025 – 2026**, comme le modèle |
 | D4 | **Questions de recherche et hypothèses** (introduction) | Le plan officiel ne les prévoit pas ; elles alourdissent l'introduction | Les garder mais les résumer, ou les retirer pour passer à 3 pages. Si elles sont gardées, le chapitre 4 doit y répondre (4.3.2) |
 | D5 | **Encadreur professionnel** | Le modèle le prévoit « le cas échéant » ; projet interne | Non renseigné |
