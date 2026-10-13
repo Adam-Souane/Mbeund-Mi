@@ -45,4 +45,14 @@ CSRF_TRUSTED_ORIGINS = env.list(
     default=['https://mbeund-mi.onrender.com', 'https://*.onrender.com']
 )
 
+# Compression et service efficace des fichiers statiques en production
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+    },
+}
+
 

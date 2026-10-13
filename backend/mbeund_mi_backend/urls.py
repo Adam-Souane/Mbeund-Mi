@@ -21,6 +21,11 @@ from django.conf import settings
 from django.conf.urls.static import static
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
+# Personnalisation de l'interface d'administration Django
+admin.site.site_header = "Administration MBEUND-MI"
+admin.site.site_title = "MBEUND-MI Admin"
+admin.site.index_title = "Gestion & Prévention des Inondations (Thiaroye-sur-Mer)"
+
 urlpatterns = [
     # Redirection de la racine vers la documentation Swagger UI
     path('', RedirectView.as_view(url='/api/docs/', permanent=False), name='index-redirect'),
