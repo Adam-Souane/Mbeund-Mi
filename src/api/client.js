@@ -1,8 +1,10 @@
 import axios from 'axios';
 import { getAccessToken, getRefreshToken, setTokens, clearTokens } from '../auth/tokenStorage';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://mbeund-mi.onrender.com/api';
+
 const client = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: API_BASE_URL,
   timeout: 10000,
 });
 
@@ -40,7 +42,7 @@ async function refreshAccessToken() {
 
   // Requête axios brute (pas `client`) pour ne pas redéclencher cet
   // intercepteur en boucle sur un 401 de /token/refresh/ lui-même.
-  const response = await axios.post(`${import.meta.env.VITE_API_URL}/token/refresh/`, { refresh });
+  const response = await axios.post(`${API_BASE_URL}/token/refresh/`, { refresh });
   setTokens({ access: response.data.access, refresh: response.data.refresh });
   return response.data.access;
 }

@@ -40,19 +40,33 @@ def _trouver_compte(identifiant):
 
 
 def generate_username_options(first_name, last_name, max_options=3):
-  """Génère jusqu'à max_options usernames disponibles."""
-  username_base = f"{first_name.lower()}{last_name.lower()}".replace(' ', '')
+  """Génère des suggestions intelligentes d'identifiants disponibles (ex: maimounasall, msall, maimouna.sall)."""
+  clean_first = re.sub(r'[^a-zA-Z0-9]', '', first_name or '').lower()
+  clean_last = re.sub(r'[^a-zA-Z0-9]', '', last_name or '').lower()
   options = []
 
-  # Essayer le username de base
-  if not User.objects.filter(username=username_base).exists():
-    options.append(username_base)
+  # Option 1 : prénom + nom complet (ex: maimounasall)
+  base1 = f"{clean_first}{clean_last}"
+  if base1 and not User.objects.filter(username=base1).exists():
+    options.append(base1)
 
-  # Ajouter des options avec suffixes numériques
+  # Option 2 : initiale prénom + nom complet (ex: msall)
+  if clean_first and clean_last:
+    base2 = f"{clean_first[0]}{clean_last}"
+    if not User.objects.filter(username=base2).exists() and base2 not in options:
+      options.append(base2)
+
+  # Option 3 : prénom.nom (ex: maimouna.sall)
+  if clean_first and clean_last:
+    base3 = f"{clean_first}.{clean_last}"
+    if not User.objects.filter(username=base3).exists() and base3 not in options:
+      options.append(base3)
+
+  # Compléter avec des suffixes numériques si nécessaire
   counter = 2
-  while len(options) < max_options:
-    candidate = f"{username_base}{counter}"
-    if not User.objects.filter(username=candidate).exists():
+  while len(options) < max_options and base1:
+    candidate = f"{base1}{counter}"
+    if not User.objects.filter(username=candidate).exists() and candidate not in options:
       options.append(candidate)
     counter += 1
 

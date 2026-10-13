@@ -31,7 +31,7 @@ export default function SignupScreen({ onSignupSubmit, onGoToLogin, loading = fa
     if (!username && first.trim() && last.trim()) {
       const cleanFirst = first.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
       const cleanLast = last.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
-      setUsername(`${cleanFirst.slice(0, 3)}${cleanLast.slice(0, 3)}`);
+      setUsername(`${cleanFirst}${cleanLast}`);
     }
   };
 

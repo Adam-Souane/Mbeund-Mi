@@ -4,12 +4,15 @@ import axios from 'axios';
 import Constants from 'expo-constants';
 
 function getApiUrl(): string {
+  if (process.env.EXPO_PUBLIC_API_URL) {
+    return process.env.EXPO_PUBLIC_API_URL;
+  }
   const debuggerHost = Constants.expoConfig?.hostUri;
-  if (debuggerHost) {
+  if (__DEV__ && debuggerHost) {
     const ip = debuggerHost.split(':')[0];
     return `http://${ip}:8000/api`;
   }
-  return 'http://192.168.1.86:8000/api';
+  return 'https://mbeund-mi.onrender.com/api';
 }
 
 export const API_URL = getApiUrl();

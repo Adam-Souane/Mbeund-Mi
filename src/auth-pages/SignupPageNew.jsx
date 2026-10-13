@@ -14,9 +14,19 @@ const CANAUX = [
   { value: 'email', label: 'Email', Icon: Mail },
 ];
 
-// Identifiant proposé si le serveur ne répond pas : 3 lettres du prénom + 3 du nom.
+// Suggestions d'identifiants par défaut (nom complet sans coupure)
 function identifiantDeSecours(prenom, nom) {
-  return `${prenom.toLowerCase().slice(0, 3)}${nom.toLowerCase().slice(0, 3)}`;
+  const p = (prenom || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+  const n = (nom || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+  const options = [];
+  if (p && n) {
+    options.push(`${p}${n}`);
+    options.push(`${p[0]}${n}`);
+    options.push(`${p}.${n}`);
+  } else if (p || n) {
+    options.push(`${p}${n}`);
+  }
+  return options;
 }
 
 function validerInscription(formData, emailObligatoire) {
@@ -86,7 +96,7 @@ export default function SignupPage() {
       .then((response) => !annule && choisirPremier(response.data.options || []))
       .catch((error) => {
         if (import.meta.env.DEV) console.error('Erreur lors du chargement des identifiants:', error);
-        if (!annule) choisirPremier([identifiantDeSecours(prenom, nom)]);
+        if (!annule) choisirPremier(identifiantDeSecours(prenom, nom));
       });
     return () => {
       annule = true;
@@ -181,23 +191,47 @@ export default function SignupPage() {
               </div>
             </div>
 
-            {usernameOptions.length > 0 && (
-              <fieldset className={encadre}>
-                <legend className={`flex items-center gap-2 px-1 text-xs font-medium ${ton(darkMode, 'text-navy-600', 'text-navy-400')}`}>
-                  Choisissez votre identifiant
-                  {loadingUsernames && <Loader2 size={12} className="animate-spin" aria-hidden="true" />}
-                </legend>
-                <div className="space-y-2">
-                  {usernameOptions.map((option) => (
-                    <label key={option} className="flex items-center gap-2 cursor-pointer">
-                      <input type="radio" name="username" value={option} checked={formData.username === option} onChange={handleChange} className="accent-red" />
-                      <code className={`font-mono text-sm font-semibold ${classeIdentifiant(option)}`}>{option}</code>
-                    </label>
-                  ))}
+            <div>
+              <label htmlFor="signup-username" className={classeEtiquette(darkMode)}>
+                Identifiant <span className={`text-xs ${texteDiscret}`}>(proposé ou personnalisé)</span>
+              </label>
+              <input
+                id="signup-username"
+                type="text"
+                name="username"
+                autoComplete="username"
+                value={formData.username}
+                onChange={handleChange}
+                placeholder="ex: maimounasall"
+                className={champ}
+              />
+              {errors.username && <p className="text-xs text-red-500 mt-1">{errors.username}</p>}
+
+              {usernameOptions.length > 0 && (
+                <div className="mt-2">
+                  <p className={`text-xs mb-1.5 flex items-center gap-1.5 ${ton(darkMode, 'text-navy-600', 'text-navy-400')}`}>
+                    <span>Suggestions disponibles :</span>
+                    {loadingUsernames && <Loader2 size={12} className="animate-spin" aria-hidden="true" />}
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {usernameOptions.map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => setFormData((prev) => ({ ...prev, username: option }))}
+                        className={`px-2.5 py-1 text-xs font-mono rounded-md border transition-all ${
+                          formData.username === option
+                            ? 'bg-red-500 text-white border-red-500 font-semibold shadow-sm'
+                            : ton(darkMode, 'bg-navy-50 text-navy-700 border-navy-200 hover:bg-navy-100', 'bg-navy-800 text-navy-200 border-navy-700 hover:bg-navy-700')
+                        }`}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </fieldset>
-            )}
-            {errors.username && <p className="text-xs text-red-500">{errors.username}</p>}
+              )}
+            </div>
 
             <div>
               <label htmlFor="signup-telephone" className={classeEtiquette(darkMode)}>

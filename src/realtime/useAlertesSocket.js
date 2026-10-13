@@ -49,7 +49,7 @@ export function useAlertesSocket() {
   useEffect(() => {
     if (!isAuthenticated) return undefined;
 
-    const wsUrl = import.meta.env.VITE_WS_URL;
+    const wsUrl = import.meta.env.VITE_WS_URL || 'wss://mbeund-mi.onrender.com/ws/alertes/';
     const accessToken = getAccessToken();
     if (!wsUrl || !accessToken) return undefined;
 
