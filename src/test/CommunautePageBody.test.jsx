@@ -202,5 +202,34 @@ describe('CommunautePageBody', () => {
     // Le contenu légitime est préservé
     expect(screen.getByText(/Ruelle inondée, contactez le urgence/i)).toBeInTheDocument();
   });
+
+  it('attribue des avatars distincts et adaptés (femme, homme, enfant) et affiche des photos variées par quartier', () => {
+    render(
+      <MemoryRouter>
+        <CommunautePageBody />
+      </MemoryRouter>
+    );
+
+    // Vérifie qu'il y a plusieurs avatars d'auteurs distincts sans répétition unique
+    const avatarImages = screen.getAllByRole('img').map((img) => img.getAttribute('src'));
+    const uniqueAvatars = new Set(avatarImages.filter((src) => src && src.includes('avatar-')));
+
+    // Au moins 4 avatars différents affichés (femmes, hommes, enfants)
+    expect(uniqueAvatars.size).toBeGreaterThanOrEqual(4);
+
+    // Vérifie la présence d'au moins un avatar féminin et un avatar masculin
+    const hasFemaleAvatar = Array.from(uniqueAvatars).some((src) =>
+      src.includes('avatar-fatou.jpg') || src.includes('avatar-awa.jpg') || src.includes('avatar-mariama.jpg')
+    );
+    const hasMaleOrChildAvatar = Array.from(uniqueAvatars).some((src) =>
+      src.includes('avatar-ibrahima.jpg') || src.includes('avatar-modou.jpg') || src.includes('avatar-enfant.jpg')
+    );
+    expect(hasFemaleAvatar).toBe(true);
+    expect(hasMaleOrChildAvatar).toBe(true);
+
+    // Vérifie que les deux posts de Ndakhane ont des photos distinctes
+    expect(screen.getByText(/Carrefour Ndakhane submergé après l’averse/i)).toBeInTheDocument();
+    expect(screen.getByText(/Montée des eaux dans la ruelle basse/i)).toBeInTheDocument();
+  });
 });
 

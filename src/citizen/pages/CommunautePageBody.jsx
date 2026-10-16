@@ -29,6 +29,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { useSignalementsApercu } from '../../shared/hooks/useSignalements';
 import { STORIES_COMMUNAUTE, COMMUNAUTE_POSTS } from '../../shared/data/riverainsData';
 import { sanitizePublicText, sanitizePublicAuthor } from '../../shared/utils/sanitizer';
+import { getPublicAvatar } from '../../shared/utils/avatarResolver';
 
 export default function CommunautePageBody() {
   const { username, user } = useAuth();
@@ -99,11 +100,13 @@ export default function CommunautePageBody() {
     } catch {}
   }, [viewsState]);
 
-  // Options de photos disponibles pour la modale
+  // Options de photos disponibles pour la modale (enrichies avec des situations variées de Thiaroye)
   const PHOTO_PRESETS = [
-    { id: 'none', label: 'Sans photo (texte seul)', url: null },
+    { id: 'none', label: 'Sans photo (texte)', url: null },
     { id: 'ruelle', label: 'Ruelle inondée', url: '/images/communaute-ruelle.jpg' },
-    { id: 'entraide', label: 'Entraide & Sacs de sable', url: '/images/communaute-entraide.jpg' },
+    { id: 'pluie', label: 'Carrefour submergé', url: '/images/communaute-pluie.jpg' },
+    { id: 'caniveau', label: 'Curage caniveau', url: '/images/communaute-caniveau.jpg' },
+    { id: 'entraide', label: 'Sacs de sable', url: '/images/communaute-entraide.jpg' },
     { id: 'pompage', label: 'Pompage ONAS', url: '/images/communaute-pompage.jpg' },
     { id: 'passerelle', label: 'Passerelle piétonne', url: '/images/communaute-passerelle.jpg' },
   ];
@@ -165,6 +168,7 @@ export default function CommunautePageBody() {
       const cleanAuthor = sanitizePublicAuthor(rawAuthor, 'Sentinelle Citoyenne');
       const cleanTitre = sanitizePublicText(p.titre || p.categorie || 'Observation terrain');
       const cleanTexte = sanitizePublicText(p.description || 'Montée des eaux observée sur la voie publique.');
+      const uniqueAvatar = getPublicAvatar({ name: cleanAuthor, id: sigId, context: cleanTexte });
 
       backendItems.push({
         id: sigId,
@@ -173,7 +177,7 @@ export default function CommunautePageBody() {
         badgeFiltre: isResolu ? 'Résolu & Sécurisé' : 'Signalement terrain',
         author: {
           name: cleanAuthor,
-          avatar: '/images/avatar-amadou.jpg',
+          avatar: uniqueAvatar,
           quartier: p.citoyen_quartier || p.quartier || 'Thiaroye-sur-Mer',
           role: 'Signalement Terrain',
         },
@@ -194,32 +198,35 @@ export default function CommunautePageBody() {
     });
 
     // 2. Posts durables de la communauté avec nouvelles images de Thiaroye et posts sans images
-    const riverainsItems = COMMUNAUTE_POSTS.map((r) => ({
-      id: r.id,
-      isBackendSignalement: false,
-      typePost: r.typePost || (r.statut === 'resolu' ? 'resolu' : 'signalement'),
-      badgeFiltre: r.badgeFiltre || (r.statut === 'resolu' ? 'Résolu & Sécurisé' : 'Signalement terrain'),
-      author: {
-        name: sanitizePublicAuthor(r.auteur),
-        avatar: r.avatar,
-        quartier: r.quartier,
-        role: r.statut === 'resolu' ? 'Relais Quartier' : 'Résident',
-      },
-      date: r.temps,
-      dureeType: r.dureeType,
-      categorie: r.categorie,
-      titre: sanitizePublicText(r.titre),
-      texte: sanitizePublicText(r.description),
-      image: r.photo || null,
-      statut: r.statut,
-      statutLabel: r.statutLabel,
-      baseLikes: r.baseVotes,
-      baseViews: r.baseViews || 64,
-      comments: [
-        { id: `${r.id}-c1`, author: 'Moussa S.', text: 'On arrive avec des renforts depuis le secteur Plage.', time: 'Il y a 10 min' },
-        { id: `${r.id}-c2`, author: 'Fatou K.', text: 'Bien noté, courage à tous les voisins !', time: 'Il y a 5 min' },
-      ],
-    }));
+    const riverainsItems = COMMUNAUTE_POSTS.map((r) => {
+      const authorAvatar = getPublicAvatar({ name: r.auteur, id: r.id, preferredAvatar: r.avatar, context: r.description });
+      return {
+        id: r.id,
+        isBackendSignalement: false,
+        typePost: r.typePost || (r.statut === 'resolu' ? 'resolu' : 'signalement'),
+        badgeFiltre: r.badgeFiltre || (r.statut === 'resolu' ? 'Résolu & Sécurisé' : 'Signalement terrain'),
+        author: {
+          name: sanitizePublicAuthor(r.auteur),
+          avatar: authorAvatar,
+          quartier: r.quartier,
+          role: r.statut === 'resolu' ? 'Relais Quartier' : 'Résident',
+        },
+        date: r.temps,
+        dureeType: r.dureeType,
+        categorie: r.categorie,
+        titre: sanitizePublicText(r.titre),
+        texte: sanitizePublicText(r.description),
+        image: r.photo || null,
+        statut: r.statut,
+        statutLabel: r.statutLabel,
+        baseLikes: r.baseVotes,
+        baseViews: r.baseViews || 64,
+        comments: [
+          { id: `${r.id}-c1`, author: 'Moussa S.', text: 'On arrive avec des renforts depuis le secteur Plage.', time: 'Il y a 10 min' },
+          { id: `${r.id}-c2`, author: 'Fatou K.', text: 'Bien noté, courage à tous les voisins !', time: 'Il y a 5 min' },
+        ],
+      };
+    });
 
     return [...userPosts, ...backendItems, ...riverainsItems];
   }, [signalementsData, userPosts]);
@@ -354,15 +361,17 @@ export default function CommunautePageBody() {
     const cleanText = sanitizePublicText(modalPostText.trim());
     const cleanAuthor = sanitizePublicAuthor(nomCitoyen, 'Citoyen');
     const cleanCategorie = sanitizePublicText(modalCategorie);
+    const newPostId = `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    const userAvatar = getPublicAvatar({ name: cleanAuthor, id: newPostId, context: cleanText });
 
     const newPost = {
-      id: `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      id: newPostId,
       isBackendSignalement: false,
       typePost: modalType,
       badgeFiltre: badgeLabel,
       author: {
         name: cleanAuthor,
-        avatar: '/images/avatar-amadou.jpg',
+        avatar: userAvatar,
         quartier: modalQuartier,
         role: modalType === 'entraide' ? 'Volontaire engagé' : 'Citoyen mobilisé',
       },
