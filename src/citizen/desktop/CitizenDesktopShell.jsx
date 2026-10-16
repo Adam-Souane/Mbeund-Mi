@@ -21,10 +21,10 @@ import { useAuth } from '../../auth/AuthContext';
 
 const NAV_ITEMS = [
   { to: '/citoyen/accueil', label: 'Accueil', icon: Home },
-  { to: '/citoyen/communaute', label: 'Communauté', icon: Users },
   { to: '/citoyen/carte', label: 'Carte interactive', icon: Map },
   { to: '/citoyen/alertes', label: 'Prévisions & alertes', icon: CloudRain },
   { to: '/citoyen/signaler', label: 'Signaler', icon: Camera },
+  { to: '/citoyen/communaute', label: 'Communauté', icon: Users },
   { to: '/citoyen/chat', label: 'NDAM · Assistant', icon: MessageCircle },
   { to: '/citoyen/profil', label: 'Profil', icon: User },
 ];
