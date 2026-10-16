@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, MessageCircle, Mail, Eye, EyeOff } from 'lucide-react';
-import Logo from '../shared/components/Logo';
 import AuthLayout from './AuthLayout';
 import useCanauxOtp from './useCanauxOtp';
 import { useTheme } from '../theme/ThemeContext';
@@ -106,22 +105,20 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <AuthLayout variante="motdepasse" className="px-6 py-10">
-      <div className="w-full max-w-[480px] lg:max-w-[560px]">
-        <button
-          onClick={() => (step === 2 ? setStep(1) : navigate('/login'))}
-          className={`flex items-center gap-2 mb-5 text-sm font-semibold transition ${ton(darkMode, 'text-navy-600 hover:text-navy-900', 'text-navy-400 hover:text-navy-200')}`}
-        >
-          <ArrowLeft size={18} />
-          Retour
-        </button>
+    <AuthLayout variante="motdepasse" className="px-4 py-8">
+        <div className="w-full max-w-md sm:max-w-lg">
+          <button
+            onClick={() => (step === 2 ? setStep(1) : navigate('/login'))}
+            className="inline-flex items-center gap-2 mb-4 px-3 py-1.5 rounded-lg bg-black/35 backdrop-blur-md border border-white/20 text-white text-xs font-bold tracking-wide uppercase shadow-md hover:bg-black/50 transition cursor-pointer"
+          >
+            <ArrowLeft size={16} />
+            Retour
+          </button>
 
-        <div className={CARTE}>
-        {/* Sur écran large, le logo figure déjà dans la bannière de gauche */}
-        <div className="text-center mb-5">
-          <Logo size="md" className="mb-3 lg:hidden" />
-          <h1 className={`text-xl lg:text-2xl font-bold ${ton(darkMode, 'text-navy-900', 'text-white')}`}>{TITRES[step]}</h1>
-        </div>
+          <div className={CARTE}>
+            <div className="text-center mb-5">
+              <h1 className={`text-xl lg:text-2xl font-bold ${ton(darkMode, 'text-navy-900', 'text-white')}`}>{TITRES[step]}</h1>
+            </div>
 
         {step === 1 && (
           <form onSubmit={demanderCode} className="space-y-4">
@@ -257,6 +254,6 @@ export default function ForgotPasswordPage() {
         )}
         </div>
       </div>
-    </AuthLayout>
+  </AuthLayout>
   );
 }

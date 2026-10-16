@@ -88,6 +88,58 @@ const COULEURS_RISQUE = {
   rouge: { bg: '#FEE2E2', text: '#991B1B', border: '#EF4444', label: 'Critique', hex: '#C0182A' },
 };
 
+type SignalementItem = {
+  id: number;
+  description?: string;
+  categorie?: string;
+  categorie_display?: string;
+  date_creation?: string;
+  valide?: boolean;
+  niveau_eau_estime?: string;
+  niveau_eau_display?: string;
+  zone?: { quartier?: string };
+  quartier?: string;
+};
+
+const CONSEILS_DATA = [
+  {
+    id: 1,
+    titre: 'Avant les fortes pluies',
+    categorie: 'Prévention',
+    description: 'Dégagez les rigoles et caniveaux devant chez vous pour fluidifier l\'évacuation.',
+    iconName: 'droplet' as const,
+    color: '#2563EB',
+    bg: '#EFF6FF',
+  },
+  {
+    id: 2,
+    titre: 'Sécurité électrique',
+    categorie: 'Sécurité',
+    description: 'En cas de montée des eaux, coupez le disjoncteur général sans attendre.',
+    iconName: 'zap' as const,
+    color: '#D97706',
+    bg: '#FFFBEB',
+  },
+  {
+    id: 3,
+    titre: 'Kit de survie 72h',
+    categorie: 'Urgences',
+    description: 'Eau potable, torche, médicaments et papiers protégés dans du plastique étanche.',
+    iconName: 'shield' as const,
+    color: '#059669',
+    bg: '#ECFDF5',
+  },
+  {
+    id: 4,
+    titre: 'Numéro d\'urgence : 18',
+    categorie: 'Alerte rapide',
+    description: 'Alertez les sapeurs-pompiers (18) ou le SAMU (1515) dès que le niveau dépasse 30 cm.',
+    iconName: 'phone-call' as const,
+    color: '#C0182A',
+    bg: '#FEF2F2',
+  },
+];
+
 export default function HomeScreen() {
   const router = useRouter();
   const { username, token, logout } = useAuth();
@@ -96,23 +148,36 @@ export default function HomeScreen() {
   const [topZone, setTopZone] = useState<ZoneRisque | null>(null);
   const [previsions, setPrevisions] = useState<Prevision[]>([]);
   const [alertes, setAlertes] = useState<Alerte[]>([]);
+  const [mesSignalements, setMesSignalements] = useState<SignalementItem[]>([]);
+  const [communaute, setCommunaute] = useState<SignalementItem[]>([]);
+  const [upvotes, setUpvotes] = useState<Record<number, number>>({});
+  const [userUpvoted, setUserUpvoted] = useState<Record<number, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  const toggleUpvote = (id: number) => {
+    const hasVoted = !!userUpvoted[id];
+    const currentCount = upvotes[id] ?? ((id % 4) + 2);
+    const newCount = hasVoted ? Math.max(0, currentCount - 1) : currentCount + 1;
+    setUpvotes((prev) => ({ ...prev, [id]: newCount }));
+    setUserUpvoted((prev) => ({ ...prev, [id]: !hasVoted }));
+  };
 
   const chargerDonnees = async () => {
     try {
       const authHeaders = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
-      const [resZones, resAlertes, resPrev] = await Promise.allSettled([
+      const [resZones, resAlertes, resPrev, resMesSig, resSig] = await Promise.allSettled([
         axios.get(`${API_URL}/zones/`, authHeaders),
         axios.get(`${API_URL}/alertes/`, authHeaders),
         axios.get(`${API_URL}/previsions/`, authHeaders),
+        token ? axios.get(`${API_URL}/mes-signalements/`, authHeaders) : Promise.reject('No token'),
+        axios.get(`${API_URL}/signalements/`, authHeaders),
       ]);
 
       // 1. Zones à risque
       if (resZones.status === 'fulfilled') {
         const feats = resZones.value.data?.features || [];
         if (feats.length > 0) {
-          // Zone la plus vulnérable (comme la fonction pickMostAtRiskZone du Web)
           const sorted = [...feats].sort((a, b) => {
             const scoreA = Number(a.properties?.score_risque_moyen || 0);
             const scoreB = Number(b.properties?.score_risque_moyen || 0);
@@ -123,7 +188,7 @@ export default function HomeScreen() {
         }
       }
 
-      // 2. Alertes récentes (3 dernières comme sur le Web)
+      // 2. Alertes récentes (3 dernières)
       if (resAlertes.status === 'fulfilled') {
         const list = resAlertes.value.data?.results || resAlertes.value.data || [];
         setAlertes(Array.isArray(list) ? list.slice(0, 3) : []);
@@ -134,6 +199,22 @@ export default function HomeScreen() {
         const prevList = resPrev.value.data?.results || resPrev.value.data || [];
         if (Array.isArray(prevList)) {
           setPrevisions(prevList);
+        }
+      }
+
+      // 4. Mes signalements
+      if (resMesSig.status === 'fulfilled') {
+        const mySigList = resMesSig.value.data?.results || resMesSig.value.data || [];
+        if (Array.isArray(mySigList)) {
+          setMesSignalements(mySigList.slice(0, 3));
+        }
+      }
+
+      // 5. Fil communautaire
+      if (resSig.status === 'fulfilled') {
+        const sigList = resSig.value.data?.results || resSig.value.data || [];
+        if (Array.isArray(sigList)) {
+          setCommunaute(sigList.slice(0, 4));
         }
       }
     } catch (e) {
@@ -177,30 +258,29 @@ export default function HomeScreen() {
               <Text style={[styles.zoneText, { color: colors.textMuted }]}>{topZone?.quartier || 'Thiaroye-sur-Mer'}</Text>
             </View>
           </View>
-          <Pressable
-            onPress={toggleTheme}
-            style={[
-              styles.themeToggleBtn,
-              {
-                backgroundColor: isDark ? '#1E293B' : '#FFFFFF',
-                borderColor: isDark ? '#334155' : Brand.navy[100],
-              },
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel={isDark ? 'Passer en mode clair' : 'Passer en mode sombre'}>
-            <Feather
-              name={isDark ? 'sun' : 'moon'}
-              size={15}
-              color={isDark ? '#FACC15' : Brand.navy.DEFAULT}
-            />
-            <Text
+          <View style={styles.topBarActions}>
+            <View style={[styles.commuHeaderPill, { backgroundColor: isDark ? '#1E3A8A33' : '#EFF6FF', borderColor: isDark ? '#1E40AF' : '#BFDBFE' }]}>
+              <View style={styles.pulseDot} />
+              <Text style={[styles.commuHeaderPillText, { color: isDark ? '#93C5FD' : '#2563EB' }]}>Entraide active</Text>
+            </View>
+            <Pressable
+              onPress={toggleTheme}
               style={[
-                styles.themeToggleText,
-                { color: isDark ? '#F1F5F9' : Brand.navy.DEFAULT },
-              ]}>
-              {isDark ? 'Clair' : 'Sombre'}
-            </Text>
-          </Pressable>
+                styles.themeToggleIconBtn,
+                {
+                  backgroundColor: isDark ? '#1E293B' : '#FFFFFF',
+                  borderColor: isDark ? '#334155' : Brand.navy[100],
+                },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={isDark ? 'Passer en mode clair' : 'Passer en mode sombre'}>
+              <Feather
+                name={isDark ? 'sun' : 'moon'}
+                size={16}
+                color={isDark ? '#FACC15' : Brand.navy.DEFAULT}
+              />
+            </Pressable>
+          </View>
         </View>
 
         {/* Bannière de Risque Majeure (Inversion Mbeund-Mi : Bleu en clair, Blanc en sombre) */}
@@ -359,6 +439,209 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
+        {/* Carrousel de conseils & prévention */}
+        <View style={styles.sectionMargin}>
+          <View style={styles.sectionTitleRow}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Bons réflexes & Prévention</Text>
+            <Text style={[styles.sectionSubtitle, { color: colors.textMuted }]}>Gestes qui sauvent</Text>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.conseilsScroll}>
+            {CONSEILS_DATA.map((c) => (
+              <View
+                key={c.id}
+                style={[
+                  styles.conseilCard,
+                  { backgroundColor: colors.card, borderColor: colors.border },
+                ]}>
+                <View style={styles.conseilCardHeader}>
+                  <View style={[styles.conseilIconBox, { backgroundColor: c.bg }]}>
+                    <Feather name={c.iconName} size={18} color={c.color} />
+                  </View>
+                  <View style={[styles.conseilPill, { backgroundColor: `${c.color}15` }]}>
+                    <Text style={[styles.conseilPillText, { color: c.color }]}>{c.categorie}</Text>
+                  </View>
+                </View>
+                <Text style={[styles.conseilTitle, { color: colors.text }]}>{c.titre}</Text>
+                <Text style={[styles.conseilDesc, { color: colors.textMuted }]} numberOfLines={3}>
+                  {c.description}
+                </Text>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Mes Signalements Citoyen */}
+        <View style={[styles.blockCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={styles.blockCardHeader}>
+            <View style={styles.blockCardTitleRow}>
+              <View style={[styles.smallIconCircle, { backgroundColor: isDark ? Brand.navy[900] : '#FEE2E2' }]}>
+                <Feather name="clock" size={15} color={Brand.red.DEFAULT} />
+              </View>
+              <View>
+                <Text style={[styles.blockTitle, { color: colors.text }]}>Mes signalements</Text>
+                <Text style={[styles.blockSub, { color: colors.textMuted }]}>Suivi direct de vos alertes</Text>
+              </View>
+            </View>
+            <Pressable onPress={() => router.push('/signaler')}>
+              <Text style={styles.seeAllText}>+ Nouveau</Text>
+            </Pressable>
+          </View>
+
+          {mesSignalements.length === 0 ? (
+            <View style={[styles.emptyBox, { backgroundColor: isDark ? Brand.navy[900] : Brand.navy[50] }]}>
+              <Text style={[styles.emptyBoxText, { color: colors.textMuted }]}>
+                Vous n'avez aucun signalement en cours.
+              </Text>
+              <Pressable
+                onPress={() => router.push('/signaler')}
+                style={styles.emptyActionBtn}>
+                <Feather name="camera" size={13} color="#FFFFFF" />
+                <Text style={styles.emptyActionText}>Signaler une inondation</Text>
+              </Pressable>
+            </View>
+          ) : (
+            mesSignalements.map((s) => (
+              <View key={s.id} style={[styles.itemRow, { borderBottomColor: colors.border }]}>
+                <View style={styles.flex}>
+                  <View style={styles.itemTitleRow}>
+                    <Text style={[styles.itemTitle, { color: colors.text }]}>
+                      {s.categorie_display || s.categorie || 'Inondation'}
+                    </Text>
+                    {s.niveau_eau_display && s.niveau_eau_display !== 'Indéterminé' && (
+                      <View style={[styles.waterTag, { backgroundColor: isDark ? '#1E3A8A' : '#DBEAFE' }]}>
+                        <Text style={[styles.waterTagText, { color: isDark ? '#93C5FD' : '#1E40AF' }]}>
+                          Eau : {s.niveau_eau_display}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={[styles.itemDesc, { color: colors.textMuted }]} numberOfLines={1}>
+                    {s.description || 'Signalement transmis par vos soins.'}
+                  </Text>
+                </View>
+                <View
+                  style={[
+                    styles.statusPill,
+                    { backgroundColor: s.valide ? '#DCFCE7' : '#FEF9C3' },
+                  ]}>
+                  <Feather
+                    name={s.valide ? 'check-circle' : 'clock'}
+                    size={11}
+                    color={s.valide ? '#166534' : '#854D0E'}
+                  />
+                  <Text
+                    style={[
+                      styles.statusPillText,
+                      { color: s.valide ? '#166534' : '#854D0E' },
+                    ]}>
+                    {s.valide ? 'Validé' : 'En examen'}
+                  </Text>
+                </View>
+              </View>
+            ))
+          )}
+        </View>
+
+        {/* Fil Communautaire de Quartier */}
+        <View style={[styles.blockCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={styles.blockCardHeader}>
+            <View style={styles.blockCardTitleRow}>
+              <View style={[styles.smallIconCircle, { backgroundColor: isDark ? Brand.navy[900] : '#DBEAFE' }]}>
+                <Feather name="users" size={15} color="#2563EB" />
+              </View>
+              <View>
+                <Text style={[styles.blockTitle, { color: colors.text }]}>Entraide Quartier</Text>
+                <Text style={[styles.blockSub, { color: colors.textMuted }]}>Confirmez les signalements voisins</Text>
+              </View>
+            </View>
+          </View>
+
+          {communaute.length === 0 ? (
+            <Text style={[styles.emptyAlertsText, { color: colors.textMuted }]}>
+              Aucun incident signalé dans le quartier pour l'instant.
+            </Text>
+          ) : (
+            communaute.map((item) => {
+              const count = upvotes[item.id] ?? ((item.id % 4) + 2);
+              const hasVoted = !!userUpvoted[item.id];
+              const isPrioritaire = count >= 4;
+
+              return (
+                <View
+                  key={item.id}
+                  style={[
+                    styles.commuCard,
+                    {
+                      backgroundColor: isPrioritaire
+                        ? isDark ? '#451A03' : '#FFFBEB'
+                        : isDark ? Brand.navy[900] : Brand.navy[50],
+                      borderColor: isPrioritaire
+                        ? '#F59E0B'
+                        : isDark ? Brand.navy[800] : Brand.navy[100],
+                    },
+                  ]}>
+                  <View style={styles.commuCardTop}>
+                    <View style={styles.locationPill}>
+                      <Feather name="map-pin" size={11} color={Brand.red.DEFAULT} />
+                      <Text style={[styles.commuLocationText, { color: colors.text }]}>
+                        {item.zone?.quartier || item.quartier || 'Thiaroye-sur-Mer'}
+                      </Text>
+                    </View>
+                    {isPrioritaire && (
+                      <View style={styles.prioritaireBadge}>
+                        <Feather name="alert-triangle" size={10} color="#B45309" />
+                        <Text style={styles.prioritaireText}>Prioritaire</Text>
+                      </View>
+                    )}
+                  </View>
+
+                  <Text style={[styles.commuDesc, { color: colors.text }]} numberOfLines={2}>
+                    {item.description || `Signalement ${item.categorie || 'inondation'}`}
+                  </Text>
+
+                  <View style={styles.commuBottom}>
+                    <Text style={[styles.commuDate, { color: colors.textMuted }]}>
+                      {item.date_creation
+                        ? new Date(item.date_creation).toLocaleDateString('fr-FR', {
+                            day: 'numeric',
+                            month: 'short',
+                          })
+                        : 'Récent'}
+                    </Text>
+
+                    <Pressable
+                      onPress={() => toggleUpvote(item.id)}
+                      style={[
+                        styles.upvoteBtn,
+                        {
+                          backgroundColor: hasVoted
+                            ? '#2563EB'
+                            : isDark ? Brand.navy[800] : '#FFFFFF',
+                          borderColor: hasVoted
+                            ? '#2563EB'
+                            : Brand.navy[200],
+                        },
+                      ]}>
+                      <Feather
+                        name="thumbs-up"
+                        size={12}
+                        color={hasVoted ? '#FFFFFF' : (isDark ? '#F1F5F9' : Brand.navy.DEFAULT)}
+                      />
+                      <Text
+                        style={[
+                          styles.upvoteText,
+                          { color: hasVoted ? '#FFFFFF' : (isDark ? '#F1F5F9' : Brand.navy.DEFAULT) },
+                        ]}>
+                        {hasVoted ? 'Confirmé' : 'Vu aussi'} ({count})
+                      </Text>
+                    </Pressable>
+                  </View>
+                </View>
+              );
+            })
+          )}
+        </View>
+
         {/* Widget Météo (WeatherWidget du Web) */}
         <View style={[styles.weatherCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <View style={styles.weatherHeader}>
@@ -475,17 +758,27 @@ const styles = StyleSheet.create({
   locationRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
   zoneText: { fontSize: 12, fontWeight: '600', color: Brand.navy[500] },
 
-  themeToggleBtn: {
+  topBarActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  commuHeaderPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 11,
-    paddingVertical: 7,
+    gap: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: Radius.pill,
-    borderWidth: 1.2,
+    borderWidth: 1,
+  },
+  pulseDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#3B82F6' },
+  commuHeaderPillText: { fontSize: 10, fontWeight: '800' },
+  themeToggleIconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
     ...Shadow.card,
   },
-  themeToggleText: { fontSize: 11.5, fontWeight: '700' },
 
   heroCard: {
     borderRadius: Radius.xl,
@@ -637,4 +930,129 @@ const styles = StyleSheet.create({
   alerteZone: { fontSize: 12, fontWeight: '700', color: Brand.navy.DEFAULT },
   alerteMessage: { fontSize: 11, color: Brand.navy[500], marginTop: 1, lineHeight: 15 },
   emptyAlertsText: { fontSize: 12, color: Brand.navy[400], textAlign: 'center', paddingVertical: 10 },
+
+  // Styles Section Conseils & Prévention
+  sectionMargin: { marginBottom: 16 },
+  sectionTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+  sectionTitle: { fontSize: 13.5, fontWeight: '800' },
+  sectionSubtitle: { fontSize: 11, fontWeight: '600' },
+  conseilsScroll: { gap: 10, paddingRight: 6 },
+  conseilCard: {
+    width: 220,
+    borderRadius: Radius.xl,
+    borderWidth: 1,
+    padding: 14,
+    ...Shadow.card,
+  },
+  conseilCardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+  conseilIconBox: { width: 34, height: 34, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
+  conseilPill: { paddingHorizontal: 7, paddingVertical: 2.5, borderRadius: Radius.pill },
+  conseilPillText: { fontSize: 10, fontWeight: '800' },
+  conseilTitle: { fontSize: 13, fontWeight: '800', marginBottom: 4 },
+  conseilDesc: { fontSize: 11, lineHeight: 15 },
+
+  // Styles Cartes de Blocs (Mes signalements & Communauté)
+  blockCard: {
+    borderRadius: Radius.xl,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 16,
+    ...Shadow.card,
+  },
+  blockCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  blockCardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  smallIconCircle: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  blockTitle: { fontSize: 13, fontWeight: '800' },
+  blockSub: { fontSize: 10.5 },
+
+  emptyBox: {
+    borderRadius: Radius.lg,
+    padding: 16,
+    alignItems: 'center',
+    gap: 10,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: Brand.navy[200],
+  },
+  emptyBoxText: { fontSize: 11.5, textAlign: 'center' },
+  emptyActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: Brand.red.DEFAULT,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: Radius.md,
+  },
+  emptyActionText: { color: '#FFFFFF', fontSize: 11.5, fontWeight: '700' },
+
+  itemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 9,
+    borderBottomWidth: 1,
+    gap: 10,
+  },
+  itemTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 },
+  itemTitle: { fontSize: 12, fontWeight: '700' },
+  waterTag: { paddingHorizontal: 5, paddingVertical: 1.5, borderRadius: 4 },
+  waterTagText: { fontSize: 9.5, fontWeight: '700' },
+  itemDesc: { fontSize: 11 },
+  statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: Radius.pill,
+  },
+  statusPillText: { fontSize: 10, fontWeight: '800' },
+
+  // Styles Cartes Communauté
+  commuCard: {
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    padding: 11,
+    marginBottom: 8,
+    gap: 6,
+  },
+  commuCardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  locationPill: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  commuLocationText: { fontSize: 11, fontWeight: '800' },
+  prioritaireBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  prioritaireText: { fontSize: 9, fontWeight: '800', color: '#B45309' },
+  commuDesc: { fontSize: 11.5, lineHeight: 16 },
+  commuBottom: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 6,
+    borderTopWidth: 0.5,
+    borderTopColor: 'rgba(0,0,0,0.06)',
+  },
+  commuDate: { fontSize: 10 },
+  upvoteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: Radius.pill,
+    borderWidth: 1,
+  },
+  upvoteText: { fontSize: 10.5, fontWeight: '700' },
 });

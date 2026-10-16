@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, Clock, RotateCw, Mail } from 'lucide-react';
-import Logo from '../shared/components/Logo';
 import AuthLayout from './AuthLayout';
 import useCanauxOtp from './useCanauxOtp';
 import { useTheme } from '../theme/ThemeContext';
@@ -139,26 +138,24 @@ export default function OTPVerificationPage() {
   const peutChangerDeCanal = Boolean(etat.emailDisponible) && (autreCanal === 'email' || smsDisponible);
 
   return (
-    <AuthLayout variante="verification" className="px-6 py-10">
-      <div className="w-full max-w-[480px] lg:max-w-[560px]">
-        <button
-          onClick={() => navigate('/signup')}
-          className={`flex items-center gap-2 mb-8 transition ${ton(darkMode, 'text-navy-600 hover:text-navy-900', 'text-navy-400 hover:text-navy-200')}`}
-        >
-          <ArrowLeft size={18} />
-          Retour
-        </button>
+    <AuthLayout variante="verification" className="px-4 py-8">
+      <div className="flex flex-col items-center justify-center w-full my-auto px-4">
+        <div className="w-full max-w-md sm:max-w-lg">
+          <button
+            onClick={() => navigate('/signup')}
+            className="inline-flex items-center gap-2 mb-4 px-3 py-1.5 rounded-lg bg-black/35 backdrop-blur-md border border-white/20 text-white text-xs font-bold tracking-wide uppercase shadow-md hover:bg-black/50 transition cursor-pointer"
+          >
+            <ArrowLeft size={16} />
+            Retour
+          </button>
 
-        <div className="text-center mb-6 lg:mb-5">
-          <div className="lg:hidden mb-3">
-            <Logo size="lg" />
-          </div>
-          <h1 className={`text-2xl font-bold ${ton(darkMode, 'text-navy-900', 'text-white')}`}>
-            {reussi ? 'Vérification réussie' : 'Vérifier votre identité'}
-          </h1>
-        </div>
+          <div className={CARTE}>
+            <div className="text-center mb-6">
+              <h1 className={`text-xl sm:text-2xl font-black ${ton(darkMode, 'text-navy-900', 'text-white')}`}>
+                {reussi ? 'Vérification réussie' : 'Vérifier votre identité'}
+              </h1>
+            </div>
 
-        <div className={CARTE}>
           {reussi ? (
             <VerificationReussie darkMode={darkMode} />
           ) : (
@@ -203,7 +200,7 @@ export default function OTPVerificationPage() {
                     className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border text-sm font-semibold transition shadow-sm ${
                       enAttente
                         ? 'bg-navy-50 dark:bg-navy-800/50 text-navy-400 border-navy-200 dark:border-navy-700 cursor-not-allowed'
-                        : 'bg-navy text-white hover:bg-navy-700 border-navy cursor-pointer'
+                        : 'bg-white dark:bg-navy-800 text-navy-900 dark:text-navy-100 border-navy-200 dark:border-navy-700 hover:border-red hover:text-red cursor-pointer'
                     }`}
                   >
                     <RotateCw size={15} className={enAttente ? 'animate-spin' : ''} />
@@ -218,7 +215,7 @@ export default function OTPVerificationPage() {
                       className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border text-sm font-semibold transition shadow-sm ${
                         enAttente
                           ? 'bg-navy-50 dark:bg-navy-800/50 text-navy-400 border-navy-200 dark:border-navy-700 cursor-not-allowed'
-                          : 'bg-red-500 text-white hover:bg-red-600 border-red-500 cursor-pointer'
+                          : 'bg-red text-white hover:bg-red-700 border-red cursor-pointer'
                       }`}
                     >
                       <Mail size={15} />
@@ -231,7 +228,7 @@ export default function OTPVerificationPage() {
                   <button
                     type="button"
                     onClick={() => navigate('/signup')}
-                    className="text-xs text-navy-500 hover:text-navy-900 dark:hover:text-navy-200 underline inline-flex items-center gap-1 font-medium transition"
+                    className="text-xs text-red hover:underline inline-flex items-center gap-1 font-semibold transition cursor-pointer"
                   >
                     <span>Numéro incorrect ou faute de frappe ? Modifier mes informations</span>
                   </button>
@@ -241,6 +238,7 @@ export default function OTPVerificationPage() {
           )}
         </div>
       </div>
-    </AuthLayout>
+    </div>
+  </AuthLayout>
   );
 }

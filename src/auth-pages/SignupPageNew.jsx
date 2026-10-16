@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Loader2, MessageCircle, Mail, AlertTriangle } from 'lucide-react';
-import Logo from '../shared/components/Logo';
 import AuthLayout from './AuthLayout';
 import useCanauxOtp from './useCanauxOtp';
 import { useTheme } from '../theme/ThemeContext';
@@ -208,17 +207,14 @@ export default function SignupPage() {
   };
 
   return (
-    <AuthLayout variante="inscription" className="px-6 py-6 lg:py-10">
-      <div className="w-full max-w-[480px] lg:max-w-[560px]">
-        <div className="text-center mb-5 lg:mb-4">
-          <div className="lg:hidden mb-3">
-            <Logo size="lg" />
-          </div>
-          <h1 className={`text-xl lg:text-2xl font-bold ${ton(darkMode, 'text-navy-900', 'text-white')}`}>Créer un compte citoyen</h1>
-          <p className={`text-xs lg:text-sm mt-1 ${ton(darkMode, 'text-navy-600', 'text-navy-400')}`}>Recevez les alertes et signalez les inondations en temps réel</p>
-        </div>
-
-        <div className={CARTE}>
+    <AuthLayout variante="inscription">
+      <div className="flex flex-col items-center justify-center w-full my-auto">
+        <div className="w-full max-w-md sm:max-w-lg">
+          <div className={CARTE}>
+            <div className="text-center mb-6">
+              <h1 className="text-xl sm:text-2xl font-black text-navy-900 dark:text-navy-50">Créer un compte citoyen</h1>
+              <p className="text-xs text-navy-500 dark:text-navy-300 mt-1">Recevez les alertes et signalez les inondations en temps réel</p>
+            </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -356,6 +352,7 @@ export default function SignupPage() {
           </p>
         </div>
       </div>
-    </AuthLayout>
+    </div>
+  </AuthLayout>
   );
 }

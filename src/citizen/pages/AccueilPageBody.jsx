@@ -8,6 +8,9 @@ import { useZones } from '../../shared/hooks/useZones';
 import { usePredictions } from '../../shared/hooks/usePredictions';
 import { useAlertesRecentes } from '../../shared/hooks/useAlertes';
 import { usePrevisions } from '../../shared/hooks/usePrevisions';
+import ConseilsCarousel from '../components/ConseilsCarousel';
+import MesSignalementsWidget from '../components/MesSignalementsWidget';
+import FilCommunautaireWidget from '../components/FilCommunautaireWidget';
 
 const NIVEAU_RANK = { vert: 0, jaune: 1, orange: 2, rouge: 3 };
 
@@ -36,76 +39,120 @@ export default function AccueilPageBody() {
 
   return (
     <CitizenShell>
-      <div>
-        <h1 className="text-xl font-extrabold">Bonjour</h1>
-        {topZone && (
-          <div className="flex items-center gap-1.5 mt-1 text-navy-600 dark:text-navy-200 text-sm">
-            <MapPin size={14} />
-            <span>{topZone.quartier}</span>
-          </div>
-        )}
+      {/* En-tête dynamique avec badge communautaire */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-1">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-black text-navy-900 dark:text-white">Bonjour</h1>
+          {topZone && (
+            <div className="flex items-center gap-1.5 text-navy-600 dark:text-navy-300 text-sm mt-0.5">
+              <MapPin size={14} className="text-red flex-shrink-0" />
+              <span className="font-bold">{topZone.quartier}</span>
+            </div>
+          )}
+        </div>
+
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/60 dark:to-indigo-950/40 border border-blue-200/80 dark:border-blue-800 text-blue-700 dark:text-blue-300 text-xs font-bold shadow-xs">
+          <span className="flex h-2 w-2 relative">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+          </span>
+          <span>Entraide quartier active</span>
+        </div>
       </div>
 
-      {zonesLoading && <p className="text-sm text-navy-400">Chargement des zones à risque…</p>}
+      {zonesLoading && <p className="text-sm text-navy-400 animate-pulse">Chargement des données de votre zone…</p>}
       {zonesError && (
-        <p className="text-sm text-red bg-red-50 dark:bg-red/15 rounded-md px-4 py-3">
+        <p className="text-sm text-red bg-red-50 dark:bg-red/15 rounded-xl px-4 py-3 border border-red/20">
           Impossible de charger les zones à risque pour l’instant.
         </p>
       )}
 
+      {/* 1. Carrousel visuel immersif avec photos réalistes de Dakar en vedette */}
+      <ConseilsCarousel />
+
+      {/* 2. Bannière de Risque Majeure avec dégradé moderne */}
       {topZone && (
-        <div className="rounded-xl p-6 text-white flex items-center justify-between gap-4" style={{ backgroundColor: '#C0182A' }}>
+        <div
+          className={`rounded-2xl p-5 sm:p-6 text-white flex items-center justify-between gap-4 shadow-md transition-all ${
+            topZone.niveau_risque === 'rouge'
+              ? 'bg-gradient-to-r from-red-600 via-rose-600 to-amber-700'
+              : topZone.niveau_risque === 'orange'
+              ? 'bg-gradient-to-r from-amber-600 via-orange-600 to-red-600'
+              : 'bg-gradient-to-r from-navy-900 via-navy-800 to-navy-950'
+          }`}
+        >
           <div>
-            <span className="text-[11px] font-bold uppercase tracking-wide opacity-85">Votre zone</span>
-            <div className="text-2xl font-extrabold my-1">Risque {topZone.niveau_risque}</div>
-            <p className="text-sm opacity-90 max-w-md">
-              {topZone.description || "Restez informé de l'évolution de la situation dans votre quartier."}
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-xs">
+                Votre secteur
+              </span>
+              <span className="text-xs opacity-85">· En temps réel</span>
+            </div>
+            <div className="text-2xl font-black my-1 drop-shadow-sm">Risque {topZone.niveau_risque}</div>
+            <p className="text-xs sm:text-sm opacity-90 max-w-lg leading-relaxed">
+              {topZone.description || "Surveillance hydrologique active dans votre quartier. Restez vigilants."}
             </p>
           </div>
-          <RiskBadge niveau={topZone.niveau_risque} className="bg-white/20 text-white flex-shrink-0" />
+          <RiskBadge niveau={topZone.niveau_risque} className="bg-white/25 text-white flex-shrink-0 shadow-sm" />
         </div>
       )}
 
+      {/* 3. 4 Cartes d'Accès Rapides avec micro-dégradés */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Link to="/citoyen/signaler" className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-lg p-4 flex flex-col gap-2.5">
-          <div className="w-9 h-9 rounded-lg bg-red-50 dark:bg-red/15 text-red flex items-center justify-center">
-            <Camera size={17} />
+        <Link
+          to="/citoyen/signaler"
+          className="group bg-gradient-to-br from-white to-red-50/30 dark:from-navy dark:to-navy-900 border border-navy-100 dark:border-navy-800 rounded-2xl p-4 flex flex-col gap-2.5 hover:border-red hover:shadow-md transition-all duration-200"
+        >
+          <div className="w-10 h-10 rounded-xl bg-red-50 dark:bg-red/20 text-red flex items-center justify-center group-hover:scale-105 transition-transform">
+            <Camera size={19} />
           </div>
-          <span className="text-sm font-bold">Signaler</span>
+          <span className="text-sm font-extrabold text-navy-900 dark:text-navy-50">Signaler</span>
         </Link>
-        <Link to="/citoyen/carte" className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-lg p-4 flex flex-col gap-2.5">
-          <div className="w-9 h-9 rounded-lg bg-navy-50 dark:bg-navy-800 text-navy dark:text-navy-50 flex items-center justify-center">
-            <MapPinIcon size={17} />
+        <Link
+          to="/citoyen/carte"
+          className="group bg-gradient-to-br from-white to-navy-50/40 dark:from-navy dark:to-navy-900 border border-navy-100 dark:border-navy-800 rounded-2xl p-4 flex flex-col gap-2.5 hover:border-navy-400 dark:hover:border-navy-600 hover:shadow-md transition-all duration-200"
+        >
+          <div className="w-10 h-10 rounded-xl bg-navy-50 dark:bg-navy-800 text-navy dark:text-navy-50 flex items-center justify-center group-hover:scale-105 transition-transform">
+            <MapPinIcon size={19} />
           </div>
-          <span className="text-sm font-bold">Carte</span>
+          <span className="text-sm font-extrabold text-navy-900 dark:text-navy-50">Carte</span>
         </Link>
-        <Link to="/citoyen/alertes" className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-lg p-4 flex flex-col gap-2.5">
-          <div className="w-9 h-9 rounded-lg bg-navy-50 dark:bg-navy-800 text-navy dark:text-navy-50 flex items-center justify-center">
-            <CloudRain size={17} />
+        <Link
+          to="/citoyen/alertes"
+          className="group bg-gradient-to-br from-white to-blue-50/30 dark:from-navy dark:to-navy-900 border border-navy-100 dark:border-navy-800 rounded-2xl p-4 flex flex-col gap-2.5 hover:border-blue-400 hover:shadow-md transition-all duration-200"
+        >
+          <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 flex items-center justify-center group-hover:scale-105 transition-transform">
+            <CloudRain size={19} />
           </div>
-          <span className="text-sm font-bold">Prévisions</span>
+          <span className="text-sm font-extrabold text-navy-900 dark:text-navy-50">Prévisions</span>
         </Link>
-        <a href="tel:18" className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-lg p-4 flex flex-col gap-2.5">
-          <div className="w-9 h-9 rounded-lg bg-red-50 dark:bg-red/15 text-red flex items-center justify-center">
-            <PhoneCall size={17} />
+        <a
+          href="tel:18"
+          className="group bg-gradient-to-br from-white to-red-50/40 dark:from-navy dark:to-navy-900 border border-navy-100 dark:border-navy-800 rounded-2xl p-4 flex flex-col gap-2.5 hover:border-red hover:shadow-md transition-all duration-200"
+        >
+          <div className="w-10 h-10 rounded-xl bg-red text-white flex items-center justify-center group-hover:scale-105 transition-transform shadow-sm">
+            <PhoneCall size={19} />
           </div>
-          <span className="text-sm font-bold">Urgence · 18</span>
+          <span className="text-sm font-extrabold text-red">Urgence · 18</span>
         </a>
       </div>
 
-      {/* Desktop : Gauge + Alertes côte à côte (comme le tableau de bord
-          autorité), Météo pleine largeur en dessous pour que sa bande de
-          prévisions à venir ait la place de s'étaler. Mobile : ordre inchangé
-          (Gauge, Météo, Alertes) — géré par `order-*` sans déplacer le DOM. */}
+      {/* 4. Suivi des signalements du citoyen & Fil communautaire */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <MesSignalementsWidget />
+        <FilCommunautaireWidget />
+      </div>
+
+      {/* Risque & Alertes météo */}
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[1.4fr_1fr] lg:gap-5 lg:items-start">
         <div className="order-1 lg:order-1">
           <GaugeRisk zone={topZone} prediction={zonePrediction} onExploreMap={() => navigate('/citoyen/carte')} />
         </div>
 
-        <div className="order-3 lg:order-2 bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5">
+        <div className="order-3 lg:order-2 bg-white dark:bg-navy border border-navy-100 dark:border-navy-800 rounded-2xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-bold">Alertes récentes</h3>
-            <Link to="/citoyen/alertes" className="text-xs font-bold text-red">
+            <Link to="/citoyen/alertes" className="text-xs font-bold text-red hover:underline">
               Voir tout
             </Link>
           </div>

@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import SplashScreen from './shared/layout/SplashScreen';
 import LoginPage from './auth-pages/LoginPage';
+import LoginAutoritePage from './auth-pages/LoginAutoritePage';
 import SignupPage from './auth-pages/SignupPageNew';
 import ForgotPasswordPage from './auth-pages/ForgotPasswordPage';
 import AdminRegisterPage from './auth-pages/AdminRegisterPage';
@@ -54,14 +55,22 @@ export default function AppRoutes() {
     <Suspense fallback={<ChargementPage />}>
       <Routes>
         <Route path="/" element={<SplashScreen />} />
+        
+        {/* Espaces d'authentification séparés Citoyen / Autorité */}
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/login-citoyen" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/signup-citoyen" element={<SignupPage />} />
+
+        <Route path="/login-autorite" element={<LoginAutoritePage />} />
         <Route path="/admin-register" element={<AdminRegisterPage />} />
+        <Route path="/signup-autorite" element={<AdminRegisterPage />} />
+
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/otp-verify" element={<OTPVerificationPage />} />
 
-        {/* Citoyen */}
-        <Route path="/citoyen/accueil" element={<Citoyen><AccueilPageBody /></Citoyen>} />
+        {/* Citoyen - Accueil public pour consultation directe des alertes et du fil de quartier */}
+        <Route path="/citoyen/accueil" element={<AccueilPageBody />} />
         <Route path="/citoyen/carte" element={<Citoyen><CartePageBody /></Citoyen>} />
         <Route path="/citoyen/alertes" element={<Citoyen><AlertesPrevisionsPageBody /></Citoyen>} />
         <Route path="/citoyen/signaler" element={<Citoyen><SignalerPageBody /></Citoyen>} />

@@ -8,40 +8,37 @@ export function ton(darkMode, clair, sombre) {
 
 export function classeChamp(darkMode, enErreur = false) {
   const bordure = enErreur
-    ? 'border-red-500'
-    : ton(darkMode, 'border-navy-200 bg-white', 'border-navy-700 bg-navy-900 text-white');
-  return `w-full px-4 py-2 rounded-lg border ${bordure} focus:outline-none focus:ring-2 focus:ring-navy-500`;
+    ? 'border-red-500 focus:border-red-500'
+    : ton(darkMode, 'border-navy-200 bg-white focus:border-red', 'border-navy-700 bg-navy-900 text-white focus:border-red');
+  return `w-full px-3.5 py-2.5 rounded-lg border ${bordure} text-sm focus:outline-none transition-colors`;
 }
 
 export function classeEtiquette(darkMode) {
-  return `block text-sm font-medium mb-1 ${ton(darkMode, 'text-navy-700', 'text-navy-200')}`;
+  return `block text-xs font-bold uppercase tracking-wider mb-1.5 ${ton(darkMode, 'text-navy-600', 'text-navy-200')}`;
 }
 
 // Carte cliquable d'un choix exclusif (canal SMS ou email).
 export function classeOption(darkMode, actif, desactive = false) {
   const etat = actif
-    ? 'border-navy bg-white dark:bg-navy-900 font-semibold'
-    : ton(darkMode, 'border-navy-200', 'border-navy-700');
+    ? 'border-red bg-red-50/40 text-red dark:bg-red/10 font-bold'
+    : ton(darkMode, 'border-navy-200 text-navy-700 hover:border-navy-300', 'border-navy-700 text-navy-200');
   const curseur = desactive ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer';
-  return `flex items-center gap-2 px-3 py-2 rounded-md border text-sm ${etat} ${curseur}`;
+  return `flex items-center gap-2 px-3.5 py-2.5 rounded-lg border text-sm transition-all ${etat} ${curseur}`;
 }
 
 // Lien « Renvoyer le code » : grisé pendant le compte à rebours.
 export function classeLienRenvoi(darkMode, enAttente) {
   return enAttente
     ? `${ton(darkMode, 'text-navy-400', 'text-navy-600')} cursor-not-allowed`
-    : 'text-navy-600 dark:text-navy-400 hover:underline';
+    : 'text-red font-semibold hover:underline';
 }
 
-// Carte blanche qui regroupe le formulaire, la même sur toutes les pages
-// d'authentification (celles-ci restent toujours en mode clair).
-export const CARTE = 'bg-white rounded-xl border border-navy-50 shadow-lg p-7 lg:p-9';
+// Carte blanche qui regroupe le formulaire, identique sur toutes les pages
+export const CARTE = 'w-full bg-white/95 backdrop-blur-md dark:bg-navy/95 rounded-2xl border border-white/60 dark:border-navy-800 p-6 sm:p-8 shadow-2xl';
 
-// Bouton principal, identique à « Se connecter ». La marge du haut l'écarte du
-// dernier champ comme sur la page de connexion (« ! » : elle doit l'emporter
-// sur l'espacement space-y des formulaires).
+// Bouton principal rouge (#B5121B), identique à « Se connecter »
 export const BOUTON_PRINCIPAL =
-  'w-full !mt-6 lg:!mt-8 py-3 lg:py-3.5 rounded-md bg-navy text-white text-sm lg:text-base font-bold hover:bg-navy-700 transition disabled:opacity-60';
+  'w-full !mt-6 py-3 rounded-xl bg-red text-white text-sm font-bold hover:bg-red-700 transition shadow-sm disabled:opacity-60 cursor-pointer';
 
 // Vérification simple (sans expression régulière à retour arrière) :
 // une seule arobase, une partie locale, un domaine avec un point, aucun espace.

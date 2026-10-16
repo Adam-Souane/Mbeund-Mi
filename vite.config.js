@@ -7,16 +7,16 @@ export default defineConfig(({ mode }) => ({
   // (remplace drop_console de terser ; les messages restent visibles en développement).
   esbuild: mode === 'production' ? { drop: ['console', 'debugger'] } : {},
   server: {
-    port: 3000,
+    port: 3001,
     open: true,
     proxy: {
       '/api/': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost:8001',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '/api')
       },
       '/ws/': {
-        target: 'ws://localhost:8000',
+        target: 'ws://localhost:8001',
         ws: true,
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/ws/, '/ws')
