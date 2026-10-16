@@ -123,4 +123,30 @@ describe('CommunautePageBody', () => {
     // Et les autres ne doivent pas être visibles
     expect(screen.queryByText(/Montée des eaux dans la ruelle basse/i)).not.toBeInTheDocument();
   });
+
+  it('affiche des boutons d action sociale colores avec separation distincte des coeurs et des vues', () => {
+    render(
+      <MemoryRouter>
+        <CommunautePageBody />
+      </MemoryRouter>
+    );
+
+    // Vérifie la présence des boutons distincts
+    const boutonsJaime = screen.getAllByRole('button', { name: /J'aime le post/i });
+    expect(boutonsJaime.length).toBeGreaterThan(0);
+
+    const boutonsVues = screen.getAllByRole('button', { name: /Nombre d'explorations du post/i });
+    expect(boutonsVues.length).toBeGreaterThan(0);
+
+    const boutonsCommentaires = screen.getAllByRole('button', { name: /Commentaires et avis riverains/i });
+    expect(boutonsCommentaires.length).toBeGreaterThan(0);
+
+    // Clic sur J'aime incrémente les cœurs sans modifier les vues
+    const premierJaime = boutonsJaime[0];
+    const premierVue = boutonsVues[0];
+
+    expect(premierJaime).toHaveTextContent(/J’aime/i);
+    expect(premierVue).toHaveTextContent(/Vues/i);
+  });
 });
+

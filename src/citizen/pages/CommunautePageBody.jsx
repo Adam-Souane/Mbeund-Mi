@@ -71,6 +71,23 @@ export default function CommunautePageBody() {
     } catch {}
   }, [likesState]);
 
+  // Vues gérées en local (séparées des cœurs/likes)
+  const [viewsState, setViewsState] = useState(() => {
+    try {
+      const saved = localStorage.getItem('mbeund_mi_community_views');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  // Sauvegarde des vues dans le localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('mbeund_mi_community_views', JSON.stringify(viewsState));
+    } catch {}
+  }, [viewsState]);
+
   // Options de photos disponibles pour la modale
   const PHOTO_PRESETS = [
     { id: 'none', label: 'Sans photo (texte seul)', url: null },
@@ -141,6 +158,7 @@ export default function CommunautePageBody() {
           statut: isResolu ? 'resolu' : 'en_cours',
           statutLabel: isResolu ? 'Vérifié par la mairie' : 'En attente de traitement',
           baseLikes: 5,
+          baseViews: 38 + ((p.id * 17) % 52),
           comments: [],
         });
       });
@@ -167,6 +185,7 @@ export default function CommunautePageBody() {
       statut: r.statut,
       statutLabel: r.statutLabel,
       baseLikes: r.baseVotes,
+      baseViews: r.baseViews || 64,
       comments: [
         { id: `${r.id}-c1`, author: 'Moussa S.', text: 'On arrive avec des renforts depuis le secteur Plage.', time: 'Il y a 10 min' },
         { id: `${r.id}-c2`, author: 'Fatou K.', text: 'Bien noté, courage à tous les voisins !', time: 'Il y a 5 min' },
@@ -202,7 +221,7 @@ export default function CommunautePageBody() {
     });
   }, [allPosts, filter]);
 
-  // Action like
+  // Action like / cœurs (représente l'appréciation ou le soutien de la communauté)
   const handleToggleLike = (postId) => {
     setLikesState((prev) => {
       const isCurrentlyLiked = !!prev[postId];
@@ -216,6 +235,22 @@ export default function CommunautePageBody() {
   const getLikesCount = (postId, baseLikes) => {
     const isLiked = !!likesState[postId];
     return baseLikes + (isLiked ? 1 : 0);
+  };
+
+  // Action vues (représente le nombre de fois où la publication a été consultée/explorée)
+  const getViewsCount = (postId, baseViews) => {
+    const extra = viewsState[postId] || 0;
+    return (baseViews || 15) + extra;
+  };
+
+  const handleIncrementView = (postId) => {
+    setViewsState((prev) => {
+      const current = prev[postId] || 0;
+      return {
+        ...prev,
+        [postId]: current + 1,
+      };
+    });
   };
 
   // Action partage
@@ -300,6 +335,7 @@ export default function CommunautePageBody() {
       statut: modalType === 'resolu' ? 'resolu' : 'en_cours',
       statutLabel,
       baseLikes: 1,
+      baseViews: 1,
       comments: [],
     };
 
@@ -490,7 +526,7 @@ export default function CommunautePageBody() {
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════════ */}
-      {/* 4. FIL D'ACTUALITÉ : GRILLE 2 COLONNES ADAPTÉE AU FILTRE           */}
+      {/* 4. FIL D'ACTUALITÉ : GRILLE 2 COLONNES AVEC BOUTONS SOCIAUX COLORÉS */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {filteredPosts.length === 0 ? (
         <div className="bg-white dark:bg-[#071322] border border-navy-100 dark:border-navy-800 rounded-3xl p-8 text-center space-y-3">
@@ -517,10 +553,12 @@ export default function CommunautePageBody() {
             const isLiked = !!likesState[post.id];
             const areCommentsOpen = !!openComments[post.id];
             const currentLikes = getLikesCount(post.id, post.baseLikes);
+            const currentViews = getViewsCount(post.id, post.baseViews);
 
             return (
               <article
                 key={post.id}
+                onClick={() => handleIncrementView(post.id)}
                 className="bg-white dark:bg-[#071322] border border-navy-100 dark:border-navy-800 rounded-2xl sm:rounded-3xl overflow-hidden shadow-xs hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
               >
                 {/* Haut de la carte : Auteur + Quartier + Badges Filtre & Statut */}
@@ -611,7 +649,10 @@ export default function CommunautePageBody() {
                   <div className="mt-3.5">
                     {post.image ? (
                       <div
-                        onClick={() => setPreviewImageModal(post.image)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPreviewImageModal(post.image);
+                        }}
                         className="relative w-full h-48 sm:h-56 bg-slate-100 dark:bg-navy-950 rounded-2xl overflow-hidden cursor-pointer group border border-navy-50 dark:border-navy-800 shadow-xs"
                       >
                         <img
@@ -638,50 +679,102 @@ export default function CommunautePageBody() {
                   </div>
                 </div>
 
-                {/* Barre d'actions sociales : Soutenir (+1) + Commentaires + Partager */}
-                <div className="px-4 py-3 sm:px-5 border-t border-navy-50 dark:border-navy-800/80 bg-slate-50/50 dark:bg-navy-900/30 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    {/* Bouton +1 Vu aussi / Soutenir */}
+                {/* ═══════════════════════════════════════════════════════════════ */}
+                {/* BARRE D'ACTIONS SOCIALES AVEC COULEURS DISTINCTES & CLICQUABLES */}
+                {/* Séparation distincte entre Cœurs (J'aime) et Vues (Explorations) */}
+                {/* ═══════════════════════════════════════════════════════════════ */}
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="px-3.5 py-3 sm:px-4 border-t border-navy-50 dark:border-navy-800/80 bg-slate-50/70 dark:bg-navy-900/40 flex items-center justify-between gap-1.5 flex-wrap"
+                >
+                  <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                    {/* 1. Bouton CŒURS / J'AIME (Rose/Rouge rubis interactif) */}
                     <button
                       type="button"
+                      aria-label="J'aime le post"
                       onClick={() => handleToggleLike(post.id)}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all active:scale-95 cursor-pointer ${
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all active:scale-95 cursor-pointer shadow-xs ${
                         isLiked
-                          ? 'bg-red-600 text-white shadow-xs'
-                          : 'bg-white dark:bg-navy-800 text-navy-700 dark:text-slate-200 border border-slate-200 dark:border-navy-700 hover:border-red-300 hover:text-red-600'
+                          ? 'bg-rose-600 text-white border border-rose-600 shadow-md ring-2 ring-rose-300 dark:ring-rose-900/50'
+                          : 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/60 dark:hover:bg-rose-900/60'
                       }`}
                     >
-                      <Heart size={14} className={isLiked ? 'fill-white' : ''} />
-                      <span>+1 Vu aussi</span>
-                      <span className="ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] bg-black/10 dark:bg-white/10">
+                      <Heart
+                        size={14}
+                        className={`transition-transform duration-200 ${isLiked ? 'fill-white scale-110' : 'fill-rose-500/20 text-rose-600 dark:text-rose-400'}`}
+                      />
+                      <span>J’aime</span>
+                      <span
+                        className={`ml-0.5 px-1.5 py-0.2 rounded-full text-[11px] font-black ${
+                          isLiked
+                            ? 'bg-white/20 text-white'
+                            : 'bg-rose-200/70 dark:bg-rose-900/70 text-rose-800 dark:text-rose-200'
+                        }`}
+                      >
                         {currentLikes}
                       </span>
                     </button>
 
-                    {/* Bouton Commentaires */}
+                    {/* 2. Bouton VUES / EXPLORATIONS (Bleu / Cyan lumineux interactif) */}
                     <button
                       type="button"
-                      onClick={() => setOpenComments((prev) => ({ ...prev, [post.id]: !prev[post.id] }))}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white dark:bg-navy-800 text-navy-700 dark:text-slate-200 border border-slate-200 dark:border-navy-700 hover:bg-slate-100 dark:hover:bg-navy-700 transition active:scale-95 cursor-pointer"
+                      aria-label="Nombre d'explorations du post"
+                      onClick={() => handleIncrementView(post.id)}
+                      title="Explorations : personnes ayant consulté ce post"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all active:scale-95 cursor-pointer shadow-xs bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-900/60 dark:hover:bg-sky-900/60"
                     >
-                      <MessageCircle size={14} />
-                      <span>{(post.comments || []).length}</span>
+                      <Eye size={14} className="text-sky-600 dark:text-sky-400" />
+                      <span>Vues</span>
+                      <span className="ml-0.5 px-1.5 py-0.2 rounded-full text-[11px] font-black bg-sky-200/70 dark:bg-sky-900/70 text-sky-800 dark:text-sky-200">
+                        {currentViews}
+                      </span>
+                    </button>
+
+                    {/* 3. Bouton COMMENTAIRES / AVIS (Ambre / Or chaleureux interactif) */}
+                    <button
+                      type="button"
+                      aria-label="Commentaires et avis riverains"
+                      onClick={() => setOpenComments((prev) => ({ ...prev, [post.id]: !prev[post.id] }))}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all active:scale-95 cursor-pointer shadow-xs ${
+                        areCommentsOpen
+                          ? 'bg-amber-500 text-white border border-amber-500 shadow-md ring-2 ring-amber-300 dark:ring-amber-900/50'
+                          : 'bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/60 dark:hover:bg-amber-900/60'
+                      }`}
+                    >
+                      <MessageCircle
+                        size={14}
+                        className={areCommentsOpen ? 'text-white' : 'text-amber-600 dark:text-amber-400'}
+                      />
+                      <span>Avis</span>
+                      <span
+                        className={`ml-0.5 px-1.5 py-0.2 rounded-full text-[11px] font-black ${
+                          areCommentsOpen
+                            ? 'bg-white/20 text-white'
+                            : 'bg-amber-200/70 dark:bg-amber-900/70 text-amber-800 dark:text-amber-200'
+                        }`}
+                      >
+                        {(post.comments || []).length}
+                      </span>
                     </button>
                   </div>
 
-                  {/* Bouton Partager */}
+                  {/* 4. Bouton PARTAGER (Violet / Pourpre élégant interactif) */}
                   <button
                     type="button"
                     onClick={() => handleShare(post)}
-                    title="Partager cette observation"
-                    className="p-2 rounded-xl text-slate-500 hover:text-navy-900 dark:hover:text-white transition active:scale-95 cursor-pointer"
+                    title="Partager ce post avec les voisins"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all active:scale-95 cursor-pointer shadow-xs bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-900/60 dark:hover:bg-purple-900/60"
                   >
                     {copiedShareId === post.id ? (
-                      <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                        <Check size={14} /> Copié
-                      </span>
+                      <>
+                        <Check size={14} className="text-emerald-600 dark:text-emerald-400" />
+                        <span className="text-emerald-700 dark:text-emerald-300">Copié</span>
+                      </>
                     ) : (
-                      <Share2 size={16} />
+                      <>
+                        <Share2 size={14} className="text-purple-600 dark:text-purple-400" />
+                        <span>Partager</span>
+                      </>
                     )}
                   </button>
                 </div>
