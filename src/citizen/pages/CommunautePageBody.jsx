@@ -54,11 +54,16 @@ export default function CommunautePageBody() {
   const [copiedShareId, setCopiedShareId] = useState(null);
   const [previewImageModal, setPreviewImageModal] = useState(null);
 
-  // Likes gérés en local
+  // Likes gérés en local avec nettoyage strict des clés corrompues (ex: 'undefined', 'backend-undefined')
   const [likesState, setLikesState] = useState(() => {
     try {
       const saved = localStorage.getItem('mbeund_mi_community_likes');
-      return saved ? JSON.parse(saved) : {};
+      if (!saved) return {};
+      const parsed = JSON.parse(saved);
+      delete parsed['undefined'];
+      delete parsed['backend-undefined'];
+      delete parsed['null'];
+      return parsed;
     } catch {
       return {};
     }
@@ -75,7 +80,12 @@ export default function CommunautePageBody() {
   const [viewsState, setViewsState] = useState(() => {
     try {
       const saved = localStorage.getItem('mbeund_mi_community_views');
-      return saved ? JSON.parse(saved) : {};
+      if (!saved) return {};
+      const parsed = JSON.parse(saved);
+      delete parsed['undefined'];
+      delete parsed['backend-undefined'];
+      delete parsed['null'];
+      return parsed;
     } catch {
       return {};
     }
@@ -128,41 +138,53 @@ export default function CommunautePageBody() {
     }
   };
 
-  // Fusion des publications locales + signalements réels du backend
+  // Fusion des publications locales + signalements réels du backend avec identifiants strictement uniques
   const allPosts = useMemo(() => {
-    // 1. Signalements réels issus de la base de données Django
+    // 1. Signalements réels issus de la base de données Django (extraction souple et ID 100% unique)
     const backendItems = [];
-    if (signalementsData?.results?.features) {
-      signalementsData.results.features.forEach((feat) => {
-        const p = feat.properties;
-        const isResolu = !!p.valide;
-        backendItems.push({
-          id: `backend-${p.id}`,
-          isBackendSignalement: true,
-          typePost: isResolu ? 'resolu' : 'signalement',
-          badgeFiltre: isResolu ? 'Résolu & Sécurisé' : 'Signalement terrain',
-          author: {
-            name: p.citoyen_prenom ? `${p.citoyen_prenom} ${p.citoyen_nom || ''}`.trim() : 'Sentinelle Citoyenne',
-            avatar: '/images/avatar-amadou.jpg',
-            quartier: p.citoyen_quartier || p.quartier || 'Thiaroye-sur-Mer',
-            role: 'Signalement Terrain',
-          },
-          date: p.date_creation
-            ? new Date(p.date_creation).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
-            : 'Récemment',
-          dureeType: 'Post durable',
-          categorie: p.categorie || 'Inondation',
-          titre: p.titre || 'Observation terrain',
-          texte: p.description || 'Montée des eaux observée sur la voie publique.',
-          image: p.photo || null,
-          statut: isResolu ? 'resolu' : 'en_cours',
-          statutLabel: isResolu ? 'Vérifié par la mairie' : 'En attente de traitement',
-          baseLikes: 5,
-          baseViews: 38 + ((p.id * 17) % 52),
-          comments: [],
-        });
+    const rawFeatures = Array.isArray(signalementsData?.results?.features)
+      ? signalementsData.results.features
+      : Array.isArray(signalementsData?.features)
+      ? signalementsData.features
+      : Array.isArray(signalementsData?.results)
+      ? signalementsData.results
+      : Array.isArray(signalementsData)
+      ? signalementsData
+      : [];
+
+    rawFeatures.forEach((feat, idx) => {
+      const p = feat.properties || feat;
+      const isResolu = !!p.valide;
+      // IMPORTANT : Utilise feat.id ou p.id ou fallback avec index pour garantir l'unicité stricte
+      const uniqueRawId = feat.id ?? p.id ?? feat.pk ?? p.pk ?? `idx-${idx}`;
+      const sigId = `backend-sig-${uniqueRawId}`;
+
+      backendItems.push({
+        id: sigId,
+        isBackendSignalement: true,
+        typePost: isResolu ? 'resolu' : 'signalement',
+        badgeFiltre: isResolu ? 'Résolu & Sécurisé' : 'Signalement terrain',
+        author: {
+          name: p.citoyen_prenom ? `${p.citoyen_prenom} ${p.citoyen_nom || ''}`.trim() : 'Sentinelle Citoyenne',
+          avatar: '/images/avatar-amadou.jpg',
+          quartier: p.citoyen_quartier || p.quartier || 'Thiaroye-sur-Mer',
+          role: 'Signalement Terrain',
+        },
+        date: p.date_creation
+          ? new Date(p.date_creation).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+          : 'Récemment',
+        dureeType: 'Post durable',
+        categorie: p.categorie || 'Inondation',
+        titre: p.titre || 'Observation terrain',
+        texte: p.description || 'Montée des eaux observée sur la voie publique.',
+        image: p.photo || null,
+        statut: isResolu ? 'resolu' : 'en_cours',
+        statutLabel: isResolu ? 'Vérifié par la mairie' : 'En attente de traitement',
+        baseLikes: 5,
+        baseViews: 38 + ((idx * 17) % 52),
+        comments: [],
       });
-    }
+    });
 
     // 2. Posts durables de la communauté avec nouvelles images de Thiaroye et posts sans images
     const riverainsItems = COMMUNAUTE_POSTS.map((r) => ({
@@ -221,8 +243,9 @@ export default function CommunautePageBody() {
     });
   }, [allPosts, filter]);
 
-  // Action like / cœurs (représente l'appréciation ou le soutien de la communauté)
+  // Action like / cœurs : bascule UNIQUEMENT le post ciblé par son identifiant unique
   const handleToggleLike = (postId) => {
+    if (!postId) return;
     setLikesState((prev) => {
       const isCurrentlyLiked = !!prev[postId];
       return {
@@ -233,17 +256,20 @@ export default function CommunautePageBody() {
   };
 
   const getLikesCount = (postId, baseLikes) => {
+    if (!postId) return baseLikes;
     const isLiked = !!likesState[postId];
     return baseLikes + (isLiked ? 1 : 0);
   };
 
-  // Action vues (représente le nombre de fois où la publication a été consultée/explorée)
+  // Action vues : incrémente UNIQUEMENT le post ciblé
   const getViewsCount = (postId, baseViews) => {
+    if (!postId) return baseViews || 15;
     const extra = viewsState[postId] || 0;
     return (baseViews || 15) + extra;
   };
 
   const handleIncrementView = (postId) => {
+    if (!postId) return;
     setViewsState((prev) => {
       const current = prev[postId] || 0;
       return {
@@ -316,7 +342,7 @@ export default function CommunautePageBody() {
         : 'Signalement actif · Traitement requis';
 
     const newPost = {
-      id: `user-${Date.now()}`,
+      id: `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       isBackendSignalement: false,
       typePost: modalType,
       badgeFiltre: badgeLabel,
@@ -526,7 +552,7 @@ export default function CommunautePageBody() {
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════════ */}
-      {/* 4. FIL D'ACTUALITÉ : GRILLE 2 COLONNES AVEC BOUTONS SOCIAUX COLORÉS */}
+      {/* 4. FIL D'ACTUALITÉ : GRILLE 2 COLONNES AVEC ANIMATION DU J'AIME     */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {filteredPosts.length === 0 ? (
         <div className="bg-white dark:bg-[#071322] border border-navy-100 dark:border-navy-800 rounded-3xl p-8 text-center space-y-3">
@@ -680,32 +706,39 @@ export default function CommunautePageBody() {
                 </div>
 
                 {/* ═══════════════════════════════════════════════════════════════ */}
-                {/* BARRE D'ACTIONS SOCIALES AVEC COULEURS DISTINCTES & CLICQUABLES */}
-                {/* Séparation distincte entre Cœurs (J'aime) et Vues (Explorations) */}
+                {/* BARRE D'ACTIONS SOCIALES AVEC COULEURS ET ANIMATION ROUGE       */}
+                {/* Clic isolé strictement sur le post avec e.stopPropagation()    */}
                 {/* ═══════════════════════════════════════════════════════════════ */}
                 <div
                   onClick={(e) => e.stopPropagation()}
                   className="px-3.5 py-3 sm:px-4 border-t border-navy-50 dark:border-navy-800/80 bg-slate-50/70 dark:bg-navy-900/40 flex items-center justify-between gap-1.5 flex-wrap"
                 >
                   <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                    {/* 1. Bouton CŒURS / J'AIME (Rose/Rouge rubis interactif) */}
+                    {/* 1. Bouton CŒURS / J'AIME avec animation rouge et isolation stricte du post */}
                     <button
                       type="button"
                       aria-label="J'aime le post"
-                      onClick={() => handleToggleLike(post.id)}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all active:scale-95 cursor-pointer shadow-xs ${
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleLike(post.id);
+                      }}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all duration-300 active:scale-90 cursor-pointer shadow-xs select-none ${
                         isLiked
-                          ? 'bg-rose-600 text-white border border-rose-600 shadow-md ring-2 ring-rose-300 dark:ring-rose-900/50'
+                          ? 'bg-rose-600 text-white border border-rose-600 shadow-md ring-2 ring-rose-400 dark:ring-rose-800 scale-[1.02]'
                           : 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/60 dark:hover:bg-rose-900/60'
                       }`}
                     >
                       <Heart
                         size={14}
-                        className={`transition-transform duration-200 ${isLiked ? 'fill-white scale-110' : 'fill-rose-500/20 text-rose-600 dark:text-rose-400'}`}
+                        className={`transition-all duration-300 ${
+                          isLiked
+                            ? 'fill-white text-white scale-125 animate-pulse'
+                            : 'fill-rose-500/20 text-rose-600 dark:text-rose-400'
+                        }`}
                       />
                       <span>J’aime</span>
                       <span
-                        className={`ml-0.5 px-1.5 py-0.2 rounded-full text-[11px] font-black ${
+                        className={`ml-0.5 px-1.5 py-0.2 rounded-full text-[11px] font-black transition-colors ${
                           isLiked
                             ? 'bg-white/20 text-white'
                             : 'bg-rose-200/70 dark:bg-rose-900/70 text-rose-800 dark:text-rose-200'
@@ -719,9 +752,12 @@ export default function CommunautePageBody() {
                     <button
                       type="button"
                       aria-label="Nombre d'explorations du post"
-                      onClick={() => handleIncrementView(post.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleIncrementView(post.id);
+                      }}
                       title="Explorations : personnes ayant consulté ce post"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all active:scale-95 cursor-pointer shadow-xs bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-900/60 dark:hover:bg-sky-900/60"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all duration-200 active:scale-95 cursor-pointer shadow-xs bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-900/60 dark:hover:bg-sky-900/60"
                     >
                       <Eye size={14} className="text-sky-600 dark:text-sky-400" />
                       <span>Vues</span>
@@ -734,8 +770,11 @@ export default function CommunautePageBody() {
                     <button
                       type="button"
                       aria-label="Commentaires et avis riverains"
-                      onClick={() => setOpenComments((prev) => ({ ...prev, [post.id]: !prev[post.id] }))}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all active:scale-95 cursor-pointer shadow-xs ${
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenComments((prev) => ({ ...prev, [post.id]: !prev[post.id] }));
+                      }}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all duration-200 active:scale-95 cursor-pointer shadow-xs ${
                         areCommentsOpen
                           ? 'bg-amber-500 text-white border border-amber-500 shadow-md ring-2 ring-amber-300 dark:ring-amber-900/50'
                           : 'bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/60 dark:hover:bg-amber-900/60'
@@ -761,9 +800,12 @@ export default function CommunautePageBody() {
                   {/* 4. Bouton PARTAGER (Violet / Pourpre élégant interactif) */}
                   <button
                     type="button"
-                    onClick={() => handleShare(post)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleShare(post);
+                    }}
                     title="Partager ce post avec les voisins"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all active:scale-95 cursor-pointer shadow-xs bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-900/60 dark:hover:bg-purple-900/60"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all duration-200 active:scale-95 cursor-pointer shadow-xs bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-900/60 dark:hover:bg-purple-900/60"
                   >
                     {copiedShareId === post.id ? (
                       <>

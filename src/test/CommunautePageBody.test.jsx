@@ -148,5 +148,32 @@ describe('CommunautePageBody', () => {
     expect(premierJaime).toHaveTextContent(/J’aime/i);
     expect(premierVue).toHaveTextContent(/Vues/i);
   });
+
+  it('active uniquement le post aime sans affecter les autres posts', () => {
+    render(
+      <MemoryRouter>
+        <CommunautePageBody />
+      </MemoryRouter>
+    );
+
+    const boutonsJaime = screen.getAllByRole('button', { name: /J'aime le post/i });
+    expect(boutonsJaime.length).toBeGreaterThan(1);
+
+    const premierPost = boutonsJaime[0];
+    const deuxiemePost = boutonsJaime[1];
+
+    // Au départ, aucun n'est liké
+    expect(premierPost).toHaveClass('bg-rose-50');
+    expect(deuxiemePost).toHaveClass('bg-rose-50');
+
+    // Clic sur le premier post
+    fireEvent.click(premierPost);
+
+    // Seul le premier post passe en rose/rouge actif
+    expect(premierPost).toHaveClass('bg-rose-600');
+    // Le deuxième post reste INTACT (non liké)
+    expect(deuxiemePost).toHaveClass('bg-rose-50');
+    expect(deuxiemePost).not.toHaveClass('bg-rose-600');
+  });
 });
 
