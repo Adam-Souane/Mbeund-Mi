@@ -231,5 +231,24 @@ describe('CommunautePageBody', () => {
     expect(screen.getByText(/Carrefour Ndakhane submergé après l’averse/i)).toBeInTheDocument();
     expect(screen.getByText(/Montée des eaux dans la ruelle basse/i)).toBeInTheDocument();
   });
+
+  it('grise le contour de la story lorsqu’elle est visionnee par le citoyen', () => {
+    localStorage.clear();
+    render(
+      <MemoryRouter>
+        <CommunautePageBody />
+      </MemoryRouter>
+    );
+
+    const storyRing = screen.getByTestId('story-ring-story-1');
+    expect(storyRing).toHaveClass('bg-gradient-to-tr');
+
+    // Clic sur la story pour la visionner
+    const storyButton = screen.getByRole('button', { name: /Moussa Diop/i });
+    fireEvent.click(storyButton);
+
+    // L'anneau passe en grisé pour indiquer qu'elle a été lue
+    expect(storyRing).toHaveClass('bg-slate-300');
+  });
 });
 

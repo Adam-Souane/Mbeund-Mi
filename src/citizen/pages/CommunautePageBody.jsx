@@ -42,6 +42,27 @@ export default function CommunautePageBody() {
   const [filter, setFilter] = useState('tous');
   const [activeStory, setActiveStory] = useState(null);
 
+  // Stories lues / vues stockées en local pour griser l'anneau de l'avatar comme sur l'accueil
+  const [viewedStories, setViewedStories] = useState(() => {
+    try {
+      const saved = localStorage.getItem('mbeund_mi_community_viewed_stories');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const handleOpenStory = (story) => {
+    setActiveStory(story);
+    setViewedStories((prev) => {
+      const next = { ...prev, [story.id]: true };
+      try {
+        localStorage.setItem('mbeund_mi_community_viewed_stories', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
   // État de la popup "Nouveau post"
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
   const [modalPostText, setModalPostText] = useState('');
@@ -472,35 +493,57 @@ export default function CommunautePageBody() {
             </span>
           </Link>
 
-          {/* Stories des riverains de Thiaroye (taille agrandie avec bordure dégradée Instagram) */}
-          {STORIES_COMMUNAUTE.map((story) => (
-            <button
-              key={story.id}
-              type="button"
-              onClick={() => setActiveStory(story)}
-              className="flex flex-col items-center flex-shrink-0 group cursor-pointer text-left transition-transform active:scale-95"
-            >
-              <div className="relative w-18 h-18 sm:w-20 sm:h-20 md:w-22 md:h-22 rounded-full p-[3px] bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-600 group-hover:from-red-600 group-hover:to-amber-400 shadow-md group-hover:shadow-lg transition-all duration-300">
-                <div className="w-full h-full rounded-full overflow-hidden bg-white dark:bg-navy-950 p-[2px]">
-                  <img
-                    src={story.avatar}
-                    alt={story.relais}
-                    className="w-full h-full rounded-full object-cover transition-transform duration-500 group-hover:scale-105"
+          {/* Stories des riverains de Thiaroye (taille agrandie avec bordure dégradée Instagram si non lue, grisée si lue) */}
+          {STORIES_COMMUNAUTE.map((story) => {
+            const isRead = !!viewedStories[story.id];
+            return (
+              <button
+                key={story.id}
+                type="button"
+                onClick={() => handleOpenStory(story)}
+                className="flex flex-col items-center flex-shrink-0 group cursor-pointer text-left transition-transform active:scale-95"
+              >
+                <div
+                  data-testid={`story-ring-${story.id}`}
+                  className={`relative w-18 h-18 sm:w-20 sm:h-20 md:w-22 md:h-22 rounded-full p-[3px] transition-all duration-300 ${
+                    isRead
+                      ? 'bg-slate-300 dark:bg-slate-700 opacity-70 group-hover:opacity-95 group-hover:bg-slate-400'
+                      : 'bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-600 group-hover:from-red-600 group-hover:to-amber-400 shadow-md group-hover:shadow-lg'
+                  }`}
+                >
+                  <div className="w-full h-full rounded-full overflow-hidden bg-white dark:bg-navy-950 p-[2px]">
+                    <img
+                      src={story.avatar}
+                      alt={story.relais}
+                      className="w-full h-full rounded-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  </div>
+
+                  {/* Point pulsant indicateur d'alerte en direct si non lu, ou discret grisé si déjà lu */}
+                  <span
+                    className={`absolute bottom-0.5 right-0.5 w-4 h-4 rounded-full border-2 border-white dark:border-[#071322] ${
+                      isRead ? 'bg-slate-400' : `${story.dotColor} animate-pulse shadow-xs`
+                    }`}
                   />
                 </div>
 
-                {/* Point pulsant indicateur d'alerte en direct */}
-                <span className={`absolute bottom-0.5 right-0.5 w-4 h-4 rounded-full border-2 border-white dark:border-[#071322] ${story.dotColor} animate-pulse shadow-xs`} />
-              </div>
-
-              <span className="text-xs font-black text-navy-900 dark:text-white mt-2 text-center truncate max-w-[76px] sm:max-w-[88px]">
-                {story.relais}
-              </span>
-              <span className="text-[10px] text-[#CC131A] dark:text-red-400 font-extrabold text-center truncate max-w-[76px] sm:max-w-[88px]">
-                {story.quartier}
-              </span>
-            </button>
-          ))}
+                <span
+                  className={`text-xs mt-2 text-center truncate max-w-[76px] sm:max-w-[88px] ${
+                    isRead ? 'font-bold text-slate-500 dark:text-slate-400' : 'font-black text-navy-900 dark:text-white'
+                  }`}
+                >
+                  {story.relais}
+                </span>
+                <span
+                  className={`text-[10px] text-center truncate max-w-[76px] sm:max-w-[88px] ${
+                    isRead ? 'font-semibold text-slate-400 dark:text-slate-500' : 'font-extrabold text-[#CC131A] dark:text-red-400'
+                  }`}
+                >
+                  {story.quartier}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </section>
 
