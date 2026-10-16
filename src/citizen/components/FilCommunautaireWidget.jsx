@@ -17,6 +17,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { useSignalementsApercu } from '../../shared/hooks/useSignalements';
+import { sanitizePublicText, sanitizePublicAuthor } from '../../shared/utils/sanitizer';
 
 // Signalements témoins ancrés exclusivement sur le périmètre de Thiaroye-sur-Mer avec images uniques et réelles
 const SIGNALEMENTS_INITIAUX = [
@@ -136,12 +137,14 @@ export default function FilCommunautaireWidget() {
     e.preventDefault();
     if (!quickDesc.trim()) return;
 
+    const cleanDesc = sanitizePublicText(quickDesc.trim());
+
     const newReport = {
       id: Date.now(),
       quartier: quickSecteur,
       rue: 'Signalement riverain direct',
       categorie: quickCategorie,
-      description: quickDesc.trim(),
+      description: cleanDesc,
       image: '/images/prevention-pluie.jpg',
       statut: 'transmis',
       statut_label: 'Transmis au relais local',
@@ -178,7 +181,7 @@ export default function FilCommunautaireWidget() {
   const apiList = rawApiItems.map((s, idx) => {
     let rueTexte = 'Secteur Thiaroye-sur-Mer';
     if (typeof s.localisation === 'string' && s.localisation.trim()) {
-      rueTexte = s.localisation;
+      rueTexte = sanitizePublicText(s.localisation);
     } else if (s.citoyen_quartier && typeof s.citoyen_quartier === 'string') {
       rueTexte = `Secteur ${s.citoyen_quartier}`;
     }
@@ -192,12 +195,16 @@ export default function FilCommunautaireWidget() {
       photoUrl = s.photo;
     }
 
+    const rawDesc = typeof s.description === 'string' && s.description ? s.description : 'Incident hydrologique signalé par un habitant.';
+    const cleanDesc = sanitizePublicText(rawDesc);
+    const rawCat = typeof s.categorie_display === 'string' ? s.categorie_display : (typeof s.categorie === 'string' ? s.categorie : 'Inondation');
+
     return {
       id: idVal,
       quartier: (s.zone && typeof s.zone.quartier === 'string' && s.zone.quartier) || 'Thiaroye-sur-Mer',
       rue: rueTexte,
-      categorie: typeof s.categorie_display === 'string' ? s.categorie_display : (typeof s.categorie === 'string' ? s.categorie : 'Inondation'),
-      description: typeof s.description === 'string' && s.description ? s.description : 'Incident hydrologique signalé par un habitant.',
+      categorie: rawCat,
+      description: cleanDesc,
       image: photoUrl,
       statut: s.valide ? 'resolu' : 'en_cours',
       statut_label: s.valide ? 'Validé par secours' : 'Intervention en cours',

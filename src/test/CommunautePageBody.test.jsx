@@ -175,5 +175,32 @@ describe('CommunautePageBody', () => {
     expect(deuxiemePost).toHaveClass('bg-rose-50');
     expect(deuxiemePost).not.toHaveClass('bg-rose-600');
   });
+
+  it('masque les numeros de telephone et supprime les balises SMS pour proteger la vie privee (RGPD)', () => {
+    render(
+      <MemoryRouter>
+        <CommunautePageBody />
+      </MemoryRouter>
+    );
+
+    // Ouvre la modale pour tester la saisie avec numéro de téléphone et tag SMS
+    const nouveauPostBtn = screen.getByRole('button', { name: /Nouveau post/i });
+    fireEvent.click(nouveauPostBtn);
+
+    const textarea = screen.getByPlaceholderText(/Que se passe-t-il dans votre ruelle/i);
+    fireEvent.change(textarea, {
+      target: { value: '[SMS de 221775555555] Ruelle inondée, contactez le 77 123 45 67 urgence 35 ans' },
+    });
+
+    const submitBtn = screen.getByRole('button', { name: /Publier le post/i });
+    fireEvent.click(submitBtn);
+
+    // Vérifie que les numéros de téléphone et le préfixe SMS sont totalement supprimés
+    expect(screen.queryByText(/221775555555/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/\[SMS de/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/77 123 45 67/)).not.toBeInTheDocument();
+    // Le contenu légitime est préservé
+    expect(screen.getByText(/Ruelle inondée, contactez le urgence/i)).toBeInTheDocument();
+  });
 });
 

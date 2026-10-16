@@ -28,6 +28,7 @@ import CitizenShell from '../shared/CitizenShell';
 import { useAuth } from '../../auth/AuthContext';
 import { useSignalementsApercu } from '../../shared/hooks/useSignalements';
 import { STORIES_COMMUNAUTE, COMMUNAUTE_POSTS } from '../../shared/data/riverainsData';
+import { sanitizePublicText, sanitizePublicAuthor } from '../../shared/utils/sanitizer';
 
 export default function CommunautePageBody() {
   const { username, user } = useAuth();
@@ -159,13 +160,19 @@ export default function CommunautePageBody() {
       const uniqueRawId = feat.id ?? p.id ?? feat.pk ?? p.pk ?? `idx-${idx}`;
       const sigId = `backend-sig-${uniqueRawId}`;
 
+      // Nettoyage strict RGPD / Confidentialité : suppression des [SMS de 221...], numéros de tél et mentions privées
+      const rawAuthor = p.citoyen_prenom ? `${p.citoyen_prenom} ${p.citoyen_nom || ''}`.trim() : null;
+      const cleanAuthor = sanitizePublicAuthor(rawAuthor, 'Sentinelle Citoyenne');
+      const cleanTitre = sanitizePublicText(p.titre || p.categorie || 'Observation terrain');
+      const cleanTexte = sanitizePublicText(p.description || 'Montée des eaux observée sur la voie publique.');
+
       backendItems.push({
         id: sigId,
         isBackendSignalement: true,
         typePost: isResolu ? 'resolu' : 'signalement',
         badgeFiltre: isResolu ? 'Résolu & Sécurisé' : 'Signalement terrain',
         author: {
-          name: p.citoyen_prenom ? `${p.citoyen_prenom} ${p.citoyen_nom || ''}`.trim() : 'Sentinelle Citoyenne',
+          name: cleanAuthor,
           avatar: '/images/avatar-amadou.jpg',
           quartier: p.citoyen_quartier || p.quartier || 'Thiaroye-sur-Mer',
           role: 'Signalement Terrain',
@@ -175,8 +182,8 @@ export default function CommunautePageBody() {
           : 'Récemment',
         dureeType: 'Post durable',
         categorie: p.categorie || 'Inondation',
-        titre: p.titre || 'Observation terrain',
-        texte: p.description || 'Montée des eaux observée sur la voie publique.',
+        titre: cleanTitre,
+        texte: cleanTexte,
         image: p.photo || null,
         statut: isResolu ? 'resolu' : 'en_cours',
         statutLabel: isResolu ? 'Vérifié par la mairie' : 'En attente de traitement',
@@ -193,7 +200,7 @@ export default function CommunautePageBody() {
       typePost: r.typePost || (r.statut === 'resolu' ? 'resolu' : 'signalement'),
       badgeFiltre: r.badgeFiltre || (r.statut === 'resolu' ? 'Résolu & Sécurisé' : 'Signalement terrain'),
       author: {
-        name: r.auteur,
+        name: sanitizePublicAuthor(r.auteur),
         avatar: r.avatar,
         quartier: r.quartier,
         role: r.statut === 'resolu' ? 'Relais Quartier' : 'Résident',
@@ -201,8 +208,8 @@ export default function CommunautePageBody() {
       date: r.temps,
       dureeType: r.dureeType,
       categorie: r.categorie,
-      titre: r.titre,
-      texte: r.description,
+      titre: sanitizePublicText(r.titre),
+      texte: sanitizePublicText(r.description),
       image: r.photo || null,
       statut: r.statut,
       statutLabel: r.statutLabel,
@@ -303,12 +310,15 @@ export default function CommunautePageBody() {
     const text = commentInputs[postId]?.trim();
     if (!text) return;
 
+    const sanitizedComment = sanitizePublicText(text);
+    const sanitizedAuthor = sanitizePublicAuthor(nomCitoyen, 'Citoyen');
+
     setUserPosts((prev) =>
       prev.map((p) => {
         if (p.id === postId) {
           return {
             ...p,
-            comments: [...(p.comments || []), { id: Date.now(), author: nomCitoyen, text, time: 'À l’instant' }],
+            comments: [...(p.comments || []), { id: Date.now(), author: sanitizedAuthor, text: sanitizedComment, time: 'À l’instant' }],
           };
         }
         return p;
@@ -341,22 +351,26 @@ export default function CommunautePageBody() {
         ? 'Mobilisation citoyenne active'
         : 'Signalement actif · Traitement requis';
 
+    const cleanText = sanitizePublicText(modalPostText.trim());
+    const cleanAuthor = sanitizePublicAuthor(nomCitoyen, 'Citoyen');
+    const cleanCategorie = sanitizePublicText(modalCategorie);
+
     const newPost = {
       id: `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       isBackendSignalement: false,
       typePost: modalType,
       badgeFiltre: badgeLabel,
       author: {
-        name: nomCitoyen,
+        name: cleanAuthor,
         avatar: '/images/avatar-amadou.jpg',
         quartier: modalQuartier,
         role: modalType === 'entraide' ? 'Volontaire engagé' : 'Citoyen mobilisé',
       },
       date: 'Posté à l’instant',
       dureeType: modalType === 'resolu' ? 'Post durable (résolu)' : 'Post durable (actif)',
-      categorie: modalCategorie,
-      titre: modalCategorie,
-      texte: modalPostText.trim(),
+      categorie: cleanCategorie,
+      titre: cleanCategorie,
+      texte: cleanText,
       image: chosenImage,
       statut: modalType === 'resolu' ? 'resolu' : 'en_cours',
       statutLabel,
