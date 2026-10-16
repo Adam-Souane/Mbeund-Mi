@@ -8,6 +8,7 @@ import CitizenShell from '../shared/CitizenShell';
 import { createSignalement } from '../../api/endpoints/signalements';
 import { flattenApiErrors } from '../../shared/utils/apiErrors';
 import { useGeolocation } from '../../shared/hooks/useGeolocation';
+import { useNotifications } from '../../shared/contexts/NotificationContext';
 
 const CATEGORIES = [
   { value: 'inondation', label: 'Inondation' },
@@ -22,6 +23,7 @@ const THIAROYE_CENTER = { lat: 14.75, lon: -17.38 };
 export default function SignalerPageBody() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { addNotification } = useNotifications();
   const { position, status: geoStatus, error: geoError, locate } = useGeolocation();
 
   const [categorie, setCategorie] = useState('inondation');
@@ -41,6 +43,13 @@ export default function SignalerPageBody() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['signalements'] });
       queryClient.invalidateQueries({ queryKey: ['mes-signalements'] });
+      addNotification({
+        type: 'signalement',
+        data: {
+          titre: 'Signalement transmis aux autorités',
+          message: `Votre observation (${categorie}) a été transmise à la cellule de crise et aux relais de Thiaroye.`,
+        },
+      });
       setSubmitted(true);
     },
   });

@@ -75,10 +75,14 @@ export default function OTPVerificationPage() {
 
   if (!username) {
     return (
-      <AuthLayout variante="verification" className="px-6 py-10">
-        <div className="w-full max-w-[480px] lg:max-w-[560px] text-center">
-          <p className={`text-lg font-semibold ${ton(darkMode, 'text-navy-900', 'text-white')}`}>Erreur : données manquantes</p>
-          <button onClick={() => navigate('/signup')} className="mt-4 text-navy-600 dark:text-navy-400 hover:underline">
+      <AuthLayout variante="verification">
+        <div className="w-full max-w-md bg-white rounded-2xl border border-slate-200/90 shadow-xl p-7 sm:p-9 text-center">
+          <p className="text-base font-bold text-slate-800">Données manquantes</p>
+          <p className="text-xs text-slate-500 mt-1">Aucune session de vérification n'est en cours.</p>
+          <button
+            onClick={() => navigate('/signup')}
+            className="mt-5 inline-block text-xs font-bold text-[#CC131A] hover:text-[#A01016] hover:underline cursor-pointer"
+          >
             Retour à l’inscription
           </button>
         </div>
@@ -138,23 +142,28 @@ export default function OTPVerificationPage() {
   const peutChangerDeCanal = Boolean(etat.emailDisponible) && (autreCanal === 'email' || smsDisponible);
 
   return (
-    <AuthLayout variante="verification" className="px-4 py-8">
-      <div className="flex flex-col items-center justify-center w-full my-auto px-4">
-        <div className="w-full max-w-md sm:max-w-lg">
-          <button
-            onClick={() => navigate('/signup')}
-            className="inline-flex items-center gap-2 mb-4 px-3 py-1.5 rounded-lg bg-black/35 backdrop-blur-md border border-white/20 text-white text-xs font-bold tracking-wide uppercase shadow-md hover:bg-black/50 transition cursor-pointer"
-          >
-            <ArrowLeft size={16} />
-            Retour
-          </button>
+    <AuthLayout variante="verification">
+      <div className="w-full max-w-md sm:max-w-lg">
+        <button
+          type="button"
+          onClick={() => navigate('/signup')}
+          className="inline-flex items-center gap-1.5 mb-4 text-xs font-semibold text-slate-500 hover:text-[#0B2545] transition cursor-pointer"
+        >
+          <ArrowLeft size={15} />
+          <span>Retour à l’inscription</span>
+        </button>
 
-          <div className={CARTE}>
-            <div className="text-center mb-6">
-              <h1 className={`text-xl sm:text-2xl font-black ${ton(darkMode, 'text-navy-900', 'text-white')}`}>
-                {reussi ? 'Vérification réussie' : 'Vérifier votre identité'}
-              </h1>
-            </div>
+        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xl p-7 sm:p-9">
+          <div className="mb-6 text-left">
+            <h1 className="text-2xl sm:text-3xl font-black text-[#0B2545] tracking-tight">
+              {reussi ? 'Vérification réussie' : 'Vérifier votre identité'}
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-500 mt-1.5 leading-relaxed">
+              {reussi
+                ? 'Votre numéro a été validé. Redirection vers votre espace...'
+                : 'Saisissez le code à 6 chiffres envoyé pour valider votre compte citoyen.'}
+            </p>
+          </div>
 
           {reussi ? (
             <VerificationReussie darkMode={darkMode} />
@@ -163,7 +172,7 @@ export default function OTPVerificationPage() {
               <CodeEnvoye darkMode={darkMode} canal={canal} destination={destination} />
 
               <div>
-                <label htmlFor="otp-code" className={`block text-sm font-medium mb-2 ${ton(darkMode, 'text-navy-700', 'text-navy-200')}`}>
+                <label htmlFor="otp-code" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
                   Code à 6 chiffres
                 </label>
                 <input
@@ -183,12 +192,14 @@ export default function OTPVerificationPage() {
                 {error && <p className="text-xs text-red-500 mt-2" role="alert">{error}</p>}
               </div>
 
-              <button type="submit" disabled={loading} className={BOUTON_PRINCIPAL}>
-                {loading ? 'Vérification...' : 'Vérifier le code'}
-              </button>
+              <div className="pt-4">
+                <button type="submit" disabled={loading} className={BOUTON_PRINCIPAL}>
+                  {loading ? 'Vérification...' : 'Vérifier le code'}
+                </button>
+              </div>
 
-              <div className="pt-5 border-t border-navy-100 dark:border-navy-800 mt-6 space-y-3">
-                <p className={`text-xs font-semibold uppercase tracking-wider text-center ${ton(darkMode, 'text-navy-500', 'text-navy-400')}`}>
+              <div className="pt-5 border-t border-slate-100 mt-6 space-y-3">
+                <p className="text-xs font-semibold uppercase tracking-wider text-center text-slate-400">
                   Vous n’avez pas reçu le code ?
                 </p>
 
@@ -197,13 +208,13 @@ export default function OTPVerificationPage() {
                     type="button"
                     onClick={() => renvoyer(canal)}
                     disabled={enAttente || loading}
-                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border text-sm font-semibold transition shadow-sm ${
+                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-bold transition shadow-sm ${
                       enAttente
-                        ? 'bg-navy-50 dark:bg-navy-800/50 text-navy-400 border-navy-200 dark:border-navy-700 cursor-not-allowed'
-                        : 'bg-white dark:bg-navy-800 text-navy-900 dark:text-navy-100 border-navy-200 dark:border-navy-700 hover:border-red hover:text-red cursor-pointer'
+                        ? 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed'
+                        : 'bg-white text-slate-700 border-slate-300 hover:border-[#0B2545] hover:text-[#0B2545] cursor-pointer'
                     }`}
                   >
-                    <RotateCw size={15} className={enAttente ? 'animate-spin' : ''} />
+                    <RotateCw size={14} className={enAttente ? 'animate-spin' : ''} />
                     <span>{enAttente ? `Renvoyer (${resendTimer} s)` : 'Renvoyer le code'}</span>
                   </button>
 
@@ -212,13 +223,13 @@ export default function OTPVerificationPage() {
                       type="button"
                       onClick={() => renvoyer(autreCanal)}
                       disabled={enAttente || loading}
-                      className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border text-sm font-semibold transition shadow-sm ${
+                      className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-bold transition shadow-sm ${
                         enAttente
-                          ? 'bg-navy-50 dark:bg-navy-800/50 text-navy-400 border-navy-200 dark:border-navy-700 cursor-not-allowed'
-                          : 'bg-red text-white hover:bg-red-700 border-red cursor-pointer'
+                          ? 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed'
+                          : 'bg-[#0B2545] text-white hover:bg-[#154275] border-[#0B2545] cursor-pointer'
                       }`}
                     >
-                      <Mail size={15} />
+                      <Mail size={14} />
                       <span>Recevoir par Email</span>
                     </button>
                   )}
@@ -228,7 +239,7 @@ export default function OTPVerificationPage() {
                   <button
                     type="button"
                     onClick={() => navigate('/signup')}
-                    className="text-xs text-red hover:underline inline-flex items-center gap-1 font-semibold transition cursor-pointer"
+                    className="text-xs text-[#CC131A] hover:text-[#A01016] hover:underline inline-flex items-center gap-1 font-semibold transition cursor-pointer"
                   >
                     <span>Numéro incorrect ou faute de frappe ? Modifier mes informations</span>
                   </button>
@@ -238,7 +249,6 @@ export default function OTPVerificationPage() {
           )}
         </div>
       </div>
-    </div>
-  </AuthLayout>
+    </AuthLayout>
   );
 }

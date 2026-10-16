@@ -430,9 +430,16 @@ def mettre_a_jour_previsions_meteo(self):
                 date_prevision__date=date.date(),
                 source='open-meteo'
             ).exists():
+                temp_moy = None
+                if day_forecast.get('temperature_max_c') is not None and day_forecast.get('temperature_min_c') is not None:
+                    temp_moy = round((float(day_forecast['temperature_max_c']) + float(day_forecast['temperature_min_c'])) / 2, 1)
+                elif day_forecast.get('temperature_max_c') is not None:
+                    temp_moy = day_forecast['temperature_max_c']
+
                 PrevisionMeteo.objects.create(
                     date_prevision=date,
                     precipitation_mm=day_forecast['precipitation_mm'],
+                    temperature_c=temp_moy,
                     temperature_max_c=day_forecast['temperature_max_c'],
                     temperature_min_c=day_forecast['temperature_min_c'],
                     source='open-meteo'

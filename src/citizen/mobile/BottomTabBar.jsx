@@ -18,13 +18,13 @@ function TabLink({ to, label, icon: Icon }) {
     <NavLink
       to={to}
       className={({ isActive }) =>
-        `flex flex-col items-center justify-center gap-1 flex-1 py-2 text-[11px] font-semibold ${
-          isActive ? 'text-red' : 'text-navy-400'
+        `flex flex-col items-center justify-center gap-1 flex-1 py-2 text-[11px] font-semibold transition-colors ${
+          isActive ? 'text-[#CC131A] font-black' : 'text-navy-400 hover:text-navy-600 dark:hover:text-navy-200'
         }`
       }
     >
       <Icon size={19} />
-      {label}
+      <span>{label}</span>
     </NavLink>
   );
 }
@@ -36,7 +36,7 @@ function TabLink({ to, label, icon: Icon }) {
  */
 export default function BottomTabBar() {
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-50 bg-white dark:bg-navy border-t border-navy-50 dark:border-navy-800 flex items-stretch max-w-3xl mx-auto lg:hidden">
+    <nav className="fixed bottom-0 inset-x-0 z-50 bg-white/95 dark:bg-[#071322]/95 backdrop-blur-md border-t border-navy-100 dark:border-navy-800 flex items-stretch max-w-3xl mx-auto lg:hidden shadow-lg">
       {SIDE_ITEMS_LEFT.map((item) => (
         <TabLink key={item.to} {...item} />
       ))}
@@ -46,13 +46,13 @@ export default function BottomTabBar() {
           {({ isActive }) => (
             <>
               <span
-                className={`w-12 h-12 rounded-full flex items-center justify-center text-white shadow-lg ${
-                  isActive ? 'bg-red-700' : 'bg-red'
+                className={`w-12 h-12 rounded-full flex items-center justify-center text-white shadow-lg transition-transform active:scale-90 ${
+                  isActive ? 'bg-red-700 ring-4 ring-red-100 dark:ring-red-950' : 'bg-[#CC131A] hover:bg-red-700'
                 }`}
               >
                 <Camera size={20} />
               </span>
-              <span className={`text-[11px] font-semibold mt-1 ${isActive ? 'text-red' : 'text-navy-400'}`}>
+              <span className={`text-[11px] font-semibold mt-1 ${isActive ? 'text-[#CC131A] font-black' : 'text-navy-400'}`}>
                 Signaler
               </span>
             </>

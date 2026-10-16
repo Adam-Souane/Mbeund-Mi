@@ -8,6 +8,19 @@ vi.mock('../citizen/shared/CitizenShell', () => ({
   default: ({ children }) => <div data-testid="citizen-shell">{children}</div>,
 }));
 
+vi.mock('../auth/AuthContext', () => ({
+  useAuth: () => ({
+    user: { id: 1, prenom: 'Mamadou', nom: 'Diop', telephone: '+221771234567', quartier: 'Thiaroye Gare' },
+    isAuthenticated: true,
+  }),
+}));
+
+vi.mock('../shared/contexts/NotificationContext', () => ({
+  useNotifications: () => ({
+    addNotification: vi.fn(),
+  }),
+}));
+
 vi.mock('../shared/hooks/useZones', () => ({
   useZones: () => ({
     data: {

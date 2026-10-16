@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { CheckCircle2, XCircle, ImageOff, Droplets, Copy, User, Phone, MapPin } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { CheckCircle2, XCircle, ImageOff, Droplets, Copy, User, Phone, MapPin, Flame, ThumbsUp } from 'lucide-react';
 import AutoriteShell from '../desktop/AutoriteShell';
 import { useSignalements, useValiderSignalement } from '../../shared/hooks/useSignalements';
 import { flattenApiErrors } from '../../shared/utils/apiErrors';
+import { getTopConfirmedPost } from '../../shared/data/riverainsData';
 import EtatListe from '../../shared/components/EtatListe';
 import Pagination from '../../shared/components/Pagination';
 
@@ -143,6 +144,7 @@ export default function SignalementsTerrainPage() {
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState('attente');
   const { data, isLoading } = useSignalements(page);
+  const topConfirmedPost = useMemo(() => getTopConfirmedPost(), []);
 
   const features = data?.results?.features ?? [];
   const filtered = features.filter((f) => {
@@ -159,6 +161,40 @@ export default function SignalementsTerrainPage() {
           Observations transmises par les riverains · {data?.count ?? 0} au total
         </p>
       </div>
+
+      {/* Bannière Priorité Communautaire : Le plus confirmé par les riverains */}
+      {topConfirmedPost && (
+        <div className="bg-gradient-to-r from-red-50 via-amber-50 to-white dark:from-[#200e12] dark:via-[#1c1214] dark:to-[#071322] border-2 border-[#CC131A] dark:border-red-600 rounded-xl p-4 shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <span className="w-10 h-10 rounded-xl bg-[#CC131A] text-white flex items-center justify-center flex-shrink-0 shadow-sm animate-pulse">
+              <Flame size={20} />
+            </span>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black uppercase text-[#CC131A] dark:text-red-400">
+                  Signalement Citoyen N°1 en Confirmations
+                </span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 dark:bg-red-950/80 text-[#CC131A] dark:text-red-300">
+                  Priorité Haute
+                </span>
+              </div>
+              <h4 className="text-sm font-bold text-navy-900 dark:text-white mt-0.5">
+                {topConfirmedPost.titre} — {topConfirmedPost.auteur} ({topConfirmedPost.quartier})
+              </h4>
+              <p className="text-xs text-navy-600 dark:text-navy-300 line-clamp-1 mt-0.5">
+                {topConfirmedPost.description}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white dark:bg-navy-800 border border-red-200 dark:border-red-900 flex-shrink-0 self-end md:self-auto shadow-xs">
+            <ThumbsUp size={15} className="text-emerald-600 dark:text-emerald-400" />
+            <span className="text-xs font-extrabold text-navy-900 dark:text-white">
+              {topConfirmedPost.totalVotes} confirmations riveraines
+            </span>
+          </div>
+        </div>
+      )}
 
       <div className="flex items-center gap-2">
         {FILTERS.map((f) => (

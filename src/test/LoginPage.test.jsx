@@ -27,7 +27,7 @@ function monter() {
         <ThemeProvider>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
-            <Route path="/otp-verify" element={<PageOtp />} />
+            <Route path="/verify-otp" element={<PageOtp />} />
           </Routes>
         </ThemeProvider>
       </AuthProvider>
@@ -36,8 +36,8 @@ function monter() {
 }
 
 async function seConnecter(utilisateur) {
-  await utilisateur.type(screen.getByPlaceholderText('jeandupont'), 'awadiop');
-  await utilisateur.type(screen.getByPlaceholderText('........'), 'motdepasse123');
+  await utilisateur.type(screen.getByLabelText(/identifiant/i), 'awadiop');
+  await utilisateur.type(screen.getByLabelText(/^mot de passe/i), 'motdepasse123');
   await utilisateur.click(screen.getByRole('button', { name: 'Se connecter' }));
 }
 
@@ -69,12 +69,9 @@ describe('LoginPage', () => {
     expect(await screen.findByText('Identifiant ou mot de passe incorrect.')).toBeInTheDocument();
   });
 
-  it('garde la même mise en page sur les deux onglets', async () => {
-    const utilisateur = userEvent.setup();
+  it('affiche les options de mot de passe oublié et création de compte', () => {
     monter();
     expect(screen.getByText('Mot de passe oublié ?')).toBeInTheDocument();
-    await utilisateur.click(screen.getByRole('button', { name: 'Autorité' }));
-    expect(screen.getByText('Mot de passe perdu ? Contactez l’administrateur.')).toBeInTheDocument();
-    expect(screen.getByText('Les comptes autorité sont créés par l’administrateur.')).toBeInTheDocument();
+    expect(screen.getByText('Créer un compte')).toBeInTheDocument();
   });
 });

@@ -31,6 +31,12 @@ vi.mock('react-router-dom', () => ({
   useNavigate: () => navigateMock,
 }));
 
+vi.mock('../shared/contexts/NotificationContext', () => ({
+  useNotifications: () => ({
+    addNotification: vi.fn(),
+  }),
+}));
+
 vi.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({
     invalidateQueries: invalidateQueriesMock,

@@ -31,9 +31,14 @@ export class ErrorBoundary extends React.Component {
             <h1 className="text-2xl font-bold text-gray-900 text-center mb-2">
               Oups! Une erreur est survenue
             </h1>
-            <p className="text-gray-600 text-center mb-6">
+            <p className="text-gray-600 text-center mb-4">
               L’application a rencontré un problème inattendu. Veuillez recharger ou retourner à l’accueil.
             </p>
+            {this.state.error && (
+              <div className="mb-6 p-3 rounded-lg bg-red-100 border border-red-300 text-left overflow-auto max-h-48 text-xs font-mono text-red-900">
+                <p className="font-bold">{this.state.error.toString()}</p>
+              </div>
+            )}
             <div className="flex gap-3">
               <button
                 onClick={() => window.location.reload()}

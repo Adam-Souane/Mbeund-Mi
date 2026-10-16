@@ -1,5 +1,6 @@
 import { Check } from 'lucide-react';
 import logoSurFondBleu from '../assets/logo-dark.png';
+import logoLight from '../assets/logo-light.png';
 
 // Mise en page commune des pages d'authentification : bannière de marque bleu
 // marine à gauche (écrans larges uniquement), contenu de la page à droite sur
@@ -75,94 +76,89 @@ export default function AuthLayout({ variante, className = '', children }) {
   const bgImage = '/images/prevention-pluie.jpg';
 
   return (
-    <div className="relative min-h-screen w-full flex flex-col justify-between overflow-x-hidden">
-      {/* 1. PHOTO DE TERRAIN PLEIN ÉCRAN CONTINUE SUR TOUT L'ÉCRAN (100vw × 100vh) */}
-      <img
-        src={bgImage}
-        alt="Prévention des inondations à Thiaroye-sur-Mer"
-        className="fixed inset-0 w-full h-full object-cover object-center z-0 pointer-events-none"
-      />
+    <div className="min-h-screen lg:h-screen w-full flex flex-col lg:flex-row bg-[#F8FAFC] text-slate-800 lg:overflow-hidden">
+      {/* Colonne gauche (56% sur grand écran) : Grande zone photographique FIXE */}
+      <aside className="relative lg:w-[56%] w-full min-h-[360px] lg:h-screen lg:sticky lg:top-0 flex flex-col justify-center p-6 sm:p-10 lg:p-14 overflow-hidden text-white flex-shrink-0">
+        {/* Photographie authentique de terrain à Thiaroye-sur-Mer */}
+        <img
+          src={bgImage}
+          alt="Prévention des inondations à Thiaroye-sur-Mer"
+          className="absolute inset-0 w-full h-full object-cover object-center z-0"
+        />
 
-      {/* 2. DÉGRADÉ BLEU LÉGER & TRÈS TRANSLUCIDE (Laisse la photo de terrain parfaitement nette et visible) */}
-      <div
-        className="fixed inset-0 z-0 pointer-events-none"
-        style={{
-          background: isAuthority
-            ? 'linear-gradient(135deg, rgba(10, 18, 30, 0.42) 0%, rgba(18, 30, 48, 0.22) 50%, rgba(10, 18, 30, 0.38) 100%)'
-            : 'linear-gradient(135deg, rgba(10, 18, 30, 0.38) 0%, rgba(18, 30, 48, 0.18) 50%, rgba(10, 18, 30, 0.32) 100%)',
-        }}
-      />
+        {/* Voile sombre contrôlé (45-50% sur la gauche, s'allégeant vers la droite) */}
+        <div
+          className="absolute inset-0 z-10 pointer-events-none"
+          style={{
+            background: 'linear-gradient(135deg, rgba(11, 28, 48, 0.78) 0%, rgba(11, 40, 68, 0.58) 50%, rgba(8, 25, 45, 0.42) 100%)',
+          }}
+        />
 
-
-      {/* 3. CONTENU GLOBAL UNIFIÉ POSÉ SUR L'IMAGE DE FOND */}
-      <div className="relative z-10 w-full flex-1 flex flex-col justify-between max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-6 sm:py-10">
-        
-        {/* En-tête mobile uniquement (Logo visible si colonne gauche cachée) */}
-        <div className="lg:hidden flex items-center justify-center mb-6">
-          <img src={logoSurFondBleu} alt="MBEUND MI" className="h-10 w-auto object-contain drop-shadow-md" />
-        </div>
-
-        {/* Grille principale harmonieuse : Présentation à gauche + Carte à droite */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center flex-1 my-auto">
-          
-          {/* Colonne gauche (Présentation et identité) */}
-          <div className="hidden lg:flex lg:col-span-7 flex-col justify-center text-white py-6">
-            
-            {/* Logo officiel MBEUND MI avec devise */}
-            <div className="w-fit flex flex-col items-start gap-2 mb-8">
-              <img src={logoSurFondBleu} alt="MBEUND MI" className="h-11 w-auto object-contain drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]" />
-              <div className="flex items-center gap-2.5">
-                <span className="w-6 h-px bg-white/60" />
-                <span className="text-xs font-bold tracking-widest uppercase text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
-                  Bul Xaar, Waajal Ko.
-                </span>
-                <span className="w-6 h-px bg-white/60" />
-              </div>
+        {/* Contenu compact et harmonieux */}
+        <div className="relative z-20 flex flex-col w-full max-w-xl my-auto">
+          {/* Logo officiel BLEU aligné à gauche avec son slogan centré sous le logo */}
+          <div className="w-fit flex flex-col items-center mb-6">
+            <div className="bg-white/95 backdrop-blur-md px-5 py-2.5 rounded-2xl shadow-md border border-white/40 inline-flex items-center justify-center">
+              <img
+                src={logoLight}
+                alt="MBEUND MI"
+                className="h-9 sm:h-11 w-auto object-contain"
+              />
             </div>
+            <div className="flex items-center justify-center gap-2 mt-2">
+              <span className="w-4 h-px bg-white/60" />
+              <span className="text-[11px] font-bold tracking-widest uppercase text-white/95 drop-shadow">
+                Bul Xaar, Waajal Ko.
+              </span>
+              <span className="w-4 h-px bg-white/60" />
+            </div>
+          </div>
 
-            {/* Badge de contexte */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/45 backdrop-blur-md border border-white/25 w-fit mb-4 text-xs font-bold uppercase tracking-wider text-red-200 shadow-md">
-              <span className="w-2.5 h-2.5 rounded-full bg-red animate-pulse" />
+          {/* Reste des éléments : conservés alignés à gauche */}
+          <div className="flex flex-col items-start gap-4">
+            {/* Mention espace / contexte */}
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md border border-white/25 w-fit text-xs font-bold uppercase tracking-wider text-white shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-[#087E8B] animate-pulse" />
               {surtitre}
             </div>
 
-            {/* Titre percutant avec ombre de texte nette pour une lisibilité totale */}
-            <h1 className="text-4xl xl:text-5xl font-black leading-[1.12] tracking-tight text-white mb-4 drop-shadow-[0_3px_12px_rgba(0,0,0,0.85)]">
+            {/* Titre sobre */}
+            <h1 className="text-3xl sm:text-4xl xl:text-5xl font-black leading-tight tracking-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.7)]">
               {titre}
             </h1>
 
-            {/* Sous-titre explicatif */}
-            <p className="text-base xl:text-lg text-white/95 mb-8 max-w-lg leading-relaxed drop-shadow-[0_2px_6px_rgba(0,0,0,0.85)] font-medium">
+            {/* Sous-titre */}
+            <p className="text-sm sm:text-base text-white/90 leading-relaxed font-medium drop-shadow">
               {texte}
             </p>
 
-            {/* Liste des atouts et fonctionnalités clés */}
-            <ul className="flex flex-col gap-4">
+            {/* 3 Atouts institutionnels ou citoyens */}
+            <ul className="flex flex-col gap-3 pt-1">
               {atouts.map((atout) => (
-                <li key={atout} className="flex items-center gap-3.5 text-sm xl:text-base font-bold text-white drop-shadow-[0_2px_5px_rgba(0,0,0,0.85)]">
-                  <span className="w-7 h-7 rounded-full bg-emerald-500/30 backdrop-blur-md ring-1 ring-emerald-300/60 flex items-center justify-center flex-shrink-0 shadow-sm">
-                    <Check size={16} strokeWidth={3} className="text-emerald-300" aria-hidden="true" />
+                <li key={atout} className="flex items-center gap-3 text-sm sm:text-base font-semibold text-white drop-shadow">
+                  <span className="w-6 h-6 rounded-full bg-[#087E8B]/80 text-white flex items-center justify-center flex-shrink-0 shadow-sm">
+                    <Check size={14} strokeWidth={3} aria-hidden="true" />
                   </span>
                   <span>{atout}</span>
                 </li>
               ))}
             </ul>
-          </div>
 
-          {/* Colonne droite : Carte blanche du formulaire posée en suspension au-dessus de l'image */}
-          <div className="col-span-1 lg:col-span-5 flex justify-center w-full">
-            <div className={`w-full max-w-lg mx-auto ${className}`}>
-              {children}
+            {/* Bas de page gauche : mention locale */}
+            <div className="pt-4 mt-2 border-t border-white/20 text-xs text-white/80 flex items-center justify-between w-full">
+              <span>Plateforme Officielle · Commune de Thiaroye-sur-Mer</span>
+              <span className="text-white/60 text-[11px]">Dakar, Sénégal</span>
             </div>
           </div>
         </div>
+      </aside>
 
-        {/* Pied de page discret et unifié */}
-        <footer className="flex flex-wrap items-center justify-between text-xs text-white/85 pt-6 mt-6 border-t border-white/20 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
-          <span>Plateforme de prévention des inondations · Commune de Thiaroye-sur-Mer</span>
-          <span className="text-[11px] text-white/70">Dakar, Sénégal</span>
-        </footer>
-      </div>
+      {/* Colonne droite (44% sur grand écran) : Espace du formulaire avec défilement INDÉPENDANT */}
+      <main className="lg:w-[44%] w-full lg:h-screen overflow-y-auto flex flex-col justify-start items-center px-4 sm:px-8 lg:px-10 py-8 lg:py-10 bg-[#F8FAFC]">
+        <div className={`w-full max-w-[530px] ${className}`}>
+          {children}
+        </div>
+      </main>
     </div>
   );
 }

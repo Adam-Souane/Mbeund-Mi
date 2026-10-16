@@ -208,14 +208,16 @@ export default function SignupPage() {
 
   return (
     <AuthLayout variante="inscription">
-      <div className="flex flex-col items-center justify-center w-full my-auto">
-        <div className="w-full max-w-md sm:max-w-lg">
-          <div className={CARTE}>
-            <div className="text-center mb-6">
-              <h1 className="text-xl sm:text-2xl font-black text-navy-900 dark:text-navy-50">Créer un compte citoyen</h1>
-              <p className="text-xs text-navy-500 dark:text-navy-300 mt-1">Recevez les alertes et signalez les inondations en temps réel</p>
-            </div>
-          <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="w-full max-w-md sm:max-w-lg bg-white rounded-2xl border border-slate-200/90 shadow-xl p-7 sm:p-9">
+        <div className="mb-6 text-left">
+          <h1 className="text-2xl sm:text-3xl font-black text-[#0B2545] tracking-tight">
+            Créer un compte citoyen
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1.5 leading-relaxed">
+            Recevez les alertes d'inondation et participez à la veille communautaire en temps réel.
+          </p>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <input type="text" name="first_name" aria-label="Prénom" autoComplete="given-name" value={formData.first_name} onChange={handleChange} placeholder="Prénom" className={champ} />
@@ -335,24 +337,33 @@ export default function SignupPage() {
               </div>
             )}
 
-            <button type="submit" disabled={loading} className={BOUTON_PRINCIPAL}>
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <Loader2 size={18} className="animate-spin" />
-                  <span>Création du compte en cours...</span>
-                </span>
-              ) : (
-                'Créer un compte'
-              )}
-            </button>
+            <div className="pt-4">
+              <button type="submit" disabled={loading} className={BOUTON_PRINCIPAL}>
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 size={18} className="animate-spin" />
+                    <span>Création du compte en cours...</span>
+                  </span>
+                ) : (
+                  'Créer un compte'
+                )}
+              </button>
+            </div>
           </form>
 
-          <p className={`text-center text-sm mt-6 ${ton(darkMode, 'text-navy-600', 'text-navy-400')}`}>
-            Vous avez déjà un compte ? <button onClick={() => navigate('/login')} className="font-semibold text-red hover:underline transition">Se connecter</button>
-          </p>
+          <div className="pt-4 border-t border-slate-100 text-center text-xs">
+            <span className="text-[#0B2545] font-medium">
+              Vous avez déjà un compte ?{' '}
+            </span>
+            <button
+              type="button"
+              onClick={() => navigate('/login')}
+              className="font-bold text-[#CC131A] hover:text-[#A01016] hover:underline transition"
+            >
+              Se connecter
+            </button>
+          </div>
         </div>
-      </div>
-    </div>
-  </AuthLayout>
+      </AuthLayout>
   );
 }

@@ -105,29 +105,34 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <AuthLayout variante="motdepasse" className="px-4 py-8">
-        <div className="w-full max-w-md sm:max-w-lg">
-          <button
-            onClick={() => (step === 2 ? setStep(1) : navigate('/login'))}
-            className="inline-flex items-center gap-2 mb-4 px-3 py-1.5 rounded-lg bg-black/35 backdrop-blur-md border border-white/20 text-white text-xs font-bold tracking-wide uppercase shadow-md hover:bg-black/50 transition cursor-pointer"
-          >
-            <ArrowLeft size={16} />
-            Retour
-          </button>
+    <AuthLayout variante="motdepasse">
+      <div className="w-full max-w-md sm:max-w-lg">
+        <button
+          type="button"
+          onClick={() => (step === 2 ? setStep(1) : navigate('/login'))}
+          className="inline-flex items-center gap-1.5 mb-4 text-xs font-semibold text-slate-500 hover:text-[#0B2545] transition cursor-pointer"
+        >
+          <ArrowLeft size={15} />
+          <span>{step === 2 ? 'Modifier les identifiants' : 'Retour à la connexion'}</span>
+        </button>
 
-          <div className={CARTE}>
-            <div className="text-center mb-5">
-              <h1 className={`text-xl lg:text-2xl font-bold ${ton(darkMode, 'text-navy-900', 'text-white')}`}>{TITRES[step]}</h1>
-            </div>
-
-        {step === 1 && (
-          <form onSubmit={demanderCode} className="space-y-4">
-            <p className={`text-sm ${ton(darkMode, 'text-navy-700', 'text-navy-300')}`}>
-              Indiquez votre identifiant, votre numéro de téléphone ou votre email : nous vous enverrons un code à 6 chiffres.
+        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xl p-7 sm:p-9">
+          <div className="mb-6 text-left">
+            <h1 className="text-2xl sm:text-3xl font-black text-[#0B2545] tracking-tight">
+              {TITRES[step]}
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-500 mt-1.5 leading-relaxed">
+              {step === 1 && 'Indiquez votre identifiant, téléphone ou email pour recevoir un code à 6 chiffres.'}
+              {step === 2 && 'Saisissez le code de sécurité reçu et définissez votre nouveau mot de passe.'}
+              {step === 3 && 'Votre mot de passe a été mis à jour avec succès.'}
             </p>
-            <div>
-              <label htmlFor="reset-identifiant" className={etiquette}>Identifiant, téléphone ou email</label>
-              <input
+          </div>
+
+          {step === 1 && (
+            <form onSubmit={demanderCode} className="space-y-4">
+              <div>
+                <label htmlFor="reset-identifiant" className={etiquette}>Identifiant, téléphone ou email</label>
+                <input
                 id="reset-identifiant"
                 type="text"
                 autoComplete="username"
@@ -169,9 +174,11 @@ export default function ForgotPasswordPage() {
               </fieldset>
             )}
             {error && <p className="text-xs text-red-500" role="alert">{error}</p>}
-            <button type="submit" disabled={loading} className={boutonPrincipal}>
-              {loading ? 'Envoi...' : 'Recevoir le code'}
-            </button>
+            <div className="pt-4">
+              <button type="submit" disabled={loading} className={boutonPrincipal}>
+                {loading ? 'Envoi...' : 'Recevoir le code'}
+              </button>
+            </div>
           </form>
         )}
 
@@ -227,14 +234,20 @@ export default function ForgotPasswordPage() {
               />
             </div>
             {error && <p className="text-xs text-red-500" role="alert">{error}</p>}
-            <button type="submit" disabled={loading} className={boutonPrincipal}>
-              {loading ? 'Enregistrement...' : 'Enregistrer le nouveau mot de passe'}
-            </button>
+            <div className="pt-4">
+              <button type="submit" disabled={loading} className={boutonPrincipal}>
+                {loading ? 'Enregistrement...' : 'Enregistrer le nouveau mot de passe'}
+              </button>
+            </div>
             <button
               type="button"
               onClick={() => demanderCode()}
               disabled={enAttente || loading}
-              className={`block mx-auto text-sm font-semibold ${classeLienRenvoi(darkMode, enAttente)}`}
+              className={`block mx-auto text-sm font-semibold transition cursor-pointer ${
+                enAttente
+                  ? 'text-slate-400 cursor-not-allowed'
+                  : 'text-[#CC131A] hover:text-[#A01016] hover:underline'
+              }`}
             >
               {enAttente ? `Renvoyer le code dans ${resendTimer} s` : 'Renvoyer le code'}
             </button>
@@ -242,18 +255,33 @@ export default function ForgotPasswordPage() {
         )}
 
         {step === 3 && (
-          <div className="text-center py-8">
-            <CheckCircle size={64} className="text-green-500 mx-auto mb-4" />
-            <p className={`text-sm mb-8 ${ton(darkMode, 'text-navy-700', 'text-navy-300')}`}>
-              Votre mot de passe a été modifié. Vous pouvez maintenant vous connecter.
+          <div className="text-center py-6">
+            <CheckCircle size={56} className="text-emerald-500 mx-auto mb-3" />
+            <p className="text-sm font-medium text-slate-700 mb-6">
+              Votre mot de passe a été modifié. Vous pouvez maintenant vous connecter en toute sécurité.
             </p>
             <button onClick={() => navigate('/login')} className={boutonPrincipal}>
               Se connecter
             </button>
           </div>
         )}
-        </div>
+
+        {step !== 3 && (
+          <div className="pt-4 border-t border-slate-100 text-center text-xs mt-6">
+            <span className="text-[#0B2545] font-medium">
+              Vous vous souvenez de votre mot de passe ?{' '}
+            </span>
+            <button
+              type="button"
+              onClick={() => navigate('/login')}
+              className="font-bold text-[#CC131A] hover:text-[#A01016] hover:underline transition cursor-pointer"
+            >
+              Se connecter
+            </button>
+          </div>
+        )}
       </div>
+    </div>
   </AuthLayout>
   );
 }

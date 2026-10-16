@@ -13,6 +13,7 @@ import RequireAuth from './auth/RequireAuth';
 // Pages de l'application chargées à la demande : l'accueil et la connexion
 // n'embarquent plus les graphiques (Recharts) ni la carte (Leaflet).
 const AccueilPageBody = lazy(() => import('./citizen/pages/AccueilPageBody'));
+const CommunautePageBody = lazy(() => import('./citizen/pages/CommunautePageBody'));
 const CartePageBody = lazy(() => import('./citizen/pages/CartePageBody'));
 const AlertesPrevisionsPageBody = lazy(() => import('./citizen/pages/AlertesPrevisionsPageBody'));
 const SignalerPageBody = lazy(() => import('./citizen/pages/SignalerPageBody'));
@@ -71,6 +72,7 @@ export default function AppRoutes() {
 
         {/* Citoyen - Accueil public pour consultation directe des alertes et du fil de quartier */}
         <Route path="/citoyen/accueil" element={<AccueilPageBody />} />
+        <Route path="/citoyen/communaute" element={<CommunautePageBody />} />
         <Route path="/citoyen/carte" element={<Citoyen><CartePageBody /></Citoyen>} />
         <Route path="/citoyen/alertes" element={<Citoyen><AlertesPrevisionsPageBody /></Citoyen>} />
         <Route path="/citoyen/signaler" element={<Citoyen><SignalerPageBody /></Citoyen>} />

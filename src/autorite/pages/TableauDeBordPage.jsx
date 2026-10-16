@@ -1,5 +1,18 @@
+import { useState, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ShieldAlert, Droplet, BarChart3, Send } from 'lucide-react';
+import {
+  ShieldAlert,
+  Droplet,
+  BarChart3,
+  Send,
+  Flame,
+  ThumbsUp,
+  MapPin,
+  CheckCircle2,
+  ArrowRight,
+  ShieldCheck,
+  AlertTriangle,
+} from 'lucide-react';
 import AutoriteShell from '../desktop/AutoriteShell';
 import GaugeRisk from '../../shared/components/GaugeRisk';
 import RiskBadge from '../../shared/components/RiskBadge';
@@ -7,6 +20,7 @@ import { useZones } from '../../shared/hooks/useZones';
 import { usePredictions } from '../../shared/hooks/usePredictions';
 import { useAlertesRecentes } from '../../shared/hooks/useAlertes';
 import { useSignalementsApercu } from '../../shared/hooks/useSignalements';
+import { getTopConfirmedPost } from '../../shared/data/riverainsData';
 
 const NIVEAU_RANK = { vert: 0, jaune: 1, orange: 2, rouge: 3 };
 
@@ -42,11 +56,35 @@ function KpiCard({ icon: Icon, label, value, caption, tone = 'navy' }) {
 
 export default function TableauDeBordPage() {
   const navigate = useNavigate();
+  const [interventionDepêchee, setInterventionDepêchee] = useState(() => {
+    try {
+      return localStorage.getItem('mbeund_mi_top_report_status') === 'intervenu';
+    } catch {
+      return false;
+    }
+  });
 
   const { data: zonesData } = useZones();
   const { data: predictions } = usePredictions();
   const { data: alertesData } = useAlertesRecentes();
   const { data: signalementsData } = useSignalementsApercu();
+
+  // Récupération dynamique du signalement citoyen ayant le plus de confirmations réelles
+  const topConfirmedPost = useMemo(() => getTopConfirmedPost(), []);
+
+  const handleDepecherIntervention = () => {
+    setInterventionDepêchee((prev) => {
+      const next = !prev;
+      try {
+        if (next) {
+          localStorage.setItem('mbeund_mi_top_report_status', 'intervenu');
+        } else {
+          localStorage.removeItem('mbeund_mi_top_report_status');
+        }
+      } catch {}
+      return next;
+    });
+  };
 
   const zones = zonesData?.features?.map((f) => ({ id: f.id, ...f.properties })) ?? [];
   const topZone = pickMostAtRiskZone(zonesData?.features);
@@ -70,17 +108,153 @@ export default function TableauDeBordPage() {
         <p className="text-base text-navy-600 dark:text-navy-200 mt-0.5">Thiaroye-sur-Mer · Supervision temps réel</p>
       </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <KpiCard icon={ShieldAlert} label="Zones à risque élevé" value={zonesARisqueEleve} tone="red" />
-          <KpiCard
-            icon={Droplet}
-            label="Prédiction IA (24h)"
-            value={zonePrediction?.niveau_eau_predit_cm != null ? `${zonePrediction.niveau_eau_predit_cm} cm` : '—'}
-            caption={zonePrediction ? `confiance ${Math.round(zonePrediction.confiance)}%` : undefined}
-          />
-          <KpiCard icon={BarChart3} label="Score de risque moyen" value={scoreRisqueMoyen} caption="échelle 0–1" />
-          <KpiCard icon={Send} label="Alertes émises" value={totalAlertesEnvoyees} />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <KpiCard icon={ShieldAlert} label="Zones à risque élevé" value={zonesARisqueEleve} tone="red" />
+        <KpiCard
+          icon={Droplet}
+          label="Prédiction IA (24h)"
+          value={zonePrediction?.niveau_eau_predit_cm != null ? `${zonePrediction.niveau_eau_predit_cm} cm` : '—'}
+          caption={zonePrediction ? `confiance ${Math.round(zonePrediction.confiance)}%` : undefined}
+        />
+        <KpiCard icon={BarChart3} label="Score de risque moyen" value={scoreRisqueMoyen} caption="échelle 0–1" />
+        <KpiCard icon={Send} label="Alertes émises" value={totalAlertesEnvoyees} />
+      </div>
+
+      {/* ── MISE EN ÉVIDENCE PRIORITAIRE : POST LE PLUS CONFIRMÉ PAR LES CITOYENS ── */}
+      {topConfirmedPost && (
+        <div className="relative overflow-hidden bg-gradient-to-r from-red-50/95 via-amber-50/70 to-white dark:from-[#200e12] dark:via-[#1c1214] dark:to-[#071322] border-2 border-[#CC131A] dark:border-red-600 rounded-2xl p-5 sm:p-6 shadow-xl transition-all">
+          {/* Lueur de priorité en arrière-plan */}
+          <div className="absolute top-0 right-0 w-80 h-40 bg-red-500/10 dark:bg-red-500/20 rounded-full blur-3xl pointer-events-none" />
+
+          {/* Bandeau d'en-tête de la priorité */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-red-200/80 dark:border-red-900/60">
+            <div className="flex items-center gap-2.5">
+              <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-[#CC131A] text-white shadow-md animate-pulse">
+                <Flame size={18} />
+              </span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black uppercase tracking-wider text-[#CC131A] dark:text-red-400">
+                    Priorité Citoyenne N°1 · Signalement le plus confirmé
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-red-100 dark:bg-red-950/80 text-[#CC131A] dark:text-red-300 border border-red-300 dark:border-red-800">
+                    Urgence Terrain
+                  </span>
+                </div>
+                <p className="text-xs text-navy-600 dark:text-navy-300 font-medium mt-0.5">
+                  Consensus populaire fort : requiert une intervention municipale prioritaire
+                </p>
+              </div>
+            </div>
+
+            {/* Badge des confirmations réelles */}
+            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white dark:bg-[#0B2545] border border-red-200 dark:border-red-800 shadow-xs">
+              <ThumbsUp size={16} className="text-emerald-600 dark:text-emerald-400 animate-bounce" />
+              <span className="text-sm font-black text-navy-900 dark:text-white">
+                {topConfirmedPost.totalVotes} confirmations
+              </span>
+              <span className="text-xs text-navy-500 dark:text-navy-300 font-semibold">(+1 vu riverains)</span>
+            </div>
+          </div>
+
+          {/* Contenu détaillé du signalement prioritaire */}
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-[140px_1fr] lg:grid-cols-[160px_1fr_auto] gap-5 items-center">
+            {/* Photo du signalement */}
+            <div className="relative group overflow-hidden rounded-xl border-2 border-red-200 dark:border-red-900 shadow-md">
+              <img
+                src={topConfirmedPost.photo}
+                alt={topConfirmedPost.titre}
+                className="w-full h-32 md:h-36 object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+              <span className="absolute bottom-1.5 left-1.5 px-2 py-0.5 rounded-md bg-black/75 text-[10px] font-bold text-white backdrop-blur-xs">
+                {topConfirmedPost.temps}
+              </span>
+            </div>
+
+            {/* Détails : Auteur, Quartier, Description */}
+            <div className="min-w-0 space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <img
+                  src={topConfirmedPost.avatar}
+                  alt={topConfirmedPost.auteur}
+                  className="w-7 h-7 rounded-full object-cover border border-[#CC131A]"
+                />
+                <span className="text-sm font-black text-navy-900 dark:text-white">
+                  {topConfirmedPost.auteur}
+                </span>
+                <span className="text-xs text-navy-400 dark:text-navy-400">·</span>
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-navy-700 dark:text-navy-200">
+                  <MapPin size={13} className="text-[#CC131A]" />
+                  {topConfirmedPost.quartier} ({topConfirmedPost.rue})
+                </span>
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase bg-navy-100 dark:bg-navy-800 text-navy-700 dark:text-navy-200">
+                  {topConfirmedPost.categorie}
+                </span>
+              </div>
+
+              <h4 className="text-base font-extrabold text-navy-900 dark:text-white">
+                {topConfirmedPost.titre}
+              </h4>
+
+              <p className="text-sm text-navy-700 dark:text-navy-200 leading-relaxed line-clamp-2">
+                {topConfirmedPost.description}
+              </p>
+
+              <div className="flex items-center gap-3 pt-1 text-xs">
+                <span className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-bold">
+                  <CheckCircle2 size={14} />
+                  {topConfirmedPost.totalVotes} riverains confirment l'ampleur du problème
+                </span>
+                <span>·</span>
+                <span className="text-navy-500 dark:text-navy-400 font-medium">
+                  {topConfirmedPost.statutLabel}
+                </span>
+              </div>
+            </div>
+
+            {/* Actions immédiates de l'autorité */}
+            <div className="flex flex-row md:flex-col gap-2.5 flex-shrink-0 w-full md:w-auto pt-2 md:pt-0">
+              <button
+                type="button"
+                onClick={handleDepecherIntervention}
+                className={`w-full px-4 py-2.5 rounded-xl text-xs font-black transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-95 ${
+                  interventionDepêchee
+                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                    : 'bg-[#CC131A] hover:bg-red-700 text-white'
+                }`}
+              >
+                {interventionDepêchee ? (
+                  <>
+                    <ShieldCheck size={16} />
+                    <span>Équipe Déployée ✓</span>
+                  </>
+                ) : (
+                  <>
+                    <Flame size={16} />
+                    <span>Dépêcher Intervention</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => navigate('/autorite/carte')}
+                className="w-full px-4 py-2.5 rounded-xl text-xs font-bold bg-white dark:bg-navy-800 border border-navy-200 dark:border-navy-700 hover:bg-navy-50 dark:hover:bg-navy-700 text-navy-800 dark:text-white transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+              >
+                <MapPin size={14} className="text-[#CC131A]" />
+                <span>Voir sur la carte</span>
+              </button>
+
+              <Link
+                to="/autorite/signalements"
+                className="w-full px-4 py-2 rounded-xl text-[11px] font-bold text-center text-navy-600 dark:text-navy-300 hover:text-[#CC131A] dark:hover:text-red-400 transition"
+              >
+                Gérer tous les signalements →
+              </Link>
+            </div>
+          </div>
         </div>
+      )}
 
         <div className="grid lg:grid-cols-[1.4fr_1fr] gap-5 items-start">
           <GaugeRisk zone={topZone} prediction={zonePrediction} onExploreMap={() => navigate('/autorite/carte')} />

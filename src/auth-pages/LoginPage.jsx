@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { Eye, EyeOff, AlertCircle } from 'lucide-react';
 import AuthLayout from './AuthLayout';
 import { useAuth } from '../auth/AuthContext';
 import { homeRouteForRole } from '../auth/RequireAuth';
@@ -7,6 +8,7 @@ import { homeRouteForRole } from '../auth/RequireAuth';
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -21,12 +23,12 @@ export default function LoginPage() {
     setError(null);
     setIsSubmitting(true);
     try {
-      const actualRole = await login({ username, password });
+      const actualRole = await login({ username: username.trim(), password });
       navigate(from || homeRouteForRole(actualRole), { replace: true });
     } catch (err) {
       const refus = err.response?.data;
       if (refus?.code === 'compte_non_verifie') {
-        navigate('/otp-verify', {
+        navigate('/verify-otp', {
           state: {
             username: refus.username,
             password,
@@ -45,79 +47,109 @@ export default function LoginPage() {
 
   return (
     <AuthLayout variante="connexion">
-      <div className="flex flex-col items-center justify-center w-full my-auto">
-        <div className="w-full bg-white/95 backdrop-blur-md dark:bg-navy/95 rounded-2xl border border-white/60 dark:border-navy-800 p-6 sm:p-8 shadow-2xl">
-          <div className="mb-6 text-center">
-            <h1 className="text-xl sm:text-2xl font-black text-navy-900 dark:text-navy-50">
-              Connexion Citoyenne
-            </h1>
-            <p className="text-xs text-navy-500 dark:text-navy-300 mt-1">
-              Plateforme de vigilance et prévention · Thiaroye-sur-Mer
-            </p>
+      <div className="w-full bg-white rounded-2xl border border-slate-200/90 shadow-xl p-7 sm:p-9 transition-all">
+        {/* En-tête de la carte */}
+        <div className="mb-6 text-left">
+          <h1 className="text-2xl sm:text-3xl font-black text-[#0B2545] tracking-tight">
+            Connexion Citoyenne
+          </h1>
+          <p className="text-sm text-[#64748B] mt-1.5 leading-relaxed">
+            Suivez en temps réel les risques d'inondation à Thiaroye-sur-Mer.
+          </p>
+        </div>
+
+        {/* Message d'erreur visible si problème */}
+        {error && (
+          <div className="flex items-start gap-3 p-3.5 rounded-xl mb-5 bg-red-50 border border-[#BE123C]/30 text-xs text-[#BE123C]">
+            <AlertCircle size={18} className="flex-shrink-0 mt-0.5 text-[#BE123C]" />
+            <div className="font-medium">{error}</div>
+          </div>
+        )}
+
+        {/* Formulaire de connexion */}
+        <form onSubmit={handleSubmit} className="space-y-4 text-left">
+          {/* Identifiant ou numéro de téléphone */}
+          <div>
+            <label htmlFor="login-username" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+              Identifiant ou Numéro de téléphone <span className="text-[#BE123C]">*</span>
+            </label>
+            <input
+              id="login-username"
+              type="text"
+              required
+              autoFocus
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Ex : 77 123 45 67 ou identifiant"
+              className="w-full h-12 px-3.5 rounded-xl border border-slate-300 bg-white text-slate-900 text-sm focus:outline-none focus:border-[#0B2545] focus:ring-1 focus:ring-[#0B2545] transition-colors"
+            />
           </div>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-bold uppercase tracking-wider text-navy-600 dark:text-navy-200">
-                Identifiant ou Téléphone
-              </span>
+          {/* Mot de passe avec toggle */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label htmlFor="login-password" className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                Mot de passe <span className="text-[#BE123C]">*</span>
+              </label>
+              <Link
+                to="/forgot-password"
+                className="text-xs font-semibold text-[#CC131A] hover:text-[#A01016] hover:underline transition"
+              >
+                Mot de passe oublié ?
+              </Link>
+            </div>
+            <div className="relative">
               <input
-                type="text"
-                required
-                autoFocus
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Ex : citoyen ou 771234567"
-                className="w-full px-3.5 py-2.5 rounded-lg border border-navy-200 dark:border-navy-800 bg-white dark:bg-navy-900 text-navy-900 dark:text-navy-50 text-sm focus:outline-none focus:border-red"
-              />
-            </label>
-
-            <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-bold uppercase tracking-wider text-navy-600 dark:text-navy-200">
-                Mot de passe
-              </span>
-              <input
-                type="password"
+                id="login-password"
+                type={showPassword ? 'text' : 'password'}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Votre mot de passe"
-                className="w-full px-3.5 py-2.5 rounded-lg border border-navy-200 dark:border-navy-800 bg-white dark:bg-navy-900 text-navy-900 dark:text-navy-50 text-sm focus:outline-none focus:border-red"
+                className="w-full h-12 px-3.5 pr-11 rounded-xl border border-slate-300 bg-white text-slate-900 text-sm focus:outline-none focus:border-[#0B2545] focus:ring-1 focus:ring-[#0B2545] transition-colors"
               />
-            </label>
-
-            <div className="text-right">
-              <Link to="/forgot-password" className="text-xs font-semibold text-red hover:underline">
-                Mot de passe oublié ?
-              </Link>
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                className="absolute right-3.5 top-3.5 text-slate-400 hover:text-slate-700 transition"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
+          </div>
 
-            {error && (
-              <div className="px-3 py-2 rounded-lg bg-red-50 dark:bg-red/15 text-red text-xs font-semibold">
-                {error}
-              </div>
-            )}
-
+          {/* Bouton principal de connexion */}
+          <div className="pt-4">
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-3 rounded-xl bg-red text-white text-sm font-bold disabled:opacity-60 hover:bg-red-700 transition shadow-sm"
+              className="w-full h-12 rounded-xl bg-[#0B2545] hover:bg-[#154275] active:bg-[#07182D] text-white text-sm font-bold shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
             >
-              {isSubmitting ? 'Connexion en cours...' : 'Se connecter'}
+              {isSubmitting ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Connexion en cours...</span>
+                </>
+              ) : (
+                'Se connecter'
+              )}
             </button>
+          </div>
 
-            <p className="text-center text-xs text-navy-600 dark:text-navy-300 mt-2">
+          {/* Lien secondaire vers inscription citoyenne */}
+          <div className="pt-4 border-t border-slate-100 text-center text-xs">
+            <span className="text-[#0B2545] font-medium">
               Pas encore de compte ?{' '}
-              <Link to="/signup" className="font-bold text-red hover:underline">
-                Créer un compte citoyen
-              </Link>
-            </p>
-          </form>
-        </div>
-
-        <p className="text-center text-[11px] text-white/90 mt-4 drop-shadow">
-          MBEUND MI · Thiaroye-sur-Mer
-        </p>
+            </span>
+            <Link
+              to="/signup"
+              className="font-bold text-[#CC131A] hover:text-[#A01016] hover:underline transition"
+            >
+              Créer un compte
+            </Link>
+          </div>
+        </form>
       </div>
     </AuthLayout>
   );
