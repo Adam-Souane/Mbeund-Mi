@@ -43,6 +43,7 @@ export default function CommunautePageBody() {
   // État de la popup "Nouveau post"
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
   const [modalPostText, setModalPostText] = useState('');
+  const [modalType, setModalType] = useState('signalement'); // 'signalement' | 'entraide' | 'resolu'
   const [modalQuartier, setModalQuartier] = useState('Ndakhane (Thiaroye)');
   const [modalCategorie, setModalCategorie] = useState('Eau stagnante');
   const [modalPhotoChoice, setModalPhotoChoice] = useState('none');
@@ -79,6 +80,37 @@ export default function CommunautePageBody() {
     { id: 'passerelle', label: 'Passerelle piétonne', url: '/images/communaute-passerelle.jpg' },
   ];
 
+  // Options de catégories selon le type de post sélectionné
+  const CATEGORIES_BY_TYPE = {
+    signalement: [
+      { value: 'Eau stagnante', label: '💧 Eau stagnante' },
+      { value: 'Caniveau bouché', label: '🚰 Caniveau bouché' },
+      { value: 'Pompage requis', label: '🚜 Pompage requis' },
+      { value: 'Reflux ruissellement', label: '🌊 Reflux ruissellement' },
+    ],
+    entraide: [
+      { value: 'Entraide sacs de sable', label: '🧱 Entraide sacs de sable' },
+      { value: 'Volontaires & Bénévoles', label: '🤝 Volontaires & Bénévoles' },
+      { value: 'Besoin d’outils (pelles/brouettes)', label: '🛠️ Besoin d’outils' },
+      { value: 'Soutien aux concessions', label: '🏠 Soutien aux concessions' },
+    ],
+    resolu: [
+      { value: 'Passage piéton aménagé', label: '🚶 Passage piéton aménagé' },
+      { value: 'Décrue constatée', label: '📉 Décrue constatée' },
+      { value: 'Voie sécurisée & Canaux dégagés', label: '✅ Voie sécurisée' },
+      { value: 'Pompage terminé', label: '✨ Pompage terminé' },
+    ],
+  };
+
+  // Synchroniser la catégorie par défaut quand le type change
+  const handleTypeChange = (newType) => {
+    setModalType(newType);
+    const available = CATEGORIES_BY_TYPE[newType];
+    if (available && available.length > 0) {
+      setModalCategorie(available[0].value);
+    }
+  };
+
   // Fusion des publications locales + signalements réels du backend
   const allPosts = useMemo(() => {
     // 1. Signalements réels issus de la base de données Django
@@ -86,9 +118,12 @@ export default function CommunautePageBody() {
     if (signalementsData?.results?.features) {
       signalementsData.results.features.forEach((feat) => {
         const p = feat.properties;
+        const isResolu = !!p.valide;
         backendItems.push({
           id: `backend-${p.id}`,
           isBackendSignalement: true,
+          typePost: isResolu ? 'resolu' : 'signalement',
+          badgeFiltre: isResolu ? 'Résolu & Sécurisé' : 'Signalement terrain',
           author: {
             name: p.citoyen_prenom ? `${p.citoyen_prenom} ${p.citoyen_nom || ''}`.trim() : 'Sentinelle Citoyenne',
             avatar: '/images/avatar-amadou.jpg',
@@ -103,8 +138,8 @@ export default function CommunautePageBody() {
           titre: p.titre || 'Observation terrain',
           texte: p.description || 'Montée des eaux observée sur la voie publique.',
           image: p.photo || null,
-          statut: p.valide ? 'resolu' : 'en_cours',
-          statutLabel: p.valide ? 'Vérifié par la mairie' : 'En attente de traitement',
+          statut: isResolu ? 'resolu' : 'en_cours',
+          statutLabel: isResolu ? 'Vérifié par la mairie' : 'En attente de traitement',
           baseLikes: 5,
           comments: [],
         });
@@ -115,6 +150,8 @@ export default function CommunautePageBody() {
     const riverainsItems = COMMUNAUTE_POSTS.map((r) => ({
       id: r.id,
       isBackendSignalement: false,
+      typePost: r.typePost || (r.statut === 'resolu' ? 'resolu' : 'signalement'),
+      badgeFiltre: r.badgeFiltre || (r.statut === 'resolu' ? 'Résolu & Sécurisé' : 'Signalement terrain'),
       author: {
         name: r.auteur,
         avatar: r.avatar,
@@ -139,12 +176,28 @@ export default function CommunautePageBody() {
     return [...userPosts, ...backendItems, ...riverainsItems];
   }, [signalementsData, userPosts]);
 
-  // Filtrage des posts selon l'onglet
+  // Compteurs par filtre
+  const counts = useMemo(() => {
+    return {
+      tous: allPosts.length,
+      signalements: allPosts.filter((p) => p.typePost === 'signalement' || p.isBackendSignalement).length,
+      entraide: allPosts.filter((p) => p.typePost === 'entraide').length,
+      resolus: allPosts.filter((p) => p.typePost === 'resolu' || p.statut === 'resolu').length,
+    };
+  }, [allPosts]);
+
+  // Filtrage strict et adapté demandé par l'utilisateur
   const filteredPosts = useMemo(() => {
     return allPosts.filter((post) => {
-      if (filter === 'signalements') return post.isBackendSignalement || post.categorie.toLowerCase().includes('caniveau') || post.categorie.toLowerCase().includes('eau');
-      if (filter === 'entraide') return post.statut === 'en_cours' || post.texte.toLowerCase().includes('aide') || post.texte.toLowerCase().includes('besoin') || post.texte.toLowerCase().includes('sacs');
-      if (filter === 'resolus') return post.statut === 'resolu';
+      if (filter === 'signalements') {
+        return post.typePost === 'signalement' || post.isBackendSignalement;
+      }
+      if (filter === 'entraide') {
+        return post.typePost === 'entraide';
+      }
+      if (filter === 'resolus') {
+        return post.typePost === 'resolu' || post.statut === 'resolu';
+      }
       return true;
     });
   }, [allPosts, filter]);
@@ -213,23 +266,39 @@ export default function CommunautePageBody() {
     const selectedPreset = PHOTO_PRESETS.find((p) => p.id === modalPhotoChoice);
     const chosenImage = selectedPreset ? selectedPreset.url : null;
 
+    const badgeLabel =
+      modalType === 'signalement'
+        ? 'Signalement terrain'
+        : modalType === 'entraide'
+        ? 'Entraide & Mobilisation'
+        : 'Résolu & Sécurisé';
+
+    const statutLabel =
+      modalType === 'resolu'
+        ? 'Résolu & Sécurisé'
+        : modalType === 'entraide'
+        ? 'Mobilisation citoyenne active'
+        : 'Signalement actif · Traitement requis';
+
     const newPost = {
       id: `user-${Date.now()}`,
       isBackendSignalement: false,
+      typePost: modalType,
+      badgeFiltre: badgeLabel,
       author: {
         name: nomCitoyen,
         avatar: '/images/avatar-amadou.jpg',
         quartier: modalQuartier,
-        role: 'Citoyen mobilisé',
+        role: modalType === 'entraide' ? 'Volontaire engagé' : 'Citoyen mobilisé',
       },
       date: 'Posté à l’instant',
-      dureeType: 'Post durable (actif)',
+      dureeType: modalType === 'resolu' ? 'Post durable (résolu)' : 'Post durable (actif)',
       categorie: modalCategorie,
       titre: modalCategorie,
       texte: modalPostText.trim(),
       image: chosenImage,
-      statut: 'en_cours',
-      statutLabel: 'Signalé au quartier',
+      statut: modalType === 'resolu' ? 'resolu' : 'en_cours',
+      statutLabel,
       baseLikes: 1,
       comments: [],
     };
@@ -351,57 +420,61 @@ export default function CommunautePageBody() {
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════════ */}
-      {/* 3. BARRE D'ACTIONS : FILTRES À GAUCHE + BOUTON « NOUVEAU POST » À DROITE */}
+      {/* 3. BARRE D'ACTIONS : FILTRES ADAPTÉS À GAUCHE + BOUTON « NOUVEAU POST » À DROITE */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-[#071322] border border-navy-100 dark:border-navy-800 rounded-2xl p-3 sm:p-4 shadow-xs">
-        {/* Filtres de navigation */}
+        {/* Filtres de navigation avec noms explicites demandés par l'utilisateur */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-none flex-1">
+          {/* Tous les posts */}
           <button
             onClick={() => setFilter('tous')}
             className={`px-3.5 py-2 rounded-xl text-xs font-black transition shadow-xs flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
               filter === 'tous'
-                ? 'bg-[#0B2545] text-white'
+                ? 'bg-[#0B2545] text-white shadow-xs'
                 : 'bg-slate-50 dark:bg-navy-900 text-navy-600 dark:text-navy-200 border border-slate-200 dark:border-navy-800 hover:border-navy-300'
             }`}
           >
             <Users size={14} />
-            Tous les posts ({allPosts.length})
+            <span>Tous les posts ({counts.tous})</span>
           </button>
 
+          {/* Signalements terrain */}
           <button
             onClick={() => setFilter('signalements')}
             className={`px-3.5 py-2 rounded-xl text-xs font-black transition shadow-xs flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
               filter === 'signalements'
-                ? 'bg-[#CC131A] text-white'
+                ? 'bg-[#CC131A] text-white shadow-xs'
                 : 'bg-slate-50 dark:bg-navy-900 text-navy-600 dark:text-navy-200 border border-slate-200 dark:border-navy-800 hover:border-red-300'
             }`}
           >
             <Camera size={14} />
-            Signalements terrain
+            <span>Signalements terrain ({counts.signalements})</span>
           </button>
 
+          {/* Entraide et mobilisation */}
           <button
             onClick={() => setFilter('entraide')}
             className={`px-3.5 py-2 rounded-xl text-xs font-black transition shadow-xs flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
               filter === 'entraide'
-                ? 'bg-amber-600 text-white'
+                ? 'bg-amber-600 text-white shadow-xs'
                 : 'bg-slate-50 dark:bg-navy-900 text-navy-600 dark:text-navy-200 border border-slate-200 dark:border-navy-800 hover:border-amber-300'
             }`}
           >
             <Flame size={14} />
-            Entraide & Sacs
+            <span>Entraide & Mobilisation ({counts.entraide})</span>
           </button>
 
+          {/* Résolus et sécurisés */}
           <button
             onClick={() => setFilter('resolus')}
             className={`px-3.5 py-2 rounded-xl text-xs font-black transition shadow-xs flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
               filter === 'resolus'
-                ? 'bg-emerald-600 text-white'
+                ? 'bg-emerald-600 text-white shadow-xs'
                 : 'bg-slate-50 dark:bg-navy-900 text-navy-600 dark:text-navy-200 border border-slate-200 dark:border-navy-800 hover:border-emerald-300'
             }`}
           >
             <CheckCircle2 size={14} />
-            Résolus
+            <span>Résolus & Sécurisés ({counts.resolus})</span>
           </button>
         </div>
 
@@ -417,214 +490,246 @@ export default function CommunautePageBody() {
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════════ */}
-      {/* 4. FIL D'ACTUALITÉ : GRILLE 2 COLONNES (POSTS DURABLES)             */}
+      {/* 4. FIL D'ACTUALITÉ : GRILLE 2 COLONNES ADAPTÉE AU FILTRE           */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-        {filteredPosts.map((post) => {
-          const isLiked = !!likesState[post.id];
-          const areCommentsOpen = !!openComments[post.id];
-          const currentLikes = getLikesCount(post.id, post.baseLikes);
+      {filteredPosts.length === 0 ? (
+        <div className="bg-white dark:bg-[#071322] border border-navy-100 dark:border-navy-800 rounded-3xl p-8 text-center space-y-3">
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-slate-100 dark:bg-navy-900 flex items-center justify-center text-slate-400">
+            <Users size={28} />
+          </div>
+          <h3 className="text-base font-black text-navy-900 dark:text-white">
+            Aucun post dans cette section pour le moment
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+            Soyez le premier riverain à partager une mise à jour ou revenez sur l’onglet de tous les posts.
+          </p>
+          <button
+            type="button"
+            onClick={() => setFilter('tous')}
+            className="px-4 py-2 rounded-xl bg-[#0B2545] text-white text-xs font-black hover:bg-[#154275] transition"
+          >
+            Afficher tous les posts
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+          {filteredPosts.map((post) => {
+            const isLiked = !!likesState[post.id];
+            const areCommentsOpen = !!openComments[post.id];
+            const currentLikes = getLikesCount(post.id, post.baseLikes);
 
-          return (
-            <article
-              key={post.id}
-              className="bg-white dark:bg-[#071322] border border-navy-100 dark:border-navy-800 rounded-2xl sm:rounded-3xl overflow-hidden shadow-xs hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
-            >
-              {/* Haut de la carte : Auteur + Quartier + Statut */}
-              <div className="p-4 sm:p-5 flex items-center justify-between gap-3 border-b border-navy-50 dark:border-navy-800/80">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-200 dark:bg-navy-800 flex-shrink-0 border-2 border-slate-100 dark:border-navy-700">
-                    <img
-                      src={post.author.avatar}
-                      alt={post.author.name}
-                      className="w-full h-full object-cover"
-                    />
+            return (
+              <article
+                key={post.id}
+                className="bg-white dark:bg-[#071322] border border-navy-100 dark:border-navy-800 rounded-2xl sm:rounded-3xl overflow-hidden shadow-xs hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
+              >
+                {/* Haut de la carte : Auteur + Quartier + Badges Filtre & Statut */}
+                <div className="p-4 sm:p-5 flex items-center justify-between gap-3 border-b border-navy-50 dark:border-navy-800/80">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-200 dark:bg-navy-800 flex-shrink-0 border-2 border-slate-100 dark:border-navy-700">
+                      <img
+                        src={post.author.avatar}
+                        alt={post.author.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-sm font-black text-navy-900 dark:text-white truncate">
+                          {post.author.name}
+                        </span>
+                        {post.author.role && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-navy-800 text-slate-600 dark:text-slate-300 truncate">
+                            {post.author.role}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        <span className="flex items-center gap-1 text-[#CC131A] font-extrabold truncate">
+                          <MapPin size={12} className="flex-shrink-0" />
+                          {post.author.quartier}
+                        </span>
+                        <span>·</span>
+                        <span className="truncate flex items-center gap-1">
+                          <Clock size={11} className="text-slate-400" />
+                          {post.date}
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-sm font-black text-navy-900 dark:text-white truncate">
-                        {post.author.name}
+                  {/* Badges explicites selon le filtrage demandé */}
+                  <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                    {post.typePost === 'signalement' && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-full bg-red-50 dark:bg-red-950/40 text-[#CC131A] dark:text-red-300 border border-red-200 dark:border-red-900">
+                        <Camera size={12} />
+                        Signalement terrain
                       </span>
-                      {post.author.role && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-navy-800 text-slate-600 dark:text-slate-300 truncate">
-                          {post.author.role}
+                    )}
+
+                    {post.typePost === 'entraide' && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                        <Flame size={12} />
+                        Entraide & Mobilisation
+                      </span>
+                    )}
+
+                    {post.typePost === 'resolu' && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                        <CheckCircle2 size={12} />
+                        Résolu & Sécurisé
+                      </span>
+                    )}
+
+                    <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">
+                      {post.statutLabel}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Corps du post : Catégorie + Texte */}
+                <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <span className="text-[11px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-900">
+                        {post.categorie}
+                      </span>
+                      {post.titre && post.titre !== post.categorie && (
+                        <span className="text-xs font-black text-navy-800 dark:text-slate-200">
+                          {post.titre}
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                      <span className="flex items-center gap-1 text-[#CC131A] font-extrabold truncate">
-                        <MapPin size={12} className="flex-shrink-0" />
-                        {post.author.quartier}
-                      </span>
-                      <span>·</span>
-                      <span className="truncate flex items-center gap-1">
-                        <Clock size={11} className="text-slate-400" />
-                        {post.date}
-                      </span>
-                    </div>
-                  </div>
-                </div>
 
-                {/* Badge Statut + Type Durable */}
-                <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                  <span
-                    className={`inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-full ${
-                      post.statut === 'resolu'
-                        ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
-                        : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
-                    }`}
-                  >
-                    <ShieldCheck size={12} />
-                    {post.statutLabel}
-                  </span>
-                  <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">
-                    Post durable
-                  </span>
-                </div>
-              </div>
-
-              {/* Corps du post : Catégorie + Texte */}
-              <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    <span className="text-[11px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-900">
-                      {post.categorie}
-                    </span>
-                    {post.titre && post.titre !== post.categorie && (
-                      <span className="text-xs font-black text-navy-800 dark:text-slate-200">
-                        {post.titre}
-                      </span>
-                    )}
+                    <p className="text-sm text-navy-900 dark:text-slate-100 leading-relaxed font-medium">
+                      {post.texte}
+                    </p>
                   </div>
 
-                  <p className="text-sm text-navy-900 dark:text-slate-100 leading-relaxed font-medium">
-                    {post.texte}
-                  </p>
-                </div>
-
-                {/* Image du post si présente, ou bloc typographique pour post sans image */}
-                <div className="mt-3.5">
-                  {post.image ? (
-                    <div
-                      onClick={() => setPreviewImageModal(post.image)}
-                      className="relative w-full h-48 sm:h-56 bg-slate-100 dark:bg-navy-950 rounded-2xl overflow-hidden cursor-pointer group border border-navy-50 dark:border-navy-800 shadow-xs"
-                    >
-                      <img
-                        src={post.image}
-                        alt={post.texte}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-black gap-1.5 backdrop-blur-2xs">
-                        <Eye size={16} />
-                        <span>Agrandir la photo</span>
-                      </div>
-                    </div>
-                  ) : (
-                    /* Format typographique moderne pour publication sans photo */
-                    <div className="p-3.5 rounded-2xl bg-gradient-to-r from-blue-50/70 to-slate-50 dark:from-navy-900/60 dark:to-navy-950/40 border-l-4 border-[#0B2545] dark:border-blue-400 border-y border-r border-slate-200/80 dark:border-navy-800 flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-blue-100 dark:bg-blue-950/80 text-[#0B2545] dark:text-blue-300 flex items-center justify-center flex-shrink-0">
-                        <Droplets size={18} />
-                      </div>
-                      <p className="text-xs text-navy-700 dark:text-slate-300 leading-snug">
-                        <span className="font-bold">Point de situation sans photo</span> · Partagé pour coordination et maintien de la vigilance riveraine.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Barre d'actions sociales : Soutenir (+1) + Commentaires + Partager */}
-              <div className="px-4 py-3 sm:px-5 border-t border-navy-50 dark:border-navy-800/80 bg-slate-50/50 dark:bg-navy-900/30 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  {/* Bouton +1 Vu aussi / Soutenir */}
-                  <button
-                    type="button"
-                    onClick={() => handleToggleLike(post.id)}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all active:scale-95 cursor-pointer ${
-                      isLiked
-                        ? 'bg-red-600 text-white shadow-xs'
-                        : 'bg-white dark:bg-navy-800 text-navy-700 dark:text-slate-200 border border-slate-200 dark:border-navy-700 hover:border-red-300 hover:text-red-600'
-                    }`}
-                  >
-                    <Heart size={14} className={isLiked ? 'fill-white' : ''} />
-                    <span>+1 Vu aussi</span>
-                    <span className="ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] bg-black/10 dark:bg-white/10">
-                      {currentLikes}
-                    </span>
-                  </button>
-
-                  {/* Bouton Commentaires */}
-                  <button
-                    type="button"
-                    onClick={() => setOpenComments((prev) => ({ ...prev, [post.id]: !prev[post.id] }))}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white dark:bg-navy-800 text-navy-700 dark:text-slate-200 border border-slate-200 dark:border-navy-700 hover:bg-slate-100 dark:hover:bg-navy-700 transition active:scale-95 cursor-pointer"
-                  >
-                    <MessageCircle size={14} />
-                    <span>{(post.comments || []).length}</span>
-                  </button>
-                </div>
-
-                {/* Bouton Partager */}
-                <button
-                  type="button"
-                  onClick={() => handleShare(post)}
-                  title="Partager cette observation"
-                  className="p-2 rounded-xl text-slate-500 hover:text-navy-900 dark:hover:text-white transition active:scale-95 cursor-pointer"
-                >
-                  {copiedShareId === post.id ? (
-                    <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                      <Check size={14} /> Copié
-                    </span>
-                  ) : (
-                    <Share2 size={16} />
-                  )}
-                </button>
-              </div>
-
-              {/* Tiroir des commentaires interactif */}
-              {areCommentsOpen && (
-                <div className="p-4 border-t border-navy-100 dark:border-navy-800 bg-slate-50/80 dark:bg-navy-950/50 space-y-3">
-                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                    {(post.comments || []).length > 0 ? (
-                      post.comments.map((c) => (
-                        <div key={c.id} className="p-2.5 rounded-xl bg-white dark:bg-navy-800 text-xs border border-slate-200/60 dark:border-navy-700">
-                          <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-bold mb-1">
-                            <span>{c.author}</span>
-                            <span>{c.time}</span>
-                          </div>
-                          <p className="text-navy-800 dark:text-slate-200 font-medium">{c.text}</p>
+                  {/* Image du post si présente, ou bloc stylisé pour post sans image */}
+                  <div className="mt-3.5">
+                    {post.image ? (
+                      <div
+                        onClick={() => setPreviewImageModal(post.image)}
+                        className="relative w-full h-48 sm:h-56 bg-slate-100 dark:bg-navy-950 rounded-2xl overflow-hidden cursor-pointer group border border-navy-50 dark:border-navy-800 shadow-xs"
+                      >
+                        <img
+                          src={post.image}
+                          alt={post.texte}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-black gap-1.5 backdrop-blur-2xs">
+                          <Eye size={16} />
+                          <span>Agrandir la photo</span>
                         </div>
-                      ))
+                      </div>
                     ) : (
-                      <p className="text-xs text-slate-400 text-center py-2">
-                        Aucun commentaire pour le moment. Soyez le premier à répondre !
-                      </p>
+                      /* Format typographique moderne pour publication textuelle sans photo */
+                      <div className="p-3.5 rounded-2xl bg-gradient-to-r from-blue-50/70 to-slate-50 dark:from-navy-900/60 dark:to-navy-950/40 border-l-4 border-[#0B2545] dark:border-blue-400 border-y border-r border-slate-200/80 dark:border-navy-800 flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-blue-100 dark:bg-blue-950/80 text-[#0B2545] dark:text-blue-300 flex items-center justify-center flex-shrink-0">
+                          <Droplets size={18} />
+                        </div>
+                        <p className="text-xs text-navy-700 dark:text-slate-300 leading-snug">
+                          <span className="font-bold">Point de situation sans photo</span> · Partagé pour coordination et maintien de la vigilance riveraine.
+                        </p>
+                      </div>
                     )}
                   </div>
-
-                  <form onSubmit={(e) => handleAddComment(post.id, e)} className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={commentInputs[post.id] || ''}
-                      onChange={(e) => setCommentInputs({ ...commentInputs, [post.id]: e.target.value })}
-                      placeholder="Ajouter une précision ou proposer de l'aide..."
-                      className="flex-1 text-xs px-3 py-2 rounded-xl border border-slate-200 dark:border-navy-700 bg-white dark:bg-navy-900 text-navy-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-[#0B2545]"
-                    />
-                    <button
-                      type="submit"
-                      disabled={!commentInputs[post.id]?.trim()}
-                      className="p-2 rounded-xl bg-[#0B2545] text-white disabled:opacity-40 transition active:scale-95 cursor-pointer"
-                    >
-                      <Send size={14} />
-                    </button>
-                  </form>
                 </div>
-              )}
-            </article>
-          );
-        })}
-      </div>
+
+                {/* Barre d'actions sociales : Soutenir (+1) + Commentaires + Partager */}
+                <div className="px-4 py-3 sm:px-5 border-t border-navy-50 dark:border-navy-800/80 bg-slate-50/50 dark:bg-navy-900/30 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    {/* Bouton +1 Vu aussi / Soutenir */}
+                    <button
+                      type="button"
+                      onClick={() => handleToggleLike(post.id)}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all active:scale-95 cursor-pointer ${
+                        isLiked
+                          ? 'bg-red-600 text-white shadow-xs'
+                          : 'bg-white dark:bg-navy-800 text-navy-700 dark:text-slate-200 border border-slate-200 dark:border-navy-700 hover:border-red-300 hover:text-red-600'
+                      }`}
+                    >
+                      <Heart size={14} className={isLiked ? 'fill-white' : ''} />
+                      <span>+1 Vu aussi</span>
+                      <span className="ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] bg-black/10 dark:bg-white/10">
+                        {currentLikes}
+                      </span>
+                    </button>
+
+                    {/* Bouton Commentaires */}
+                    <button
+                      type="button"
+                      onClick={() => setOpenComments((prev) => ({ ...prev, [post.id]: !prev[post.id] }))}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white dark:bg-navy-800 text-navy-700 dark:text-slate-200 border border-slate-200 dark:border-navy-700 hover:bg-slate-100 dark:hover:bg-navy-700 transition active:scale-95 cursor-pointer"
+                    >
+                      <MessageCircle size={14} />
+                      <span>{(post.comments || []).length}</span>
+                    </button>
+                  </div>
+
+                  {/* Bouton Partager */}
+                  <button
+                    type="button"
+                    onClick={() => handleShare(post)}
+                    title="Partager cette observation"
+                    className="p-2 rounded-xl text-slate-500 hover:text-navy-900 dark:hover:text-white transition active:scale-95 cursor-pointer"
+                  >
+                    {copiedShareId === post.id ? (
+                      <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                        <Check size={14} /> Copié
+                      </span>
+                    ) : (
+                      <Share2 size={16} />
+                    )}
+                  </button>
+                </div>
+
+                {/* Tiroir des commentaires interactif */}
+                {areCommentsOpen && (
+                  <div className="p-4 border-t border-navy-100 dark:border-navy-800 bg-slate-50/80 dark:bg-navy-950/50 space-y-3">
+                    <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                      {(post.comments || []).length > 0 ? (
+                        post.comments.map((c) => (
+                          <div key={c.id} className="p-2.5 rounded-xl bg-white dark:bg-navy-800 text-xs border border-slate-200/60 dark:border-navy-700">
+                            <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-bold mb-1">
+                              <span>{c.author}</span>
+                              <span>{c.time}</span>
+                            </div>
+                            <p className="text-navy-800 dark:text-slate-200 font-medium">{c.text}</p>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-xs text-slate-400 text-center py-2">
+                          Aucun commentaire pour le moment. Soyez le premier à répondre !
+                        </p>
+                      )}
+                    </div>
+
+                    <form onSubmit={(e) => handleAddComment(post.id, e)} className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={commentInputs[post.id] || ''}
+                        onChange={(e) => setCommentInputs({ ...commentInputs, [post.id]: e.target.value })}
+                        placeholder="Ajouter une précision ou proposer de l'aide..."
+                        className="flex-1 text-xs px-3 py-2 rounded-xl border border-slate-200 dark:border-navy-700 bg-white dark:bg-navy-900 text-navy-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-[#0B2545]"
+                      />
+                      <button
+                        type="submit"
+                        disabled={!commentInputs[post.id]?.trim()}
+                        className="p-2 rounded-xl bg-[#0B2545] text-white disabled:opacity-40 transition active:scale-95 cursor-pointer"
+                      >
+                        <Send size={14} />
+                      </button>
+                    </form>
+                  </div>
+                )}
+              </article>
+            );
+          })}
+        </div>
+      )}
 
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {/* 5. POPUP MODALE : NOUVEAU POST COMMUNAUTAIRE (DURABLE)              */}
@@ -673,6 +778,53 @@ export default function CommunautePageBody() {
 
             {/* Formulaire de publication */}
             <form onSubmit={handleSubmitModalPost} className="space-y-4">
+              {/* Type de post adapté aux 3 catégories de filtrage */}
+              <div>
+                <label className="block text-xs font-black text-navy-900 dark:text-white uppercase tracking-wider mb-1.5">
+                  Type de publication
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleTypeChange('signalement')}
+                    className={`p-2.5 rounded-xl border text-center transition cursor-pointer flex flex-col items-center gap-1 ${
+                      modalType === 'signalement'
+                        ? 'border-[#CC131A] bg-red-50 dark:bg-red-950/40 text-[#CC131A] font-black'
+                        : 'border-slate-200 dark:border-navy-700 bg-slate-50 dark:bg-navy-900 text-slate-600 dark:text-slate-300'
+                    }`}
+                  >
+                    <Camera size={16} />
+                    <span className="text-[11px] leading-tight">Signalement terrain</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleTypeChange('entraide')}
+                    className={`p-2.5 rounded-xl border text-center transition cursor-pointer flex flex-col items-center gap-1 ${
+                      modalType === 'entraide'
+                        ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-black'
+                        : 'border-slate-200 dark:border-navy-700 bg-slate-50 dark:bg-navy-900 text-slate-600 dark:text-slate-300'
+                    }`}
+                  >
+                    <Flame size={16} />
+                    <span className="text-[11px] leading-tight">Entraide & Mobilisation</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleTypeChange('resolu')}
+                    className={`p-2.5 rounded-xl border text-center transition cursor-pointer flex flex-col items-center gap-1 ${
+                      modalType === 'resolu'
+                        ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-black'
+                        : 'border-slate-200 dark:border-navy-700 bg-slate-50 dark:bg-navy-900 text-slate-600 dark:text-slate-300'
+                    }`}
+                  >
+                    <CheckCircle2 size={16} />
+                    <span className="text-[11px] leading-tight">Résolu & Sécurisé</span>
+                  </button>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-xs font-black text-navy-900 dark:text-white uppercase tracking-wider mb-1.5">
                   Votre observation ou message
@@ -681,7 +833,7 @@ export default function CommunautePageBody() {
                   value={modalPostText}
                   onChange={(e) => setModalPostText(e.target.value)}
                   placeholder="Que se passe-t-il dans votre ruelle ? Décrivez l'état de l'eau, les besoins en sacs de sable ou l'avancement..."
-                  rows={4}
+                  rows={3}
                   required
                   className="w-full text-xs sm:text-sm p-3.5 rounded-2xl border border-slate-200 dark:border-navy-700 bg-slate-50 dark:bg-navy-900 text-navy-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-[#0B2545] focus:ring-1 focus:ring-[#0B2545] resize-none"
                 />
@@ -714,12 +866,11 @@ export default function CommunautePageBody() {
                     onChange={(e) => setModalCategorie(e.target.value)}
                     className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-navy-700 bg-white dark:bg-navy-900 text-navy-900 dark:text-white font-bold"
                   >
-                    <option value="Eau stagnante">💧 Eau stagnante</option>
-                    <option value="Caniveau bouché">🚰 Caniveau bouché</option>
-                    <option value="Pompage requis">🚜 Pompage requis</option>
-                    <option value="Entraide sacs de sable">🧱 Entraide sacs de sable</option>
-                    <option value="Passage piéton aménagé">🚶 Passage piéton aménagé</option>
-                    <option value="Information permanente">📢 Information permanente</option>
+                    {(CATEGORIES_BY_TYPE[modalType] || []).map((cat) => (
+                      <option key={cat.value} value={cat.value}>
+                        {cat.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>

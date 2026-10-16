@@ -28,7 +28,7 @@ vi.mock('../shared/hooks/useSignalements', () => ({
               date_creation: '2026-10-16T12:00:00Z',
               categorie: 'Eau stagnante',
               description: 'Inondation ruelle 5',
-              valide: true,
+              valide: false,
               photo: null,
             },
           },
@@ -87,5 +87,40 @@ describe('CommunautePageBody', () => {
 
     // Le nouveau post s'affiche dans le fil
     expect(screen.getByText(/Passage bloqué par les eaux à Ndakhane/i)).toBeInTheDocument();
+  });
+
+  it('filtre strictement le contenu selon les onglets Signalements terrain, Entraide & Mobilisation, et Résolus & Sécurisés', () => {
+    render(
+      <MemoryRouter>
+        <CommunautePageBody />
+      </MemoryRouter>
+    );
+
+    // 1. Filtre par défaut : Tous les posts
+    expect(screen.getByText(/Tous les posts/i)).toBeInTheDocument();
+
+    // 2. Clic sur Signalements terrain
+    const btnSignalements = screen.getByRole('button', { name: /Signalements terrain/i });
+    fireEvent.click(btnSignalements);
+    // Vérifie qu'un post de signalement est affiché
+    expect(screen.getByText(/Montée des eaux dans la ruelle basse/i)).toBeInTheDocument();
+    // Et qu'un post d'entraide ne s'y trouve pas
+    expect(screen.queryByText(/Barricades de sacs de sable installées/i)).not.toBeInTheDocument();
+
+    // 3. Clic sur Entraide & Mobilisation
+    const btnEntraide = screen.getByRole('button', { name: /Entraide & Mobilisation/i });
+    fireEvent.click(btnEntraide);
+    // Le post d'entraide doit être visible
+    expect(screen.getByText(/Barricades de sacs de sable installées/i)).toBeInTheDocument();
+    // Et le post de signalement ne s'y trouve pas
+    expect(screen.queryByText(/Montée des eaux dans la ruelle basse/i)).not.toBeInTheDocument();
+
+    // 4. Clic sur Résolus & Sécurisés
+    const btnResolus = screen.getByRole('button', { name: /Résolus & Sécurisés/i });
+    fireEvent.click(btnResolus);
+    // Le post résolu doit être visible
+    expect(screen.getByText(/Passerelle surélevée opérationnelle/i)).toBeInTheDocument();
+    // Et les autres ne doivent pas être visibles
+    expect(screen.queryByText(/Montée des eaux dans la ruelle basse/i)).not.toBeInTheDocument();
   });
 });
