@@ -307,43 +307,56 @@ export default function AccueilPageBody() {
         </div>
       </div>
 
-      {/* 6. Suivi des Risques, Mes Signalements & Alertes officielles avec Titre en haut de chaque carte */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 w-full mt-6 sm:mt-8 pt-4 sm:pt-6 items-stretch auto-rows-fr">
-        {/* Carte 1 : Évaluation du Risque */}
-        <div className="flex flex-col gap-2.5 h-full min-h-0">
-          <div className="flex items-center gap-2 px-1">
-            <div className="w-2 h-4 rounded-full bg-[#CC131A]" />
-            <h3 className="text-sm font-black uppercase tracking-wider text-navy-900 dark:text-white">
-              Évaluation du Risque
-            </h3>
+      {/* 6. Diagnostic Territorial, Vos Observations & Alertes officielles */}
+      <div className="w-full pt-6 sm:pt-8 pb-2">
+        <div className="flex items-center justify-between mb-3 px-1">
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-4 rounded-full bg-[#CC131A]" />
+            <h2 className="text-base sm:text-lg font-black text-navy-900 dark:text-white tracking-tight">
+              Diagnostic Territorial & Veille Active
+            </h2>
           </div>
-          <GaugeRisk
-            zone={topZone}
-            prediction={zonePrediction}
-            onExploreMap={() => navigate('/citoyen/carte')}
-            className="flex-1 h-full"
-          />
+          <span className="text-[11px] font-bold text-navy-400 dark:text-navy-500 hidden sm:inline">
+            Données consolidées
+          </span>
         </div>
 
-        {/* Carte 2 : Vos Observations Terrain (Renommé pour éviter la redondance avec le titre interne de la carte) */}
-        <div className="flex flex-col gap-2.5 h-full min-h-0">
-          <div className="flex items-center gap-2 px-1">
-            <div className="w-1.5 h-3.5 rounded-full bg-[#CC131A]" />
-            <h3 className="text-sm font-black uppercase tracking-wider text-navy-900 dark:text-white">
-              Vos Observations Terrain
-            </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 w-full items-stretch auto-rows-fr">
+          {/* Carte 1 : Évaluation du Risque */}
+          <div className="flex flex-col gap-2.5 h-full min-h-0">
+            <div className="flex items-center gap-2 px-1">
+              <div className="w-1.5 h-3.5 rounded-full bg-[#CC131A]" />
+              <h3 className="text-sm font-black uppercase tracking-wider text-navy-900 dark:text-white">
+                Évaluation du Risque
+              </h3>
+            </div>
+            <GaugeRisk
+              zone={topZone}
+              prediction={zonePrediction}
+              onExploreMap={() => navigate('/citoyen/carte')}
+              className="flex-1 h-full"
+            />
           </div>
-          <MesSignalementsWidget className="flex-1 h-full" />
-        </div>
 
-        {/* Carte 3 : Alertes Officielles */}
-        <div className="flex flex-col gap-2.5 h-full min-h-0">
-          <div className="flex items-center gap-2 px-1">
-            <div className="w-2 h-4 rounded-full bg-[#CC131A]" />
-            <h3 className="text-sm font-black uppercase tracking-wider text-navy-900 dark:text-white">
-              Alertes Officielles
-            </h3>
+          {/* Carte 2 : Vos Observations Terrain */}
+          <div className="flex flex-col gap-2.5 h-full min-h-0">
+            <div className="flex items-center gap-2 px-1">
+              <div className="w-1.5 h-3.5 rounded-full bg-[#CC131A]" />
+              <h3 className="text-sm font-black uppercase tracking-wider text-navy-900 dark:text-white">
+                Vos Observations Terrain
+              </h3>
+            </div>
+            <MesSignalementsWidget className="flex-1 h-full" />
           </div>
+
+          {/* Carte 3 : Alertes Officielles */}
+          <div className="flex flex-col gap-2.5 h-full min-h-0">
+            <div className="flex items-center gap-2 px-1">
+              <div className="w-1.5 h-3.5 rounded-full bg-[#CC131A]" />
+              <h3 className="text-sm font-black uppercase tracking-wider text-navy-900 dark:text-white">
+                Alertes Officielles
+              </h3>
+            </div>
           <div className="bg-white dark:bg-[#071322] border border-navy-100 dark:border-navy-800 rounded-3xl p-5 shadow-xs transition-all duration-300 ease-out hover:scale-[1.02] active:scale-[1.025] hover:-translate-y-1.5 hover:shadow-2xl hover:border-navy-300 dark:hover:border-navy-600 will-change-transform flex flex-col justify-between flex-1 h-full">
             <div>
               <div className="flex items-center justify-between mb-3.5">
@@ -392,6 +405,7 @@ export default function AccueilPageBody() {
           </div>
         </div>
       </div>
+    </div>
 
       {/* 7. Bandeau d'engagement & Réflexes d'urgence 24/7 (Élément de fin de page interactif et animé) */}
       <SentinellesUrgenceBanner />
