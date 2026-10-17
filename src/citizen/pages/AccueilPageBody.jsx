@@ -13,6 +13,7 @@ import ConseilsCarousel from '../components/ConseilsCarousel';
 import MesSignalementsWidget from '../components/MesSignalementsWidget';
 import FilActualiteStoriesWidget from '../components/FilActualiteStoriesWidget';
 import SentinellesUrgenceBanner from '../components/SentinellesUrgenceBanner';
+import MareeVentMarinWidget from '../components/MareeVentMarinWidget';
 
 const NIVEAU_RANK = { vert: 0, jaune: 1, orange: 2, rouge: 3 };
 
@@ -205,6 +206,24 @@ export default function AccueilPageBody() {
         </p>
       )}
 
+      {/* Styles d'animation et de transitions fluides */}
+      <style>{`
+        @keyframes shimmerGlow {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(200%); }
+        }
+        .animate-shimmer {
+          animation: shimmerGlow 2.5s infinite;
+        }
+        @keyframes subtleFloat {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-3px); }
+        }
+        .animate-subtle-float {
+          animation: subtleFloat 4s ease-in-out infinite;
+        }
+      `}</style>
+
       {/* 2. Capsules d'Actions Express Citoyennes (Flottantes, légères & vivantes) */}
       <div className="w-full pt-1 pb-2">
         <div className="flex items-center justify-between mb-2.5 px-1">
@@ -225,10 +244,13 @@ export default function AccueilPageBody() {
             to="/citoyen/signaler"
             className="group relative overflow-hidden flex items-center gap-3 p-3 sm:p-3.5 rounded-2xl bg-white dark:bg-[#071322] border border-red-200/80 dark:border-red-950/60 hover:border-red-400 dark:hover:border-red-700 shadow-xs hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer"
           >
+            {/* Shimmer lumineux au survol */}
+            <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+
             <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-red-500 to-[#CC131A] text-white flex items-center justify-center flex-shrink-0 shadow-sm shadow-red-500/30 group-hover:scale-105 transition-transform">
               <Camera size={19} />
             </div>
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 relative z-10">
               <h3 className="text-xs sm:text-sm font-black text-navy-900 dark:text-white group-hover:text-red-600 transition-colors leading-tight truncate">
                 Signaler
               </h3>
@@ -244,10 +266,13 @@ export default function AccueilPageBody() {
             to="/citoyen/carte"
             className="group relative overflow-hidden flex items-center gap-3 p-3 sm:p-3.5 rounded-2xl bg-white dark:bg-[#071322] border border-blue-200/80 dark:border-blue-950/60 hover:border-blue-400 dark:hover:border-blue-700 shadow-xs hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer"
           >
+            {/* Shimmer lumineux au survol */}
+            <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+
             <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm shadow-blue-500/30 group-hover:scale-105 transition-transform">
               <MapPin size={19} />
             </div>
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 relative z-10">
               <h3 className="text-xs sm:text-sm font-black text-navy-900 dark:text-white group-hover:text-blue-600 transition-colors leading-tight truncate">
                 Carte
               </h3>
@@ -262,10 +287,13 @@ export default function AccueilPageBody() {
             to="/citoyen/communaute"
             className="group relative overflow-hidden flex items-center gap-3 p-3 sm:p-3.5 rounded-2xl bg-white dark:bg-[#071322] border border-emerald-200/80 dark:border-emerald-950/60 hover:border-emerald-400 dark:hover:border-emerald-700 shadow-xs hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer"
           >
+            {/* Shimmer lumineux au survol */}
+            <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+
             <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm shadow-emerald-500/30 group-hover:scale-105 transition-transform">
               <Users size={19} />
             </div>
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 relative z-10">
               <h3 className="text-xs sm:text-sm font-black text-navy-900 dark:text-white group-hover:text-emerald-600 transition-colors leading-tight truncate">
                 Entraide
               </h3>
@@ -280,10 +308,13 @@ export default function AccueilPageBody() {
             to="/citoyen/alertes"
             className="group relative overflow-hidden flex items-center gap-3 p-3 sm:p-3.5 rounded-2xl bg-white dark:bg-[#071322] border border-amber-200/80 dark:border-amber-950/60 hover:border-amber-400 dark:hover:border-amber-700 shadow-xs hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer"
           >
+            {/* Shimmer lumineux au survol */}
+            <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+
             <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 text-white flex items-center justify-center flex-shrink-0 shadow-sm shadow-amber-500/30 group-hover:scale-105 transition-transform">
               <CloudRain size={19} />
             </div>
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 relative z-10">
               <h3 className="text-xs sm:text-sm font-black text-navy-900 dark:text-white group-hover:text-amber-600 transition-colors leading-tight truncate">
                 Prévisions
               </h3>
@@ -295,7 +326,12 @@ export default function AccueilPageBody() {
         </div>
       </div>
 
-      {/* 3. Carrousel visuel immersif en pleine largeur */}
+      {/* 3. Indicateur dynamique Côtier : Marée & Vent Marin de Thiaroye (Organique & Aéré) */}
+      <div className="w-full pt-1 pb-3">
+        <MareeVentMarinWidget />
+      </div>
+
+      {/* 4. Carrousel visuel immersif en pleine largeur */}
       <div className="w-full">
         <ConseilsCarousel />
       </div>

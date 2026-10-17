@@ -84,4 +84,12 @@ describe('AccueilPageBody', () => {
     expect(screen.getByText('Entraide')).toBeInTheDocument();
     expect(screen.getByText('Prévisions')).toBeInTheDocument();
   });
+
+  it('affiche le ruban dynamique de marée côtière et vent marin', () => {
+    renderWithProviders(<AccueilPageBody />);
+
+    expect(screen.getByTestId('maree-vent-marin-widget')).toBeInTheDocument();
+    expect(screen.getByText(/Façade Maritime · Thiaroye Plage/i)).toBeInTheDocument();
+    expect(screen.getByText(/Marée Descendante/i)).toBeInTheDocument();
+  });
 });
