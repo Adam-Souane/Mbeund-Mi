@@ -17,7 +17,7 @@ export default function CitizenProfileHeaderButton() {
       to="/citoyen/profil"
       title={`Mon profil citoyen (${username ?? 'Utilisateur'})`}
       aria-label="Mon profil citoyen"
-      className={`group relative flex items-center gap-2 p-1 sm:px-2.5 sm:py-1.5 rounded-full sm:rounded-xl transition-all duration-200 cursor-pointer ${
+      className={`group relative flex items-center gap-2 p-0.5 sm:px-2.5 sm:py-1.5 rounded-full sm:rounded-xl transition-all duration-200 cursor-pointer flex-shrink-0 ${
         isProfileActive
           ? 'bg-red-50 dark:bg-red-950/40 text-[#CC131A] dark:text-red-400 ring-2 ring-[#CC131A]/40 shadow-xs'
           : 'hover:bg-slate-100 dark:hover:bg-navy-800 text-navy-800 dark:text-slate-200'

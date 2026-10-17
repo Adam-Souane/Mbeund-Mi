@@ -133,10 +133,10 @@ export default function NotificationCenter() {
       <div className="relative">
         <button
           onClick={handleOpenPanel}
-          className="relative p-2 text-navy-700 dark:text-navy-200 hover:text-navy-950 dark:hover:text-white hover:bg-navy-100 dark:hover:bg-navy-800 rounded-xl transition-colors cursor-pointer"
+          className="relative w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center text-navy-700 dark:text-navy-200 hover:text-navy-950 dark:hover:text-white hover:bg-navy-100 dark:hover:bg-navy-800 rounded-xl transition-colors cursor-pointer flex-shrink-0"
           title={isConnected ? 'Centre de notifications (connecté 24/7)' : 'Centre de notifications'}
         >
-          <Bell size={20} />
+          <Bell size={18} />
 
           {/* Badge de compteur rouge pulsant */}
           {unreadCount > 0 && (

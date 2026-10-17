@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { LogOut, PhoneCall } from 'lucide-react';
 import Logo from '../../shared/components/Logo';
 import ThemeToggle from '../../theme/ThemeToggle';
@@ -30,22 +31,26 @@ export default function CitizenShell({ children, fullHeight = false }) {
   return (
     <div className={`min-h-screen bg-navy-50 dark:bg-navy-950 text-navy dark:text-navy-50 flex flex-col ${fullHeight ? 'h-screen overflow-hidden' : ''}`}>
       {/* Header mobile & tablette : z-50 pour être toujours au-dessus des couches Leaflet */}
-      <header className="h-14 sm:h-16 flex items-center justify-between px-4 sm:px-6 bg-white dark:bg-[#071322] border-b border-navy-100 dark:border-navy-800 flex-shrink-0 z-50 sticky top-0 shadow-2xs">
+      <header className="h-14 sm:h-16 flex items-center justify-between px-3.5 sm:px-6 bg-white dark:bg-[#071322] border-b border-navy-100 dark:border-navy-800 flex-shrink-0 z-50 sticky top-0 shadow-2xs gap-3 sm:gap-6">
+        {/* Logo plus discret et proportionné en mode mobile, espacé des actions */}
         <div className="flex items-center flex-shrink-0">
-          <Logo imgClassName="h-6 sm:h-8" className="items-start" />
+          <Link to="/citoyen/accueil" className="flex items-center focus:outline-none" aria-label="Accueil Mbeund Mi">
+            <Logo imgClassName="h-5 sm:h-7 max-w-[110px] sm:max-w-none" className="items-start" />
+          </Link>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-2.5 flex-shrink-0">
-          {/* Bouton Rouge Urgence / SOS (compact sur mobile, étendu sur tablette/desktop) */}
+        {/* Bloc d'actions à droite : groupe compact et harmonisé sans coller au logo */}
+        <div className="flex items-center gap-1.5 sm:gap-2.5 flex-shrink-0">
+          {/* Bouton Rouge Urgence / SOS (carré compact sur mobile, étendu avec texte sur tablette/desktop) */}
           <button
             type="button"
             onClick={() => setEmergencyOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 active:scale-95 text-white shadow-xs transition cursor-pointer"
+            className="flex items-center justify-center w-8 h-8 sm:w-auto sm:px-3 sm:py-1.5 rounded-xl bg-red-600 hover:bg-red-700 active:scale-95 text-white shadow-xs transition cursor-pointer flex-shrink-0"
             title="Numéros d'urgence 24/7"
+            aria-label="Numéros d'urgence 24/7"
           >
             <PhoneCall size={14} className="animate-pulse flex-shrink-0" />
-            <span className="text-[11px] font-black tracking-wide sm:hidden">SOS</span>
-            <span className="hidden sm:inline text-xs font-black">Urgence</span>
+            <span className="hidden sm:inline text-xs font-black ml-1.5">Urgence</span>
           </button>
 
           <NotificationCenter />
