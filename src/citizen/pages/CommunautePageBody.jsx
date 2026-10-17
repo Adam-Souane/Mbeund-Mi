@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Users,
@@ -12,7 +12,6 @@ import {
   Clock,
   Sparkles,
   Flame,
-  ArrowLeft,
   CheckCircle2,
   Plus,
   X,
@@ -31,6 +30,8 @@ import {
   ChevronDown,
   ChevronUp,
   Tag,
+  Upload,
+  Trash2,
 } from 'lucide-react';
 import CitizenShell from '../shared/CitizenShell';
 import { useAuth } from '../../auth/AuthContext';
@@ -84,7 +85,24 @@ export default function CommunautePageBody() {
   const [modalQuartier, setModalQuartier] = useState('Ndakhane (Thiaroye)');
   const [modalCategorie, setModalCategorie] = useState('Eau stagnante');
   const [modalPhotoChoice, setModalPhotoChoice] = useState('none');
+  const [modalCustomPhoto, setModalCustomPhoto] = useState(null);
   const [modalError, setModalError] = useState(null);
+  const modalUploadRef = useRef(null);
+  const modalCameraRef = useRef(null);
+
+  const handleModalPhotoFile = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result;
+      if (typeof result === 'string') {
+        setModalCustomPhoto(result);
+        setModalPhotoChoice('custom');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   // État de la popup "Créer une Story éphémère (24h)" (Photo ou Texte seul)
   const [isStoryModalOpen, setIsStoryModalOpen] = useState(false);
@@ -486,7 +504,7 @@ export default function CommunautePageBody() {
     }
 
     const selectedPreset = PHOTO_PRESETS.find((p) => p.id === modalPhotoChoice);
-    const chosenImage = selectedPreset ? selectedPreset.url : null;
+    const chosenImage = modalCustomPhoto || (selectedPreset ? selectedPreset.url : null);
 
     const badgeLabel =
       modalType === 'signalement'
@@ -535,6 +553,7 @@ export default function CommunautePageBody() {
     setUserPosts([newPost, ...userPosts]);
     setModalPostText('');
     setModalPhotoChoice('none');
+    setModalCustomPhoto(null);
     setModalError(null);
     setIsPostModalOpen(false);
   };
@@ -631,28 +650,19 @@ export default function CommunautePageBody() {
       {/* ═══════════════════════════════════════════════════════════════════ */}
       <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-[#0B2545] via-[#103565] to-slate-900 text-white p-5 sm:p-7 shadow-xl border border-blue-900/40 flex-shrink-0">
         <div className="flex flex-wrap items-center justify-between gap-4 relative z-10">
-          <div className="flex items-center gap-3.5 min-w-0">
-            <Link
-              to="/citoyen/accueil"
-              aria-label="Retour à l'accueil"
-              className="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 flex items-center justify-center text-white transition active:scale-95 flex-shrink-0"
-            >
-              <ArrowLeft size={18} />
-            </Link>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                  Espace Communauté · Thiaroye
-                </h1>
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                  En direct
-                </span>
-              </div>
-              <p className="text-xs sm:text-sm text-slate-300 mt-0.5 truncate">
-                Fil d’actualité citoyen, signalements géolocalisés et entraide solidaire entre voisins
-              </p>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                Espace Communauté · Thiaroye
+              </h1>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                En direct
+              </span>
             </div>
+            <p className="text-xs sm:text-sm text-slate-300 mt-0.5 truncate">
+              Fil d’actualité citoyen, signalements géolocalisés et entraide solidaire entre voisins
+            </p>
           </div>
 
           <Link
@@ -1393,35 +1403,108 @@ export default function CommunautePageBody() {
                 </div>
               </div>
 
-              {/* Sélection optionnelle d'image */}
+              {/* Sélection d'image : Prise directe, Upload ou Bibliothèque */}
               <div>
-                <label className="block text-xs font-black text-navy-900 dark:text-white uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-black text-navy-900 dark:text-white uppercase tracking-wider mb-2">
                   Illustration de la situation (Optionnel)
                 </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+
+                {/* Inputs cachés pour la prise de photo et l'upload */}
+                <input
+                  type="file"
+                  ref={modalCameraRef}
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={handleModalPhotoFile}
+                />
+                <input
+                  type="file"
+                  ref={modalUploadRef}
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleModalPhotoFile}
+                />
+
+                {/* Boutons d'action pour prendre ou uploader une photo */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+                  <button
+                    type="button"
+                    onClick={() => modalCameraRef.current?.click()}
+                    className="flex items-center justify-center gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-navy-700 bg-white dark:bg-navy-900 hover:border-[#CC131A] dark:hover:border-[#CC131A] text-navy-900 dark:text-white font-bold text-xs transition cursor-pointer active:scale-95 shadow-2xs group"
+                  >
+                    <Camera size={16} className="text-[#CC131A] group-hover:scale-110 transition" />
+                    <span>Prendre une photo</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => modalUploadRef.current?.click()}
+                    className="flex items-center justify-center gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-navy-700 bg-white dark:bg-navy-900 hover:border-[#0B2545] dark:hover:border-blue-400 text-navy-900 dark:text-white font-bold text-xs transition cursor-pointer active:scale-95 shadow-2xs group"
+                  >
+                    <Upload size={16} className="text-[#0B2545] dark:text-blue-400 group-hover:scale-110 transition" />
+                    <span>Importer depuis l'appareil</span>
+                  </button>
+                </div>
+
+                {/* Aperçu si une photo a été prise ou uploadée */}
+                {modalCustomPhoto && (
+                  <div className="relative mb-3 rounded-2xl overflow-hidden border-2 border-emerald-500/80 bg-slate-900 shadow-sm animate-in fade-in duration-200">
+                    <img
+                      src={modalCustomPhoto}
+                      alt="Photo capturée pour le post"
+                      className="w-full h-36 sm:h-44 object-cover"
+                    />
+                    <div className="absolute top-2 left-2 px-2.5 py-1 rounded-full bg-emerald-600/90 text-white text-[11px] font-black flex items-center gap-1 shadow-xs">
+                      <Check size={12} strokeWidth={3} />
+                      <span>Votre photo est prête</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setModalCustomPhoto(null);
+                        setModalPhotoChoice('none');
+                      }}
+                      className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/70 hover:bg-red-600 text-white flex items-center justify-center transition cursor-pointer shadow-xs"
+                      title="Retirer cette photo"
+                      aria-label="Retirer cette photo"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                )}
+
+                {/* Bibliothèque d'illustrations locales */}
+                <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1.5">
+                  Ou choisir une illustration de la communauté :
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {PHOTO_PRESETS.map((p) => {
-                    const isSelected = modalPhotoChoice === p.id;
+                    const isSelected = !modalCustomPhoto && modalPhotoChoice === p.id;
                     return (
                       <button
                         key={p.id}
                         type="button"
-                        onClick={() => setModalPhotoChoice(p.id)}
-                        className={`p-2 rounded-xl border text-left flex flex-col items-center gap-1.5 transition-all cursor-pointer ${
+                        onClick={() => {
+                          setModalCustomPhoto(null);
+                          setModalPhotoChoice(p.id);
+                        }}
+                        className={`p-1.5 rounded-xl border text-left flex flex-col items-center gap-1 transition-all cursor-pointer ${
                           isSelected
                             ? 'border-[#0B2545] dark:border-blue-400 bg-blue-50 dark:bg-blue-950/40 text-[#0B2545] dark:text-white font-black ring-2 ring-[#0B2545]/20'
                             : 'border-slate-200 dark:border-navy-700 bg-slate-50 dark:bg-navy-900/40 text-slate-600 dark:text-slate-300'
                         }`}
                       >
                         {p.url ? (
-                          <div className="w-full h-14 rounded-lg overflow-hidden bg-slate-200">
+                          <div className="w-full h-12 rounded-lg overflow-hidden bg-slate-200">
                             <img src={p.url} alt={p.label} className="w-full h-full object-cover" />
                           </div>
                         ) : (
-                          <div className="w-full h-14 rounded-lg bg-slate-100 dark:bg-navy-800 flex items-center justify-center text-slate-400">
-                            <ImageIcon size={20} />
+                          <div className="w-full h-12 rounded-lg bg-slate-100 dark:bg-navy-800 flex items-center justify-center text-slate-400">
+                            <ImageIcon size={18} />
                           </div>
                         )}
-                        <span className="text-[11px] truncate w-full text-center">
+                        <span className="text-[10px] truncate w-full text-center">
                           {p.label}
                         </span>
                       </button>
