@@ -53,6 +53,10 @@ class Alerte(models.Model):
         verbose_name = "Alerte"
         verbose_name_plural = "Alertes"
         ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['statut', '-timestamp']),
+            models.Index(fields=['zone', '-timestamp']),
+        ]
 
     def __str__(self):
         return f"Alerte {self.get_niveau_display()} - {self.zone.quartier} ({self.get_statut_display()})"
@@ -104,6 +108,9 @@ class PointRefuge(models.Model):
         verbose_name = "Point de refuge"
         verbose_name_plural = "Points de refuge"
         ordering = ['quartier', 'nom']
+        indexes = [
+            models.Index(fields=['actif', 'zone']),
+        ]
 
     def __str__(self):
         return f"{self.nom} ({self.get_type_refuge_display()}) - {self.quartier}"
@@ -125,6 +132,9 @@ class PredictionIA(models.Model):
         verbose_name = "Prédiction IA"
         verbose_name_plural = "Prédictions IA"
         ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['zone', '-timestamp']),
+        ]
 
     def __str__(self):
         return f"Prédiction {self.zone.quartier} - {self.probabilite * 100:.1f}% à {self.horizon_h}h"
@@ -165,6 +175,10 @@ class SignalementCitoyen(models.Model):
         verbose_name = "Signalement citoyen"
         verbose_name_plural = "Signalements citoyens"
         ordering = ['-date_creation']
+        indexes = [
+            models.Index(fields=['valide', '-date_creation']),
+            models.Index(fields=['signale_par', '-date_creation']),
+        ]
 
     def __str__(self):
         return f"Signalement {self.get_categorie_display()} - {self.date_creation}"
@@ -263,6 +277,10 @@ class HistoriqueRisque(models.Model):
         verbose_name = "Historique de risque"
         verbose_name_plural = "Historiques de risque"
         ordering = ['-date_calcul']
+        indexes = [
+            models.Index(fields=['zone', '-date_calcul']),
+            models.Index(fields=['segment', '-date_calcul']),
+        ]
         constraints = [
             models.CheckConstraint(
                 check=(

@@ -45,6 +45,10 @@ class Mesure(models.Model):
         verbose_name = "Mesure"
         verbose_name_plural = "Mesures"
         ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['capteur', '-timestamp']),
+            models.Index(fields=['-timestamp']),
+        ]
 
     def __str__(self):
         return f"{self.capteur.nom} - {self.valeur} {self.unite} @ {self.timestamp}"

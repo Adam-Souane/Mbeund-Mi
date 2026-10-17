@@ -216,7 +216,7 @@ class MesureViewSet(viewsets.ModelViewSet):
 
 
 class AlerteViewSet(viewsets.ModelViewSet):
-    queryset = Alerte.objects.all().select_related('zone').order_by('-timestamp')
+    queryset = Alerte.objects.all().select_related('zone', 'created_by').order_by('-timestamp')
     serializer_class = AlerteSerializer
     pagination_class = PageNumberPagination
 
@@ -344,7 +344,7 @@ class EpisodeInondationViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class SignalementCitoyenViewSet(viewsets.ModelViewSet):
-    queryset = SignalementCitoyen.objects.prefetch_related('photos_supplementaires').all()
+    queryset = SignalementCitoyen.objects.select_related('signale_par', 'signalement_similaire').prefetch_related('photos_supplementaires').all()
     serializer_class = SignalementCitoyenSerializer
     pagination_class = PageNumberPagination
 
@@ -403,7 +403,7 @@ class SegmentRueViewSet(viewsets.ModelViewSet):
 
 
 class PrevisionMeteoViewSet(viewsets.ModelViewSet):
-    queryset = PrevisionMeteo.objects.all().order_by('date_prevision')
+    queryset = PrevisionMeteo.objects.select_related('zone').all().order_by('date_prevision')
     serializer_class = PrevisionMeteoSerializer
     pagination_class = PageNumberPagination
 
@@ -414,7 +414,7 @@ class PrevisionMeteoViewSet(viewsets.ModelViewSet):
 
 
 class HistoriqueRisqueViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = HistoriqueRisque.objects.all()
+    queryset = HistoriqueRisque.objects.select_related('zone', 'segment').all()
     serializer_class = HistoriqueRisqueSerializer
     pagination_class = PageNumberPagination
 
@@ -425,7 +425,7 @@ class ContactAlerteViewSet(viewsets.ModelViewSet):
     Inscription libre (comme pour les signalements) ; consultation/gestion
     réservées aux autorités/admin car ce sont des numéros de téléphone (PII).
     """
-    queryset = ContactAlerte.objects.all()
+    queryset = ContactAlerte.objects.select_related('zone').all()
     serializer_class = ContactAlerteSerializer
     pagination_class = PageNumberPagination
 
