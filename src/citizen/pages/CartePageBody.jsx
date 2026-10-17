@@ -449,6 +449,9 @@ export default function CartePageBody() {
                     onToggleFullscreen={() => setIsMapFullscreen((prev) => !prev)}
                     isFullscreen={isMapFullscreen}
                     route={itineraire.data?.route}
+                    itineraireInstructions={itineraire.data?.instructions}
+                    isNavigating={isNavigating}
+                    currentStepIndex={currentStepIndex}
                     height="100%"
                     selectedSignalementId={activeSignalementId || urlSignalementId}
                     selectedQuartier={selectedQuartier}
@@ -597,6 +600,9 @@ export default function CartePageBody() {
                 onToggleFullscreen={() => setIsMapFullscreen(false)}
                 isFullscreen={true}
                 route={itineraire.data?.route}
+                itineraireInstructions={itineraire.data?.instructions}
+                isNavigating={isNavigating}
+                currentStepIndex={currentStepIndex}
                 height="100%"
                 selectedSignalementId={activeSignalementId || urlSignalementId}
                 selectedQuartier={selectedQuartier}

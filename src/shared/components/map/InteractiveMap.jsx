@@ -386,6 +386,55 @@ function createZoneTotemIcon({ quartier, niveauRisque, scorePct }) {
   });
 }
 
+function createRouteEndpointIcon({ type = 'depart' }) {
+  if (typeof window === 'undefined' || typeof L === 'undefined' || !L?.divIcon) return undefined;
+  const isDepart = type === 'depart';
+  const color = isDepart ? '#0284C7' : '#059669';
+  const text = isDepart ? 'DÉPART' : 'REFUGE';
+  const iconSvg = isDepart
+    ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3" fill="#ffffff"/></svg>`
+    : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`;
+
+  return L.divIcon({
+    className: 'route-endpoint-pin-div',
+    html: `
+      <div style="position: relative; display: flex; flex-direction: column; align-items: center; cursor: pointer;">
+        <span style="position: absolute; top: 0; width: 36px; height: 36px; border-radius: 9999px; background-color: ${color}; opacity: 0.35; animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></span>
+        <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 9999px; background: ${color}; color: white; box-shadow: 0 4px 14px rgba(0,0,0,0.4); border: 2.5px solid white;">
+          ${iconSvg}
+        </div>
+        <div style="margin-top: 2px; padding: 1px 6px; border-radius: 9999px; background: #071322; color: white; font-size: 9px; font-weight: 900; letter-spacing: 0.05em; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 2px 6px rgba(0,0,0,0.3); text-transform: uppercase;">
+          ${text}
+        </div>
+      </div>
+    `,
+    iconSize: [60, 56],
+    iconAnchor: [30, 20],
+    popupAnchor: [0, -22],
+  });
+}
+
+function createNavigationStepIcon({ stepNumber }) {
+  if (typeof window === 'undefined' || typeof L === 'undefined' || !L?.divIcon) return undefined;
+  return L.divIcon({
+    className: 'nav-step-active-pin-div',
+    html: `
+      <div style="position: relative; display: flex; flex-direction: column; align-items: center; cursor: pointer;">
+        <span style="position: absolute; top: 0; width: 44px; height: 44px; border-radius: 9999px; background-color: #10B981; opacity: 0.5; animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></span>
+        <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 9999px; background: #059669; color: white; font-weight: 900; font-size: 14px; box-shadow: 0 6px 16px rgba(5, 150, 105, 0.6); border: 3px solid white;">
+          ${stepNumber}
+        </div>
+        <div style="margin-top: 2px; padding: 2px 8px; border-radius: 9999px; background: #064E3B; color: #6EE7B7; font-size: 10px; font-weight: 900; letter-spacing: 0.05em; border: 1px solid #10B981; box-shadow: 0 2px 8px rgba(0,0,0,0.4); text-transform: uppercase; white-space: nowrap;">
+          À suivre
+        </div>
+      </div>
+    `,
+    iconSize: [64, 62],
+    iconAnchor: [32, 22],
+    popupAnchor: [0, -26],
+  });
+}
+
 function MapViewportListener({ onViewportChange }) {
   const map = useMap();
   useEffect(() => {
@@ -394,7 +443,7 @@ function MapViewportListener({ onViewportChange }) {
       let b = null;
       if (typeof map.getBounds === 'function') {
         const raw = map.getBounds();
-        b = typeof raw?.pad === 'function' ? raw.pad(0.2) : raw;
+        b = typeof raw?.pad === 'function' ? raw.pad(0.5) : raw;
       }
       const z = typeof map.getZoom === 'function' ? map.getZoom() : 15;
       onViewportChange({ zoom: z, bounds: b });
@@ -464,34 +513,117 @@ function FocusSignalement({ signalements, selectedId, selectedQuartier, markerRe
 function MapAutoResizer() {
   const map = useMap();
   useEffect(() => {
+    if (!map) return;
     const handleResize = () => {
-      if (typeof map?.invalidateSize === 'function') {
+      if (typeof map.invalidateSize === 'function') {
         map.invalidateSize({ animate: false });
       }
     };
     handleResize();
-    const t1 = setTimeout(handleResize, 100);
+    const t0 = setTimeout(handleResize, 50);
+    const t1 = setTimeout(handleResize, 150);
     const t2 = setTimeout(handleResize, 350);
+    const t3 = setTimeout(handleResize, 750);
     window.addEventListener('resize', handleResize);
     return () => {
+      clearTimeout(t0);
       clearTimeout(t1);
       clearTimeout(t2);
+      clearTimeout(t3);
       window.removeEventListener('resize', handleResize);
     };
   }, [map]);
   return null;
 }
 
-// Recentre/zoome automatiquement sur l'itinéraire dès qu'il apparaît
+// Auto-recentre la vue dès qu'un popup s'ouvre pour garantir qu'il soit toujours 100% visible
+function MapPopupAutoPanner() {
+  const map = useMap();
+  useEffect(() => {
+    if (!map || typeof map.on !== 'function') return;
+
+    const handlePopupOpen = (e) => {
+      const popup = e?.popup;
+      if (!popup || typeof popup.getLatLng !== 'function') return;
+      const latlng = popup.getLatLng();
+      if (!latlng) return;
+
+      // Décaler vers le haut pour compenser la hauteur du popup (~120-140px)
+      // et éviter d'être masqué par les boutons de filtres supérieurs ou les overlays
+      if (typeof map.project === 'function' && typeof map.unproject === 'function') {
+        const px = map.project(latlng);
+        px.y -= 120;
+        const targetLatLng = map.unproject(px);
+        if (typeof map.panTo === 'function') {
+          map.panTo(targetLatLng, { animate: true, duration: 0.45 });
+        }
+      }
+    };
+
+    map.on('popupopen', handlePopupOpen);
+    return () => {
+      if (typeof map.off === 'function') {
+        map.off('popupopen', handlePopupOpen);
+      }
+    };
+  }, [map]);
+  return null;
+}
+
+// Recentre/zoome automatiquement sur l'itinéraire dès qu'il apparaît avec marges adaptées
 function FitRoute({ coordinates }) {
   const map = useMap();
   useEffect(() => {
-    if (!coordinates?.length) return;
-    map.fitBounds(
-      coordinates.map(([lon, lat]) => [lat, lon]),
-      { padding: [48, 48] }
-    );
+    if (!coordinates?.length || !map || typeof map.fitBounds !== 'function') return;
+    try {
+      const bounds = coordinates.map(([lon, lat]) => [lat, lon]);
+      map.fitBounds(bounds, {
+        paddingTopLeft: [50, 90],
+        paddingBottomRight: [50, 160],
+        maxZoom: 16.5,
+        animate: true,
+        duration: 0.6,
+      });
+    } catch {}
   }, [coordinates, map]);
+  return null;
+}
+
+// Accompagne visuellement le guidage pas-à-pas le long des ruelles
+function NavigationStepFollower({ isNavigating, currentStepIndex, instructions, coordinates, stepMarkerRef }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!isNavigating || !coordinates?.length || !map) return;
+
+    const totalSteps = instructions?.length || 1;
+    const ratio = totalSteps > 1 ? currentStepIndex / (totalSteps - 1) : 0;
+    const coordIdx = Math.min(
+      coordinates.length - 1,
+      Math.max(0, Math.round(ratio * (coordinates.length - 1)))
+    );
+    const coord = coordinates[coordIdx];
+    if (!coord) return;
+
+    const targetPoint = [coord[1], coord[0]];
+    if (typeof map.project === 'function' && typeof map.unproject === 'function') {
+      const px = map.project(targetPoint);
+      px.y -= 110;
+      const targetLatLng = map.unproject(px);
+      if (typeof map.flyTo === 'function') {
+        map.flyTo(targetLatLng, 17, { duration: 0.6 });
+      }
+    }
+
+    const timer = setTimeout(() => {
+      if (stepMarkerRef?.current && typeof stepMarkerRef.current.openPopup === 'function') {
+        stepMarkerRef.current.openPopup();
+      }
+    }, 650);
+
+    return () => clearTimeout(timer);
+  }, [isNavigating, currentStepIndex, instructions, coordinates, map, stepMarkerRef]);
+
   return null;
 }
 
@@ -595,6 +727,9 @@ export default function InteractiveMap({
   data = {},
   height = 560,
   route,
+  itineraireInstructions = null,
+  isNavigating = false,
+  currentStepIndex = 0,
   selectedSignalementId = null,
   selectedQuartier = null,
   defaultBaseMap = 'satellite',
@@ -607,6 +742,21 @@ export default function InteractiveMap({
 }) {
   const { zones, inondations, segments, capteurs, signalements, refuges } = data;
   const markerRefs = useRef({});
+  const navStepMarkerRef = useRef(null);
+
+  const instructions = itineraireInstructions || [];
+  const currentStep = instructions[currentStepIndex] || instructions[0] || null;
+  const currentStepCoord = useMemo(() => {
+    if (!route?.coordinates?.length) return null;
+    const totalSteps = instructions.length || 1;
+    const ratio = totalSteps > 1 ? currentStepIndex / (totalSteps - 1) : 0;
+    const coordIdx = Math.min(
+      route.coordinates.length - 1,
+      Math.max(0, Math.round(ratio * (route.coordinates.length - 1)))
+    );
+    const c = route.coordinates[coordIdx];
+    return c ? [c[1], c[0]] : null;
+  }, [route?.coordinates, instructions.length, currentStepIndex]);
 
   const availableLayers = Object.keys(LAYER_LABELS).filter((key) => {
     if (key === 'signalements') return !!signalements?.length;
@@ -862,6 +1012,14 @@ export default function InteractiveMap({
       >
         <ZoomControl position="topleft" />
         <MapAutoResizer />
+        <MapPopupAutoPanner />
+        <NavigationStepFollower
+          isNavigating={isNavigating}
+          currentStepIndex={currentStepIndex}
+          instructions={instructions}
+          coordinates={route?.coordinates}
+          stepMarkerRef={navStepMarkerRef}
+        />
         <MapViewportListener onViewportChange={handleViewportChange} />
         <RecenterButton center={THIAROYE_CENTER} defaultZoom={14.5} />
 
@@ -1117,9 +1275,19 @@ export default function InteractiveMap({
 
             return (
               <Marker
-                key={`refuge-pin-${fid}-${zoomLevel >= 15 ? 'hi' : 'low'}`}
+                key={`refuge-pin-${fid}`}
                 position={point}
                 icon={refugeIcon}
+                zIndexOffset={400}
+                eventHandlers={{
+                  click: () => {
+                    if (map && typeof map.panTo === 'function') {
+                      const px = map.project(point);
+                      px.y -= 120;
+                      map.panTo(map.unproject(px), { animate: true, duration: 0.45 });
+                    }
+                  },
+                }}
               >
                 <Popup
                   className="citizen-map-popup"
@@ -1317,16 +1485,31 @@ export default function InteractiveMap({
                     fillColor: isCurrentUser ? '#F59E0B' : statusColor,
                     fillOpacity: isSelected ? 0.35 : 0.2,
                   }}
+                  eventHandlers={{
+                    click: () => {
+                      const m = markerRefs.current?.[fid];
+                      if (m && typeof m.openPopup === 'function') m.openPopup();
+                    },
+                  }}
                 />
 
-                {/* 2. Marqueur Avatar Vivant réactif au zoom (clé incluant zoomBucket pour forcer le redimensionnement) */}
+                {/* 2. Marqueur Avatar Vivant réactif au zoom avec clé stable (évite la destruction du popup lors des zooms) */}
                 <Marker
-                  key={`sig-marker-${fid}-${zoomBucket}`}
+                  key={`sig-marker-${fid}`}
                   position={point}
                   icon={customIcon}
                   zIndexOffset={isCurrentUser ? 1000 : (isSelected ? 500 : 0)}
                   ref={(ref) => {
                     if (ref) markerRefs.current[fid] = ref;
+                  }}
+                  eventHandlers={{
+                    click: () => {
+                      if (map && typeof map.panTo === 'function') {
+                        const px = map.project(point);
+                        px.y -= 120;
+                        map.panTo(map.unproject(px), { animate: true, duration: 0.45 });
+                      }
+                    },
                   }}
                 >
                   <Popup
@@ -1478,6 +1661,15 @@ export default function InteractiveMap({
                 zoomLevel,
               })}
               zIndexOffset={2000}
+              eventHandlers={{
+                click: () => {
+                  if (map && typeof map.panTo === 'function') {
+                    const px = map.project([userLocation.lat, userLocation.lon]);
+                    px.y -= 120;
+                    map.panTo(map.unproject(px), { animate: true, duration: 0.45 });
+                  }
+                },
+              }}
             >
               <Popup
                 className="citizen-map-popup"
@@ -1537,26 +1729,98 @@ export default function InteractiveMap({
           <>
             <Polyline
               positions={route.coordinates.map(([lon, lat]) => [lat, lon])}
-              pathOptions={{ color: '#0D9488', weight: 7, opacity: 0.3 }}
+              pathOptions={{ color: '#0D9488', weight: 8, opacity: 0.35 }}
             />
             <Polyline
               positions={route.coordinates.map(([lon, lat]) => [lat, lon])}
-              pathOptions={{ color: '#0D9488', weight: 4, dashArray: '2,10', lineCap: 'round' }}
+              pathOptions={{ color: '#0D9488', weight: 4.5, dashArray: '4,10', lineCap: 'round' }}
             />
+
+            {/* Marqueur du point de départ avec auto-recentrage au clic */}
             <CircleMarker
               center={[route.coordinates[0][1], route.coordinates[0][0]]}
-              radius={7}
-              pathOptions={{ color: '#fff', weight: 2, fillColor: '#1B2A40', fillOpacity: 1 }}
+              radius={8}
+              pathOptions={{ color: '#fff', weight: 2.5, fillColor: '#0284C7', fillOpacity: 1 }}
+              eventHandlers={{
+                click: () => {
+                  if (map && typeof map.panTo === 'function') {
+                    const px = map.project([route.coordinates[0][1], route.coordinates[0][0]]);
+                    px.y -= 110;
+                    map.panTo(map.unproject(px), { animate: true, duration: 0.45 });
+                  }
+                },
+              }}
             >
-              <Popup>Départ</Popup>
+              <Popup className="citizen-map-popup" autoPan={false}>
+                <div className="text-xs p-2 font-sans space-y-1">
+                  <div className="flex items-center gap-1.5 font-black text-sky-600 dark:text-sky-400">
+                    <MapPin size={13} />
+                    <span>Départ</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    Début du trajet d’évacuation sécurisé
+                  </p>
+                </div>
+              </Popup>
             </CircleMarker>
+
+            {/* Marqueur du point d'arrivée (Lieu sûr) avec auto-recentrage au clic */}
             <CircleMarker
               center={[route.coordinates.at(-1)[1], route.coordinates.at(-1)[0]]}
-              radius={8}
-              pathOptions={{ color: '#fff', weight: 2, fillColor: '#0D9488', fillOpacity: 1 }}
+              radius={9}
+              pathOptions={{ color: '#fff', weight: 2.5, fillColor: '#059669', fillOpacity: 1 }}
+              eventHandlers={{
+                click: () => {
+                  if (map && typeof map.panTo === 'function') {
+                    const px = map.project([route.coordinates.at(-1)[1], route.coordinates.at(-1)[0]]);
+                    px.y -= 110;
+                    map.panTo(map.unproject(px), { animate: true, duration: 0.45 });
+                  }
+                },
+              }}
             >
-              <Popup>Point sûr le plus proche</Popup>
+              <Popup className="citizen-map-popup" autoPan={false}>
+                <div className="text-xs p-2 font-sans space-y-1">
+                  <div className="flex items-center gap-1.5 font-black text-emerald-600 dark:text-emerald-400">
+                    <ShieldCheck size={14} />
+                    <span>Point sûr le plus proche</span>
+                  </div>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-300 font-medium">
+                    Zone hors de danger d’inondation (Refuge)
+                  </p>
+                </div>
+              </Popup>
             </CircleMarker>
+
+            {/* Marqueur animé d'étape en direct quand le guidage est en cours */}
+            {isNavigating && currentStepCoord && (
+              <Marker
+                position={currentStepCoord}
+                icon={createNavigationStepIcon({ stepNumber: currentStepIndex + 1 })}
+                zIndexOffset={2500}
+                ref={navStepMarkerRef}
+              >
+                <Popup className="citizen-map-popup" autoPan={false} closeButton={false}>
+                  <div className="text-xs p-3 font-sans space-y-1.5 min-w-[210px]">
+                    <div className="flex items-center justify-between border-b border-slate-100 dark:border-navy-800 pb-1.5">
+                      <span className="font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider text-[10px]">
+                        Étape {currentStepIndex + 1} / {instructions.length}
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-bold">À suivre</span>
+                    </div>
+                    <p className="font-extrabold text-sm text-navy-950 dark:text-white leading-snug">
+                      {currentStep?.instruction || 'Continuez sur cet axe sécurisé'}
+                    </p>
+                    {currentStep?.ruelle && (
+                      <p className="text-[11px] text-slate-500 font-medium">
+                        {currentStep.ruelle} {currentStep.distance_m ? `· ${currentStep.distance_m} m` : ''}
+                      </p>
+                    )}
+                  </div>
+                </Popup>
+              </Marker>
+            )}
+
             <FitRoute coordinates={route.coordinates} />
           </>
         )}

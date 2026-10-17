@@ -397,4 +397,29 @@ describe('InteractiveMap', () => {
     expect(screen.getByText('Zones')).toBeInTheDocument();
     expect(screen.getByText('Signalements')).toBeInTheDocument();
   });
+
+  it('affiche le marqueur d’étape actif et son popup "À suivre" lors de la navigation guidée', () => {
+    const route = {
+      coordinates: [
+        [-17.38, 14.75],
+        [-17.37, 14.76],
+      ],
+    };
+    const instructions = [
+      { ordre: 1, direction: 'depart', instruction: 'Départ depuis votre position', ruelle: 'Rue de la Corniche', distance_m: 50 },
+      { ordre: 2, direction: 'droite', instruction: 'Tournez à droite sur la Rue du Débarcadère', ruelle: 'Rue du Débarcadère', distance_m: 120 },
+    ];
+
+    render(
+      <InteractiveMap
+        route={route}
+        itineraireInstructions={instructions}
+        isNavigating={true}
+        currentStepIndex={1}
+      />
+    );
+
+    expect(screen.getByText('À suivre')).toBeInTheDocument();
+    expect(screen.getByText(/Tournez à droite sur la Rue du Débarcadère/i)).toBeInTheDocument();
+  });
 });
