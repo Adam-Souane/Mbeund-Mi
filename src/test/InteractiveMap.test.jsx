@@ -76,6 +76,8 @@ vi.mock('lucide-react', () => ({
   PhoneCall: () => <span data-testid="phone-call-icon" />,
   Compass: () => <span data-testid="compass-icon" />,
   LocateFixed: () => <span data-testid="locate-fixed-icon" />,
+  Maximize2: () => <span data-testid="maximize-icon" />,
+  Minimize2: () => <span data-testid="minimize-icon" />,
 }));
 
 describe('InteractiveMap', () => {
@@ -320,5 +322,15 @@ describe('InteractiveMap', () => {
     expect(screen.getByText('350 places')).toBeInTheDocument();
     expect(screen.getByText('+221 77 123 45 67')).toBeInTheDocument();
     expect(screen.getByText(/Itinéraire vers ce refuge sécurisé/i)).toBeInTheDocument();
+  });
+
+  it('affiche le bouton Plein écran à côté du sélecteur Plan / Satellite et déclenche onToggleFullscreen', () => {
+    const handleToggleFullscreen = vi.fn();
+    render(<InteractiveMap onToggleFullscreen={handleToggleFullscreen} isFullscreen={false} />);
+
+    const fullscreenBtn = screen.getByRole('button', { name: 'Plein écran' });
+    expect(fullscreenBtn).toBeInTheDocument();
+    fireEvent.click(fullscreenBtn);
+    expect(handleToggleFullscreen).toHaveBeenCalledTimes(1);
   });
 });

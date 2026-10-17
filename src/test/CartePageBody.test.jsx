@@ -109,12 +109,17 @@ describe('CartePageBody', () => {
     );
   });
 
-  it('affiche la barre de boutons de filtres des couches au-dessus de la carte', () => {
+  it('affiche la barre de filtres temporels et transmet les couches et le plein écran à InteractiveMap', () => {
     renderWithProviders(<CartePageBody />);
 
-    expect(screen.getByText(/Zones à risque/i)).toBeInTheDocument();
-    expect(screen.getByText(/Signalements citoyens/i)).toBeInTheDocument();
-    expect(screen.getByText(/Rues & drainage/i)).toBeInTheDocument();
-    expect(screen.getByText(/Points de refuge/i)).toBeInTheDocument();
+    expect(screen.getByText("Aujourd'hui")).toBeInTheDocument();
+    expect(screen.getByText('7 jours')).toBeInTheDocument();
+    expect(screen.getByText('30 jours')).toBeInTheDocument();
+    expect(mockInteractiveMap).toHaveBeenCalledWith(
+      expect.objectContaining({
+        onToggleFullscreen: expect.any(Function),
+        isFullscreen: false,
+      })
+    );
   });
 });

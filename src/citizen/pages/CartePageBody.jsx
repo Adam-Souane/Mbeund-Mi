@@ -18,7 +18,7 @@ import {
   Flag,
 } from 'lucide-react';
 import CitizenShell from '../shared/CitizenShell';
-import InteractiveMap, { LAYER_LABELS, LAYER_ICONS } from '../../shared/components/map/InteractiveMap';
+import InteractiveMap from '../../shared/components/map/InteractiveMap';
 import RiskBadge from '../../shared/components/RiskBadge';
 import { useZones } from '../../shared/hooks/useZones';
 import { useSegments } from '../../shared/hooks/useSegments';
@@ -452,61 +452,6 @@ export default function CartePageBody() {
             </div>
           </div>
 
-          {/* Ligne 2 : Couches SIG (Zones, Signalements, Rues, Refuges) + Bouton Plein Écran */}
-          <div className="flex items-center justify-between gap-3 flex-wrap bg-white dark:bg-navy-900 px-3.5 py-2 rounded-2xl border border-navy-100 dark:border-navy-800 shadow-2xs">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-navy-950 dark:text-white select-none shrink-0 whitespace-nowrap">
-              <Layers size={14} className="text-[#CC131A] flex-shrink-0" />
-              <span>Afficher sur la carte :</span>
-            </div>
-
-            <div className="flex items-center gap-1.5 flex-wrap overflow-x-auto py-0.5">
-              {['zones', 'signalements', 'segments', 'refuges'].map((key) => {
-                const Icon = LAYER_ICONS[key] || MapPin;
-                const isVisible = layersVisibility[key] !== false;
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => handleToggleLayer(key)}
-                    aria-pressed={isVisible}
-                    aria-label={`Filtrer ${LAYER_LABELS[key]}`}
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold transition-all border shadow-2xs cursor-pointer select-none active:scale-95 whitespace-nowrap shrink-0 ${
-                      isVisible
-                        ? 'bg-navy-950 dark:bg-white text-white dark:text-navy-950 border-navy-950 dark:border-white shadow-xs'
-                        : 'bg-slate-50 dark:bg-navy-950/70 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-navy-800 hover:text-slate-700 dark:hover:text-slate-300 opacity-60'
-                    }`}
-                  >
-                    <Icon
-                      size={12}
-                      className={`flex-shrink-0 ${
-                        isVisible ? 'text-[#CC131A]' : 'opacity-40'
-                      }`}
-                    />
-                    <span className={isVisible ? 'font-bold' : 'line-through'}>
-                      {LAYER_LABELS[key]}
-                    </span>
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full flex-shrink-0 transition-colors ${
-                        isVisible ? 'bg-emerald-500 ring-2 ring-emerald-400/40' : 'bg-slate-300 dark:bg-slate-600'
-                      }`}
-                    />
-                  </button>
-                );
-              })}
-
-              {/* Bouton Plein Écran */}
-              <button
-                type="button"
-                onClick={() => setIsMapFullscreen(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-[#CC131A]/10 hover:bg-[#CC131A] text-[#CC131A] hover:text-white border border-[#CC131A]/30 transition-all cursor-pointer active:scale-95 ml-auto"
-                title="Agrandir la carte en plein écran"
-              >
-                <Maximize2 size={13} />
-                <span>Plein écran</span>
-              </button>
-            </div>
-          </div>
-
           {/* Déroulé Itinéraire actif si secours en cours */}
           {itineraire.data && (
             <div className="bg-white dark:bg-navy-900 border border-teal-200 dark:border-teal-900/60 rounded-2xl p-3.5 shadow-sm flex flex-col gap-2.5">
@@ -578,6 +523,8 @@ export default function CartePageBody() {
                 }}
                 visibleLayers={layersVisibility}
                 onToggleLayer={handleToggleLayer}
+                onToggleFullscreen={() => setIsMapFullscreen((prev) => !prev)}
+                isFullscreen={isMapFullscreen}
                 route={itineraire.data?.route}
                 height="100%"
                 selectedSignalementId={activeSignalementId || urlSignalementId}
@@ -632,6 +579,8 @@ export default function CartePageBody() {
                 }}
                 visibleLayers={layersVisibility}
                 onToggleLayer={handleToggleLayer}
+                onToggleFullscreen={() => setIsMapFullscreen(false)}
+                isFullscreen={true}
                 route={itineraire.data?.route}
                 height="100%"
                 selectedSignalementId={activeSignalementId || urlSignalementId}

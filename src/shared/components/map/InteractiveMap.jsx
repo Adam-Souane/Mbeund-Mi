@@ -22,6 +22,8 @@ import {
   PhoneCall,
   Compass,
   LocateFixed,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { riskInfo } from '../RiskBadge';
@@ -442,6 +444,8 @@ export default function InteractiveMap({
   onCalculateRouteFromPoint = null,
   visibleLayers = null,
   onToggleLayer = null,
+  onToggleFullscreen = null,
+  isFullscreen = false,
 }) {
   const { zones, inondations, segments, capteurs, signalements, refuges } = data;
   const markerRefs = useRef({});
@@ -556,6 +560,31 @@ export default function InteractiveMap({
           <Satellite size={13} className="flex-shrink-0" />
           <span>Sol réel (Satellite HD)</span>
         </button>
+
+        {onToggleFullscreen && (
+          <>
+            <div className="w-[1px] h-4 bg-navy-100 dark:bg-navy-800 mx-0.5" />
+            <button
+              type="button"
+              onClick={onToggleFullscreen}
+              className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-lg transition text-[#CC131A] hover:bg-[#CC131A]/10 active:scale-95 cursor-pointer"
+              aria-label={isFullscreen ? 'Quitter le plein écran' : 'Plein écran'}
+              title={isFullscreen ? 'Quitter le plein écran (Échap)' : 'Agrandir la carte en plein écran'}
+            >
+              {isFullscreen ? (
+                <>
+                  <Minimize2 size={13} className="flex-shrink-0" />
+                  <span className="hidden sm:inline">Réduire</span>
+                </>
+              ) : (
+                <>
+                  <Maximize2 size={13} className="flex-shrink-0" />
+                  <span className="hidden sm:inline">Plein écran</span>
+                </>
+              )}
+            </button>
+          </>
+        )}
       </div>
 
       {/* Incitation contextuelle au fort zoom pour révéler le sol réel si en mode plan */}
