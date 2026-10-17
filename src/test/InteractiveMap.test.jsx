@@ -382,4 +382,19 @@ describe('InteractiveMap', () => {
     const liveMarker = markers.find((m) => m.getAttribute('data-zindex') === '2000');
     expect(liveMarker).toBeDefined();
   });
+
+  it('affiche les libellés courts explicites des capsules dont "Refuges" et "Rues"', () => {
+    const testData = {
+      refuges: { features: [{ id: 1, geometry: { coordinates: [-17.38, 14.74] }, properties: { nom: 'Refuge 1' } }] },
+      segments: { features: [{ id: 1, geometry: { coordinates: [[-17.38, 14.74], [-17.39, 14.75]] }, properties: { nom: 'Rue 1' } }] },
+      zones: { features: [{ id: 1, geometry: { coordinates: [[[-17.38, 14.74], [-17.39, 14.75], [-17.38, 14.75], [-17.38, 14.74]]] }, properties: { nom: 'Zone 1' } }] },
+      signalements: [{ id: 1, position: [-17.38, 14.74] }],
+    };
+    render(<InteractiveMap data={testData} />);
+
+    expect(screen.getByText('Refuges')).toBeInTheDocument();
+    expect(screen.getByText('Rues')).toBeInTheDocument();
+    expect(screen.getByText('Zones')).toBeInTheDocument();
+    expect(screen.getByText('Signalements')).toBeInTheDocument();
+  });
 });

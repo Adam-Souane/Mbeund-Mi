@@ -22,6 +22,12 @@ vi.mock('../shared/components/map/InteractiveMap', () => ({
     segments: 'Rues & drainage',
     refuges: 'Points de refuge',
   },
+  LAYER_SHORT_LABELS: {
+    zones: 'Zones',
+    signalements: 'Signalements',
+    segments: 'Rues',
+    refuges: 'Refuges',
+  },
   LAYER_ICONS: {},
 }));
 

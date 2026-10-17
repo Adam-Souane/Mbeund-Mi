@@ -51,6 +51,14 @@ export const LAYER_LABELS = {
   refuges: 'Points de refuge',
 };
 
+export const LAYER_SHORT_LABELS = {
+  zones: 'Zones',
+  segments: 'Rues',
+  capteurs: 'Capteurs',
+  signalements: 'Signalements',
+  refuges: 'Refuges',
+};
+
 export const LAYER_ICONS = {
   zones: ShieldAlert,
   segments: Route,
@@ -602,7 +610,9 @@ export default function InteractiveMap({
 
   const availableLayers = Object.keys(LAYER_LABELS).filter((key) => {
     if (key === 'signalements') return !!signalements?.length;
-    return !!data[key]?.features?.length;
+    const layer = data[key];
+    if (Array.isArray(layer)) return layer.length > 0;
+    return !!(layer?.features?.length || layer?.results?.features?.length || layer?.length);
   });
 
   const [internalVisible, setInternalVisible] = useState(() =>
@@ -746,7 +756,7 @@ export default function InteractiveMap({
               title={`Afficher ou masquer : ${LAYER_LABELS[key]}`}
             >
               <Icon size={12} className={isLayerActive ? 'text-[#CC131A]' : 'opacity-40'} />
-              <span>{LAYER_LABELS[key]?.split(' ')[0]}</span>
+              <span>{LAYER_SHORT_LABELS[key] || LAYER_LABELS[key]}</span>
               {count !== null && (
                 <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
                   isLayerActive
@@ -1031,7 +1041,7 @@ export default function InteractiveMap({
           })}
 
         {visible.capteurs !== false &&
-          capteurs?.features?.map((f) => {
+          (capteurs?.features || (Array.isArray(capteurs) ? capteurs : []))?.map((f) => {
             const point = pointToLatLng(f.geometry);
             if (!point) return null;
             return (
