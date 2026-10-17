@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Navigation,
@@ -110,6 +110,14 @@ export default function CartePageBody() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isMapFullscreen]);
 
+  const mapSectionRef = useRef(null);
+
+  const scrollToMapIfMobile = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024 && mapSectionRef.current) {
+      mapSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   // État des couches actives affichées sur la carte
   const [layersVisibility, setLayersVisibility] = useState({
     zones: true,
@@ -120,6 +128,12 @@ export default function CartePageBody() {
 
   const handleToggleLayer = (key) => {
     setLayersVisibility((prev) => ({ ...prev, [key]: !prev[key] }));
+    scrollToMapIfMobile();
+  };
+
+  const handleTimeFilter = (tabId) => {
+    setTimeFilter(tabId);
+    scrollToMapIfMobile();
   };
 
   const { data: zonesData, isLoading } = useZones();
@@ -400,7 +414,7 @@ export default function CartePageBody() {
                 <button
                   key={tab.id}
                   type="button"
-                  onClick={() => setTimeFilter(tab.id)}
+                  onClick={() => handleTimeFilter(tab.id)}
                   className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     timeFilter === tab.id
                       ? 'bg-navy-950 dark:bg-white text-white dark:text-navy-950 shadow-xs'
@@ -545,7 +559,7 @@ export default function CartePageBody() {
           {/* ========================================================= */}
           {/* CARTE INTERACTIVE PLEINE LARGEUR (w-full) */}
           {/* ========================================================= */}
-          <div className="w-full h-[650px] lg:h-[720px] relative rounded-2xl overflow-hidden shadow-sm border border-navy-100 dark:border-navy-800 isolate z-10">
+          <div ref={mapSectionRef} className="w-full h-[650px] lg:h-[720px] relative rounded-2xl overflow-hidden shadow-sm border border-navy-100 dark:border-navy-800 isolate z-10 scroll-mt-4">
             {isLoading ? (
               <div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-navy-900">
                 <p className="text-sm text-navy-400 flex items-center gap-2 font-semibold">

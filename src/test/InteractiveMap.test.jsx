@@ -74,6 +74,8 @@ vi.mock('lucide-react', () => ({
   Building2: () => <span data-testid="building-icon" />,
   Users: () => <span data-testid="users-icon" />,
   PhoneCall: () => <span data-testid="phone-call-icon" />,
+  Compass: () => <span data-testid="compass-icon" />,
+  LocateFixed: () => <span data-testid="locate-fixed-icon" />,
 }));
 
 describe('InteractiveMap', () => {

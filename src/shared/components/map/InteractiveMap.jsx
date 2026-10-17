@@ -20,6 +20,8 @@ import {
   Building2,
   Users,
   PhoneCall,
+  Compass,
+  LocateFixed,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { riskInfo } from '../RiskBadge';
@@ -30,6 +32,13 @@ import { sanitizePublicAuthor, sanitizePublicText } from '../../utils/sanitizer'
 // Coordonnées optimales englobant l'intégralité du territoire de Thiaroye-sur-Mer
 // (du littoral et de la plage au sud, à la cuvette ouest, jusqu'à la gare et Guinaw Rail)
 const THIAROYE_CENTER = [14.747, -17.385];
+
+// Limites géographiques strictes de Thiaroye-sur-Mer et de ses abords immédiats (Pikine / Yeumbeul)
+// Empêche toute dérive de la caméra vers le large de l'océan Atlantique ou hors zone
+const THIAROYE_BOUNDS = [
+  [14.718, -17.435], // Sud-Ouest maritime (baie de Hann / estran immédiat)
+  [14.785, -17.345], // Nord-Est terrestre (Guinaw Rail / Yeumbeul / Tally Diallo)
+];
 
 export const LAYER_LABELS = {
   zones: 'Zones à risque',
@@ -396,6 +405,30 @@ function FitRoute({ coordinates }) {
   return null;
 }
 
+// Bouton flottant de recentrage territorial immédiat sur Thiaroye
+function RecenterButton({ center = THIAROYE_CENTER, defaultZoom = 14.5 }) {
+  const map = useMap();
+  return (
+    <div
+      className="leaflet-bottom leaflet-right pointer-events-auto"
+      style={{ marginBottom: '18px', marginRight: '14px', zIndex: 1000 }}
+    >
+      <button
+        type="button"
+        onClick={() => {
+          map.flyTo(center, defaultZoom, { duration: 0.8 });
+        }}
+        className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/95 dark:bg-[#071322]/95 backdrop-blur-md border border-navy-100 dark:border-navy-800 text-navy-900 dark:text-white hover:text-[#CC131A] dark:hover:text-red-400 font-extrabold text-xs shadow-lg transition-all active:scale-95 cursor-pointer"
+        title="Recentrer la vue sur Thiaroye-sur-Mer"
+        aria-label="Recentrer la carte"
+      >
+        <Compass size={15} className="text-[#CC131A] animate-[spin_12s_linear_infinite]" />
+        <span className="hidden sm:inline">Recentrer Thiaroye</span>
+      </button>
+    </div>
+  );
+}
+
 /**
  * Carte SIG partagée citoyen/autorité avec Avatars Vivants style "Snap Map" / Waze.
  */
@@ -455,6 +488,46 @@ export default function InteractiveMap({
       className="relative rounded-xl overflow-hidden border border-navy-50 dark:border-navy-800 isolate z-10 w-full"
       style={{ height: typeof height === 'number' ? `${height}px` : height }}
     >
+      {/* Capsules flottantes de contrôle rapide directement intégrées sur la carte (Format Waze / Google Maps) */}
+      <div className="absolute top-3 left-14 sm:left-16 z-[1000] flex items-center gap-1.5 overflow-x-auto max-w-[calc(100%-195px)] sm:max-w-[calc(100%-250px)] py-1 px-1 scrollbar-none pointer-events-auto">
+        {['signalements', 'refuges', 'segments', 'zones'].map((key) => {
+          if (!availableLayers.includes(key) && key !== 'signalements') return null;
+          const isLayerActive = visible[key] !== false;
+          const Icon = LAYER_ICONS[key] || MapPin;
+          const count = key === 'signalements'
+            ? (signalements?.length || 0)
+            : key === 'refuges'
+            ? (refuges?.features?.length || refuges?.length || 0)
+            : null;
+
+          return (
+            <button
+              key={`float-pill-${key}`}
+              type="button"
+              onClick={() => toggle(key)}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-black backdrop-blur-md border shadow-md transition-all active:scale-95 whitespace-nowrap cursor-pointer ${
+                isLayerActive
+                  ? 'bg-navy-950/90 dark:bg-white/95 text-white dark:text-navy-950 border-white/20 dark:border-navy-800'
+                  : 'bg-white/70 dark:bg-navy-950/70 text-slate-500 dark:text-slate-400 border-white/40 dark:border-navy-800 line-through opacity-70'
+              }`}
+              title={`Afficher ou masquer : ${LAYER_LABELS[key]}`}
+            >
+              <Icon size={12} className={isLayerActive ? 'text-[#CC131A]' : 'opacity-40'} />
+              <span>{LAYER_LABELS[key]?.split(' ')[0]}</span>
+              {count !== null && (
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                  isLayerActive
+                    ? 'bg-red-500/20 text-red-300 dark:text-red-700'
+                    : 'bg-slate-200 dark:bg-navy-800 text-slate-500'
+                }`}>
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Sélecteur de fond de carte à l'intérieur de la carte : Plan vs Sol Réel (Satellite HD) */}
       <div className="absolute top-3 right-3 z-[1000] flex items-center gap-1 bg-white/95 dark:bg-navy/95 backdrop-blur p-1 rounded-xl border border-navy-50 dark:border-navy-800 shadow-md">
         <button
@@ -508,9 +581,11 @@ export default function InteractiveMap({
 
       <MapContainer
         center={THIAROYE_CENTER}
-        zoom={14}
+        zoom={14.5}
         minZoom={12}
         maxZoom={20}
+        maxBounds={THIAROYE_BOUNDS}
+        maxBoundsViscosity={0.85}
         scrollWheelZoom
         dragging
         touchZoom
@@ -519,6 +594,7 @@ export default function InteractiveMap({
       >
         <ZoomControl position="topleft" />
         <MapZoomListener onZoomChange={setZoomLevel} />
+        <RecenterButton center={THIAROYE_CENTER} defaultZoom={14.5} />
 
         {/* Triple couche Satellite Ultra-Précision :
             1. Photo aérienne satellite HD réelle (Esri World Imagery)
@@ -593,6 +669,16 @@ export default function InteractiveMap({
                   <Marker
                     position={center}
                     icon={totemIcon}
+                    eventHandlers={{
+                      click: (e) => {
+                        const map = e.target._map;
+                        if (map) {
+                          map.flyTo(center, Math.max(map.getZoom(), 15.5), {
+                            duration: 0.8,
+                          });
+                        }
+                      },
+                    }}
                   >
                     <Popup
                       className="citizen-map-popup"
@@ -770,6 +856,17 @@ export default function InteractiveMap({
                 key={`refuge-pin-${fid}-${zoomLevel >= 15 ? 'hi' : 'low'}`}
                 position={point}
                 icon={refugeIcon}
+                eventHandlers={{
+                  click: (e) => {
+                    const map = e.target._map;
+                    if (map) {
+                      map.flyTo(point, Math.max(map.getZoom(), 16.5), {
+                        duration: 0.8,
+                        easeLinearity: 0.25,
+                      });
+                    }
+                  },
+                }}
               >
                 <Popup
                   className="citizen-map-popup"
@@ -950,6 +1047,17 @@ export default function InteractiveMap({
                   icon={customIcon}
                   ref={(ref) => {
                     if (ref) markerRefs.current[fid] = ref;
+                  }}
+                  eventHandlers={{
+                    click: (e) => {
+                      const map = e.target._map;
+                      if (map) {
+                        map.flyTo(point, Math.max(map.getZoom(), 16.5), {
+                          duration: 0.8,
+                          easeLinearity: 0.25,
+                        });
+                      }
+                    },
                   }}
                 >
                   <Popup
