@@ -316,7 +316,7 @@ describe('CommunautePageBody', () => {
     expect(screen.getByText(/Eau évacuée avec succès devant le CEM 44/i)).toBeInTheDocument();
   });
 
-  it('offre un visualiseur de story avec texte compact et escamotable pour ne pas masquer la photo', () => {
+  it('offre un visualiseur de story avec texte compact et bouton Soutenir sans lien de signalement', () => {
     localStorage.clear();
     render(
       <MemoryRouter>
@@ -335,6 +335,16 @@ describe('CommunautePageBody', () => {
     // Clic pour déplier le texte
     fireEvent.click(toggleDetailsBtn);
     expect(screen.getByRole('button', { name: /Réduire/i })).toBeInTheDocument();
+
+    // Vérification des deux boutons : Soutenir et Fermer (pas de lien vers /citoyen/signaler)
+    const soutenirBtn = screen.getByRole('button', { name: /Soutenir cette observation/i });
+    expect(soutenirBtn).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Fermer' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Confirmer à proximité/i })).not.toBeInTheDocument();
+
+    // Clic pour soutenir / valider la story
+    fireEvent.click(soutenirBtn);
+    expect(screen.getByRole('button', { name: /Observation confirmée/i })).toBeInTheDocument();
   });
 
   it('bloque la publication des propos haineux ou insultes via le filtre de moderation', () => {

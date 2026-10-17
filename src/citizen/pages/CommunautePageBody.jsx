@@ -129,6 +129,38 @@ export default function CommunautePageBody() {
     return [...userStories, ...STORIES_COMMUNAUTE];
   }, [userStories]);
 
+  // Soutiens et validations citoyennes des stories pour prioriser les quartiers en danger
+  const [storySupports, setStorySupports] = useState(() => {
+    try {
+      const saved = localStorage.getItem('mbeund_mi_story_supports');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const handleSupportStory = (storyId) => {
+    if (!storyId) return;
+    const isAlreadySupported = !!storySupports[`user_${storyId}`];
+    setStorySupports((prev) => {
+      const currentCount = prev[storyId] || 0;
+      const next = {
+        ...prev,
+        [storyId]: isAlreadySupported ? Math.max(0, currentCount - 1) : currentCount + 1,
+        [`user_${storyId}`]: !isAlreadySupported,
+      };
+      try {
+        localStorage.setItem('mbeund_mi_story_supports', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+
+    if (!isAlreadySupported) {
+      setReportSuccessToast("Merci ! Votre confirmation soutient ce riverain et aide à prioriser les secours dans ce quartier.");
+      setTimeout(() => setReportSuccessToast(null), 3500);
+    }
+  };
+
   // Signalement citoyen pour modération (pour préserver un espace sain)
   const [reportingItem, setReportingItem] = useState(null);
   const [reportingReason, setReportingReason] = useState('Propos inappropriés / agressifs');
@@ -1887,12 +1919,22 @@ export default function CommunautePageBody() {
               )}
 
               <div className="flex items-center gap-2">
-                <Link
-                  to="/citoyen/signaler"
-                  className="flex-1 py-2.5 rounded-xl bg-[#CC131A] hover:bg-red-700 text-white text-xs font-black text-center shadow-lg transition active:scale-95"
+                <button
+                  type="button"
+                  onClick={() => handleSupportStory(activeStory.id)}
+                  className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black text-center shadow-lg transition active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer ${
+                    storySupports[`user_${activeStory.id}`]
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                      : 'bg-[#0B2545] hover:bg-[#123969] text-white border border-white/20'
+                  }`}
                 >
-                  Confirmer à proximité
-                </Link>
+                  <CheckCircle2 size={15} className={storySupports[`user_${activeStory.id}`] ? 'text-white' : 'text-emerald-400'} />
+                  <span>
+                    {storySupports[`user_${activeStory.id}`]
+                      ? `Observation confirmée (${(activeStory.baseVotes || 3) + (storySupports[activeStory.id] || 1)})`
+                      : `Soutenir cette observation (${(activeStory.baseVotes || 3) + (storySupports[activeStory.id] || 0)})`}
+                  </span>
+                </button>
                 <button
                   type="button"
                   onClick={() => {
