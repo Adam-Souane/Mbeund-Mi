@@ -77,6 +77,22 @@ export default function CommunautePageBody() {
   const [copiedShareId, setCopiedShareId] = useState(null);
   const [previewImageModal, setPreviewImageModal] = useState(null);
 
+  // Commentaires stockés en local par identifiant de post pour incrémenter instantanément le bouton Avis
+  const [commentsByPost, setCommentsByPost] = useState(() => {
+    try {
+      const saved = localStorage.getItem('mbeund_mi_community_comments');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('mbeund_mi_community_comments', JSON.stringify(commentsByPost));
+    } catch {}
+  }, [commentsByPost]);
+
   // Likes gérés en local avec nettoyage strict des clés corrompues (ex: 'undefined', 'backend-undefined')
   const [likesState, setLikesState] = useState(() => {
     try {
@@ -332,7 +348,7 @@ export default function CommunautePageBody() {
     }
   };
 
-  // Action ajout commentaire
+  // Action ajout commentaire : enregistre dans commentsByPost et incrémente aussitôt le compteur du bouton Avis
   const handleAddComment = (postId, e) => {
     e.preventDefault();
     const text = commentInputs[postId]?.trim();
@@ -341,17 +357,17 @@ export default function CommunautePageBody() {
     const sanitizedComment = sanitizePublicText(text);
     const sanitizedAuthor = sanitizePublicAuthor(nomCitoyen, 'Citoyen');
 
-    setUserPosts((prev) =>
-      prev.map((p) => {
-        if (p.id === postId) {
-          return {
-            ...p,
-            comments: [...(p.comments || []), { id: Date.now(), author: sanitizedAuthor, text: sanitizedComment, time: 'À l’instant' }],
-          };
-        }
-        return p;
-      })
-    );
+    const newComment = {
+      id: `comment-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      author: sanitizedAuthor,
+      text: sanitizedComment,
+      time: 'À l’instant',
+    };
+
+    setCommentsByPost((prev) => ({
+      ...prev,
+      [postId]: [...(prev[postId] || []), newComment],
+    }));
 
     setCommentInputs((prev) => ({ ...prev, [postId]: '' }));
     setOpenComments((prev) => ({ ...prev, [postId]: true }));
@@ -646,6 +662,10 @@ export default function CommunautePageBody() {
             const areCommentsOpen = !!openComments[post.id];
             const currentLikes = getLikesCount(post.id, post.baseLikes);
             const currentViews = getViewsCount(post.id, post.baseViews);
+            const postComments = [
+              ...(post.comments || []),
+              ...(commentsByPost[post.id] || []),
+            ];
 
             return (
               <article
@@ -852,13 +872,14 @@ export default function CommunautePageBody() {
                       />
                       <span>Avis</span>
                       <span
-                        className={`ml-0.5 px-1.5 py-0.2 rounded-full text-[11px] font-black ${
+                        data-testid={`comments-count-${post.id}`}
+                        className={`ml-0.5 px-1.5 py-0.2 rounded-full text-[11px] font-black transition-all ${
                           areCommentsOpen
                             ? 'bg-white/20 text-white'
                             : 'bg-amber-200/70 dark:bg-amber-900/70 text-amber-800 dark:text-amber-200'
                         }`}
                       >
-                        {(post.comments || []).length}
+                        {postComments.length}
                       </span>
                     </button>
                   </div>
@@ -891,8 +912,8 @@ export default function CommunautePageBody() {
                 {areCommentsOpen && (
                   <div className="p-4 border-t border-navy-100 dark:border-navy-800 bg-slate-50/80 dark:bg-navy-950/50 space-y-3">
                     <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                      {(post.comments || []).length > 0 ? (
-                        post.comments.map((c) => (
+                      {postComments.length > 0 ? (
+                        postComments.map((c) => (
                           <div key={c.id} className="p-2.5 rounded-xl bg-white dark:bg-navy-800 text-xs border border-slate-200/60 dark:border-navy-700">
                             <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-bold mb-1">
                               <span>{c.author}</span>

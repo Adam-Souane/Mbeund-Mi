@@ -250,5 +250,36 @@ describe('CommunautePageBody', () => {
     // L'anneau passe en grisé pour indiquer qu'elle a été lue
     expect(storyRing).toHaveClass('bg-slate-300');
   });
+
+  it('incremente aussitot le bouton d avis/commentaires lors de l envoi d un commentaire', () => {
+    localStorage.clear();
+    render(
+      <MemoryRouter>
+        <CommunautePageBody />
+      </MemoryRouter>
+    );
+
+    // Ouvre les commentaires du premier post
+    const boutonsAvis = screen.getAllByRole('button', { name: /Commentaires et avis riverains/i });
+    const premierBoutonAvis = boutonsAvis[0];
+    const initialCount = parseInt(premierBoutonAvis.textContent.match(/\d+/)[0], 10);
+
+    // Clic pour ouvrir le tiroir des commentaires
+    fireEvent.click(premierBoutonAvis);
+
+    // Saisie et envoi d'un commentaire
+    const inputCommentaire = screen.getByPlaceholderText(/Ajouter une précision ou proposer de l'aide/i);
+    fireEvent.change(inputCommentaire, { target: { value: 'Nous apportons 10 sacs supplémentaires.' } });
+
+    const form = inputCommentaire.closest('form');
+    fireEvent.submit(form);
+
+    // Le compteur du bouton s'est incrémenté aussitôt de +1
+    const newCount = parseInt(premierBoutonAvis.textContent.match(/\d+/)[0], 10);
+    expect(newCount).toBe(initialCount + 1);
+
+    // Le commentaire envoyé est affiché dans le tiroir
+    expect(screen.getByText(/Nous apportons 10 sacs supplémentaires/i)).toBeInTheDocument();
+  });
 });
 
