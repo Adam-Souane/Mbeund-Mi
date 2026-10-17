@@ -28,6 +28,7 @@ import { useSignalementsApercu } from '../../shared/hooks/useSignalements';
 import { useRefuges } from '../../shared/hooks/useRefuges';
 import { useGeolocation } from '../../shared/hooks/useGeolocation';
 import { useItineraireSecurise } from '../../shared/hooks/useItineraireSecurise';
+import ItineraireNavigationOverlay from '../components/ItineraireNavigationOverlay';
 import { flattenApiErrors } from '../../shared/utils/apiErrors';
 import { COMMUNAUTE_POSTS } from '../../shared/data/riverainsData';
 import { sanitizePublicAuthor, sanitizePublicText } from '../../shared/utils/sanitizer';
@@ -118,6 +119,8 @@ export default function CartePageBody() {
   // Filtre temporel : 'aujourdhui' par défaut comme demandé par l'utilisateur
   const [timeFilter, setTimeFilter] = useState('aujourdhui');
   const [isMapFullscreen, setIsMapFullscreen] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
 
   // Fermer le plein écran à l'appui sur Échap
   useEffect(() => {
@@ -165,22 +168,6 @@ export default function CartePageBody() {
   const { data: refugesData } = useRefuges();
   const { status: geoStatus } = useGeolocation();
   const itineraire = useItineraireSecurise();
-
-  // Icône directionnelle adaptée pour chaque étape du guidage piéton
-  const getDirectionIcon = (direction) => {
-    switch (direction) {
-      case 'tourner_gauche':
-        return <CornerUpLeft size={16} className="text-amber-500 flex-shrink-0" />;
-      case 'tourner_droite':
-        return <CornerUpRight size={16} className="text-amber-500 flex-shrink-0" />;
-      case 'arrivee':
-        return <Flag size={16} className="text-emerald-500 flex-shrink-0" />;
-      case 'depart':
-        return <MapPin size={16} className="text-teal-600 flex-shrink-0" />;
-      default:
-        return <ArrowRight size={16} className="text-navy-600 dark:text-navy-300 flex-shrink-0" />;
-    }
-  };
 
   // 1. Fusion complète de tous les signalements réels et citoyens de Thiaroye
   const allSignalements = useMemo(() => {
@@ -327,6 +314,8 @@ export default function CartePageBody() {
     }
 
     const triggerRoute = (lat, lon) => {
+      setIsNavigating(false);
+      setCurrentStepIndex(0);
       itineraire.mutate({ lat, lon });
     };
 
@@ -364,6 +353,8 @@ export default function CartePageBody() {
 
   const handleCloseItineraire = () => {
     itineraire.reset();
+    setIsNavigating(false);
+    setCurrentStepIndex(0);
   };
 
   return (
@@ -425,83 +416,9 @@ export default function CartePageBody() {
           </p>
         )}
 
-        {itineraire.data && (
-          <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl px-4 py-2.5 flex items-center justify-between gap-4 flex-shrink-0 text-xs shadow-xs">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 flex items-center justify-center flex-shrink-0">
-                <ShieldCheck size={16} />
-              </div>
-              <div>
-                <p className="text-[10px] text-navy-400">Point sûr le plus proche</p>
-                <p className="text-xs font-bold">{itineraire.data.zone_arrivee.quartier}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4 text-xs">
-              <div>
-                <span className="block text-[10px] text-navy-400">Distance</span>
-                <span className="font-bold">{itineraire.data.distance_km} km</span>
-              </div>
-              <div>
-                <span className="block text-[10px] text-navy-400">Risque</span>
-                <span className="font-bold">{Math.round(itineraire.data.score_risque_moyen_parcours * 100)}%</span>
-              </div>
-            </div>
-            <RiskBadge niveau={itineraire.data.zone_arrivee.niveau_risque} />
-          </div>
-        )}
-
         <div className="w-full flex flex-col gap-3">
-          {/* Déroulé Itinéraire actif si secours en cours */}
-          {itineraire.data && (
-            <div className="bg-white dark:bg-navy-900 border border-teal-200 dark:border-teal-900/60 rounded-2xl p-3.5 shadow-sm flex flex-col gap-2.5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-lg bg-teal-500 text-white flex items-center justify-center font-bold text-xs">
-                    <Navigation size={13} />
-                  </div>
-                  <div>
-                    <h2 className="text-xs font-bold text-navy-950 dark:text-white">
-                      Feuille de route sécurisée : Vers {itineraire.data.zone_arrivee.quartier}
-                    </h2>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                      Distance : {itineraire.data.distance_km} km · Risque moyen : {Math.round(itineraire.data.score_risque_moyen_parcours * 100)}%
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleCloseItineraire}
-                  className="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-navy-800 text-slate-600 dark:text-slate-300 cursor-pointer"
-                >
-                  Fermer
-                </button>
-              </div>
-
-              {itineraire.data.instructions && itineraire.data.instructions.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-2 border-t border-navy-100 dark:border-navy-800">
-                  {itineraire.data.instructions.map((step) => (
-                    <div
-                      key={step.etape}
-                      className="flex items-start gap-2 p-2 rounded-xl bg-slate-50 dark:bg-navy-950 border border-navy-100 dark:border-navy-800/60 text-xs"
-                    >
-                      <div className="mt-0.5">{getDirectionIcon(step.direction)}</div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-navy-900 dark:text-white leading-tight">
-                          {step.etape}. {step.instruction}
-                        </p>
-                        <p className="text-[10px] text-slate-500 mt-0.5">
-                          {step.rue} {step.distance_m ? `(${step.distance_m} m)` : ''}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
           {/* ========================================================= */}
-          {/* CARTE + BANDEAU LATÉRAL ÉTROI DE FILTRES TEMPORELS À DROITE */}
+          {/* CARTE + BANDEAU LATÉRAL ÉTROIT DE FILTRES TEMPORELS À DROITE */}
           {/* ========================================================= */}
           <div className="w-full flex flex-col lg:flex-row gap-2.5 items-start">
             {/* CARTE INTERACTIVE (Prend l'écrasante majorité de la largeur) */}
@@ -517,27 +434,48 @@ export default function CartePageBody() {
                   </p>
                 </div>
               ) : (
-                <InteractiveMap
-                  data={{
-                    zones: zonesData,
-                    segments: segmentsData,
-                    inondations: inondationsData,
-                    signalements: filteredSignalements,
-                    refuges: refugesData,
-                  }}
-                  userLocation={currentUserLocation}
-                  visibleLayers={layersVisibility}
-                  onToggleLayer={handleToggleLayer}
-                  onToggleFullscreen={() => setIsMapFullscreen((prev) => !prev)}
-                  isFullscreen={isMapFullscreen}
-                  route={itineraire.data?.route}
-                  height="100%"
-                  selectedSignalementId={activeSignalementId || urlSignalementId}
-                  selectedQuartier={selectedQuartier}
-                  onCalculateRouteFromPoint={({ lat, lon }) => {
-                    itineraire.mutate({ lat, lon });
-                  }}
-                />
+                <>
+                  <InteractiveMap
+                    data={{
+                      zones: zonesData,
+                      segments: segmentsData,
+                      inondations: inondationsData,
+                      signalements: filteredSignalements,
+                      refuges: refugesData,
+                    }}
+                    userLocation={currentUserLocation}
+                    visibleLayers={layersVisibility}
+                    onToggleLayer={handleToggleLayer}
+                    onToggleFullscreen={() => setIsMapFullscreen((prev) => !prev)}
+                    isFullscreen={isMapFullscreen}
+                    route={itineraire.data?.route}
+                    height="100%"
+                    selectedSignalementId={activeSignalementId || urlSignalementId}
+                    selectedQuartier={selectedQuartier}
+                    onCalculateRouteFromPoint={({ lat, lon }) => {
+                      setIsNavigating(false);
+                      setCurrentStepIndex(0);
+                      itineraire.mutate({ lat, lon });
+                    }}
+                  />
+
+                  {/* OVERLAY INTERACTIF SUR LA MAP : APERÇU ITINÉRAIRE + BOUTON « SUIVRE » + GUIDAGE PAS-À-PAS */}
+                  <ItineraireNavigationOverlay
+                    itineraireData={itineraire.data}
+                    isNavigating={isNavigating}
+                    onStartNavigation={() => {
+                      setIsNavigating(true);
+                      setCurrentStepIndex(0);
+                    }}
+                    onClose={handleCloseItineraire}
+                    currentStepIndex={currentStepIndex}
+                    onPrevStep={() => setCurrentStepIndex((prev) => Math.max(0, prev - 1))}
+                    onNextStep={() => {
+                      const total = itineraire.data?.instructions?.length || 0;
+                      setCurrentStepIndex((prev) => Math.min(total - 1, prev + 1));
+                    }}
+                  />
+                </>
               )}
             </div>
 
@@ -663,7 +601,25 @@ export default function CartePageBody() {
                 selectedSignalementId={activeSignalementId || urlSignalementId}
                 selectedQuartier={selectedQuartier}
                 onCalculateRouteFromPoint={({ lat, lon }) => {
+                  setIsNavigating(false);
+                  setCurrentStepIndex(0);
                   itineraire.mutate({ lat, lon });
+                }}
+              />
+
+              <ItineraireNavigationOverlay
+                itineraireData={itineraire.data}
+                isNavigating={isNavigating}
+                onStartNavigation={() => {
+                  setIsNavigating(true);
+                  setCurrentStepIndex(0);
+                }}
+                onClose={handleCloseItineraire}
+                currentStepIndex={currentStepIndex}
+                onPrevStep={() => setCurrentStepIndex((prev) => Math.max(0, prev - 1))}
+                onNextStep={() => {
+                  const total = itineraire.data?.instructions?.length || 0;
+                  setCurrentStepIndex((prev) => Math.min(total - 1, prev + 1));
                 }}
               />
             </div>
