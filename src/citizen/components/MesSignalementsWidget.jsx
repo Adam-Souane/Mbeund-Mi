@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import {
   Camera,
@@ -98,7 +99,7 @@ export default function MesSignalementsWidget({ className = '' }) {
   });
 
   return (
-    <div className={`bg-white dark:bg-[#071322] border border-navy-100 dark:border-navy-800 rounded-3xl p-5 shadow-xs transition-all duration-300 ease-out hover:scale-[1.02] active:scale-[1.025] hover:-translate-y-1.5 hover:shadow-2xl hover:border-navy-300 dark:hover:border-navy-600 will-change-transform flex flex-col justify-between ${className}`}>
+    <div className={`bg-white dark:bg-[#071322] border border-navy-100 dark:border-navy-800 rounded-3xl p-5 shadow-xs transition-all duration-300 ease-out hover:scale-[1.02] active:scale-[1.025] hover:-translate-y-1.5 hover:shadow-2xl hover:border-navy-300 dark:hover:border-navy-600 flex flex-col justify-between ${className}`}>
       <div>
         {/* ── EN-TÊTE AVEC BOUTON "VOIR MES SIGNALEMENTS" À DROITE (OPTION B) ── */}
         <div className="flex items-center justify-between mb-3.5">
@@ -213,9 +214,9 @@ export default function MesSignalementsWidget({ className = '' }) {
       {/* ═══════════════════════════════════════════════════════════════════════ */}
       {/* ── MODALE 1 : HISTORIQUE COMPLET DE MES SIGNALEMENTS (Au clic bouton) ── */}
       {/* ═══════════════════════════════════════════════════════════════════════ */}
-      {showHistoriqueModal && (
+      {showHistoriqueModal && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-150"
           onClick={() => setShowHistoriqueModal(false)}
         >
           <div
@@ -370,15 +371,16 @@ export default function MesSignalementsWidget({ className = '' }) {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* ═══════════════════════════════════════════════════════════════════════ */}
       {/* ── MODALE 2 : FICHE DE DÉTAIL D'UN SIGNALEMENT (Au clic sur une carte) ── */}
       {/* ═══════════════════════════════════════════════════════════════════════ */}
-      {selectedDetail && (
+      {selectedDetail && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-200"
           onClick={() => setSelectedDetail(null)}
         >
           <div
@@ -386,7 +388,7 @@ export default function MesSignalementsWidget({ className = '' }) {
             className="w-full max-w-md bg-white dark:bg-[#071322] rounded-3xl overflow-hidden shadow-2xl border border-navy-100 dark:border-navy-800 flex flex-col"
           >
             {/* Image d'en-tête */}
-            <div className="relative h-48 w-full overflow-hidden">
+            <div className="relative h-52 w-full overflow-hidden">
               <img
                 src={selectedDetail.photo || FALLBACK_PHOTOS[0]}
                 alt={selectedDetail.categorie}
@@ -452,7 +454,8 @@ export default function MesSignalementsWidget({ className = '' }) {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
