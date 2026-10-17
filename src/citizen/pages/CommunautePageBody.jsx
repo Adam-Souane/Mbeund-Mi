@@ -1227,15 +1227,16 @@ export default function CommunautePageBody() {
                 </div>
 
                 {/* ═══════════════════════════════════════════════════════════════ */}
-                {/* BARRE D'ACTIONS SOCIALES AVEC COULEURS ET ANIMATION ROUGE       */}
+                {/* ═══════════════════════════════════════════════════════════════ */}
+                {/* BARRE D'ACTIONS SOCIALES ALIGNÉE SUR UNE SEULE LIGNE SANS WRAP */}
                 {/* Clic isolé strictement sur le post avec e.stopPropagation()    */}
                 {/* ═══════════════════════════════════════════════════════════════ */}
                 <div
                   onClick={(e) => e.stopPropagation()}
-                  className="px-3.5 py-3 sm:px-4 border-t border-navy-50 dark:border-navy-800/80 bg-slate-50/70 dark:bg-navy-900/40 flex items-center justify-between gap-1.5 flex-wrap"
+                  className="px-3 sm:px-4 py-2.5 border-t border-navy-50 dark:border-navy-800/80 bg-slate-50/70 dark:bg-navy-900/40 flex items-center justify-between gap-1.5 sm:gap-2"
                 >
-                  <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                    {/* 1. Bouton CŒURS / J'AIME avec animation rouge et isolation stricte du post */}
+                  <div className="flex items-center gap-1 sm:gap-2 flex-1 min-w-0">
+                    {/* 1. Bouton CŒUR (sans texte "J'aime" encombrant, cœur remarquable avec compteur) */}
                     <button
                       type="button"
                       aria-label="J'aime le post"
@@ -1243,23 +1244,23 @@ export default function CommunautePageBody() {
                         e.stopPropagation();
                         handleToggleLike(post.id);
                       }}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all duration-300 active:scale-90 cursor-pointer shadow-xs select-none ${
+                      title="J'aime cette observation"
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-black transition-all duration-300 active:scale-90 cursor-pointer shadow-xs select-none flex-shrink-0 ${
                         isLiked
                           ? 'bg-rose-600 text-white border border-rose-600 shadow-md ring-2 ring-rose-400 dark:ring-rose-800 scale-[1.02]'
                           : 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/60 dark:hover:bg-rose-900/60'
                       }`}
                     >
                       <Heart
-                        size={14}
+                        size={17}
                         className={`transition-all duration-300 ${
                           isLiked
-                            ? 'fill-white text-white scale-125 animate-pulse'
+                            ? 'fill-white text-white scale-110 animate-pulse'
                             : 'fill-rose-500/20 text-rose-600 dark:text-rose-400'
                         }`}
                       />
-                      <span>J’aime</span>
                       <span
-                        className={`ml-0.5 px-1.5 py-0.2 rounded-full text-[11px] font-black transition-colors ${
+                        className={`px-1.5 py-0.2 rounded-full text-[11px] font-black transition-colors ${
                           isLiked
                             ? 'bg-white/20 text-white'
                             : 'bg-rose-200/70 dark:bg-rose-900/70 text-rose-800 dark:text-rose-200'
@@ -1269,7 +1270,7 @@ export default function CommunautePageBody() {
                       </span>
                     </button>
 
-                    {/* 2. Bouton VUES / EXPLORATIONS (Bleu / Cyan lumineux interactif) */}
+                    {/* 2. Bouton VUES / EXPLORATIONS */}
                     <button
                       type="button"
                       aria-label="Nombre d'explorations du post"
@@ -1278,16 +1279,16 @@ export default function CommunautePageBody() {
                         handleIncrementView(post.id);
                       }}
                       title="Explorations : personnes ayant consulté ce post"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all duration-200 active:scale-95 cursor-pointer shadow-xs bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-900/60 dark:hover:bg-sky-900/60"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-black transition-all duration-200 active:scale-95 cursor-pointer shadow-xs bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-900/60 dark:hover:bg-sky-900/60 flex-shrink-0"
                     >
-                      <Eye size={14} className="text-sky-600 dark:text-sky-400" />
-                      <span>Vues</span>
-                      <span className="ml-0.5 px-1.5 py-0.2 rounded-full text-[11px] font-black bg-sky-200/70 dark:bg-sky-900/70 text-sky-800 dark:text-sky-200">
+                      <Eye size={16} className="text-sky-600 dark:text-sky-400" />
+                      <span className="hidden sm:inline">Vues</span>
+                      <span className="px-1.5 py-0.2 rounded-full text-[11px] font-black bg-sky-200/70 dark:bg-sky-900/70 text-sky-800 dark:text-sky-200">
                         {currentViews}
                       </span>
                     </button>
 
-                    {/* 3. Bouton COMMENTAIRES / AVIS (Ambre / Or chaleureux interactif) */}
+                    {/* 3. Bouton COMMENTAIRES / AVIS */}
                     <button
                       type="button"
                       aria-label="Commentaires et avis riverains"
@@ -1295,20 +1296,21 @@ export default function CommunautePageBody() {
                         e.stopPropagation();
                         setOpenComments((prev) => ({ ...prev, [post.id]: !prev[post.id] }));
                       }}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all duration-200 active:scale-95 cursor-pointer shadow-xs ${
+                      title="Commentaires et avis riverains"
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-black transition-all duration-200 active:scale-95 cursor-pointer shadow-xs flex-shrink-0 ${
                         areCommentsOpen
                           ? 'bg-amber-500 text-white border border-amber-500 shadow-md ring-2 ring-amber-300 dark:ring-amber-900/50'
                           : 'bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/60 dark:hover:bg-amber-900/60'
                       }`}
                     >
                       <MessageCircle
-                        size={14}
+                        size={16}
                         className={areCommentsOpen ? 'text-white' : 'text-amber-600 dark:text-amber-400'}
                       />
-                      <span>Avis</span>
+                      <span className="hidden sm:inline">Avis</span>
                       <span
                         data-testid={`comments-count-${post.id}`}
-                        className={`ml-0.5 px-1.5 py-0.2 rounded-full text-[11px] font-black transition-all ${
+                        className={`px-1.5 py-0.2 rounded-full text-[11px] font-black transition-all ${
                           areCommentsOpen
                             ? 'bg-white/20 text-white'
                             : 'bg-amber-200/70 dark:bg-amber-900/70 text-amber-800 dark:text-amber-200'
@@ -1319,9 +1321,8 @@ export default function CommunautePageBody() {
                     </button>
                   </div>
 
-                  {/* 4. Bouton PARTAGER (Violet / Pourpre élégant interactif) */}
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    {/* 4. Bouton PARTAGER (Violet / Pourpre élégant interactif) */}
+                  {/* 4. Bouton PARTAGER + Optionnel SIGNALER */}
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
                     <button
                       type="button"
                       onClick={(e) => {
@@ -1329,16 +1330,16 @@ export default function CommunautePageBody() {
                         handleShare(post);
                       }}
                       title="Partager ce post avec les voisins"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all duration-200 active:scale-95 cursor-pointer shadow-xs bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-900/60 dark:hover:bg-purple-900/60"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-black transition-all duration-200 active:scale-95 cursor-pointer shadow-xs bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-900/60 dark:hover:bg-purple-900/60 flex-shrink-0"
                     >
                       {copiedShareId === post.id ? (
                         <>
-                          <Check size={14} className="text-emerald-600 dark:text-emerald-400" />
-                          <span className="text-emerald-700 dark:text-emerald-300">Copié</span>
+                          <Check size={15} className="text-emerald-600 dark:text-emerald-400" />
+                          <span className="text-emerald-700 dark:text-emerald-300 font-bold">Copié</span>
                         </>
                       ) : (
                         <>
-                          <Share2 size={14} className="text-purple-600 dark:text-purple-400" />
+                          <Share2 size={15} className="text-purple-600 dark:text-purple-400" />
                           <span>Partager</span>
                         </>
                       )}
@@ -1360,14 +1361,13 @@ export default function CommunautePageBody() {
                           });
                         }}
                         title={reportedIds[post.id] ? "Post déjà signalé pour modération" : "Signaler un contenu inapproprié ou abusif"}
-                        className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer shadow-xs ${
+                        className={`inline-flex items-center justify-center p-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer shadow-xs flex-shrink-0 ${
                           reportedIds[post.id]
                             ? 'bg-slate-100 dark:bg-navy-800 text-slate-400 border border-slate-200 dark:border-navy-700 cursor-default'
                             : 'bg-slate-50 hover:bg-rose-50 text-slate-500 hover:text-red-600 border border-slate-200 dark:border-navy-800 dark:bg-navy-900/40 dark:text-slate-400 dark:hover:text-red-400'
                         }`}
                       >
-                        <Flag size={13} className={reportedIds[post.id] ? 'text-slate-400' : 'text-slate-400 group-hover:text-red-500'} />
-                        <span className="hidden sm:inline">{reportedIds[post.id] ? 'Signalé' : 'Signaler'}</span>
+                        <Flag size={14} className={reportedIds[post.id] ? 'text-slate-400' : 'text-slate-400 group-hover:text-red-500'} />
                       </button>
                     )}
                   </div>

@@ -151,8 +151,14 @@ describe('CommunautePageBody', () => {
     const premierJaime = boutonsJaime[0];
     const premierVue = boutonsVues[0];
 
-    expect(premierJaime).toHaveTextContent(/J’aime/i);
+    // Le bouton J'aime est sous forme de cœur compact avec le nombre de likes sans texte encombrant
+    expect(premierJaime).toHaveAttribute('aria-label', "J'aime le post");
+    expect(premierJaime).toHaveTextContent(/[0-9]+/);
     expect(premierVue).toHaveTextContent(/Vues/i);
+
+    // Le bouton Partager est présent sur la même ligne
+    const boutonsPartager = screen.getAllByRole('button', { name: /Partager/i });
+    expect(boutonsPartager.length).toBeGreaterThan(0);
   });
 
   it('active uniquement le post aime sans affecter les autres posts', () => {
