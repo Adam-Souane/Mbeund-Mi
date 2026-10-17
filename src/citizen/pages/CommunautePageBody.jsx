@@ -439,7 +439,7 @@ export default function CommunautePageBody() {
           name: cleanAuthor,
           avatar: uniqueAvatar,
           quartier: p.citoyen_quartier || p.quartier || 'Thiaroye-sur-Mer',
-          role: 'Signalement Terrain',
+          role: 'Résident',
         },
         date: p.date_creation
           ? new Date(p.date_creation).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
@@ -1066,10 +1066,11 @@ export default function CommunautePageBody() {
                 onClick={() => handleIncrementView(post.id)}
                 className="bg-white dark:bg-[#0B1E36] border border-slate-200 dark:border-navy-800/90 rounded-2xl sm:rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between ring-1 ring-slate-900/5 dark:ring-white/5"
               >
-                {/* Haut de la carte : Auteur + Quartier + Badges Filtre & Statut */}
+                {/* Haut de la carte : Auteur + Quartier + Badges Filtre & Statut (Design unifié 100% cohérent) */}
                 <div className="p-4 sm:p-5 flex items-center justify-between gap-3 border-b border-navy-50 dark:border-navy-800/80">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-200 dark:bg-navy-800 flex-shrink-0 border-2 border-slate-100 dark:border-navy-700">
+                  {/* Bloc Auteur à gauche : 2 lignes fixes, nettes et parfaitement alignées */}
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-200 dark:bg-navy-800 flex-shrink-0 border-2 border-slate-100 dark:border-navy-700 shadow-xs">
                       <img
                         src={post.author.avatar}
                         alt={post.author.name}
@@ -1077,34 +1078,41 @@ export default function CommunautePageBody() {
                       />
                     </div>
 
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5 flex-wrap">
+                    <div className="min-w-0 flex-1">
+                      {/* Ligne 1 : Nom de l'auteur + badge optionnel sans wrap perturbateur */}
+                      <div className="flex items-center gap-1.5 min-w-0">
                         <span className="text-sm font-black text-navy-900 dark:text-white truncate">
                           {post.author.name}
                         </span>
-                        {post.author.role && (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-navy-800 text-slate-600 dark:text-slate-300 truncate">
-                            {post.author.role}
+                        {isPostOwner(post) ? (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 flex-shrink-0">
+                            Vous
                           </span>
-                        )}
+                        ) : post.author.role === 'Relais Quartier' ? (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-navy-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-navy-700 flex-shrink-0">
+                            Relais
+                          </span>
+                        ) : null}
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                        <span className="flex items-center gap-1 text-[#CC131A] font-extrabold truncate">
-                          <MapPin size={12} className="flex-shrink-0" />
+
+                      {/* Ligne 2 : Quartier · Date d'observation */}
+                      <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mt-0.5 min-w-0">
+                        <span className="flex items-center gap-1 text-[#CC131A] font-extrabold truncate flex-shrink-0 max-w-[140px] sm:max-w-[200px]">
+                          <MapPin size={12} className="flex-shrink-0 text-[#CC131A]" />
                           {post.author.quartier}
                         </span>
-                        <span>·</span>
-                        <span className="truncate flex items-center gap-1">
-                          <Clock size={11} className="text-slate-400" />
+                        <span className="text-slate-300 dark:text-navy-600 flex-shrink-0">·</span>
+                        <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400 truncate flex-shrink-0">
+                          <Clock size={11} className="text-slate-400 flex-shrink-0" />
                           {post.date}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Badges explicites selon le filtrage demandé + Menu 3 points (pour l'auteur) */}
-                  <div className="flex items-start gap-2 flex-shrink-0">
-                    <div className="flex flex-col items-end gap-1">
+                  {/* Côté droit : Badges de catégorie & Statut + Menu 3 points universel (style Facebook / Instagram) */}
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <div className="flex flex-col items-end gap-0.5">
                       {post.typePost === 'signalement' && (
                         <span className="inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-full bg-red-50 dark:bg-red-950/40 text-[#CC131A] dark:text-red-300 border border-red-200 dark:border-red-900">
                           <Camera size={12} />
@@ -1126,33 +1134,33 @@ export default function CommunautePageBody() {
                         </span>
                       )}
 
-                      <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">
+                      <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 truncate max-w-[140px] text-right">
                         {post.statutLabel}
                       </span>
                     </div>
 
-                    {/* Menu 3 points uniquement pour les posts créés par le citoyen lui-même */}
-                    {isPostOwner(post) && (
-                      <div className="relative" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          type="button"
-                          aria-label="Options de la publication"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setOpenMenuPostId((prev) => (prev === post.id ? null : post.id));
-                          }}
-                          className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-navy-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-navy-800 transition cursor-pointer"
-                          title="Options de la publication"
-                        >
-                          <MoreVertical size={18} />
-                        </button>
+                    {/* Menu 3 points unifié sur toutes les publications (Supprimer pour auteur, Signaler pour autrui) */}
+                    <div className="relative" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        aria-label="Options de la publication"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenMenuPostId((prev) => (prev === post.id ? null : post.id));
+                        }}
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-navy-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-navy-800 transition cursor-pointer"
+                        title="Options de la publication"
+                      >
+                        <MoreVertical size={18} />
+                      </button>
 
-                        {/* Menu contextuel déroulant */}
-                        {openMenuPostId === post.id && (
-                          <div
-                            role="menu"
-                            className="absolute right-0 top-9 w-52 bg-white dark:bg-[#071322] border border-slate-200 dark:border-navy-700 rounded-xl shadow-xl z-20 py-1.5 animate-in fade-in zoom-in-95 duration-150"
-                          >
+                      {/* Menu contextuel déroulant */}
+                      {openMenuPostId === post.id && (
+                        <div
+                          role="menu"
+                          className="absolute right-0 top-9 w-52 bg-white dark:bg-[#071322] border border-slate-200 dark:border-navy-700 rounded-xl shadow-xl z-20 py-1.5 animate-in fade-in zoom-in-95 duration-150"
+                        >
+                          {isPostOwner(post) ? (
                             <button
                               type="button"
                               role="menuitem"
@@ -1166,10 +1174,30 @@ export default function CommunautePageBody() {
                               <Trash2 size={15} className="flex-shrink-0" />
                               <span>Supprimer la publication</span>
                             </button>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                          ) : (
+                            <button
+                              type="button"
+                              role="menuitem"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenMenuPostId(null);
+                                if (reportedIds[post.id]) return;
+                                setReportingItem({
+                                  targetId: post.id,
+                                  targetType: 'post',
+                                  authorName: post.author.name,
+                                  textSnippet: post.texte,
+                                });
+                              }}
+                              className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-navy-800 transition cursor-pointer text-left"
+                            >
+                              <Flag size={15} className={`flex-shrink-0 ${reportedIds[post.id] ? 'text-emerald-500' : 'text-amber-500'}`} />
+                              <span>{reportedIds[post.id] ? 'Publication déjà signalée' : 'Signaler cette publication'}</span>
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 

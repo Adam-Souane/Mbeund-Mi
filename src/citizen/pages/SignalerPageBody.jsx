@@ -9,6 +9,9 @@ import { createSignalement } from '../../api/endpoints/signalements';
 import { flattenApiErrors } from '../../shared/utils/apiErrors';
 import { useGeolocation } from '../../shared/hooks/useGeolocation';
 import { useNotifications } from '../../shared/contexts/NotificationContext';
+import { useAuth } from '../../auth/AuthContext';
+import { getPublicAvatar } from '../../shared/utils/avatarResolver';
+import { sanitizePublicAuthor } from '../../shared/utils/sanitizer';
 
 const CATEGORIES = [
   { value: 'inondation', label: 'Inondation' },
@@ -23,6 +26,8 @@ const THIAROYE_CENTER = { lat: 14.75, lon: -17.38 };
 export default function SignalerPageBody() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user, username } = useAuth();
+  const nomCitoyen = user?.prenom ? `${user.prenom} ${user.nom || ''}`.trim() : (username || 'Citoyen');
   const { addNotification } = useNotifications();
   const { position, status: geoStatus, error: geoError, locate } = useGeolocation();
 
@@ -61,6 +66,8 @@ export default function SignalerPageBody() {
       } else {
         // Le citoyen a coché le partage : le signalement est également diffusé sur le fil d'entraide communautaire
         try {
+          const cleanAuthor = sanitizePublicAuthor(nomCitoyen, 'Citoyen');
+          const authorAvatar = getPublicAvatar({ name: cleanAuthor, id: `shared-sig-${rawId}`, context: description });
           const sharedPost = {
             id: `shared-sig-${rawId}`,
             rawBackendId: rawId,
@@ -69,10 +76,10 @@ export default function SignalerPageBody() {
             typePost: 'signalement',
             badgeFiltre: 'Signalement terrain',
             author: {
-              name: 'Sentinelle Citoyenne',
-              avatar: '/images/avatar-modou.jpg',
+              name: cleanAuthor,
+              avatar: authorAvatar,
               quartier: 'Thiaroye-sur-Mer',
-              role: 'Signalement Terrain',
+              role: 'Résident',
             },
             date: 'Posté à l’instant',
             dureeType: 'Post durable (actif)',
