@@ -18,6 +18,8 @@ import {
   Route,
   Radio,
   Building2,
+  Users,
+  PhoneCall,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { riskInfo } from '../RiskBadge';
@@ -592,12 +594,18 @@ export default function InteractiveMap({
                     position={center}
                     icon={totemIcon}
                   >
-                    <Popup>
-                      <div className="text-xs space-y-2 min-w-[200px] p-0.5 font-sans">
-                        <div className="flex items-center justify-between border-b border-navy-100 pb-1">
-                          <span className="font-bold text-sm text-navy-900">{props.quartier}</span>
+                    <Popup
+                      className="citizen-map-popup"
+                      minWidth={260}
+                      maxWidth={320}
+                      autoPan={true}
+                      closeButton={true}
+                    >
+                      <div className="text-xs space-y-2.5 p-3 min-w-[220px] font-sans">
+                        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-navy-800">
+                          <span className="font-extrabold text-sm text-navy-950 dark:text-white">{props.quartier}</span>
                           <span
-                            className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                            className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider"
                             style={{ backgroundColor: `${hex}20`, color: hex }}
                           >
                             {label}
@@ -605,12 +613,12 @@ export default function InteractiveMap({
                         </div>
                         <div>
                           <div className="flex justify-between items-center text-[11px] mb-1">
-                            <span className="text-navy-600 font-medium">Indice de risque :</span>
-                            <span className="font-bold" style={{ color: hex }}>
+                            <span className="text-slate-600 dark:text-slate-400 font-medium">Indice de risque moyen :</span>
+                            <span className="font-extrabold text-xs" style={{ color: hex }}>
                               {scorePct} %
                             </span>
                           </div>
-                          <div className="w-full bg-navy-100 rounded-full h-1.5 overflow-hidden">
+                          <div className="w-full bg-slate-100 dark:bg-navy-800 rounded-full h-2 overflow-hidden">
                             <div
                               className="h-full rounded-full transition-all duration-300"
                               style={{
@@ -621,7 +629,9 @@ export default function InteractiveMap({
                           </div>
                         </div>
                         {props.description && (
-                          <p className="text-navy-600 text-[11px] leading-relaxed pt-0.5">{props.description}</p>
+                          <p className="text-slate-600 dark:text-slate-300 text-xs leading-relaxed bg-slate-50 dark:bg-navy-900/50 p-2 rounded-lg border border-slate-100 dark:border-navy-800">
+                            {props.description}
+                          </p>
                         )}
                       </div>
                     </Popup>
@@ -648,21 +658,34 @@ export default function InteractiveMap({
                   opacity: 0.95,
                 }}
               >
-                <Popup>
-                  <div className="text-xs space-y-1.5 min-w-[170px] p-0.5">
-                    <div className="font-bold text-sm text-navy-900">{f.properties.nom || 'Rue sans nom'}</div>
-                    <div className="text-[11px] text-navy-700">
-                      Drainage : <span className="font-medium">{f.properties.etat_drainage || 'Non renseigné'}</span>
+                <Popup
+                  className="citizen-map-popup"
+                  minWidth={260}
+                  maxWidth={320}
+                  autoPan={true}
+                  closeButton={true}
+                >
+                  <div className="text-xs space-y-2.5 p-3 min-w-[210px] font-sans">
+                    <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-navy-800">
+                      <div className="w-8 h-8 rounded-xl text-white flex items-center justify-center flex-shrink-0" style={{ backgroundColor: color }}>
+                        <Route size={16} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <span className="font-extrabold text-sm text-navy-950 dark:text-white block truncate">{f.properties.nom || 'Rue'}</span>
+                        <p className="text-[10px] text-slate-500">Drainage : {f.properties.etat_drainage || 'Non renseigné'}</p>
+                      </div>
                     </div>
-                    <div className="flex justify-between items-center text-[11px]">
-                      <span className="text-navy-600 font-medium">Vulnérabilité :</span>
-                      <span className="font-bold" style={{ color }}>{segPct} %</span>
-                    </div>
-                    <div className="w-full bg-navy-100 rounded-full h-1.5 overflow-hidden">
-                      <div
-                        className="h-full rounded-full"
-                        style={{ width: `${Math.min(100, Math.max(5, segPct))}%`, backgroundColor: color }}
-                      />
+                    <div>
+                      <div className="flex justify-between items-center text-[11px] mb-1">
+                        <span className="text-slate-600 dark:text-slate-400 font-medium">Vulnérabilité ruissellement :</span>
+                        <span className="font-extrabold" style={{ color }}>{segPct} %</span>
+                      </div>
+                      <div className="w-full bg-slate-100 dark:bg-navy-800 rounded-full h-1.5 overflow-hidden">
+                        <div
+                          className="h-full rounded-full"
+                          style={{ width: `${Math.min(100, Math.max(5, segPct))}%`, backgroundColor: color }}
+                        />
+                      </div>
                     </div>
                   </div>
                 </Popup>
@@ -686,12 +709,34 @@ export default function InteractiveMap({
                   fillOpacity: 1,
                 }}
               >
-                <Popup>
-                  <div className="text-xs space-y-1 min-w-[160px]">
-                    <div className="font-bold text-sm">{f.properties.nom}</div>
-                    <div>Type : {f.properties.type}</div>
-                    <div>Statut : {f.properties.statut}</div>
-                    {f.properties.dernier_releve && <div>Dernier relevé : {formatDate(f.properties.dernier_releve)}</div>}
+                <Popup
+                  className="citizen-map-popup"
+                  minWidth={260}
+                  maxWidth={320}
+                  autoPan={true}
+                  closeButton={true}
+                >
+                  <div className="text-xs space-y-2 p-3 min-w-[200px] font-sans">
+                    <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-navy-800">
+                      <div className={`w-8 h-8 rounded-xl text-white flex items-center justify-center flex-shrink-0 ${f.properties.actif ? 'bg-emerald-600' : 'bg-slate-500'}`}>
+                        <Radio size={16} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <span className="font-extrabold text-sm text-navy-950 dark:text-white block truncate">{f.properties.nom}</span>
+                        <span className="text-[10px] text-slate-500 capitalize">{f.properties.type || 'Capteur IoT'}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-slate-500">Statut réseau :</span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${f.properties.actif ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300' : 'bg-slate-100 text-slate-700'}`}>
+                        {f.properties.actif ? 'En ligne · Connecté' : 'Hors ligne'}
+                      </span>
+                    </div>
+                    {f.properties.dernier_releve && (
+                      <div className="text-[10px] text-slate-400">
+                        Dernier relevé : {formatDate(f.properties.dernier_releve)}
+                      </div>
+                    )}
                   </div>
                 </Popup>
               </CircleMarker>
@@ -726,36 +771,92 @@ export default function InteractiveMap({
                 position={point}
                 icon={refugeIcon}
               >
-                <Popup>
-                  <div className="text-xs space-y-1.5 min-w-[210px] p-0.5 font-sans">
-                    <div className="flex items-center justify-between border-b border-navy-100 dark:border-navy-800 pb-1">
-                      <span className="font-bold text-sm text-navy-950">{props.nom}</span>
+                <Popup
+                  className="citizen-map-popup"
+                  minWidth={290}
+                  maxWidth={340}
+                  autoPan={true}
+                  autoPanPadding={[50, 70]}
+                  keepInView={true}
+                  closeButton={true}
+                >
+                  <div className="text-xs space-y-2.5 p-3 min-w-[240px] max-w-[290px] font-sans">
+                    {/* En-tête : Icône Refuge/Bâtiment + Nom + Quartier */}
+                    <div className="flex items-center gap-2.5 pb-2.5 border-b border-slate-100 dark:border-navy-800">
+                      <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm shadow-emerald-600/30">
+                        <Building2 size={20} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <span className="font-extrabold text-sm text-navy-950 dark:text-white leading-tight block truncate">
+                          {props.nom}
+                        </span>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5 truncate">
+                          <MapPin size={11} className="text-[#CC131A] flex-shrink-0" />
+                          <span className="truncate">{props.quartier}</span>
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
-                      Refuge sécurisé · {typeLabel[props.type_refuge] || 'Lieu sûr'}
+
+                    {/* Badges : Type + Statut sécurisé */}
+                    <div className="flex items-center justify-between gap-1.5 flex-wrap">
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-slate-100 dark:bg-navy-800 text-slate-700 dark:text-slate-200">
+                        {typeLabel[props.type_refuge] || 'Lieu sûr'}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900">
+                        Refuge opérationnel
+                      </span>
                     </div>
-                    <div className="text-[11px] text-slate-600 dark:text-slate-300">
-                      Quartier : <span className="font-medium text-navy-900">{props.quartier}</span>
+
+                    {/* Grille d'infos : Capacité & Contact */}
+                    <div className="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-navy-900/60 p-2.5 rounded-xl border border-slate-100 dark:border-navy-800">
+                      <div>
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 block font-semibold uppercase">Capacité</span>
+                        <span className="text-xs font-black text-navy-900 dark:text-white flex items-center gap-1 mt-0.5">
+                          <Users size={12} className="text-emerald-600" />
+                          <span className="truncate">{props.capacite ? `${props.capacite} places` : 'Places libres'}</span>
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 block font-semibold uppercase">Contact 24/7</span>
+                        {props.contact ? (
+                          <a
+                            href={`tel:${props.contact.replace(/\s+/g, '')}`}
+                            className="text-xs font-black text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 mt-0.5"
+                          >
+                            <PhoneCall size={12} className="flex-shrink-0" />
+                            <span className="truncate">{props.contact}</span>
+                          </a>
+                        ) : (
+                          <span className="text-xs font-bold text-slate-500 mt-0.5 block">18 (Secours)</span>
+                        )}
+                      </div>
                     </div>
+
+                    {/* Adresse / Accès */}
                     {props.adresse && (
-                      <div className="text-[11px] text-slate-500">
-                        Adresse : {props.adresse}
-                      </div>
-                    )}
-                    {props.capacite && (
-                      <div className="text-[11px] text-navy-800 font-bold">
-                        Capacité : {props.capacite} places
-                      </div>
-                    )}
-                    {props.contact && (
-                      <div className="text-[11px] text-teal-700 font-medium">
-                        Contact : {props.contact}
-                      </div>
-                    )}
-                    {props.notes && (
-                      <p className="text-navy-600 dark:text-navy-200 text-[11px] mt-1 pt-1 border-t border-slate-100">
-                        {props.notes}
+                      <p className="text-[11px] text-slate-600 dark:text-slate-300 flex items-start gap-1.5">
+                        <MapPin size={12} className="text-slate-400 flex-shrink-0 mt-0.5" />
+                        <span>{props.adresse}</span>
                       </p>
+                    )}
+
+                    {/* Description / Caractéristiques */}
+                    {(props.description || props.notes) && (
+                      <p className="text-xs text-navy-800 dark:text-slate-200 leading-relaxed bg-white dark:bg-navy-950/40 p-2 rounded-lg border border-slate-100 dark:border-navy-800">
+                        {props.description || props.notes}
+                      </p>
+                    )}
+
+                    {/* Bouton d'action : Calculer l'itinéraire vers ce refuge */}
+                    {onCalculateRouteFromPoint && point && (
+                      <button
+                        type="button"
+                        onClick={() => onCalculateRouteFromPoint({ lat: point[0], lon: point[1] })}
+                        className="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition shadow-xs cursor-pointer mt-1"
+                      >
+                        <Navigation size={14} className="flex-shrink-0" />
+                        <span>Itinéraire vers ce refuge sécurisé</span>
+                      </button>
                     )}
                   </div>
                 </Popup>

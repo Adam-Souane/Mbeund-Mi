@@ -72,6 +72,8 @@ vi.mock('lucide-react', () => ({
   Route: () => <span data-testid="route-icon" />,
   Radio: () => <span data-testid="radio-icon" />,
   Building2: () => <span data-testid="building-icon" />,
+  Users: () => <span data-testid="users-icon" />,
+  PhoneCall: () => <span data-testid="phone-call-icon" />,
 }));
 
 describe('InteractiveMap', () => {
@@ -277,5 +279,44 @@ describe('InteractiveMap', () => {
 
     rerender(<InteractiveMap data={data} visibleLayers={{ zones: false }} />);
     expect(screen.queryByTestId('polygon')).not.toBeInTheDocument();
+  });
+
+  it('affiche le popup moderne et harmonisé pour les refuges sécurisés', () => {
+    const data = {
+      refuges: {
+        features: [
+          {
+            id: 'refuge-1',
+            geometry: {
+              type: 'Point',
+              coordinates: [-17.385, 14.747],
+            },
+            properties: {
+              nom: 'Lycée Moderne de Thiaroye',
+              type_refuge: 'ecole',
+              quartier: 'Thiaroye Gare',
+              adresse: 'Route de Thiaroye Gare',
+              capacite: 350,
+              contact: '+221 77 123 45 67',
+              description: 'Bâtiment R+2 surélevé, cour abritée, point de rassemblement prioritaire.',
+            },
+          },
+        ],
+      },
+    };
+
+    render(
+      <InteractiveMap
+        data={data}
+        visibleLayers={{ refuges: true }}
+        onCalculateRouteFromPoint={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('Lycée Moderne de Thiaroye')).toBeInTheDocument();
+    expect(screen.getByText('Refuge opérationnel')).toBeInTheDocument();
+    expect(screen.getByText('350 places')).toBeInTheDocument();
+    expect(screen.getByText('+221 77 123 45 67')).toBeInTheDocument();
+    expect(screen.getByText(/Itinéraire vers ce refuge sécurisé/i)).toBeInTheDocument();
   });
 });
