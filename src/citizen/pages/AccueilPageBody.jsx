@@ -270,18 +270,31 @@ export default function AccueilPageBody() {
         <ConseilsCarousel />
       </div>
 
-      {/* 4. Titre de section : Veille & Vie de Quartier (Harmonisé avec le 1er titre) */}
-      <div className="w-full text-center py-4 sm:py-5 my-1">
-        <div className="inline-flex items-center justify-center gap-2 mb-1">
-          <div className="w-2 h-4 rounded-full bg-[#0B2545] dark:bg-[#CC131A]" />
-          <h2 className="text-lg sm:text-xl font-black text-navy-900 dark:text-white tracking-tight">
-            Veille Territoriale & Vie de Quartier
-          </h2>
-          <div className="w-2 h-4 rounded-full bg-[#0B2545] dark:bg-[#CC131A]" />
+      {/* 4. En-tête fluide : Veille Territoriale & Vie de Quartier */}
+      <div className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-6 pb-2.5 px-1">
+        <div className="flex items-center gap-2.5">
+          <div className="w-1.5 h-4 rounded-full bg-[#CC131A]" />
+          <div>
+            <h2 className="text-base sm:text-lg font-black text-navy-900 dark:text-white tracking-tight flex items-center gap-2">
+              <span>Veille Territoriale & Vie du Quartier</span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black tracking-normal">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Direct
+              </span>
+            </h2>
+            <p className="text-xs text-navy-500 dark:text-navy-400 font-medium">
+              Météo côtière en direct et observations partagées par les riverains
+            </p>
+          </div>
         </div>
-        <p className="text-xs sm:text-sm text-navy-500 dark:text-navy-300 max-w-xl mx-auto">
-          Suivez en direct la météo côtière de Thiaroye-sur-Mer et les observations partagées par les riverains.
-        </p>
+
+        <Link
+          to="/citoyen/communaute"
+          className="inline-flex items-center gap-1 text-xs font-bold text-[#CC131A] dark:text-red-400 hover:underline self-start sm:self-center"
+        >
+          <span>Espace communauté</span>
+          <ChevronRight size={14} />
+        </Link>
       </div>
 
       {/* 5. Duo Météo (Gauche, largeur contenue) & Fil d'Actualité (Droite, spacieux) à hauteur rigoureusement identique */}
@@ -315,7 +328,7 @@ export default function AccueilPageBody() {
         {/* Carte 2 : Vos Observations Terrain (Renommé pour éviter la redondance avec le titre interne de la carte) */}
         <div className="flex flex-col gap-2.5 h-full min-h-0">
           <div className="flex items-center gap-2 px-1">
-            <div className="w-2 h-4 rounded-full bg-[#0B2545] dark:bg-[#CC131A]" />
+            <div className="w-1.5 h-3.5 rounded-full bg-[#CC131A]" />
             <h3 className="text-sm font-black uppercase tracking-wider text-navy-900 dark:text-white">
               Vos Observations Terrain
             </h3>

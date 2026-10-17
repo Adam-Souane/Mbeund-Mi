@@ -75,44 +75,46 @@ export default function ConseilsCarousel() {
 
   return (
     <div
-      className="relative w-full h-48 sm:h-64 md:h-80 lg:h-[380px] rounded-2xl sm:rounded-3xl overflow-hidden shadow-xl border border-navy-100 dark:border-navy-800 transition-all group"
+      className="relative w-full h-52 sm:h-64 md:h-80 lg:h-[390px] rounded-2xl sm:rounded-3xl overflow-hidden shadow-xl ring-1 ring-black/5 dark:ring-white/10 transition-all group my-2"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
-      {/* Image de fond avec transition */}
+      {/* Image de fond avec zoom doux au survol */}
       <img
         src={slide.image}
         alt={slide.titre}
-        className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
+        key={slide.id}
+        className="absolute inset-0 w-full h-full object-cover object-center transition-all duration-700 ease-out group-hover:scale-105"
       />
 
-      {/* Dégradé sombre cinématique pour sublimer le texte et l'image */}
-      <div className="absolute inset-0 bg-gradient-to-t from-navy-950/95 via-navy-950/50 to-navy-950/10" />
+      {/* Dégradé sombre cinématique multicouche pour un contraste parfait et élégant */}
+      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/45 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-r from-slate-950/70 via-transparent to-transparent hidden sm:block" />
 
       {/* Contenu visuel par-dessus */}
-      <div className="absolute inset-0 p-3.5 sm:p-6 lg:p-8 flex flex-col justify-between text-white z-10">
-        {/* En-tête de la slide */}
+      <div className="absolute inset-0 p-4 sm:p-6 lg:p-8 flex flex-col justify-between text-white z-10">
+        {/* En-tête de la slide avec badge et navigation */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <span className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-extrabold uppercase tracking-wider backdrop-blur-md ${slide.tagColor} shadow-md truncate`}>
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-wider backdrop-blur-md ${slide.tagColor} shadow-md truncate`}>
               <Icon size={14} className="flex-shrink-0" />
               <span className="truncate">{slide.badge}</span>
             </span>
           </div>
 
-          {/* Flèches de navigation confortables et tactiles */}
-          <div className="flex items-center gap-1.5 sm:gap-2 bg-black/40 backdrop-blur-md rounded-full p-1 border border-white/20 shadow-md flex-shrink-0">
+          {/* Flèches de navigation en verre dépoli */}
+          <div className="flex items-center gap-1.5 bg-slate-950/50 backdrop-blur-md rounded-full p-1 border border-white/20 shadow-lg flex-shrink-0">
             <button
               onClick={() => setCurrent((prev) => (prev - 1 + SLIDES.length) % SLIDES.length)}
               aria-label="Conseil précédent"
-              className="w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center hover:bg-white/25 active:scale-95 transition cursor-pointer"
+              className="w-8 h-8 rounded-full flex items-center justify-center text-white hover:bg-white/20 active:scale-95 transition cursor-pointer"
             >
               <ChevronLeft size={16} />
             </button>
             <button
               onClick={() => setCurrent((prev) => (prev + 1) % SLIDES.length)}
               aria-label="Conseil suivant"
-              className="w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center hover:bg-white/25 active:scale-95 transition cursor-pointer"
+              className="w-8 h-8 rounded-full flex items-center justify-center text-white hover:bg-white/20 active:scale-95 transition cursor-pointer"
             >
               <ChevronRight size={16} />
             </button>
@@ -121,10 +123,10 @@ export default function ConseilsCarousel() {
 
         {/* Titre & texte percutant */}
         <div className="max-w-2xl">
-          <h3 className="text-base sm:text-2xl md:text-3xl font-black leading-snug sm:leading-tight text-white drop-shadow-lg mb-1 sm:mb-2">
+          <h3 className="text-base sm:text-2xl md:text-3xl font-black leading-snug sm:leading-tight text-white drop-shadow-md mb-1 sm:mb-2">
             {slide.titre}
           </h3>
-          <p className="text-xs sm:text-sm md:text-base text-slate-100 line-clamp-2 sm:line-clamp-3 drop-shadow-md leading-relaxed opacity-95">
+          <p className="text-xs sm:text-sm md:text-base text-slate-200 line-clamp-2 sm:line-clamp-3 drop-shadow-sm leading-relaxed">
             {slide.description}
           </p>
 
@@ -135,8 +137,8 @@ export default function ConseilsCarousel() {
                 key={s.id}
                 onClick={() => setCurrent(idx)}
                 aria-label={`Afficher diapositive ${idx + 1}`}
-                className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
-                  idx === current ? 'w-10 bg-white shadow-sm' : 'w-2.5 bg-white/40 hover:bg-white/70'
+                className={`h-1.5 sm:h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                  idx === current ? 'w-10 sm:w-12 bg-white shadow-md' : 'w-2.5 sm:w-3 bg-white/35 hover:bg-white/60'
                 }`}
               />
             ))}
