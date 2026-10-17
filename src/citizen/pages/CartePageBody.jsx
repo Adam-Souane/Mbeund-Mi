@@ -6,7 +6,6 @@ import {
   X,
   ShieldCheck,
   AlertTriangle,
-  Search,
   MapPin,
   Layers,
   Maximize2,
@@ -96,7 +95,6 @@ export default function CartePageBody() {
 
   // Filtre temporel : 'aujourdhui' par défaut comme demandé par l'utilisateur
   const [timeFilter, setTimeFilter] = useState('aujourdhui');
-  const [searchQuery, setSearchQuery] = useState('');
   const [isMapFullscreen, setIsMapFullscreen] = useState(false);
 
   // Fermer le plein écran à l'appui sur Échap
@@ -128,11 +126,6 @@ export default function CartePageBody() {
 
   const handleToggleLayer = (key) => {
     setLayersVisibility((prev) => ({ ...prev, [key]: !prev[key] }));
-    scrollToMapIfMobile();
-  };
-
-  const handleTimeFilter = (tabId) => {
-    setTimeFilter(tabId);
     scrollToMapIfMobile();
   };
 
@@ -237,21 +230,9 @@ export default function CartePageBody() {
         matchesTime = bucket === 'anciens';
       }
 
-      if (!matchesTime) return false;
-
-      // Condition mot-clé
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase().trim();
-        const desc = (item.properties?.description || item.description || '').toLowerCase();
-        const quartier = (item.properties?.citoyen_quartier || item.properties?.quartier || '').toLowerCase();
-        const author = (item.properties?.citoyen_nom || '').toLowerCase();
-        const rue = (item.properties?.rue || '').toLowerCase();
-        return desc.includes(q) || quartier.includes(q) || author.includes(q) || rue.includes(q);
-      }
-
-      return true;
+      return matchesTime;
     });
-  }, [allSignalements, timeFilter, searchQuery]);
+  }, [allSignalements, timeFilter]);
 
   const handleItineraire = () => {
     let startLat = 14.7385;
@@ -392,66 +373,7 @@ export default function CartePageBody() {
           </div>
         )}
 
-        {/* ========================================================= */}
-        {/* BARRE DE CONTRÔLE SUPÉRIEURE : Filtres temporels & Couches SIG */}
-        {/* ========================================================= */}
         <div className="w-full flex flex-col gap-3">
-          {/* Ligne 1 : Filtres temporels des signalements citoyens + Recherche rapide */}
-          <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-navy-900 p-3 sm:px-4 sm:py-2.5 rounded-2xl border border-navy-100 dark:border-navy-800 shadow-2xs">
-            {/* Période temporelle */}
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-xs font-bold text-navy-400 dark:text-navy-300 flex items-center gap-1 mr-1">
-                <Clock size={13} className="text-[#CC131A]" />
-                <span>Période :</span>
-              </span>
-              {[
-                { id: 'aujourdhui', label: "Aujourd'hui" },
-                { id: 'semaine', label: '7 jours' },
-                { id: 'mois', label: '30 jours' },
-                { id: 'anciens', label: 'Anciens' },
-                { id: 'tous', label: 'Tous' },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => handleTimeFilter(tab.id)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    timeFilter === tab.id
-                      ? 'bg-navy-950 dark:bg-white text-white dark:text-navy-950 shadow-xs'
-                      : 'bg-slate-100 dark:bg-navy-800/80 text-slate-600 dark:text-slate-400 hover:text-navy-950 dark:hover:text-white'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-
-              <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full ml-1 border border-emerald-200 dark:border-emerald-800/40">
-                {filteredSignalements.length} observation{filteredSignalements.length > 1 ? 's' : ''}
-              </span>
-            </div>
-
-            {/* Recherche quartier / mot-clé */}
-            <div className="relative min-w-[200px] flex-1 sm:flex-initial">
-              <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-navy-400 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Filtrer par quartier ou mot-clé…"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-7 py-1 text-xs rounded-xl bg-slate-50 dark:bg-navy-950 border border-navy-100 dark:border-navy-800 focus:outline-hidden focus:ring-1 focus:ring-[#CC131A] text-navy-900 dark:text-slate-100"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-navy-400 hover:text-navy-700 dark:hover:text-white"
-                >
-                  <X size={12} />
-                </button>
-              )}
-            </div>
-          </div>
-
           {/* Déroulé Itinéraire actif si secours en cours */}
           {itineraire.data && (
             <div className="bg-white dark:bg-navy-900 border border-teal-200 dark:border-teal-900/60 rounded-2xl p-3.5 shadow-sm flex flex-col gap-2.5">
@@ -502,38 +424,88 @@ export default function CartePageBody() {
           )}
 
           {/* ========================================================= */}
-          {/* CARTE INTERACTIVE PLEINE LARGEUR (w-full) */}
+          {/* CARTE + BANDEAU LATÉRAL ÉTROI DE FILTRES TEMPORELS À DROITE */}
           {/* ========================================================= */}
-          <div ref={mapSectionRef} className="w-full h-[650px] lg:h-[720px] relative rounded-2xl overflow-hidden shadow-sm border border-navy-100 dark:border-navy-800 isolate z-10 scroll-mt-4">
-            {isLoading ? (
-              <div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-navy-900">
-                <p className="text-sm text-navy-400 flex items-center gap-2 font-semibold">
-                  <Loader2 size={16} className="animate-spin text-[#CC131A]" />
-                  Chargement de la carte de Thiaroye-sur-Mer…
-                </p>
+          <div className="w-full flex flex-col lg:flex-row gap-2.5 items-stretch">
+            {/* CARTE INTERACTIVE (Prend l'écrasante majorité de la largeur) */}
+            <div
+              ref={mapSectionRef}
+              className="flex-1 min-w-0 h-[620px] lg:h-[720px] relative rounded-2xl overflow-hidden shadow-sm border border-navy-100 dark:border-navy-800 isolate z-10 scroll-mt-4"
+            >
+              {isLoading ? (
+                <div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-navy-900">
+                  <p className="text-sm text-navy-400 flex items-center gap-2 font-semibold">
+                    <Loader2 size={16} className="animate-spin text-[#CC131A]" />
+                    Chargement de la carte de Thiaroye-sur-Mer…
+                  </p>
+                </div>
+              ) : (
+                <InteractiveMap
+                  data={{
+                    zones: zonesData,
+                    segments: segmentsData,
+                    inondations: inondationsData,
+                    signalements: filteredSignalements,
+                    refuges: refugesData,
+                  }}
+                  visibleLayers={layersVisibility}
+                  onToggleLayer={handleToggleLayer}
+                  onToggleFullscreen={() => setIsMapFullscreen((prev) => !prev)}
+                  isFullscreen={isMapFullscreen}
+                  route={itineraire.data?.route}
+                  height="100%"
+                  selectedSignalementId={activeSignalementId || urlSignalementId}
+                  selectedQuartier={selectedQuartier}
+                  onCalculateRouteFromPoint={({ lat, lon }) => {
+                    itineraire.mutate({ lat, lon });
+                  }}
+                />
+              )}
+            </div>
+
+            {/* BANDE ÉTROITE À DROITE : Filtres temporels épurés sans texte lourd */}
+            <aside
+              aria-label="Filtres temporels"
+              className="w-full lg:w-28 xl:w-32 flex lg:flex-col justify-between sm:justify-start gap-1.5 p-2 bg-white dark:bg-navy-900 rounded-2xl border border-navy-100 dark:border-navy-800 shadow-2xs shrink-0 self-stretch overflow-x-auto lg:overflow-x-visible"
+            >
+              <div className="hidden lg:flex items-center gap-1.5 px-1 py-1 text-[11px] font-bold text-navy-400 dark:text-navy-300 select-none">
+                <Clock size={12} className="text-[#CC131A] shrink-0" />
+                <span>Période</span>
               </div>
-            ) : (
-              <InteractiveMap
-                data={{
-                  zones: zonesData,
-                  segments: segmentsData,
-                  inondations: inondationsData,
-                  signalements: filteredSignalements,
-                  refuges: refugesData,
-                }}
-                visibleLayers={layersVisibility}
-                onToggleLayer={handleToggleLayer}
-                onToggleFullscreen={() => setIsMapFullscreen((prev) => !prev)}
-                isFullscreen={isMapFullscreen}
-                route={itineraire.data?.route}
-                height="100%"
-                selectedSignalementId={activeSignalementId || urlSignalementId}
-                selectedQuartier={selectedQuartier}
-                onCalculateRouteFromPoint={({ lat, lon }) => {
-                  itineraire.mutate({ lat, lon });
-                }}
-              />
-            )}
+
+              <div className="flex lg:flex-col gap-1.5 flex-1 w-full">
+                {[
+                  { id: 'aujourdhui', label: "Aujourd'hui" },
+                  { id: 'semaine', label: '7 jours' },
+                  { id: 'mois', label: '30 jours' },
+                  { id: 'anciens', label: 'Anciens' },
+                  { id: 'tous', label: 'Tous' },
+                ].map((tab) => {
+                  const isActive = timeFilter === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setTimeFilter(tab.id)}
+                      className={`w-full text-center px-2 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap active:scale-95 ${
+                        isActive
+                          ? 'bg-navy-950 dark:bg-white text-white dark:text-navy-950 shadow-xs'
+                          : 'bg-slate-50 dark:bg-navy-950/70 text-slate-600 dark:text-slate-400 hover:text-navy-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-navy-800'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Compteur d'observations discret */}
+              <div className="hidden lg:flex items-center justify-center p-1.5 mt-auto bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-200/60 dark:border-emerald-800/40">
+                <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 text-center leading-tight">
+                  {filteredSignalements.length} obs.
+                </span>
+              </div>
+            </aside>
           </div>
         </div>
 

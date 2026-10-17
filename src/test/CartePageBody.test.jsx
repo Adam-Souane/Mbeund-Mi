@@ -115,6 +115,8 @@ describe('CartePageBody', () => {
     expect(screen.getByText("Aujourd'hui")).toBeInTheDocument();
     expect(screen.getByText('7 jours')).toBeInTheDocument();
     expect(screen.getByText('30 jours')).toBeInTheDocument();
+    expect(screen.getByText('Anciens')).toBeInTheDocument();
+    expect(screen.getByText('Tous')).toBeInTheDocument();
     expect(mockInteractiveMap).toHaveBeenCalledWith(
       expect.objectContaining({
         onToggleFullscreen: expect.any(Function),
