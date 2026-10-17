@@ -344,7 +344,7 @@ class EpisodeInondationViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class SignalementCitoyenViewSet(viewsets.ModelViewSet):
-    queryset = SignalementCitoyen.objects.all()
+    queryset = SignalementCitoyen.objects.prefetch_related('photos_supplementaires').all()
     serializer_class = SignalementCitoyenSerializer
     pagination_class = PageNumberPagination
 
@@ -394,7 +394,12 @@ class SignalementCitoyenViewSet(viewsets.ModelViewSet):
 class SegmentRueViewSet(viewsets.ModelViewSet):
     queryset = SegmentRue.objects.all()
     serializer_class = SegmentRueSerializer
-    permission_classes = [IsAutoriteOrAdmin]
+    pagination_class = None
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [permissions.AllowAny()]
+        return [IsAutoriteOrAdmin()]
 
 
 class PrevisionMeteoViewSet(viewsets.ModelViewSet):
@@ -572,7 +577,10 @@ class PointRefugeViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = PointRefuge.objects.select_related('zone').filter(actif=True)
     serializer_class = PointRefugeSerializer
     permission_classes = [permissions.AllowAny]
-    pagination_class = PageNumberPagination
+    pagination_class = None
+
+    def paginate_queryset(self, queryset):
+        return None
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -828,14 +836,14 @@ class MesSignalementsView(APIView):
         # Filtrer les signalements de l'utilisateur actuel
         signalements = SignalementCitoyen.objects.filter(
             signale_par=request.user
-        ).order_by('-date_creation')
+        ).prefetch_related('photos_supplementaires').order_by('-date_creation')
         
         # Pagination
         paginator = PageNumberPagination()
         paginator.page_size = 20
         paginated = paginator.paginate_queryset(signalements, request)
         
-        serializer = SignalementHistoriqueSerializer(paginated, many=True)
+        serializer = SignalementHistoriqueSerializer(paginated, many=True, context={'request': request})
         return paginator.get_paginated_response(serializer.data)
 
 

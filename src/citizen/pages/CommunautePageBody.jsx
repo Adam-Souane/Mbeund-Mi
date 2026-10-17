@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Users,
   MapPin,
@@ -44,11 +44,16 @@ import { checkContentModeration, isUserBanned, reportContent } from '../../share
 import { formatCompactDate } from '../../shared/utils/dateFormatter';
 
 export default function CommunautePageBody() {
+  const navigate = useNavigate();
   const { username, user } = useAuth();
   const nomCitoyen = user?.prenom ? `${user.prenom} ${user.nom || ''}`.trim() : (username || 'Citoyen');
 
   // Récupération des signalements citoyens réels depuis le backend Django
   const { data: signalementsData } = useSignalementsApercu();
+
+  const [searchParams] = useSearchParams();
+  const targetPostId = searchParams.get('postId') || searchParams.get('signalementId');
+  const [highlightedPostId, setHighlightedPostId] = useState(null);
 
   // Filtres : 'tous' | 'signalements' | 'entraide' | 'resolus'
   const [filter, setFilter] = useState('tous');
@@ -433,6 +438,7 @@ export default function CommunautePageBody() {
 
       backendItems.push({
         id: sigId,
+        rawBackendId: uniqueRawId,
         isBackendSignalement: true,
         typePost: isResolu ? 'resolu' : 'signalement',
         badgeFiltre: isResolu ? 'Résolu & Sécurisé' : 'Signalement terrain',
@@ -520,6 +526,56 @@ export default function CommunautePageBody() {
       return true;
     });
   }, [allPosts, filter]);
+
+  // Deep-linking automatique : scrolle et met en évidence le post ciblé (ex: depuis la Carte ou l'Historique)
+  useEffect(() => {
+    if (!targetPostId || !allPosts?.length) return;
+
+    const targetStr = String(targetPostId);
+    const matched = allPosts.find((p) => {
+      const pid = String(p.id);
+      const rawId = p.rawBackendId ? String(p.rawBackendId) : null;
+      return (
+        pid === targetStr ||
+        rawId === targetStr ||
+        pid === `backend-sig-${targetStr}` ||
+        pid === `shared-sig-${targetStr}` ||
+        targetStr.includes(pid) ||
+        (rawId && targetStr.includes(rawId))
+      );
+    });
+
+    if (matched) {
+      // Si le post n'appartient pas au filtre actif, on bascule sur l'onglet "tous" pour l'afficher
+      if (filter !== 'tous') {
+        const matchesCurrent =
+          (filter === 'signalements' && isSignalementPost(matched)) ||
+          (filter === 'entraide' && isEntraidePost(matched)) ||
+          (filter === 'resolus' && isResoluPost(matched));
+        if (!matchesCurrent) {
+          setFilter('tous');
+        }
+      }
+
+      setHighlightedPostId(matched.id);
+
+      const timer = setTimeout(() => {
+        const el = document.getElementById(`communaute-post-${matched.id}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 250);
+
+      const clearTimer = setTimeout(() => {
+        setHighlightedPostId(null);
+      }, 6000);
+
+      return () => {
+        clearTimeout(timer);
+        clearTimeout(clearTimer);
+      };
+    }
+  }, [targetPostId, allPosts]);
 
   // Action like / cœurs : bascule UNIQUEMENT le post ciblé par son identifiant unique
   const handleToggleLike = (postId) => {
@@ -1064,12 +1120,32 @@ export default function CommunautePageBody() {
               ...(commentsByPost[post.id] || []),
             ];
 
+            const isHighlighted = highlightedPostId === post.id;
+
             return (
               <article
                 key={post.id}
+                id={`communaute-post-${post.id}`}
                 onClick={() => handleIncrementView(post.id)}
-                className="bg-white dark:bg-[#0B1E36] border border-slate-200 dark:border-navy-800/90 rounded-2xl sm:rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between ring-1 ring-slate-900/5 dark:ring-white/5"
+                className={`bg-white dark:bg-[#0B1E36] border rounded-2xl sm:rounded-3xl overflow-hidden transition-all duration-500 flex flex-col justify-between ${
+                  isHighlighted
+                    ? 'ring-4 ring-[#CC131A] border-[#CC131A] shadow-2xl scale-[1.015]'
+                    : 'border-slate-200 dark:border-navy-800/90 shadow-sm hover:shadow-md ring-1 ring-slate-900/5 dark:ring-white/5'
+                }`}
               >
+                {/* Bandeau d'accentuation si sélectionné depuis la Carte */}
+                {isHighlighted && (
+                  <div className="bg-gradient-to-r from-red-600 to-rose-600 text-white text-xs font-black px-4 py-2 flex items-center justify-between shadow-sm">
+                    <span className="flex items-center gap-1.5">
+                      <MapPin size={14} className="animate-bounce" />
+                      <span>Publication sélectionnée depuis la Carte</span>
+                    </span>
+                    <span className="text-[10px] bg-white/25 px-2 py-0.5 rounded-full uppercase tracking-wider font-extrabold">
+                      En évidence
+                    </span>
+                  </div>
+                )}
+
                 {/* Haut de la carte : Auteur + Quartier + Badges Filtre & Statut (Design unifié 100% cohérent) */}
                 <div className="p-4 sm:p-5 flex items-center justify-between gap-3 border-b border-navy-50 dark:border-navy-800/80">
                   {/* Bloc Auteur à gauche : 2 lignes fixes, nettes et parfaitement alignées */}
@@ -1099,12 +1175,20 @@ export default function CommunautePageBody() {
                         ) : null}
                       </div>
 
-                      {/* Ligne 2 : Quartier · Date compacte (ex: 2j, 1j, 1m, 1a) sans risque de troncature du nombre de jours */}
+                      {/* Ligne 2 : Quartier · Date compacte (ex: 2j, 1j, 1m, 1a) avec accès direct à la carte */}
                       <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mt-0.5 min-w-0 overflow-hidden">
-                        <span className="inline-flex items-center gap-1 text-[#CC131A] font-extrabold truncate shrink min-w-0">
-                          <MapPin size={11} className="shrink-0 text-[#CC131A]" />
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/citoyen/carte?signalementId=${post.rawBackendId || post.id}&quartier=${encodeURIComponent(post.author.quartier || '')}`);
+                          }}
+                          title="Localiser sur la carte vivante de Thiaroye"
+                          className="inline-flex items-center gap-1 text-[#CC131A] font-extrabold truncate shrink min-w-0 hover:underline cursor-pointer group text-left"
+                        >
+                          <MapPin size={11} className="shrink-0 text-[#CC131A] group-hover:scale-110 transition-transform" />
                           <span className="truncate">{post.author.quartier}</span>
-                        </span>
+                        </button>
                         <span className="text-slate-300 dark:text-navy-600 shrink-0">·</span>
                         <span
                           className="inline-flex items-center gap-1 text-slate-500 dark:text-slate-400 shrink-0 font-semibold"
@@ -1161,6 +1245,19 @@ export default function CommunautePageBody() {
                           role="menu"
                           className="absolute right-0 top-9 w-52 bg-white dark:bg-[#071322] border border-slate-200 dark:border-navy-700 rounded-xl shadow-xl z-20 py-1.5 animate-in fade-in zoom-in-95 duration-150"
                         >
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenMenuPostId(null);
+                              navigate(`/citoyen/carte?signalementId=${post.rawBackendId || post.id}&quartier=${encodeURIComponent(post.author.quartier || '')}`);
+                            }}
+                            className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-navy-800 transition cursor-pointer text-left border-b border-slate-100 dark:border-navy-800/80"
+                          >
+                            <MapPin size={15} className="text-[#CC131A] flex-shrink-0" />
+                            <span>Voir sur la carte</span>
+                          </button>
                           {isPostOwner(post) ? (
                             <button
                               type="button"
@@ -1367,8 +1464,21 @@ export default function CommunautePageBody() {
                     </button>
                   </div>
 
-                  {/* 4. Bouton PARTAGER + Optionnel SIGNALER */}
+                  {/* 4. Bouton CARTE & PARTAGER + Optionnel SIGNALER */}
                   <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/citoyen/carte?signalementId=${post.rawBackendId || post.id}&quartier=${encodeURIComponent(post.author.quartier || '')}`);
+                      }}
+                      title="Localiser sur la carte interactive avec son avatar"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-black transition-all duration-200 active:scale-95 cursor-pointer shadow-xs bg-red-50 hover:bg-red-100 text-[#CC131A] border border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-900/60 dark:hover:bg-red-900/60 flex-shrink-0"
+                    >
+                      <MapPin size={15} className="text-[#CC131A] dark:text-red-400" />
+                      <span>Carte</span>
+                    </button>
+
                     <button
                       type="button"
                       onClick={(e) => {
@@ -1597,9 +1707,13 @@ export default function CommunautePageBody() {
                       onChange={(e) => setModalQuartier(e.target.value)}
                       className="w-full text-xs pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 dark:border-navy-700 bg-white dark:bg-navy-900 text-navy-900 dark:text-white font-bold cursor-pointer"
                     >
+                      <option value="Cuvette Ouest (Thiaroye-sur-Mer)">Cuvette Ouest (Zone Historique)</option>
                       <option value="Ndakhane (Thiaroye)">Ndakhane Cuvette</option>
-                      <option value="Thiaroye Plage">Thiaroye Plage</option>
+                      <option value="Thiaroye Plage">Thiaroye Plage & Débarcadère</option>
+                      <option value="Médina Fass">Médina Fass</option>
+                      <option value="Baghdad">Baghdad</option>
                       <option value="Thiaroye Gare">Thiaroye Gare</option>
+                      <option value="Guinaw Rail">Guinaw Rail</option>
                       <option value="CEM Thiaroye 44">CEM Thiaroye 44</option>
                       <option value="Thiaroye Minam">Thiaroye Minam</option>
                     </select>
@@ -1941,11 +2055,15 @@ export default function CommunautePageBody() {
                   onChange={(e) => setStoryQuartier(e.target.value)}
                   className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-navy-700 bg-white dark:bg-navy-900 text-navy-900 dark:text-white font-bold"
                 >
-                  <option value="Ndakhane (Thiaroye)">📍 Ndakhane Cuvette</option>
-                  <option value="Thiaroye Plage">📍 Thiaroye Plage</option>
-                  <option value="Thiaroye Gare">📍 Thiaroye Gare</option>
-                  <option value="CEM Thiaroye 44">📍 CEM Thiaroye 44</option>
-                  <option value="Thiaroye Minam">📍 Thiaroye Minam</option>
+                  <option value="Cuvette Ouest (Thiaroye-sur-Mer)">Cuvette Ouest (Zone Historique)</option>
+                  <option value="Ndakhane (Thiaroye)">Ndakhane Cuvette</option>
+                  <option value="Thiaroye Plage">Thiaroye Plage & Débarcadère</option>
+                  <option value="Médina Fass">Médina Fass</option>
+                  <option value="Baghdad">Baghdad</option>
+                  <option value="Thiaroye Gare">Thiaroye Gare</option>
+                  <option value="Guinaw Rail">Guinaw Rail</option>
+                  <option value="CEM Thiaroye 44">CEM Thiaroye 44</option>
+                  <option value="Thiaroye Minam">Thiaroye Minam</option>
                 </select>
               </div>
 

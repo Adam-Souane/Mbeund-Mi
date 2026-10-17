@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from .models import (
-    ZoneRisque, Alerte, EpisodeInondation, PredictionIA, SignalementCitoyen,
+    ZoneRisque, Alerte, EpisodeInondation, PredictionIA, SignalementCitoyen, SignalementPhoto,
     SegmentRue, PrevisionMeteo, HistoriqueRisque, ContactAlerte,
     ProfilVulnerabilite, RelaisQuartier,
 )
@@ -78,13 +78,21 @@ class EpisodeInondationAdmin(admin.ModelAdmin):
 @admin.register(PredictionIA)
 class PredictionIAAdmin(admin.ModelAdmin):
     list_display = ('zone', 'probabilite', 'horizon_h', 'confiance', 'niveau_eau_predit_cm', 'timestamp')
-    list_filter = ('zone', 'timestamp')
+    list_filter = ('horizon_h', 'timestamp', 'zone')
+    search_fields = ('zone__quartier',)
+    list_select_related = ('zone',)
+
+
+class SignalementPhotoInline(admin.TabularInline):
+    model = SignalementPhoto
+    extra = 1
 
 @admin.register(SignalementCitoyen)
 class SignalementCitoyenAdmin(admin.ModelAdmin):
     list_display = ('categorie', 'valide', 'niveau_eau_estime', 'signalement_similaire', 'date_creation', 'localisation')
     list_filter = ('categorie', 'valide', 'niveau_eau_estime', 'date_creation')
     search_fields = ('description',)
+    inlines = [SignalementPhotoInline]
 
 @admin.register(SegmentRue)
 class SegmentRueAdmin(admin.ModelAdmin):

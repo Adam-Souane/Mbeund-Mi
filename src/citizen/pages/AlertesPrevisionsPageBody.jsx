@@ -31,71 +31,77 @@ export default function AlertesPrevisionsPageBody() {
         <p className="text-sm text-navy-600 dark:text-navy-200 mt-0.5">Thiaroye-sur-Mer · Suivi météo et vigilance</p>
       </div>
 
-      <WeatherWidget previsions={previsions} />
-
-      {/* Desktop : tableau + liste côte à côte plutôt qu'empilés pleine
-          largeur (un tableau à 4 colonnes étiré sur 1100px laisse d'énormes
-          vides entre les valeurs). Mobile : empilement inchangé. */}
-      <div className="flex flex-col gap-5 lg:grid lg:grid-cols-2 lg:items-start">
-      <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5">
-        <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
-          <CloudRain size={15} />
-          Toutes les prévisions
-        </h3>
-        <EtatListe chargement={previsionsLoading} vide={previsions.length === 0} messageVide="Aucune prévision météo enregistrée pour l’instant." taille="xs">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="text-navy-400 uppercase border-b border-navy-50 dark:border-navy-800">
-                <tr>
-                  <th className="py-2 pr-3 font-semibold">Date</th>
-                  <th className="py-2 pr-3 font-semibold">Température</th>
-                  <th className="py-2 pr-3 font-semibold">
-                    <Droplets size={11} className="inline mr-1" />
-                    Précipitations
-                  </th>
-                  <th className="py-2 pr-3 font-semibold">
-                    <Wind size={11} className="inline mr-1" />
-                    Vent
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-navy-50 dark:divide-navy-800">
-                {previsions.map((p) => (
-                  <tr key={p.id}>
-                    <td className="py-2 pr-3 font-semibold">{formatDateTime(p.date_prevision)}</td>
-                    <td className="py-2 pr-3">{p.temperature != null ? `${p.temperature}°C` : '—'}</td>
-                    <td className="py-2 pr-3">{p.precipitation != null ? `${p.precipitation} mm` : '—'}</td>
-                    <td className="py-2 pr-3">{p.vitesse_vent != null ? `${p.vitesse_vent} km/h` : '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </EtatListe>
-      </div>
-
-      <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5">
-        <h3 className="text-sm font-bold mb-3">Alertes</h3>
-        <EtatListe chargement={alertesLoading} vide={alertes.length === 0} messageVide="Aucune alerte pour l’instant." taille="xs">
-          <div className="flex flex-col gap-3">
-            {alertes.map((a) => (
-              <div key={a.id} className="flex items-start gap-3 pb-3 border-b border-navy-50 dark:border-navy-800 last:border-0 last:pb-0">
-                <RiskBadge niveau={a.niveau} className="mt-0.5 flex-shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-semibold truncate">{a.zone?.quartier}</span>
-                    <span className="text-[10px] text-navy-400 flex-shrink-0">{formatDateTime(a.timestamp)}</span>
+      {/* Disposition : Alertes et tableau à gauche, Carte météo à droite (moitié d'écran) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+        {/* Colonne Gauche : Alertes prioritaires et Tableau des prévisions */}
+        <div className="order-2 lg:order-1 flex flex-col gap-5">
+          {/* Bloc Alertes */}
+          <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5 shadow-xs">
+            <h3 className="text-sm font-bold mb-3">Alertes</h3>
+            <EtatListe chargement={alertesLoading} vide={alertes.length === 0} messageVide="Aucune alerte pour l’instant." taille="xs">
+              <div className="flex flex-col gap-3">
+                {alertes.map((a) => (
+                  <div key={a.id} className="flex items-start gap-3 pb-3 border-b border-navy-50 dark:border-navy-800 last:border-0 last:pb-0">
+                    <RiskBadge niveau={a.niveau} className="mt-0.5 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-semibold truncate">{a.zone?.quartier}</span>
+                        <span className="text-[10px] text-navy-400 flex-shrink-0">{formatDateTime(a.timestamp)}</span>
+                      </div>
+                      <p className="text-xs text-navy-600 dark:text-navy-200 mt-0.5">{a.message}</p>
+                      <span className="inline-block mt-1 text-[10px] font-bold uppercase text-navy-400">
+                        {STATUT_LABELS[a.statut] ?? a.statut}
+                      </span>
+                    </div>
                   </div>
-                  <p className="text-xs text-navy-600 dark:text-navy-200 mt-0.5">{a.message}</p>
-                  <span className="inline-block mt-1 text-[10px] font-bold uppercase text-navy-400">
-                    {STATUT_LABELS[a.statut] ?? a.statut}
-                  </span>
-                </div>
+                ))}
               </div>
-            ))}
+            </EtatListe>
           </div>
-        </EtatListe>
-      </div>
+
+          {/* Tableau Toutes les prévisions */}
+          <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5 shadow-xs">
+            <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
+              <CloudRain size={15} />
+              Toutes les prévisions
+            </h3>
+            <EtatListe chargement={previsionsLoading} vide={previsions.length === 0} messageVide="Aucune prévision météo enregistrée pour l’instant." taille="xs">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="text-navy-400 uppercase border-b border-navy-50 dark:border-navy-800">
+                    <tr>
+                      <th className="py-2 pr-3 font-semibold">Date</th>
+                      <th className="py-2 pr-3 font-semibold">Température</th>
+                      <th className="py-2 pr-3 font-semibold">
+                        <Droplets size={11} className="inline mr-1" />
+                        Précipitations
+                      </th>
+                      <th className="py-2 pr-3 font-semibold">
+                        <Wind size={11} className="inline mr-1" />
+                        Vent
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-navy-50 dark:divide-navy-800">
+                    {previsions.map((p) => (
+                      <tr key={p.id}>
+                        <td className="py-2 pr-3 font-semibold">{formatDateTime(p.date_prevision)}</td>
+                        <td className="py-2 pr-3">{p.temperature != null ? `${p.temperature}°C` : '—'}</td>
+                        <td className="py-2 pr-3">{p.precipitation != null ? `${p.precipitation} mm` : '—'}</td>
+                        <td className="py-2 pr-3">{p.vitesse_vent != null ? `${p.vitesse_vent} km/h` : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </EtatListe>
+          </div>
+        </div>
+
+        {/* Colonne Droite : Carte Météo (largeur contenue ~50% comme sur l'accueil) */}
+        <div className="order-1 lg:order-2 lg:sticky lg:top-4">
+          <WeatherWidget previsions={previsions} />
+        </div>
       </div>
     </CitizenShell>
   );

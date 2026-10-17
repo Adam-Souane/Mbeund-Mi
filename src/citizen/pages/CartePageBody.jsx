@@ -1,123 +1,635 @@
-import { Navigation, Loader2, X, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { useMemo, useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import {
+  Navigation,
+  Loader2,
+  X,
+  ShieldCheck,
+  AlertTriangle,
+  Search,
+  MapPin,
+  Layers,
+  Maximize2,
+  Minimize2,
+  Clock,
+  CornerUpRight,
+  CornerUpLeft,
+  ArrowRight,
+  Flag,
+} from 'lucide-react';
 import CitizenShell from '../shared/CitizenShell';
-import InteractiveMap from '../../shared/components/map/InteractiveMap';
+import InteractiveMap, { LAYER_LABELS, LAYER_ICONS } from '../../shared/components/map/InteractiveMap';
 import RiskBadge from '../../shared/components/RiskBadge';
 import { useZones } from '../../shared/hooks/useZones';
+import { useSegments } from '../../shared/hooks/useSegments';
 import { useInondations } from '../../shared/hooks/useInondations';
 import { useSignalementsApercu } from '../../shared/hooks/useSignalements';
 import { useRefuges } from '../../shared/hooks/useRefuges';
 import { useGeolocation } from '../../shared/hooks/useGeolocation';
 import { useItineraireSecurise } from '../../shared/hooks/useItineraireSecurise';
 import { flattenApiErrors } from '../../shared/utils/apiErrors';
+import { COMMUNAUTE_POSTS } from '../../shared/data/riverainsData';
+import { sanitizePublicAuthor, sanitizePublicText } from '../../shared/utils/sanitizer';
+
+// Référentiel SIG de coordonnées pour tout Thiaroye-sur-Mer (100% sur la terre ferme habitée)
+const THIAROYE_QUARTIERS_COORDS = {
+  'cuvette ouest': [14.7470, -17.4045],
+  cuvette: [14.7470, -17.4045],
+  ndakhane: [14.7450, -17.3820],
+  plage: [14.7438, -17.3910],
+  gare: [14.7570, -17.3752],
+  thiaroye: [14.7485, -17.3850],
+  fass: [14.7520, -17.3792],
+  'sam sam': [14.7550, -17.3715],
+  'tally diallo': [14.7495, -17.3745],
+  darou: [14.7525, -17.3840],
+  baghdad: [14.7490, -17.3815],
+  'guinaw rail': [14.7610, -17.3685],
+  minam: [14.7555, -17.3780],
+};
+
+// Classification temporelle des signalements
+function getSignalementTimeBucket(item) {
+  const dateStr =
+    item.properties?.date_creation ||
+    item.date_creation ||
+    item.properties?.date ||
+    item.date;
+
+  if (!dateStr) return 'aujourdhui';
+
+  if (
+    typeof dateStr === 'string' &&
+    (dateStr.includes('instant') ||
+      dateStr.includes('Aujourd') ||
+      dateStr.includes('h') ||
+      dateStr.includes('min'))
+  ) {
+    return 'aujourdhui';
+  }
+
+  const dateObj = new Date(dateStr);
+  if (isNaN(dateObj.getTime())) return 'aujourdhui';
+
+  const now = new Date();
+  const isSameDay =
+    dateObj.getDate() === now.getDate() &&
+    dateObj.getMonth() === now.getMonth() &&
+    dateObj.getFullYear() === now.getFullYear();
+
+  if (isSameDay) return 'aujourdhui';
+
+  const diffHours = (now.getTime() - dateObj.getTime()) / (1000 * 3600);
+  if (diffHours <= 24) return 'aujourdhui';
+  if (diffHours <= 24 * 7) return 'semaine';
+  if (diffHours <= 24 * 30) return 'mois';
+  return 'anciens';
+}
 
 export default function CartePageBody() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlSignalementId = searchParams.get('signalementId');
+  const selectedQuartier = searchParams.get('quartier');
+
+  // État local du signalement actif pour interaction immédiate au clic
+  const [activeSignalementId, setActiveSignalementId] = useState(urlSignalementId || null);
+
+  // Filtre temporel : 'aujourdhui' par défaut comme demandé par l'utilisateur
+  const [timeFilter, setTimeFilter] = useState('aujourdhui');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isMapFullscreen, setIsMapFullscreen] = useState(false);
+
+  // Fermer le plein écran à l'appui sur Échap
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isMapFullscreen) {
+        setIsMapFullscreen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isMapFullscreen]);
+
+  // État des couches actives affichées sur la carte
+  const [layersVisibility, setLayersVisibility] = useState({
+    zones: true,
+    signalements: true,
+    segments: true,
+    refuges: true,
+  });
+
+  const handleToggleLayer = (key) => {
+    setLayersVisibility((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
   const { data: zonesData, isLoading } = useZones();
+  const { data: segmentsData } = useSegments();
   const { data: inondationsData } = useInondations();
   const { data: signalementsData } = useSignalementsApercu();
   const { data: refugesData } = useRefuges();
-  const { status: geoStatus, locate } = useGeolocation();
+  const { status: geoStatus } = useGeolocation();
   const itineraire = useItineraireSecurise();
 
-  const signalementsFeatures = signalementsData?.results?.features ?? [];
+  // Icône directionnelle adaptée pour chaque étape du guidage piéton
+  const getDirectionIcon = (direction) => {
+    switch (direction) {
+      case 'tourner_gauche':
+        return <CornerUpLeft size={16} className="text-amber-500 flex-shrink-0" />;
+      case 'tourner_droite':
+        return <CornerUpRight size={16} className="text-amber-500 flex-shrink-0" />;
+      case 'arrivee':
+        return <Flag size={16} className="text-emerald-500 flex-shrink-0" />;
+      case 'depart':
+        return <MapPin size={16} className="text-teal-600 flex-shrink-0" />;
+      default:
+        return <ArrowRight size={16} className="text-navy-600 dark:text-navy-300 flex-shrink-0" />;
+    }
+  };
+
+  // 1. Fusion complète de tous les signalements réels et citoyens de Thiaroye
+  const allSignalements = useMemo(() => {
+    const list = [...(signalementsData?.results?.features ?? [])];
+    const existingIds = new Set(list.map((f) => String(f.id ?? f.properties?.id)));
+
+    let userPosts = [];
+    try {
+      userPosts = JSON.parse(localStorage.getItem('mbeund_mi_user_community_posts') || '[]');
+    } catch {}
+
+    const communitySources = [...userPosts, ...COMMUNAUTE_POSTS];
+    communitySources.forEach((post, idx) => {
+      if (!post || existingIds.has(String(post.id))) return;
+      if (post.rawBackendId && existingIds.has(String(post.rawBackendId))) return;
+
+      const q = (post.author?.quartier || post.quartier || '').toLowerCase();
+      let coords = [14.747, -17.385];
+      for (const [key, val] of Object.entries(THIAROYE_QUARTIERS_COORDS)) {
+        if (q.includes(key)) {
+          coords = val;
+          break;
+        }
+      }
+      // Dispersion fine des avatars dans les ruelles du quartier (strictement vers le nord/est/ouest, jamais vers l'océan au sud)
+      const offsetLat = Math.abs((((idx * 7) % 7) - 3) * 0.0004);
+      const offsetLon = (((idx * 13) % 9) - 4) * 0.0005;
+
+      const safeLat = Math.max(14.7432, coords[0] + offsetLat);
+      const safeLon = coords[1] + offsetLon;
+
+      list.push({
+        id: post.id,
+        date_creation: post.date_creation || post.date || new Date().toISOString(),
+        geometry: {
+          type: 'Point',
+          coordinates: [safeLon, safeLat],
+        },
+        properties: {
+          id: post.id,
+          rawBackendId: post.rawBackendId,
+          categorie: post.categorie || 'Inondation',
+          description: sanitizePublicText(post.texte || post.description || 'Montée des eaux signalée par un habitant.'),
+          photo: post.image || post.photo,
+          valide: post.statut === 'resolu',
+          statut: post.statut || 'en_cours',
+          citoyen_nom: sanitizePublicAuthor(post.author?.name || post.auteur, 'Sentinelle Citoyenne'),
+          citoyen_prenom: '',
+          citoyen_quartier: post.author?.quartier || post.quartier || 'Thiaroye-sur-Mer',
+          rue: post.rue || null,
+          date_creation: post.date_creation || post.date || new Date().toISOString(),
+          isSharedOnCommunity: true,
+        },
+      });
+    });
+
+    return list;
+  }, [signalementsData]);
+
+  // 2. Filtrage dynamique selon la période choisie et le mot-clé de recherche
+  const filteredSignalements = useMemo(() => {
+    return allSignalements.filter((item) => {
+      const bucket = getSignalementTimeBucket(item);
+
+      // Condition temporelle
+      let matchesTime = false;
+      if (timeFilter === 'tous') {
+        matchesTime = true;
+      } else if (timeFilter === 'aujourdhui') {
+        matchesTime = bucket === 'aujourdhui';
+      } else if (timeFilter === 'semaine') {
+        matchesTime = bucket === 'aujourdhui' || bucket === 'semaine';
+      } else if (timeFilter === 'mois') {
+        matchesTime = bucket === 'aujourdhui' || bucket === 'semaine' || bucket === 'mois';
+      } else if (timeFilter === 'anciens') {
+        matchesTime = bucket === 'anciens';
+      }
+
+      if (!matchesTime) return false;
+
+      // Condition mot-clé
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const desc = (item.properties?.description || item.description || '').toLowerCase();
+        const quartier = (item.properties?.citoyen_quartier || item.properties?.quartier || '').toLowerCase();
+        const author = (item.properties?.citoyen_nom || '').toLowerCase();
+        const rue = (item.properties?.rue || '').toLowerCase();
+        return desc.includes(q) || quartier.includes(q) || author.includes(q) || rue.includes(q);
+      }
+
+      return true;
+    });
+  }, [allSignalements, timeFilter, searchQuery]);
 
   const handleItineraire = () => {
-    if (!navigator.geolocation) return;
+    let startLat = 14.7385;
+    let startLon = -17.3920;
+
+    // Si un signalement est sélectionné, on démarre directement depuis ses coordonnées précises
+    if (activeSignalementId) {
+      const activeItem = allSignalements.find(
+        (s) => String(s.id ?? s.properties?.id) === String(activeSignalementId)
+      );
+      if (activeItem?.geometry?.coordinates) {
+        startLon = activeItem.geometry.coordinates[0];
+        startLat = activeItem.geometry.coordinates[1];
+      }
+    }
+
+    const triggerRoute = (lat, lon) => {
+      itineraire.mutate({ lat, lon });
+    };
+
+    if (!navigator.geolocation) {
+      triggerRoute(startLat, startLon);
+      return;
+    }
+
+    let responded = false;
+    const timer = setTimeout(() => {
+      if (!responded) {
+        responded = true;
+        triggerRoute(startLat, startLon);
+      }
+    }, 2500);
+
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        itineraire.mutate({ lat: pos.coords.latitude, lon: pos.coords.longitude });
+        if (!responded) {
+          responded = true;
+          clearTimeout(timer);
+          triggerRoute(pos.coords.latitude, pos.coords.longitude);
+        }
       },
       () => {
-        // La géolocalisation a échoué — on retente via le hook pour que le
-        // message d'erreur standard s'affiche (permission refusée, etc.).
-        locate();
+        if (!responded) {
+          responded = true;
+          clearTimeout(timer);
+          triggerRoute(startLat, startLon);
+        }
       },
-      { enableHighAccuracy: true, timeout: 10_000 }
+      { enableHighAccuracy: true, timeout: 3000 }
     );
+  };
+
+  const handleCloseItineraire = () => {
+    itineraire.reset();
   };
 
   return (
     <CitizenShell>
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h1 className="text-xl font-extrabold">Carte des risques</h1>
-          <p className="text-sm text-navy-600 dark:text-navy-200 mt-0.5">
-            Thiaroye-sur-Mer · Zones à risque, inondations passées et signalements
-          </p>
-        </div>
-
-        {itineraire.data ? (
-          <button
-            onClick={() => itineraire.reset()}
-            className="flex items-center gap-1.5 text-xs font-bold text-navy-600 dark:text-navy-200 border-[1.5px] border-navy-200 dark:border-navy-800 rounded-md px-3.5 py-2"
-          >
-            <X size={14} />
-            Fermer l’itinéraire
-          </button>
-        ) : (
-          <button
-            onClick={handleItineraire}
-            disabled={itineraire.isPending}
-            className="flex items-center gap-1.5 text-xs font-bold text-white bg-red rounded-md px-3.5 py-2 disabled:opacity-60"
-          >
-            {itineraire.isPending ? <Loader2 size={14} className="animate-spin" /> : <Navigation size={14} />}
-            Itinéraire vers un lieu sûr
-          </button>
-        )}
-      </div>
-
-      {itineraire.isError && (
-        <div className="flex items-start gap-2 px-4 py-3 rounded-md bg-red-50 dark:bg-red/15 text-red-900 dark:text-red-200 text-xs">
-          <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
-          <span>{flattenApiErrors(itineraire.error)[0]}</span>
-        </div>
-      )}
-
-      {geoStatus === 'error' && !itineraire.data && !itineraire.isError && (
-        <p className="text-xs text-navy-400">
-          Localisez-vous pour calculer un itinéraire — la géolocalisation a été refusée ou est indisponible.
-        </p>
-      )}
-
-      {itineraire.data && (
-        <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 flex items-center justify-center flex-shrink-0">
-              <ShieldCheck size={17} />
+      <div className="w-full flex flex-col gap-4 sm:gap-5 pb-8">
+        {/* Bandeau d'en-tête bleu nuit au format Communauté */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0B2545] via-[#103565] to-slate-900 text-white p-4 sm:p-5 md:px-6 md:py-5 shadow-lg border border-blue-900/40 flex-shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 sm:gap-4 relative z-10">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-base sm:text-lg md:text-xl font-black text-white tracking-tight">
+                  Carte des risques · Thiaroye
+                </h1>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shrink-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  En direct
+                </span>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-300 mt-1 line-clamp-2 sm:line-clamp-1">
+                Fil d’actualité citoyen, signalements géolocalisés et entraide solidaire entre voisins
+              </p>
             </div>
-            <div>
-              <p className="text-xs text-navy-400">Point sûr le plus proche</p>
-              <p className="text-sm font-bold">{itineraire.data.zone_arrivee.quartier}</p>
+
+            <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+              {itineraire.data ? (
+                <button
+                  type="button"
+                  onClick={handleCloseItineraire}
+                  className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-black border border-white/20 transition active:scale-95 cursor-pointer w-full sm:w-auto"
+                >
+                  <X size={16} />
+                  <span>Fermer l’itinéraire</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleItineraire}
+                  disabled={itineraire.isPending}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#CC131A] hover:bg-red-700 text-white text-xs sm:text-sm font-black shadow-md transition active:scale-95 disabled:opacity-60 cursor-pointer w-full sm:w-auto"
+                >
+                  {itineraire.isPending ? <Loader2 size={16} className="animate-spin" /> : <Navigation size={16} />}
+                  <span>Itinéraire vers un lieu sûr</span>
+                </button>
+              )}
             </div>
           </div>
-          <div className="flex items-center gap-4 text-xs">
-            <div>
-              <span className="block text-navy-400">Distance</span>
-              <span className="font-bold">{itineraire.data.distance_km} km</span>
-            </div>
-            <div>
-              <span className="block text-navy-400">Risque du trajet</span>
-              <span className="font-bold">{Math.round(itineraire.data.score_risque_moyen_parcours * 100)}%</span>
-            </div>
-            {itineraire.data.segments_risque_traverses.length > 0 && (
-              <div>
-                <span className="block text-navy-400">Rues à risque traversées</span>
-                <span className="font-bold text-red">{itineraire.data.segments_risque_traverses.length}</span>
+        </div>
+
+        {itineraire.isError && (
+          <div className="flex items-start gap-2 px-3.5 py-2 rounded-lg bg-red-50 dark:bg-red/15 text-red-900 dark:text-red-200 text-xs flex-shrink-0">
+            <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
+            <span>{flattenApiErrors(itineraire.error)[0]}</span>
+          </div>
+        )}
+
+        {geoStatus === 'error' && !itineraire.data && !itineraire.isError && (
+          <p className="text-xs text-navy-400 flex-shrink-0">
+            Localisez-vous pour calculer un itinéraire — la géolocalisation a été refusée ou est indisponible.
+          </p>
+        )}
+
+        {itineraire.data && (
+          <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl px-4 py-2.5 flex items-center justify-between gap-4 flex-shrink-0 text-xs shadow-xs">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 flex items-center justify-center flex-shrink-0">
+                <ShieldCheck size={16} />
               </div>
+              <div>
+                <p className="text-[10px] text-navy-400">Point sûr le plus proche</p>
+                <p className="text-xs font-bold">{itineraire.data.zone_arrivee.quartier}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 text-xs">
+              <div>
+                <span className="block text-[10px] text-navy-400">Distance</span>
+                <span className="font-bold">{itineraire.data.distance_km} km</span>
+              </div>
+              <div>
+                <span className="block text-[10px] text-navy-400">Risque</span>
+                <span className="font-bold">{Math.round(itineraire.data.score_risque_moyen_parcours * 100)}%</span>
+              </div>
+            </div>
+            <RiskBadge niveau={itineraire.data.zone_arrivee.niveau_risque} />
+          </div>
+        )}
+
+        {/* ========================================================= */}
+        {/* BARRE DE CONTRÔLE SUPÉRIEURE : Filtres temporels & Couches SIG */}
+        {/* ========================================================= */}
+        <div className="w-full flex flex-col gap-3">
+          {/* Ligne 1 : Filtres temporels des signalements citoyens + Recherche rapide */}
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-navy-900 p-3 sm:px-4 sm:py-2.5 rounded-2xl border border-navy-100 dark:border-navy-800 shadow-2xs">
+            {/* Période temporelle */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-xs font-bold text-navy-400 dark:text-navy-300 flex items-center gap-1 mr-1">
+                <Clock size={13} className="text-[#CC131A]" />
+                <span>Période :</span>
+              </span>
+              {[
+                { id: 'aujourdhui', label: "Aujourd'hui" },
+                { id: 'semaine', label: '7 jours' },
+                { id: 'mois', label: '30 jours' },
+                { id: 'anciens', label: 'Anciens' },
+                { id: 'tous', label: 'Tous' },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setTimeFilter(tab.id)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    timeFilter === tab.id
+                      ? 'bg-navy-950 dark:bg-white text-white dark:text-navy-950 shadow-xs'
+                      : 'bg-slate-100 dark:bg-navy-800/80 text-slate-600 dark:text-slate-400 hover:text-navy-950 dark:hover:text-white'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+
+              <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full ml-1 border border-emerald-200 dark:border-emerald-800/40">
+                {filteredSignalements.length} observation{filteredSignalements.length > 1 ? 's' : ''}
+              </span>
+            </div>
+
+            {/* Recherche quartier / mot-clé */}
+            <div className="relative min-w-[200px] flex-1 sm:flex-initial">
+              <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-navy-400 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Filtrer par quartier ou mot-clé…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-8 pr-7 py-1 text-xs rounded-xl bg-slate-50 dark:bg-navy-950 border border-navy-100 dark:border-navy-800 focus:outline-hidden focus:ring-1 focus:ring-[#CC131A] text-navy-900 dark:text-slate-100"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-navy-400 hover:text-navy-700 dark:hover:text-white"
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Ligne 2 : Couches SIG (Zones, Signalements, Rues, Refuges) + Bouton Plein Écran */}
+          <div className="flex items-center justify-between gap-3 flex-wrap bg-white dark:bg-navy-900 px-3.5 py-2 rounded-2xl border border-navy-100 dark:border-navy-800 shadow-2xs">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-navy-950 dark:text-white select-none shrink-0 whitespace-nowrap">
+              <Layers size={14} className="text-[#CC131A] flex-shrink-0" />
+              <span>Afficher sur la carte :</span>
+            </div>
+
+            <div className="flex items-center gap-1.5 flex-wrap overflow-x-auto py-0.5">
+              {['zones', 'signalements', 'segments', 'refuges'].map((key) => {
+                const Icon = LAYER_ICONS[key] || MapPin;
+                const isVisible = layersVisibility[key] !== false;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => handleToggleLayer(key)}
+                    aria-pressed={isVisible}
+                    aria-label={`Filtrer ${LAYER_LABELS[key]}`}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold transition-all border shadow-2xs cursor-pointer select-none active:scale-95 whitespace-nowrap shrink-0 ${
+                      isVisible
+                        ? 'bg-navy-950 dark:bg-white text-white dark:text-navy-950 border-navy-950 dark:border-white shadow-xs'
+                        : 'bg-slate-50 dark:bg-navy-950/70 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-navy-800 hover:text-slate-700 dark:hover:text-slate-300 opacity-60'
+                    }`}
+                  >
+                    <Icon
+                      size={12}
+                      className={`flex-shrink-0 ${
+                        isVisible ? 'text-[#CC131A]' : 'opacity-40'
+                      }`}
+                    />
+                    <span className={isVisible ? 'font-bold' : 'line-through'}>
+                      {LAYER_LABELS[key]}
+                    </span>
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full flex-shrink-0 transition-colors ${
+                        isVisible ? 'bg-emerald-500 ring-2 ring-emerald-400/40' : 'bg-slate-300 dark:bg-slate-600'
+                      }`}
+                    />
+                  </button>
+                );
+              })}
+
+              {/* Bouton Plein Écran */}
+              <button
+                type="button"
+                onClick={() => setIsMapFullscreen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-[#CC131A]/10 hover:bg-[#CC131A] text-[#CC131A] hover:text-white border border-[#CC131A]/30 transition-all cursor-pointer active:scale-95 ml-auto"
+                title="Agrandir la carte en plein écran"
+              >
+                <Maximize2 size={13} />
+                <span>Plein écran</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Déroulé Itinéraire actif si secours en cours */}
+          {itineraire.data && (
+            <div className="bg-white dark:bg-navy-900 border border-teal-200 dark:border-teal-900/60 rounded-2xl p-3.5 shadow-sm flex flex-col gap-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-teal-500 text-white flex items-center justify-center font-bold text-xs">
+                    <Navigation size={13} />
+                  </div>
+                  <div>
+                    <h2 className="text-xs font-bold text-navy-950 dark:text-white">
+                      Feuille de route sécurisée : Vers {itineraire.data.zone_arrivee.quartier}
+                    </h2>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Distance : {itineraire.data.distance_km} km · Risque moyen : {Math.round(itineraire.data.score_risque_moyen_parcours * 100)}%
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCloseItineraire}
+                  className="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-navy-800 text-slate-600 dark:text-slate-300 cursor-pointer"
+                >
+                  Fermer
+                </button>
+              </div>
+
+              {itineraire.data.instructions && itineraire.data.instructions.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 pt-2 border-t border-navy-100 dark:border-navy-800">
+                  {itineraire.data.instructions.map((step) => (
+                    <div
+                      key={step.etape}
+                      className="flex items-start gap-2 p-2 rounded-xl bg-slate-50 dark:bg-navy-950 border border-navy-100 dark:border-navy-800/60 text-xs"
+                    >
+                      <div className="mt-0.5">{getDirectionIcon(step.direction)}</div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-navy-900 dark:text-white leading-tight">
+                          {step.etape}. {step.instruction}
+                        </p>
+                        <p className="text-[10px] text-slate-500 mt-0.5">
+                          {step.rue} {step.distance_m ? `(${step.distance_m} m)` : ''}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* CARTE INTERACTIVE PLEINE LARGEUR (w-full) */}
+          {/* ========================================================= */}
+          <div className="w-full h-[650px] lg:h-[720px] relative rounded-2xl overflow-hidden shadow-sm border border-navy-100 dark:border-navy-800 isolate z-10">
+            {isLoading ? (
+              <div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-navy-900">
+                <p className="text-sm text-navy-400 flex items-center gap-2 font-semibold">
+                  <Loader2 size={16} className="animate-spin text-[#CC131A]" />
+                  Chargement de la carte de Thiaroye-sur-Mer…
+                </p>
+              </div>
+            ) : (
+              <InteractiveMap
+                data={{
+                  zones: zonesData,
+                  segments: segmentsData,
+                  inondations: inondationsData,
+                  signalements: filteredSignalements,
+                  refuges: refugesData,
+                }}
+                visibleLayers={layersVisibility}
+                onToggleLayer={handleToggleLayer}
+                route={itineraire.data?.route}
+                height="100%"
+                selectedSignalementId={activeSignalementId || urlSignalementId}
+                selectedQuartier={selectedQuartier}
+                onCalculateRouteFromPoint={({ lat, lon }) => {
+                  itineraire.mutate({ lat, lon });
+                }}
+              />
             )}
           </div>
-          <RiskBadge niveau={itineraire.data.zone_arrivee.niveau_risque} className="sm:ml-auto" />
         </div>
-      )}
 
-      {isLoading ? (
-        <p className="text-sm text-navy-400">Chargement de la carte…</p>
-      ) : (
-        <InteractiveMap
-          data={{ zones: zonesData, inondations: inondationsData, signalements: signalementsFeatures, refuges: refugesData }}
-          route={itineraire.data?.route}
-          height={560}
-        />
-      )}
+        {/* ========================================================= */}
+        {/* MODALE PLEIN ÉCRAN IMMERSIF AVEC BOUTON DE FERMETURE X */}
+        {/* ========================================================= */}
+        {isMapFullscreen && (
+          <div className="fixed inset-0 z-[9999] bg-navy-950/95 backdrop-blur-md p-3 sm:p-4 flex flex-col gap-3 animate-in fade-in duration-200">
+            {/* Header du mode plein écran */}
+            <div className="flex items-center justify-between gap-3 bg-white/10 text-white px-4 py-2.5 rounded-2xl border border-white/15 backdrop-blur-md flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <h2 className="text-sm sm:text-base font-black tracking-tight flex items-center gap-2">
+                  <Layers size={16} className="text-[#CC131A]" />
+                  <span>Carte Grand Format · Thiaroye-sur-Mer</span>
+                </h2>
+                <span className="text-xs text-slate-300 hidden md:inline">
+                  ({filteredSignalements.length} signalements affichés)
+                </span>
+              </div>
+
+              {/* Bouton pour fermer le plein écran */}
+              <button
+                type="button"
+                onClick={() => setIsMapFullscreen(false)}
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#CC131A] hover:bg-red-700 text-white text-xs font-black shadow-md transition-all active:scale-95 cursor-pointer"
+                title="Quitter le plein écran (Échap)"
+              >
+                <Minimize2 size={14} />
+                <span>Quitter le plein écran</span>
+                <span className="text-[10px] opacity-80 border border-white/30 rounded px-1 hidden sm:inline">Échap</span>
+              </button>
+            </div>
+
+            {/* Carte en plein écran */}
+            <div className="flex-1 w-full h-full relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl isolate z-10">
+              <InteractiveMap
+                data={{
+                  zones: zonesData,
+                  segments: segmentsData,
+                  inondations: inondationsData,
+                  signalements: filteredSignalements,
+                  refuges: refugesData,
+                }}
+                visibleLayers={layersVisibility}
+                onToggleLayer={handleToggleLayer}
+                route={itineraire.data?.route}
+                height="100%"
+                selectedSignalementId={activeSignalementId || urlSignalementId}
+                selectedQuartier={selectedQuartier}
+                onCalculateRouteFromPoint={({ lat, lon }) => {
+                  itineraire.mutate({ lat, lon });
+                }}
+              />
+            </div>
+          </div>
+        )}
+      </div>
     </CitizenShell>
   );
 }

@@ -8,6 +8,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { useMediaQuery } from '../../shared/hooks/useMediaQuery';
 import BottomTabBar from '../mobile/BottomTabBar';
 import CitizenDesktopShell from '../desktop/CitizenDesktopShell';
+import CitizenProfileHeaderButton from '../components/CitizenProfileHeaderButton';
 
 /**
  * Point d'entrée unique de toutes les pages citoyen : choisit entre le
@@ -17,19 +18,19 @@ import CitizenDesktopShell from '../desktop/CitizenDesktopShell';
  * pas monter le contenu de la page deux fois (double appel des hooks de
  * données de chaque page).
  */
-export default function CitizenShell({ children }) {
+export default function CitizenShell({ children, fullHeight = false }) {
   const isDesktop = useMediaQuery('(min-width: 1024px)');
   const { logout } = useAuth();
   const [emergencyOpen, setEmergencyOpen] = useState(false);
 
   if (isDesktop) {
-    return <CitizenDesktopShell>{children}</CitizenDesktopShell>;
+    return <CitizenDesktopShell fullHeight={fullHeight}>{children}</CitizenDesktopShell>;
   }
 
   return (
-    <div className="min-h-screen bg-navy-50 dark:bg-navy-950 text-navy dark:text-navy-50 flex flex-col">
-      {/* Header mobile & tablette aéré et élégant sans encombrement */}
-      <header className="h-14 sm:h-16 flex items-center justify-between px-4 sm:px-6 bg-white dark:bg-[#071322] border-b border-navy-100 dark:border-navy-800 flex-shrink-0 z-30 sticky top-0 shadow-2xs">
+    <div className={`min-h-screen bg-navy-50 dark:bg-navy-950 text-navy dark:text-navy-50 flex flex-col ${fullHeight ? 'h-screen overflow-hidden' : ''}`}>
+      {/* Header mobile & tablette : z-50 pour être toujours au-dessus des couches Leaflet */}
+      <header className="h-14 sm:h-16 flex items-center justify-between px-4 sm:px-6 bg-white dark:bg-[#071322] border-b border-navy-100 dark:border-navy-800 flex-shrink-0 z-50 sticky top-0 shadow-2xs">
         <div className="flex items-center flex-shrink-0">
           <Logo imgClassName="h-6 sm:h-8" className="items-start" />
         </div>
@@ -49,6 +50,7 @@ export default function CitizenShell({ children }) {
 
           <NotificationCenter />
           <ThemeToggle />
+          <CitizenProfileHeaderButton />
 
           {/* Déconnexion : visible à partir de la tablette (sur mobile, disponible dans l'onglet Profil) */}
           <button
@@ -62,8 +64,14 @@ export default function CitizenShell({ children }) {
         </div>
       </header>
 
-      {/* Contenu principal fluide : padding aéré sur mobile (px-3.5) et marge sous la barre d'onglets (pb-28) */}
-      <div className="flex-1 max-w-4xl w-full mx-auto px-3.5 sm:px-6 py-4 sm:py-6 flex flex-col gap-4 sm:gap-6 pb-28 sm:pb-24">
+      {/* Contenu principal fluide : si fullHeight, prend toute la hauteur disponible sans scroll */}
+      <div
+        className={`flex-1 max-w-4xl w-full mx-auto px-3.5 sm:px-6 ${
+          fullHeight
+            ? 'py-3 pb-20 flex flex-col min-h-0 overflow-hidden'
+            : 'py-4 sm:py-6 pb-28 sm:pb-24 flex flex-col gap-4 sm:gap-6'
+        }`}
+      >
         {children}
       </div>
 

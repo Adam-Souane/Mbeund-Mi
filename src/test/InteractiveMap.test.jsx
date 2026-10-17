@@ -1,4 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
+import { forwardRef } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import InteractiveMap from '../shared/components/map/InteractiveMap';
 
@@ -23,18 +24,54 @@ vi.mock('react-leaflet', () => ({
     <div data-testid="circle-marker">{children}</div>
   ),
 
+  Marker: forwardRef(({ children }, ref) => (
+    <div ref={ref} data-testid="marker">{children}</div>
+  )),
+
   Popup: ({ children }) => (
     <div data-testid="popup">{children}</div>
   ),
 
+  ZoomControl: () => (
+    <div data-testid="zoom-control" />
+  ),
+
   useMap: () => ({
     fitBounds: vi.fn(),
+    flyTo: vi.fn(),
   }),
+}));
+
+vi.mock('leaflet', () => ({
+  default: {
+    divIcon: vi.fn(() => ({})),
+  },
+}));
+
+vi.mock('react-router-dom', () => ({
+  Link: ({ children, to, className }) => (
+    <a href={to} className={className} data-testid="router-link">
+      {children}
+    </a>
+  ),
 }));
 
 vi.mock('lucide-react', () => ({
   Layers: () => <span data-testid="layers-icon" />,
   X: () => <span data-testid="close-icon" />,
+  ExternalLink: () => <span data-testid="external-link-icon" />,
+  ShieldCheck: () => <span data-testid="shield-icon" />,
+  MessageCircle: () => <span data-testid="message-icon" />,
+  MapPin: () => <span data-testid="mappin-icon" />,
+  Eye: () => <span data-testid="eye-icon" />,
+  Map: () => <span data-testid="map-icon" />,
+  Satellite: () => <span data-testid="satellite-icon" />,
+  Navigation: () => <span data-testid="navigation-icon" />,
+  ShieldAlert: () => <span data-testid="shield-alert-icon" />,
+  Droplets: () => <span data-testid="droplets-icon" />,
+  Route: () => <span data-testid="route-icon" />,
+  Radio: () => <span data-testid="radio-icon" />,
+  Building2: () => <span data-testid="building-icon" />,
 }));
 
 describe('InteractiveMap', () => {
@@ -42,91 +79,39 @@ describe('InteractiveMap', () => {
     render(<InteractiveMap />);
 
     expect(screen.getByTestId('map-container')).toBeInTheDocument();
-    expect(screen.getByTestId('tile-layer')).toBeInTheDocument();
+    expect(screen.getAllByTestId('tile-layer').length).toBeGreaterThan(0);
   });
 
-  it('affiche le bouton des couches lorsque des données sont disponibles', () => {
-    const data = {
-      zones: {
-        features: [
-          {
-            id: 1,
-            geometry: {
-              type: 'Polygon',
-              coordinates: [
-                [
-                  [-17.38, 14.75],
-                  [-17.37, 14.75],
-                  [-17.37, 14.76],
-                  [-17.38, 14.76],
-                  [-17.38, 14.75],
-                ],
-              ],
-            },
-            properties: {
-              niveau_risque: 'eleve',
-              quartier: 'Thiaroye',
-              score_risque_moyen: 0.75,
-              description: 'Zone à risque',
-            },
-          },
-        ],
-      },
-    };
-
-    render(<InteractiveMap data={data} />);
+  it('affiche le sélecteur Plan et Satellite HD à l’intérieur de la carte', () => {
+    render(<InteractiveMap />);
 
     expect(
       screen.getByRole('button', {
-        name: 'Afficher les couches de la carte',
+        name: 'Mode Plan standard',
+      })
+    ).toBeInTheDocument();
+
+    expect(
+      screen.getByRole('button', {
+        name: 'Mode Satellite HD',
       })
     ).toBeInTheDocument();
   });
 
-  it('ouvre et ferme le panneau des couches', () => {
-    const data = {
-      zones: {
-        features: [
-          {
-            id: 1,
-            geometry: {
-              type: 'Polygon',
-              coordinates: [
-                [
-                  [-17.38, 14.75],
-                  [-17.37, 14.75],
-                  [-17.37, 14.76],
-                  [-17.38, 14.76],
-                  [-17.38, 14.75],
-                ],
-              ],
-            },
-            properties: {
-              niveau_risque: 'eleve',
-              quartier: 'Thiaroye',
-              score_risque_moyen: 0.75,
-            },
-          },
-        ],
-      },
-    };
+  it('permet de basculer entre le mode Plan et le mode Satellite HD', () => {
+    render(<InteractiveMap defaultBaseMap="satellite" />);
 
-    render(<InteractiveMap data={data} />);
-
-    const button = screen.getByRole('button', {
-      name: 'Afficher les couches de la carte',
+    const planButton = screen.getByRole('button', {
+      name: 'Mode Plan standard',
+    });
+    const satelliteButton = screen.getByRole('button', {
+      name: 'Mode Satellite HD',
     });
 
-    expect(screen.queryByText('Couches')).not.toBeInTheDocument();
+    expect(satelliteButton).toBeInTheDocument();
+    fireEvent.click(planButton);
 
-    fireEvent.click(button);
-
-    expect(screen.getByText('Couches')).toBeInTheDocument();
-    expect(screen.getByText('Zones à risque')).toBeInTheDocument();
-
-    fireEvent.click(button);
-
-    expect(screen.queryByText('Couches')).not.toBeInTheDocument();
+    expect(planButton).toBeInTheDocument();
   });
 
   it('affiche une zone à risque', () => {
@@ -257,18 +242,9 @@ describe('InteractiveMap', () => {
 
     expect(screen.getByTestId('polygon')).toBeInTheDocument();
     expect(screen.getByTestId('circle-marker')).toBeInTheDocument();
-
-    const button = screen.getByRole('button', {
-      name: 'Afficher les couches de la carte',
-    });
-
-    fireEvent.click(button);
-
-    expect(screen.getByText('Zones à risque')).toBeInTheDocument();
-    expect(screen.getByText('Signalements citoyens')).toBeInTheDocument();
   });
 
-  it('permet de masquer une couche', () => {
+  it('permet de masquer une couche via la prop visibleLayers', () => {
     const data = {
       zones: {
         features: [
@@ -296,24 +272,10 @@ describe('InteractiveMap', () => {
       },
     };
 
-    render(<InteractiveMap data={data} />);
-
+    const { rerender } = render(<InteractiveMap data={data} visibleLayers={{ zones: true }} />);
     expect(screen.getByTestId('polygon')).toBeInTheDocument();
 
-    fireEvent.click(
-      screen.getByRole('button', {
-        name: 'Afficher les couches de la carte',
-      })
-    );
-
-    const checkbox = screen.getByRole('checkbox', {
-      name: 'Zones à risque',
-    });
-
-    expect(checkbox).toBeChecked();
-
-    fireEvent.click(checkbox);
-
+    rerender(<InteractiveMap data={data} visibleLayers={{ zones: false }} />);
     expect(screen.queryByTestId('polygon')).not.toBeInTheDocument();
   });
 });

@@ -211,8 +211,8 @@ export default function AutoriteShell({ children }) {
       {/* Pop-up des Contacts d'Urgence 24/7 */}
       <EmergencyModal isOpen={emergencyOpen} onClose={() => setEmergencyOpen(false)} />
 
-      {/* 1. Header supérieur complet & responsive */}
-      <header className="bg-white dark:bg-[#071322] border-b border-navy-100 dark:border-navy-800 flex-shrink-0 z-30 sticky top-0 transition-all duration-300">
+      {/* 1. Header supérieur complet & responsive : z-50 pour rester au-dessus des couches Leaflet */}
+      <header className="bg-white dark:bg-[#071322] border-b border-navy-100 dark:border-navy-800 flex-shrink-0 z-50 sticky top-0 transition-all duration-300">
         <div className="w-full flex items-center justify-between">
           {/* Bloc Logo desktop : largeur synchrone avec la sidebar pour alignement parfait */}
           <div

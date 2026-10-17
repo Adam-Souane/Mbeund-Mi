@@ -13,6 +13,7 @@ import ConseilsCarousel from '../components/ConseilsCarousel';
 import MesSignalementsWidget from '../components/MesSignalementsWidget';
 import FilActualiteStoriesWidget from '../components/FilActualiteStoriesWidget';
 import SentinellesUrgenceBanner from '../components/SentinellesUrgenceBanner';
+import RubanLiveRuelles from '../components/RubanLiveRuelles';
 
 const NIVEAU_RANK = { vert: 0, jaune: 1, orange: 2, rouge: 3 };
 
@@ -160,6 +161,9 @@ export default function AccueilPageBody() {
           Impossible de charger les zones à risque pour l’instant.
         </p>
       )}
+
+      {/* Proposition 1 : Ruban Live des Ruelles (Ticker défilant d’activités citoyennes) */}
+      <RubanLiveRuelles />
 
       {/* 2. Titre de section : Actions Rapides & Services Citoyens */}
       <div className="w-full text-center pt-2 pb-1">

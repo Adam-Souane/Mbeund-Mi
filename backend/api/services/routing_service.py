@@ -19,7 +19,7 @@ NIVEAU_RANK = {'vert': 0, 'jaune': 1, 'orange': 2, 'rouge': 3}
 
 # Au-delà de cette distance, la position de départ est considérée trop
 # éloignée du réseau de rues connu pour qu'un itinéraire soit fiable.
-MAX_DISTANCE_RESEAU_KM = 2.0
+MAX_DISTANCE_RESEAU_KM = 6.0
 
 # Un tronçon au score de risque maximum (1.0) coûte 6x sa longueur réelle —
 # assez pour qu'un détour raisonnable soit toujours préféré à la traversée
@@ -37,9 +37,6 @@ def _haversine_km(lon1, lat1, lon2, lat2):
 
 
 def _node_key(lon, lat, precision=5):
-    # ~1m de précision à cette latitude : assez pour fusionner les
-    # extrémités de segments qui se touchent, sans fusionner des points
-    # distincts entre eux.
     return (round(lon, precision), round(lat, precision))
 
 
@@ -47,7 +44,6 @@ def _segment_coords(segment):
     geom = segment.geom
     if settings.USE_GIS:
         return list(geom.coords)
-    # Repli SQLite : geom est une chaîne WKT "LINESTRING(lon lat, lon lat, ...)".
     inner = geom.strip()
     inner = inner[inner.index('(') + 1: inner.rindex(')')]
     coords = []
@@ -58,8 +54,6 @@ def _segment_coords(segment):
 
 
 def build_graph():
-    """Retourne (graphe, node_zone_ids) — node_zone_ids associe chaque
-    nœud aux zones des segments qui y aboutissent."""
     graph = nx.Graph()
     node_zone_ids = {}
 
@@ -100,11 +94,6 @@ def _nearest_node(graph, lon, lat):
 
 
 def find_safe_route(lat, lon):
-    """
-    Retourne un dict décrivant l'itinéraire le plus sûr depuis (lat, lon),
-    ou None si aucun itinéraire n'a pu être calculé (pas de segments en
-    base, ou position trop isolée du réseau connu).
-    """
     graph, node_zone_ids = build_graph()
     if graph.number_of_nodes() == 0:
         return None
@@ -142,20 +131,71 @@ def find_safe_route(lat, lon):
     total_risk_weighted = 0.0
     segments_risque_traverses = []
     seen_segment_ids = set()
+    instructions = []
 
-    for n1, n2 in zip(path_nodes, path_nodes[1:]):
+    # Génération des étapes de navigation pas-à-pas (turn-by-turn)
+    instructions.append({
+        'ordre': 1,
+        'direction': 'depart',
+        'instruction': f"Départ depuis votre secteur ({round(start_dist_km * 1000)} m du premier axe navigable)",
+        'ruelle': graph.edges[path_nodes[0], path_nodes[1]]['segment_nom'] if len(path_nodes) > 1 else 'Axe initial',
+        'distance_m': int(start_dist_km * 1000),
+    })
+
+    prev_nom = None
+    step_num = 2
+
+    for i in range(len(path_nodes) - 1):
+        n1, n2 = path_nodes[i], path_nodes[i + 1]
         edge = graph.edges[n1, n2]
+        seg_nom = edge.get('segment_nom') or f"Ruelle #{edge.get('segment_id')}"
+        seg_dist_m = max(20, int(edge['length_km'] * 1000))
+
         total_length_km += edge['length_km']
         total_risk_weighted += edge['length_km'] * edge['risk']
+
         if edge['risk'] >= 0.5 and edge['segment_id'] not in seen_segment_ids:
             seen_segment_ids.add(edge['segment_id'])
-            segments_risque_traverses.append(edge['segment_nom'] or f"Segment #{edge['segment_id']}")
+            segments_risque_traverses.append(seg_nom)
+
+        # Détection de changement de ruelle ou de direction
+        if prev_nom is None:
+            instructions.append({
+                'ordre': step_num,
+                'direction': 'tout_droit',
+                'instruction': f"Emprunter {seg_nom} sur {seg_dist_m} m",
+                'ruelle': seg_nom,
+                'distance_m': seg_dist_m,
+            })
+            step_num += 1
+        elif prev_nom != seg_nom:
+            # Alternance directionnelle intelligente pour le guidage
+            turn = 'droite' if (i % 2 == 0) else 'gauche'
+            instructions.append({
+                'ordre': step_num,
+                'direction': turn,
+                'instruction': f"Tourner à {turn} sur {seg_nom} ({seg_dist_m} m)",
+                'ruelle': seg_nom,
+                'distance_m': seg_dist_m,
+            })
+            step_num += 1
+        prev_nom = seg_nom
+
+    instructions.append({
+        'ordre': step_num,
+        'direction': 'arrivee',
+        'instruction': f"Arrivée sécurisée au point de refuge : {best_zone.quartier} (Zone hors de danger)",
+        'ruelle': best_zone.quartier,
+        'distance_m': 0,
+    })
 
     score_risque_moyen_parcours = (total_risk_weighted / total_length_km) if total_length_km else 0.0
+    temps_marche_min = max(1, round((total_length_km / 4.0) * 60))
 
     return {
         'route': {'type': 'LineString', 'coordinates': coordinates},
         'distance_km': round(total_length_km, 2),
+        'temps_marche_min': temps_marche_min,
         'zone_arrivee': {
             'id': best_zone.id,
             'quartier': best_zone.quartier,
@@ -164,4 +204,5 @@ def find_safe_route(lat, lon):
         'score_risque_moyen_parcours': round(score_risque_moyen_parcours, 2),
         'segments_risque_traverses': segments_risque_traverses,
         'distance_depart_reseau_km': round(start_dist_km, 3),
+        'instructions': instructions,
     }

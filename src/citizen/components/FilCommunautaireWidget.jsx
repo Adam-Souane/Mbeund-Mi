@@ -319,10 +319,10 @@ export default function FilCommunautaireWidget() {
                 onChange={(e) => setQuickSecteur(e.target.value)}
                 className="text-xs px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-navy-700 bg-white dark:bg-navy-800 text-navy-900 dark:text-white font-medium"
               >
-                <option value="Thiaroye-sur-Mer Plage">📍 Thiaroye Plage</option>
-                <option value="Ndakhane (Thiaroye)">📍 Ndakhane Cuvette</option>
-                <option value="Thiaroye Gare Rue 10">📍 Thiaroye Gare / Rue 10</option>
-                <option value="CEM Thiaroye 44">📍 CEM Thiaroye 44</option>
+                <option value="Thiaroye-sur-Mer Plage">Thiaroye Plage</option>
+                <option value="Ndakhane (Thiaroye)">Ndakhane Cuvette</option>
+                <option value="Thiaroye Gare Rue 10">Thiaroye Gare / Rue 10</option>
+                <option value="CEM Thiaroye 44">CEM Thiaroye 44</option>
               </select>
 
               <select

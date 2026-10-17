@@ -71,7 +71,7 @@ def test_create_signalement_accepted(api_client):
 @pytest.mark.django_db
 def test_create_signalement_rejected(api_client):
     # Center of Thiaroye: lat=14.75, lon=-17.38
-    # Point at > 4 km: -17.38, 14.85 (approx 11.1 km away)
+    # Point at > 6 km: -17.38, 14.85 (approx 11.1 km away)
     photo = generate_test_image()
     data = {
         "localisation": "[-17.38, 14.85]",
@@ -82,8 +82,8 @@ def test_create_signalement_rejected(api_client):
     response = api_client.post('/api/signalements/', data, format='multipart')
     assert response.status_code == 400
     assert 'localisation' in response.data
-    # Check the custom validation error message contains "4 km"
-    assert "4 km" in response.data['localisation'][0]
+    # Check the custom validation error message contains "6 km"
+    assert "6 km" in response.data['localisation'][0]
 
 @pytest.mark.django_db
 def test_create_signalement_compression(api_client):
@@ -353,4 +353,39 @@ def test_create_signalement_authentifie_associe_citoyen_et_mes_signalements(api_
     assert mes_res.status_code == 200
     ids = [item['id'] for item in mes_res.data['results']]
     assert sig_id in ids
+
+
+@pytest.mark.django_db
+def test_create_signalement_multi_photos_jusqu_a_trois(api_client, user_citoyen):
+    api_client.force_authenticate(user=user_citoyen)
+    photo1 = generate_test_image(color='blue')
+    photo2 = generate_test_image(color='green')
+    photo3 = generate_test_image(color='red')
+
+    data = {
+        "localisation": "[-17.38, 14.76]",
+        "description": "Multi-photos test signalement",
+        "categorie": "inondation",
+        "photos": [photo1, photo2, photo3],
+    }
+    response = api_client.post('/api/signalements/', data, format='multipart')
+    assert response.status_code == 201
+    res_data = response.data
+    sig_id = res_data['id']
+
+    # Vérifier que le serializer renvoie bien la liste des 3 photos
+    assert 'photos' in res_data['properties']
+    assert len(res_data['properties']['photos']) == 3
+
+    # Vérifier en BDD
+    sig = SignalementCitoyen.objects.get(id=sig_id)
+    assert bool(sig.photo) is True
+    assert sig.photos_supplementaires.count() == 2
+
+    # Vérifier dans mes-signalements
+    mes_res = api_client.get('/api/mes-signalements/')
+    assert mes_res.status_code == 200
+    user_item = next(item for item in mes_res.data['results'] if item['id'] == sig_id)
+    assert len(user_item['photos']) == 3
+
 

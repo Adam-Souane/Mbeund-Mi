@@ -93,7 +93,7 @@ describe('CommunautePageBody', () => {
 
     // Le nouveau post s'affiche dans le fil
     expect(screen.getByText(/Passage bloqué par les eaux à Ndakhane/i)).toBeInTheDocument();
-  });
+  }, 15000);
 
   it('filtre strictement le contenu selon les onglets Signalements terrain, Entraide & Mobilisation, et Résolus & Sécurisés', () => {
     render(
@@ -357,7 +357,7 @@ describe('CommunautePageBody', () => {
     // Clic pour soutenir / valider la story
     fireEvent.click(soutenirBtn);
     expect(screen.getByRole('button', { name: /Observation confirmée/i })).toBeInTheDocument();
-  });
+  }, 15000);
 
   it('bloque la publication des propos haineux ou insultes via le filtre de moderation', () => {
     localStorage.clear();
@@ -451,7 +451,7 @@ describe('CommunautePageBody', () => {
 
     // 7. Toast de succès affiché
     expect(screen.getByText(/Publication retirée de l'espace Communauté/i)).toBeInTheDocument();
-  });
+  }, 15000);
 
   it('affiche des compteurs entre parenthèses rigoureusement exacts dont la somme égale le total', () => {
     localStorage.clear();

@@ -12,11 +12,13 @@ import {
   ChevronLeft,
   ChevronRight,
   PhoneCall,
+  Settings,
 } from 'lucide-react';
 import Logo from '../../shared/components/Logo';
 import ThemeToggle from '../../theme/ThemeToggle';
 import NotificationCenter from '../../shared/components/NotificationCenter';
 import EmergencyModal from '../../shared/components/EmergencyModal';
+import CitizenProfileHeaderButton from '../components/CitizenProfileHeaderButton';
 import { useAuth } from '../../auth/AuthContext';
 
 const NAV_ITEMS = [
@@ -26,7 +28,7 @@ const NAV_ITEMS = [
   { to: '/citoyen/signaler', label: 'Signaler', icon: Camera },
   { to: '/citoyen/communaute', label: 'Communauté', icon: Users },
   { to: '/citoyen/chat', label: 'NDAM · Assistant', icon: MessageCircle },
-  { to: '/citoyen/profil', label: 'Profil', icon: User },
+  { to: '/citoyen/parametres', label: 'Paramètres', icon: Settings },
 ];
 
 /**
@@ -36,7 +38,7 @@ const NAV_ITEMS = [
  * - En mode replié : seules les icônes s'affichent, le dashboard s'élargit pour remplir tout l'espace
  * - Sticky au défilement
  */
-export default function CitizenDesktopShell({ children }) {
+export default function CitizenDesktopShell({ children, fullHeight = false }) {
   const { logout } = useAuth();
   const [emergencyOpen, setEmergencyOpen] = useState(false);
 
@@ -64,8 +66,8 @@ export default function CitizenDesktopShell({ children }) {
       {/* Pop-up des Contacts d'Urgence 24/7 */}
       <EmergencyModal isOpen={emergencyOpen} onClose={() => setEmergencyOpen(false)} />
 
-      {/* 1. Header supérieur avec Logo aligné et responsive avec l'état de la sidebar */}
-      <header className="bg-white dark:bg-[#071322] border-b border-navy-100 dark:border-navy-800 flex-shrink-0 z-30 sticky top-0 transition-all duration-300">
+      {/* 1. Header supérieur : z-50 infranchissable pour rester TOUJOURS au-dessus de Leaflet */}
+      <header className="bg-white dark:bg-[#071322] border-b border-navy-100 dark:border-navy-800 flex-shrink-0 z-50 sticky top-0 transition-all duration-300">
         <div className="w-full flex items-center justify-between">
           {/* Bloc Logo : s'ajuste à la largeur de la sidebar */}
           <div
@@ -94,6 +96,9 @@ export default function CitizenDesktopShell({ children }) {
 
             {/* Bascule Mode Clair / Sombre */}
             <ThemeToggle />
+
+            {/* Bouton Profil Citoyen dans le header */}
+            <CitizenProfileHeaderButton />
           </div>
         </div>
       </header>
@@ -177,8 +182,14 @@ export default function CitizenDesktopShell({ children }) {
           </div>
         </aside>
 
-        {/* Zone Principale de Contenu : prend automatiquement tout l'espace disponible */}
-        <main className="flex-1 min-w-0 p-6 lg:p-8 flex flex-col gap-7 lg:gap-8 max-w-[1600px] transition-all duration-300">
+        {/* Zone Principale de Contenu : si fullHeight, s'aligne rigoureusement sur la sidebar sans aucun scroll */}
+        <main
+          className={`flex-1 min-w-0 transition-all duration-300 ${
+            fullHeight
+              ? 'p-4 lg:p-6 flex flex-col h-[calc(100vh-65px)] overflow-hidden max-w-none'
+              : 'p-6 lg:p-8 flex flex-col gap-7 lg:gap-8 max-w-[1600px]'
+          }`}
+        >
           {children}
         </main>
       </div>

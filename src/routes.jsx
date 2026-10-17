@@ -17,7 +17,9 @@ const CommunautePageBody = lazy(() => import('./citizen/pages/CommunautePageBody
 const CartePageBody = lazy(() => import('./citizen/pages/CartePageBody'));
 const AlertesPrevisionsPageBody = lazy(() => import('./citizen/pages/AlertesPrevisionsPageBody'));
 const SignalerPageBody = lazy(() => import('./citizen/pages/SignalerPageBody'));
+const MesSignalementsPageBody = lazy(() => import('./citizen/pages/MesSignalementsPageBody'));
 const ProfilPageBody = lazy(() => import('./citizen/pages/ProfilPageBody'));
+const ParametresPageBody = lazy(() => import('./citizen/pages/ParametresPageBody'));
 const ChatPageBody = lazy(() => import('./citizen/pages/ChatPageBody'));
 const TableauDeBordPage = lazy(() => import('./autorite/pages/TableauDeBordPage'));
 const CarteInteractivePage = lazy(() => import('./autorite/pages/CarteInteractivePage'));
@@ -76,7 +78,9 @@ export default function AppRoutes() {
         <Route path="/citoyen/carte" element={<Citoyen><CartePageBody /></Citoyen>} />
         <Route path="/citoyen/alertes" element={<Citoyen><AlertesPrevisionsPageBody /></Citoyen>} />
         <Route path="/citoyen/signaler" element={<Citoyen><SignalerPageBody /></Citoyen>} />
+        <Route path="/citoyen/mes-signalements" element={<Citoyen><MesSignalementsPageBody /></Citoyen>} />
         <Route path="/citoyen/profil" element={<Citoyen><ProfilPageBody /></Citoyen>} />
+        <Route path="/citoyen/parametres" element={<Citoyen><ParametresPageBody /></Citoyen>} />
         <Route path="/citoyen/chat" element={<Citoyen><ChatPageBody /></Citoyen>} />
 
         {/* Autorité */}

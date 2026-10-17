@@ -1,4 +1,5 @@
 import math
+import re
 import json
 from io import BytesIO
 from PIL import Image, UnidentifiedImageError
@@ -10,7 +11,7 @@ from drf_spectacular.utils import extend_schema_field
 from capteurs.models import Capteur, Mesure
 from alertes.models import (
     ZoneRisque, Alerte, PredictionIA, EpisodeInondation, SignalementCitoyen,
-    SegmentRue, PrevisionMeteo, HistoriqueRisque, ContactAlerte,
+    SignalementPhoto, SegmentRue, PrevisionMeteo, HistoriqueRisque, ContactAlerte,
     ProfilVulnerabilite, RelaisQuartier, PointRefuge, SMSSignalement,
     SurvivalKit, EmergencyContact, TriageAppel,
 )
@@ -531,34 +532,103 @@ class SignalementCitoyenSerializer(HybridGeoFeatureModelSerializer):
     citoyen_prenom = serializers.SerializerMethodField()
     citoyen_telephone = serializers.SerializerMethodField()
     citoyen_quartier = serializers.SerializerMethodField()
+    photos = serializers.SerializerMethodField()
 
     class Meta:
         model = SignalementCitoyen
         geo_field = 'localisation'
         fields = (
-            'id', 'localisation', 'description', 'photo', 'valide', 'date_creation', 'categorie',
+            'id', 'localisation', 'description', 'photo', 'photos', 'valide', 'date_creation', 'categorie',
             'niveau_eau_estime', 'score_eau_estime', 'signalement_similaire',
             'citoyen_nom', 'citoyen_prenom', 'citoyen_telephone', 'citoyen_quartier',
         )
         read_only_fields = (
-            'id', 'valide', 'date_creation',
+            'id', 'photos', 'valide', 'date_creation',
             'niveau_eau_estime', 'score_eau_estime', 'signalement_similaire',
             'citoyen_nom', 'citoyen_prenom', 'citoyen_telephone', 'citoyen_quartier',
         )
 
+    @extend_schema_field(serializers.ListField(child=serializers.CharField()))
+    def get_photos(self, obj):
+        request = self.context.get('request')
+        result = []
+        if obj.photo:
+            try:
+                url = obj.photo.url
+                result.append(request.build_absolute_uri(url) if request else url)
+            except Exception:
+                pass
+        for supp in obj.photos_supplementaires.all():
+            if supp.photo:
+                try:
+                    url = supp.photo.url
+                    result.append(request.build_absolute_uri(url) if request else url)
+                except Exception:
+                    pass
+        return result
+
     @extend_schema_field(serializers.CharField(required=False, allow_null=True))
     def get_citoyen_nom(self, obj):
-        return obj.signale_par.last_name if obj.signale_par else None
+        if not obj.signale_par:
+            return None
+        last_name = obj.signale_par.last_name or ''
+        # Protection RGPD : si le nom contient des chiffres (ex: numéro de téléphone ou SMS), on ne l'expose pas
+        if re.search(r'\d{6,}', last_name) or 'sms' in last_name.lower():
+            return None
+        return last_name
 
     @extend_schema_field(serializers.CharField(required=False, allow_null=True))
     def get_citoyen_prenom(self, obj):
-        return obj.signale_par.first_name if obj.signale_par else None
+        if not obj.signale_par:
+            return None
+        first_name = obj.signale_par.first_name or ''
+        if re.search(r'\d{6,}', first_name) or 'sms' in first_name.lower():
+            return None
+        return first_name
 
     @extend_schema_field(serializers.CharField(required=False, allow_null=True))
     def get_citoyen_telephone(self, obj):
-        if obj.signale_par and hasattr(obj.signale_par, 'profile'):
-            return obj.signale_par.profile.telephone
+        # Protection RGPD stricte : seuls les secours, autorités ou administrateurs
+        # connectés ont l'autorisation d'accéder au numéro de téléphone de contact
+        request = self.context.get('request')
+        if request and getattr(request, 'user', None) and request.user.is_authenticated:
+            profile = getattr(request.user, 'profile', None)
+            if profile and profile.role in ('autorite', 'admin', 'agent'):
+                if obj.signale_par and hasattr(obj.signale_par, 'profile'):
+                    return obj.signale_par.profile.telephone
         return None
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        request = self.context.get('request')
+        is_autorite = False
+        if request and getattr(request, 'user', None) and request.user.is_authenticated:
+            profile = getattr(request.user, 'profile', None)
+            if profile and profile.role in ('autorite', 'admin', 'agent'):
+                is_autorite = True
+
+        # Pour les citoyens et le public : aucune donnée sensible ne doit fuiter
+        target_dict = ret.get('properties', ret) if isinstance(ret, dict) else {}
+        if not is_autorite:
+            if isinstance(target_dict, dict):
+                target_dict['citoyen_telephone'] = None
+                for key in ('citoyen_nom', 'citoyen_prenom'):
+                    val = target_dict.get(key)
+                    if val and (re.search(r'\d{6,}', str(val)) or 'sms' in str(val).lower()):
+                        target_dict[key] = None
+
+                desc = target_dict.get('description') or ''
+                # Nettoie d'éventuels préfixes SMS et numéros de téléphone inclus dans le texte
+                desc = re.sub(r'\[\s*SMS(?:\s+de)?\s*[^\]]*\]', '', desc, flags=re.IGNORECASE)
+                desc = re.sub(r'(?:\+?221[\s.-]*)?(?:7[05678]|33)[\s.-]*\d{3}[\s.-]*\d{2}[\s.-]*\d{2}\b', '', desc)
+                desc = re.sub(r'\b\d{8,15}\b', '', desc)
+                target_dict['description'] = desc.strip() or 'Observation d’inondation transmise par un riverain.'
+
+            if isinstance(ret, dict) and ret is not target_dict:
+                ret['citoyen_telephone'] = None
+                if 'description' in ret and isinstance(target_dict, dict):
+                    ret['description'] = target_dict.get('description')
+        return ret
 
     @extend_schema_field(serializers.CharField(required=False, allow_null=True))
     def get_citoyen_quartier(self, obj):
@@ -606,9 +676,9 @@ class SignalementCitoyenSerializer(HybridGeoFeatureModelSerializer):
         lon, lat = coords
         # Center of Thiaroye Sur Mer: lat=14.75, lon=-17.38
         dist = haversine_distance(lon, lat, -17.38, 14.75)
-        if dist > 4.0:
+        if dist > 6.0:
             raise serializers.ValidationError(
-                f"Le signalement doit être à moins de 4 km du centre de Thiaroye Sur Mer. Distance calculée : {dist:.2f} km."
+                f"Le signalement doit être à moins de 6 km du centre de Thiaroye Sur Mer. Distance calculée : {dist:.2f} km."
             )
         return value
 
@@ -627,14 +697,44 @@ class SignalementCitoyenSerializer(HybridGeoFeatureModelSerializer):
 
     def create(self, validated_data):
         vision = getattr(self, '_vision_result', None)
+        request = self.context.get('request')
+        extra_files = []
+
+        if request and hasattr(request, 'FILES'):
+            multi_files = request.FILES.getlist('photos')
+            if not multi_files:
+                multi_files = request.FILES.getlist('photos_supplementaires')
+
+            # Si aucune photo principale n'est déjà validée mais qu'on a des photos
+            if not validated_data.get('photo') and multi_files:
+                first = multi_files[0]
+                try:
+                    compressed_first = compress_image(first)
+                    validated_data['photo'] = compressed_first
+                    vision = analyser_photo(compressed_first)
+                except Exception:
+                    validated_data['photo'] = first
+                extra_files = multi_files[1:3]
+            elif validated_data.get('photo') and multi_files:
+                # Exclure le premier s'il correspond au champ photo déjà passé
+                extra_files = [f for f in multi_files if f != request.FILES.get('photo')][:2]
+
         if vision:
-            validated_data['niveau_eau_estime'] = vision['niveau_eau_estime']
-            validated_data['score_eau_estime'] = vision['score_eau_estime']
-            validated_data['photo_hash'] = vision['photo_hash']
+            validated_data['niveau_eau_estime'] = vision.get('niveau_eau_estime', '')
+            validated_data['score_eau_estime'] = vision.get('score_eau_estime', 0.0)
+            validated_data['photo_hash'] = vision.get('photo_hash', '')
 
         instance = super().create(validated_data)
 
-        if vision and vision['photo_hash']:
+        # Création des photos secondaires (max 2 de plus -> total 3)
+        for extra in extra_files:
+            try:
+                comp_extra = compress_image(extra)
+            except Exception:
+                comp_extra = extra
+            SignalementPhoto.objects.create(signalement=instance, photo=comp_extra)
+
+        if vision and vision.get('photo_hash'):
             similaire = trouve_signalement_similaire(
                 vision['photo_hash'], SignalementCitoyen.objects.all(), exclude_id=instance.id
             )
@@ -776,15 +876,35 @@ class SignalementHistoriqueSerializer(serializers.ModelSerializer):
     """Serializer pour afficher l'historique des signalements d'un utilisateur."""
     categorie_display = serializers.CharField(source='get_categorie_display', read_only=True)
     niveau_eau_display = serializers.CharField(source='get_niveau_eau_estime_display', read_only=True)
+    photos = serializers.SerializerMethodField()
     
     class Meta:
         model = SignalementCitoyen
         fields = [
-            'id', 'description', 'categorie', 'categorie_display', 
+            'id', 'description', 'photo', 'photos', 'categorie', 'categorie_display', 
             'niveau_eau_estime', 'niveau_eau_display', 'valide',
             'date_creation', 'localisation'
         ]
         read_only_fields = fields
+
+    @extend_schema_field(serializers.ListField(child=serializers.CharField()))
+    def get_photos(self, obj):
+        request = self.context.get('request')
+        result = []
+        if obj.photo:
+            try:
+                url = obj.photo.url
+                result.append(request.build_absolute_uri(url) if request else url)
+            except Exception:
+                pass
+        for supp in obj.photos_supplementaires.all():
+            if supp.photo:
+                try:
+                    url = supp.photo.url
+                    result.append(request.build_absolute_uri(url) if request else url)
+                except Exception:
+                    pass
+        return result
 
 
 class TriageAppelSerializer(serializers.ModelSerializer):

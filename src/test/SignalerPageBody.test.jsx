@@ -88,11 +88,21 @@ vi.mock('lucide-react', () => ({
   ShieldCheck: () => <span data-testid="shield-icon" />,
   Users: () => <span data-testid="users-icon" />,
   EyeOff: () => <span data-testid="eye-off-icon" />,
+  ArrowDown: () => <span data-testid="arrow-down-icon" />,
+  Clock: () => <span data-testid="clock-icon" />,
+  Trash2: () => <span data-testid="trash-icon" />,
+  RefreshCw: () => <span data-testid="refresh-icon" />,
+  Plus: () => <span data-testid="plus-icon" />,
+  AlertCircle: () => <span data-testid="alert-icon" />,
+  X: () => <span data-testid="x-icon" />,
 }));
 
 describe('SignalerPageBody', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    global.URL.createObjectURL = vi.fn((file) => `blob:mock-${file?.name || 'file'}`);
+    global.URL.revokeObjectURL = vi.fn();
+
     createSignalementMock.mockResolvedValue({
       id: 1,
       description: 'Rue inondée',
@@ -141,7 +151,7 @@ describe('SignalerPageBody', () => {
     );
   });
 
-  it('permet de sélectionner une photo', () => {
+  it('permet de sélectionner une photo', async () => {
     render(<SignalerPageBody />);
 
     const fileInput = screen.getByLabelText(/Ajouter une photo/i);
@@ -158,7 +168,9 @@ describe('SignalerPageBody', () => {
       },
     });
 
-    expect(screen.getByText('inondation.jpg')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('inondation.jpg')).toBeInTheDocument();
+    });
   });
 
   it('envoie le signalement avec la photo sélectionnée', async () => {
@@ -188,6 +200,10 @@ describe('SignalerPageBody', () => {
       },
     });
 
+    await waitFor(() => {
+      expect(screen.getByText('photo-inondation.jpg')).toBeInTheDocument();
+    });
+
     fireEvent.click(
       screen.getByRole('button', {
         name: 'Envoyer le signalement',
@@ -198,12 +214,77 @@ describe('SignalerPageBody', () => {
       expect(createSignalementMock).toHaveBeenCalled();
     });
 
-    expect(createSignalementMock).toHaveBeenCalledWith({
-      description: 'Rue complètement inondée',
-      categorie: 'inondation',
-      longitude: -17.38,
-      latitude: 14.75,
-      photo,
+    expect(createSignalementMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        description: 'Rue complètement inondée',
+        categorie: 'inondation',
+        longitude: -17.38,
+        latitude: 14.75,
+        photo,
+        photos: [photo],
+      })
+    );
+  });
+
+  it('permet de sélectionner jusqu’à 3 photos et affiche les aperçus', async () => {
+    render(<SignalerPageBody />);
+
+    const fileInput = screen.getByLabelText(/Ajouter une photo/i);
+    const photo1 = new File(['p1'], 'vue-face.jpg', { type: 'image/jpeg' });
+    const photo2 = new File(['p2'], 'vue-caniveau.jpg', { type: 'image/jpeg' });
+    const photo3 = new File(['p3'], 'vue-degats.jpg', { type: 'image/jpeg' });
+
+    fireEvent.change(fileInput, {
+      target: { files: [photo1, photo2, photo3] },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('vue-face.jpg')).toBeInTheDocument();
+      expect(screen.getByText('vue-caniveau.jpg')).toBeInTheDocument();
+      expect(screen.getByText('vue-degats.jpg')).toBeInTheDocument();
+      expect(screen.getByText('3/3 photos')).toBeInTheDocument();
+    });
+  });
+
+  it('permet de supprimer une photo ajoutée', async () => {
+    render(<SignalerPageBody />);
+
+    const fileInput = screen.getByLabelText(/Ajouter une photo/i);
+    const photo1 = new File(['p1'], 'photo-a-supprimer.jpg', { type: 'image/jpeg' });
+
+    fireEvent.change(fileInput, {
+      target: { files: [photo1] },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('photo-a-supprimer.jpg')).toBeInTheDocument();
+    });
+
+    const deleteBtn = screen.getByTitle('Supprimer cette photo');
+    fireEvent.click(deleteBtn);
+
+    await waitFor(() => {
+      expect(screen.queryByText('photo-a-supprimer.jpg')).not.toBeInTheDocument();
+      expect(screen.getByText('0/3 photos')).toBeInTheDocument();
+    });
+  });
+
+  it('alerte si la limite de 3 photos est atteinte', async () => {
+    render(<SignalerPageBody />);
+
+    const fileInput = screen.getByLabelText(/Ajouter une photo/i);
+    const p1 = new File(['1'], 'p1.jpg', { type: 'image/jpeg' });
+    const p2 = new File(['2'], 'p2.jpg', { type: 'image/jpeg' });
+    const p3 = new File(['3'], 'p3.jpg', { type: 'image/jpeg' });
+    const p4 = new File(['4'], 'p4.jpg', { type: 'image/jpeg' });
+
+    fireEvent.change(fileInput, {
+      target: { files: [p1, p2, p3, p4] },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/limite de 3 photos/i)).toBeInTheDocument();
+      expect(screen.getByText('3/3 photos')).toBeInTheDocument();
     });
   });
 

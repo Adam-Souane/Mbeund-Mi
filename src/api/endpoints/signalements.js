@@ -8,12 +8,22 @@ export function getSignalements({ page } = {}) {
 // POST /api/signalements/ — AllowAny, mais géré via multipart/form-data car
 // la photo (optionnelle) est un vrai fichier. `localisation` accepte la
 // forme "lon,lat" en texte d'après SignalementCitoyenSerializer.to_internal_value.
-export function createSignalement({ description, categorie, longitude, latitude, photo }) {
+export function createSignalement({ description, categorie, longitude, latitude, photo, photos }) {
   const formData = new FormData();
   formData.append('description', description);
   formData.append('categorie', categorie);
   formData.append('localisation', `${longitude},${latitude}`);
-  if (photo) formData.append('photo', photo);
+
+  const allPhotos = Array.isArray(photos) && photos.length > 0 
+    ? photos 
+    : (photo ? [photo] : []);
+
+  if (allPhotos.length > 0) {
+    formData.append('photo', allPhotos[0]);
+    allPhotos.forEach((file) => {
+      formData.append('photos', file);
+    });
+  }
 
   return client
     .post('/signalements/', formData, {

@@ -73,7 +73,12 @@ export default function AuthLayout({ variante, className = '', children }) {
   const { surtitre, titre, texte } = CONTENUS[variante] ?? CONTENUS.connexion;
   const isAuthority = variante === 'administration' || variante === 'autorite';
   const atouts = isAuthority ? ATOUTS_AUTORITE : ATOUTS_CITOYEN;
-  const bgImage = '/images/prevention-pluie.jpg';
+  const bgImage = isAuthority
+    ? '/images/login-autorite-thiaroye.jpg'
+    : '/images/login-citoyen-thiaroye.jpg';
+  const bgAlt = isAuthority
+    ? 'Autorités et secours en intervention face aux inondations à Thiaroye-sur-Mer'
+    : 'Citoyens engagés dans la prévention des inondations à Thiaroye-sur-Mer';
 
   return (
     <div className="min-h-screen lg:h-screen w-full flex flex-col lg:flex-row bg-[#F8FAFC] text-slate-800 lg:overflow-hidden">
@@ -82,7 +87,7 @@ export default function AuthLayout({ variante, className = '', children }) {
         {/* Photographie authentique de terrain à Thiaroye-sur-Mer */}
         <img
           src={bgImage}
-          alt="Prévention des inondations à Thiaroye-sur-Mer"
+          alt={bgAlt}
           className="absolute inset-0 w-full h-full object-cover object-center z-0"
         />
 

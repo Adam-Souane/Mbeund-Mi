@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, Map, Camera, MessageCircle, User } from 'lucide-react';
+import { Home, Map, Camera, MessageCircle, Settings } from 'lucide-react';
 
 const SIDE_ITEMS_LEFT = [
   { to: '/citoyen/accueil', label: 'Accueil', icon: Home },
@@ -10,7 +10,7 @@ const SIDE_ITEMS_LEFT = [
 // comme "ouvre une conversation" au premier coup d'œil.
 const SIDE_ITEMS_RIGHT = [
   { to: '/citoyen/chat', label: 'NDAM', icon: MessageCircle },
-  { to: '/citoyen/profil', label: 'Profil', icon: User },
+  { to: '/citoyen/parametres', label: 'Paramètres', icon: Settings },
 ];
 
 function TabLink({ to, label, icon: Icon }) {

@@ -185,7 +185,7 @@ function FilDeReflexe() {
   const categories = [
     {
       id: 'electrique',
-      titre: '⚡ Danger électronique',
+      titre: 'Danger électrique',
       icon: AlertTriangle,
       actions: [
         'Couper l\'électricité dans les zones inondées',
@@ -197,7 +197,7 @@ function FilDeReflexe() {
     },
     {
       id: 'eau',
-      titre: '💧 Eau potable & désinfectée',
+      titre: 'Eau potable & désinfectée',
       icon: Droplet,
       actions: [
         'Vérifier la qualité de l\'eau avec tests',
@@ -209,7 +209,7 @@ function FilDeReflexe() {
     },
     {
       id: 'evacuation',
-      titre: '🚨 Évacuation réflexe & secours',
+      titre: 'Évacuation réflexe & secours',
       icon: CornerDownRight,
       actions: [
         'Identifier les zones à évacuer immédiatement',

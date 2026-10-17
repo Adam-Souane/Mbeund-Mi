@@ -170,6 +170,22 @@ class SignalementCitoyen(models.Model):
         return f"Signalement {self.get_categorie_display()} - {self.date_creation}"
 
 
+class SignalementPhoto(models.Model):
+    signalement = models.ForeignKey(
+        SignalementCitoyen, on_delete=models.CASCADE, related_name='photos_supplementaires'
+    )
+    photo = models.FileField(upload_to='signalements/galerie/')
+    date_creation = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Photo de signalement"
+        verbose_name_plural = "Photos de signalements"
+        ordering = ['date_creation']
+
+    def __str__(self):
+        return f"Photo #{self.pk} - Signalement #{self.signalement_id}"
+
+
 class SegmentRue(models.Model):
     ETAT_DRAINAGE_CHOICES = [
         ('bon', 'Bon'),
