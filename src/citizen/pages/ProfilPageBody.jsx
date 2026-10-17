@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { Moon, LogOut, ShieldCheck, HeartHandshake, Users2, Loader2, CheckCircle2, Copy, Check, AlertCircle, Droplet, Utensils, Phone, Mail, MapPin, Clock, Layers } from 'lucide-react';
+import { Moon, LogOut, ShieldCheck, HeartHandshake, Users2, Loader2, CheckCircle2, Copy, Check, AlertCircle, Droplet, Utensils, Phone, Mail, MapPin, Clock, Layers, Pencil } from 'lucide-react';
 import CitizenShell from '../shared/CitizenShell';
 import ErrorMessage from '../../shared/components/ErrorMessage';
+import AvatarSelectorModal, { RenderAvatar } from '../components/AvatarSelectorModal';
+import { getUserCustomAvatar, setUserCustomAvatar } from '../../shared/utils/avatarResolver';
 import { useAuth } from '../../auth/AuthContext';
 import { useTheme } from '../../theme/ThemeContext';
 import { useZones } from '../../shared/hooks/useZones';
@@ -91,6 +93,14 @@ export default function ProfilPageBody() {
   // Validation errors
   const [errors, setErrors] = useState({});
 
+  // Avatar personnalisé (bibliothèque ou upload)
+  const [avatarModalOpen, setAvatarModalOpen] = useState(false);
+  const [userAvatar, setUserAvatar] = useState(() => getUserCustomAvatar(username));
+
+  const handleSelectAvatar = (newAvatar) => {
+    setUserCustomAvatar(username, newAvatar);
+    setUserAvatar(newAvatar);
+  };
 
   const copyUsername = () => {
     navigator.clipboard.writeText(username);
@@ -143,11 +153,32 @@ export default function ProfilPageBody() {
       <div className="w-full flex flex-col gap-5 lg:grid lg:grid-cols-2 lg:gap-5 lg:items-start">
         <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5">
           <div className="flex items-center gap-4 mb-4">
-            <div className="w-14 h-14 rounded-full bg-navy dark:bg-navy-800 text-white flex items-center justify-center text-xl font-extrabold flex-shrink-0">
-              {initial}
+            {/* Cercle d'avatar personnalisé avec bouton crayon */}
+            <div className="relative flex-shrink-0">
+              <RenderAvatar avatar={userAvatar} initial={initial} size="w-16 h-16" textClass="text-2xl" />
+              <button
+                type="button"
+                onClick={() => setAvatarModalOpen(true)}
+                className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[#CC131A] hover:bg-[#b01016] text-white flex items-center justify-center shadow-md border-2 border-white dark:border-navy-900 transition hover:scale-110 active:scale-95 cursor-pointer"
+                title="Modifier l'avatar (bibliothèque ou photo)"
+                aria-label="Modifier l'avatar"
+              >
+                <Pencil size={13} />
+              </button>
             </div>
             <div className="min-w-0">
-              <p className="text-base font-extrabold truncate">{username ?? 'Utilisateur'}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-base font-extrabold truncate">{username ?? 'Utilisateur'}</p>
+                <button
+                  type="button"
+                  onClick={() => setAvatarModalOpen(true)}
+                  className="p-1 rounded-md text-slate-400 hover:text-[#CC131A] hover:bg-slate-100 dark:hover:bg-navy-800 transition cursor-pointer"
+                  title="Modifier l'avatar"
+                  aria-label="Modifier l'avatar"
+                >
+                  <Pencil size={14} />
+                </button>
+              </div>
               <span className="inline-flex items-center gap-1.5 text-xs font-bold text-navy-600 dark:text-navy-200 mt-1">
                 <ShieldCheck size={13} />
                 {ROLE_LABELS[role] ?? role}
@@ -742,6 +773,14 @@ export default function ProfilPageBody() {
           Se déconnecter
         </button>
       </div>
+
+      <AvatarSelectorModal
+        isOpen={avatarModalOpen}
+        onClose={() => setAvatarModalOpen(false)}
+        currentAvatar={userAvatar}
+        onSelectAvatar={handleSelectAvatar}
+        initial={initial}
+      />
     </CitizenShell>
   );
 }

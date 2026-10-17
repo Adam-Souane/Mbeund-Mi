@@ -85,3 +85,32 @@ export function getPublicAvatar({ name = '', id = '', context = '', preferredAva
 
   return allPool[hash % allPool.length];
 }
+
+/**
+ * Récupère l'avatar personnalisé du citoyen actuellement connecté depuis le localStorage
+ */
+export function getUserCustomAvatar(username = '') {
+  try {
+    const key = `mbeund_mi_user_avatar_${username || 'default'}`;
+    return localStorage.getItem(key) || localStorage.getItem('mbeund_mi_user_avatar') || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Sauvegarde l'avatar personnalisé du citoyen dans le localStorage et émet un événement
+ */
+export function setUserCustomAvatar(username = '', avatar = null) {
+  try {
+    const key = `mbeund_mi_user_avatar_${username || 'default'}`;
+    if (avatar) {
+      localStorage.setItem(key, avatar);
+      localStorage.setItem('mbeund_mi_user_avatar', avatar);
+    } else {
+      localStorage.removeItem(key);
+      localStorage.removeItem('mbeund_mi_user_avatar');
+    }
+    window.dispatchEvent(new CustomEvent('mbeund_mi_avatar_updated', { detail: { avatar } }));
+  } catch {}
+}
