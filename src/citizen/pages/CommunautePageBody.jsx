@@ -785,26 +785,26 @@ export default function CommunautePageBody() {
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {/* 1. HEADER COMMUNAUTÉ CONSERVÉ STRICTEMENT INTÉGRALEMENT            */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
-      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-[#0B2545] via-[#103565] to-slate-900 text-white p-5 sm:p-7 shadow-xl border border-blue-900/40 flex-shrink-0">
-        <div className="flex flex-wrap items-center justify-between gap-4 relative z-10">
-          <div className="min-w-0">
+      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-[#0B2545] via-[#103565] to-slate-900 text-white p-4 sm:p-6 md:p-7 shadow-xl border border-blue-900/40 flex-shrink-0">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 sm:gap-4 relative z-10">
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+              <h1 className="text-lg sm:text-xl md:text-2xl font-black text-white tracking-tight">
                 Espace Communauté · Thiaroye
               </h1>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shrink-0">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                 En direct
               </span>
             </div>
-            <p className="text-xs sm:text-sm text-slate-300 mt-0.5 truncate">
+            <p className="text-xs sm:text-sm text-slate-300 mt-1 line-clamp-2 sm:line-clamp-1">
               Fil d’actualité citoyen, signalements géolocalisés et entraide solidaire entre voisins
             </p>
           </div>
 
           <Link
             to="/citoyen/signaler"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#CC131A] hover:bg-red-700 text-white text-xs sm:text-sm font-black shadow-md transition active:scale-95 cursor-pointer flex-shrink-0"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#CC131A] hover:bg-red-700 text-white text-xs sm:text-sm font-black shadow-md transition active:scale-95 cursor-pointer shrink-0 w-full sm:w-auto"
           >
             <Camera size={16} />
             Signaler avec photo
@@ -844,22 +844,25 @@ export default function CommunautePageBody() {
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {/* 2. STORIES INSTAGRAM · ÉPHÉMÈRES (24 HEURES)                       */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
-      <section className="bg-white dark:bg-[#071322] border border-navy-100 dark:border-navy-800 rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-xs">
-        <div className="flex items-center justify-between mb-3 px-1">
-          <div className="flex items-center gap-2">
-            <Sparkles size={16} className="text-amber-500" />
-            <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-navy-900 dark:text-white">
+      <section className="bg-white dark:bg-[#071322] border border-navy-100 dark:border-navy-800 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 shadow-xs overflow-hidden">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3 px-1">
+          <div className="flex items-center gap-2 min-w-0">
+            <Sparkles size={16} className="text-amber-500 shrink-0" />
+            <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-navy-900 dark:text-white truncate">
               Stories du terrain · En direct
             </h2>
           </div>
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-[11px] font-extrabold text-[#CC131A] dark:text-rose-400">
-            <Timer size={13} />
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-[10px] sm:text-[11px] font-extrabold text-[#CC131A] dark:text-rose-400 shrink-0">
+            <Timer size={13} className="shrink-0" />
             <span>Éphémère · Expire dans 24h</span>
           </div>
         </div>
 
-        {/* Carousel horizontal fluide avec avatars de grande taille */}
-        <div className="flex items-start gap-4 sm:gap-6 overflow-x-auto pb-2 pt-1 scrollbar-none px-1">
+        {/* Carousel horizontal fluide avec avatars et swipe tactile natif */}
+        <div
+          className="flex items-start gap-3 sm:gap-5 md:gap-6 overflow-x-auto pb-2 pt-1 scrollbar-none px-1 touch-pan-x"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
           {/* Cercle 1 : Ajouter sa propre observation terrain éphémère (Texte ou Photo) */}
           <button
             type="button"
@@ -947,15 +950,15 @@ export default function CommunautePageBody() {
       {/* 3. BARRE D'ACTIONS : FILTRES ADAPTÉS À GAUCHE + BOUTON « NOUVEAU POST » À DROITE */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-[#071322] border border-navy-100 dark:border-navy-800 rounded-2xl p-3 sm:p-4 shadow-xs">
-        {/* Filtres de navigation avec masquage strict et absolu de toute scrollbar grise native */}
+        {/* Filtres de navigation avec masquage strict et défilement tactile fluide */}
         <div
-          className="flex items-center gap-2 overflow-x-auto pb-0 scrollbar-none no-scrollbar flex-1"
+          className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-none no-scrollbar flex-1 touch-pan-x"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {/* Tous les posts */}
           <button
             onClick={() => setFilter('tous')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-black transition shadow-xs flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-black transition shadow-xs flex items-center gap-1.5 whitespace-nowrap cursor-pointer shrink-0 ${
               filter === 'tous'
                 ? 'bg-[#0B2545] text-white shadow-xs'
                 : 'bg-slate-50 dark:bg-navy-900 text-navy-600 dark:text-navy-200 border border-slate-200 dark:border-navy-800 hover:border-navy-300'
@@ -968,7 +971,7 @@ export default function CommunautePageBody() {
           {/* Signalements terrain */}
           <button
             onClick={() => setFilter('signalements')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-black transition shadow-xs flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-black transition shadow-xs flex items-center gap-1.5 whitespace-nowrap cursor-pointer shrink-0 ${
               filter === 'signalements'
                 ? 'bg-[#CC131A] text-white shadow-xs'
                 : 'bg-slate-50 dark:bg-navy-900 text-navy-600 dark:text-navy-200 border border-slate-200 dark:border-navy-800 hover:border-red-300'
@@ -981,7 +984,7 @@ export default function CommunautePageBody() {
           {/* Entraide et mobilisation */}
           <button
             onClick={() => setFilter('entraide')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-black transition shadow-xs flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-black transition shadow-xs flex items-center gap-1.5 whitespace-nowrap cursor-pointer shrink-0 ${
               filter === 'entraide'
                 ? 'bg-amber-600 text-white shadow-xs'
                 : 'bg-slate-50 dark:bg-navy-900 text-navy-600 dark:text-navy-200 border border-slate-200 dark:border-navy-800 hover:border-amber-300'
@@ -994,7 +997,7 @@ export default function CommunautePageBody() {
           {/* Résolus et sécurisés */}
           <button
             onClick={() => setFilter('resolus')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-black transition shadow-xs flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-black transition shadow-xs flex items-center gap-1.5 whitespace-nowrap cursor-pointer shrink-0 ${
               filter === 'resolus'
                 ? 'bg-emerald-600 text-white shadow-xs'
                 : 'bg-slate-50 dark:bg-navy-900 text-navy-600 dark:text-navy-200 border border-slate-200 dark:border-navy-800 hover:border-emerald-300'
@@ -1005,7 +1008,7 @@ export default function CommunautePageBody() {
           </button>
         </div>
 
-        {/* Bouton Nouveau Post positionné à droite */}
+        {/* Bouton Nouveau Post positionné à droite (pleine largeur sur mobile pour zone tactile optimale, compact sur tablette/desktop) */}
         <button
           type="button"
           onClick={() => {
@@ -1017,7 +1020,7 @@ export default function CommunautePageBody() {
             setIsPostModalOpen(true);
           }}
           disabled={userIsBanned}
-          className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-black shadow-md transition-all flex-shrink-0 ${
+          className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-black shadow-md transition-all shrink-0 w-full sm:w-auto ${
             userIsBanned
               ? 'bg-slate-300 dark:bg-navy-800 text-slate-500 cursor-not-allowed'
               : 'bg-gradient-to-r from-[#0B2545] to-[#154275] hover:from-[#154275] hover:to-[#1e5899] text-white hover:shadow-lg active:scale-95 cursor-pointer'
@@ -1200,8 +1203,8 @@ export default function CommunautePageBody() {
                   </div>
                 </div>
 
-                {/* 1. Image du post placée en PREMIER sous le header (comme sur Instagram et Facebook) */}
-                {post.image && (
+                {/* 1. Conteneur visuel unifié sous le header : Photo OU Texte stylisé (hauteur identique sur tous les posts) */}
+                {post.image ? (
                   <div
                     onClick={(e) => {
                       e.stopPropagation();
@@ -1219,9 +1222,26 @@ export default function CommunautePageBody() {
                       <span>Agrandir la photo</span>
                     </div>
                   </div>
+                ) : (
+                  /* Quand le post n'a pas de photo : le texte occupe majestueusement le conteneur de l'image (façon post Facebook) */
+                  <div className="relative w-full h-52 sm:h-60 md:h-68 bg-gradient-to-br from-[#0B2545] via-[#103565] to-slate-950 p-6 sm:p-8 flex items-center justify-center text-center overflow-hidden border-b border-navy-50/10 dark:border-navy-800/80 select-none">
+                    {/* Lueur d'ambiance et filigrane discret */}
+                    <div className="absolute -right-10 -top-10 w-44 h-44 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
+                    <div className="absolute -left-10 -bottom-10 w-44 h-44 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
+                    <Droplets className="absolute right-3 bottom-3 text-white/5 w-24 h-24 pointer-events-none" />
+
+                    {/* Texte du post centré et mis en valeur */}
+                    <div className="relative z-10 max-w-sm sm:max-w-md mx-auto flex flex-col items-center justify-center px-2">
+                      <span className="text-2xl sm:text-3xl text-amber-400/50 font-serif leading-none select-none mb-1">“</span>
+                      <p className="text-sm sm:text-base md:text-lg font-bold text-white leading-relaxed drop-shadow-xs line-clamp-5">
+                        {post.texte}
+                      </p>
+                      <span className="text-2xl sm:text-3xl text-amber-400/50 font-serif leading-none select-none mt-1">”</span>
+                    </div>
+                  </div>
                 )}
 
-                {/* 2. Corps du post : Catégorie + Texte descriptif placé EN DESSOUS de la photo */}
+                {/* 2. Corps du post : Catégorie + Statut + Texte descriptif (si photo présente) */}
                 <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
                   <div>
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
@@ -1240,22 +1260,19 @@ export default function CommunautePageBody() {
                       )}
                     </div>
 
-                    <p className="text-sm text-navy-900 dark:text-slate-100 leading-relaxed font-medium">
-                      {post.texte}
-                    </p>
-                  </div>
-
-                  {/* Format stylisé si le post ne comporte pas de photo */}
-                  {!post.image && (
-                    <div className="mt-3.5 p-3.5 rounded-2xl bg-gradient-to-r from-blue-50/70 to-slate-50 dark:from-navy-900/60 dark:to-navy-950/40 border-l-4 border-[#0B2545] dark:border-blue-400 border-y border-r border-slate-200/80 dark:border-navy-800 flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-blue-100 dark:bg-blue-950/80 text-[#0B2545] dark:text-blue-300 flex items-center justify-center flex-shrink-0">
-                        <Droplets size={18} />
-                      </div>
-                      <p className="text-xs text-navy-700 dark:text-slate-300 leading-snug">
-                        <span className="font-bold">Point de situation sans photo</span> · Partagé pour coordination et maintien de la vigilance riveraine.
+                    {/* Si le post possède une photo, le texte descriptif s'affiche ici */}
+                    {post.image ? (
+                      <p className="text-sm text-navy-900 dark:text-slate-100 leading-relaxed font-medium">
+                        {post.texte}
                       </p>
-                    </div>
-                  )}
+                    ) : (
+                      /* Si le post n'a pas de photo, le texte est déjà magnifiquement affiché dans le grand conteneur du haut :
+                         la zone du dessous reste aérée et légère pour préserver l'harmonie */
+                      <p className="text-xs text-slate-400 dark:text-slate-500 italic mt-1">
+                        Observation terrain partagée pour vigilance communautaire.
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 {/* ═══════════════════════════════════════════════════════════════ */}
