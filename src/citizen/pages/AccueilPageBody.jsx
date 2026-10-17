@@ -13,7 +13,7 @@ import ConseilsCarousel from '../components/ConseilsCarousel';
 import MesSignalementsWidget from '../components/MesSignalementsWidget';
 import FilActualiteStoriesWidget from '../components/FilActualiteStoriesWidget';
 import SentinellesUrgenceBanner from '../components/SentinellesUrgenceBanner';
-import RubanLiveRuelles from '../components/RubanLiveRuelles';
+import LieuSurWidget from '../components/LieuSurWidget';
 
 const NIVEAU_RANK = { vert: 0, jaune: 1, orange: 2, rouge: 3 };
 
@@ -45,110 +45,124 @@ export default function AccueilPageBody() {
 
   return (
     <CitizenShell>
-      {/* Bannière Majeure Unifiée Tout en Haut (Bonjour Citoyen + Niveau de Risque Réel) */}
+      {/* ========================================================= */}
+      {/* ÉTAPE 1 : HERO IMMERSIF, AÉRÉ & CHALEUREUX (Village de Thiaroye) */}
+      {/* ========================================================= */}
       {(() => {
         const riskLevel = topZone?.niveau_risque?.toLowerCase() || 'vert';
-        
-        // Configuration chromatique et textuelle dynamique selon le risque réel
+
         const THEMES = {
           vert: {
-            gradient: 'from-emerald-950 via-teal-900 to-slate-900',
-            border: 'border-emerald-500/40 shadow-emerald-950/20',
-            badgeBg: 'bg-emerald-500/20 text-emerald-200 border-emerald-400/30',
-            dotPing: 'bg-emerald-400',
-            dotCore: 'bg-emerald-500',
-            tagLabel: 'FAIBLE',
-            defaultDesc: 'Conditions stables. Aucun débordement ni accumulation critique des eaux signalés à Thiaroye-sur-Mer. Vigilance habituelle.',
+            bgAura: 'from-emerald-500/15 via-teal-500/10 to-transparent',
+            cardBg: 'bg-gradient-to-r from-emerald-950/30 via-slate-900/40 to-teal-950/20 dark:from-emerald-950/50 dark:via-navy-950/60 dark:to-teal-950/30',
+            border: 'border-emerald-500/25 dark:border-emerald-500/30',
+            pillBg: 'bg-emerald-600 text-white border-emerald-400 shadow-xs font-black',
+            iconBg: 'bg-emerald-600 text-white border-emerald-400/40 shadow-xs',
+            pingColor: 'bg-emerald-400',
+            dotColor: 'bg-emerald-500',
+            tagLabel: 'Vigilance normale',
+            summary: 'Ruelles praticables · Pas de débordement critique signalé à Thiaroye-sur-Mer.',
           },
           jaune: {
-            gradient: 'from-amber-950 via-yellow-900 to-slate-900',
-            border: 'border-amber-500/40 shadow-amber-950/20',
-            badgeBg: 'bg-amber-500/20 text-amber-200 border-amber-400/30',
-            dotPing: 'bg-amber-400',
-            dotCore: 'bg-amber-500',
-            tagLabel: 'MODÉRÉ',
-            defaultDesc: 'Vigilance modérée. Sol saturé et légères accumulations d’eau possibles dans les points bas de Thiaroye-sur-Mer.',
+            bgAura: 'from-amber-500/15 via-yellow-500/10 to-transparent',
+            cardBg: 'bg-gradient-to-r from-amber-950/30 via-slate-900/40 to-amber-950/20 dark:from-amber-950/50 dark:via-navy-950/60 dark:to-yellow-950/30',
+            border: 'border-amber-500/25 dark:border-amber-500/30',
+            pillBg: 'bg-amber-400 text-slate-950 border-amber-300 shadow-xs font-black',
+            iconBg: 'bg-amber-500 text-slate-950 border-amber-300/60 shadow-xs',
+            pingColor: 'bg-amber-400',
+            dotColor: 'bg-amber-500',
+            tagLabel: 'Vigilance modérée',
+            summary: 'Sols humides · Ralentissements possibles dans les ruelles basses de Thiaroye.',
           },
           orange: {
-            gradient: 'from-orange-950 via-orange-900 to-slate-900',
-            border: 'border-orange-500/50 shadow-orange-950/30',
-            badgeBg: 'bg-orange-500/25 text-orange-200 border-orange-400/40',
-            dotPing: 'bg-orange-400',
-            dotCore: 'bg-orange-500',
-            tagLabel: 'ÉLEVÉ',
-            defaultDesc: 'Risque élevé d’inondation. Caniveaux sous tension et ruissellement marqué dans les secteurs de Ndakhane et Plage.',
+            bgAura: 'from-orange-500/20 via-orange-600/10 to-transparent',
+            cardBg: 'bg-gradient-to-r from-orange-950/40 via-slate-900/50 to-orange-950/30 dark:from-orange-950/60 dark:via-navy-950/70 dark:to-orange-950/40',
+            border: 'border-orange-500/35 dark:border-orange-500/40',
+            pillBg: 'bg-orange-600 text-white border-orange-400 shadow-xs font-black',
+            iconBg: 'bg-orange-600 text-white border-orange-400/40 shadow-xs',
+            pingColor: 'bg-orange-400',
+            dotColor: 'bg-orange-500',
+            tagLabel: 'Risque élevé',
+            summary: 'Ruissellement marqué · Caniveaux sous surveillance à Ndakhane et Plage.',
           },
           rouge: {
-            gradient: 'from-red-950 via-[#B5121B] to-slate-950',
-            border: 'border-red-500/60 shadow-red-950/40',
-            badgeBg: 'bg-red-500/30 text-white border-red-400/50',
-            dotPing: 'bg-red-400',
-            dotCore: 'bg-red-500',
-            tagLabel: 'CRITIQUE',
-            defaultDesc: 'Alerte critique d’inondation à Thiaroye-sur-Mer. Évacuez les zones basses, suivez les consignes et contactez les secours (18).',
+            bgAura: 'from-red-600/25 via-red-500/15 to-transparent',
+            cardBg: 'bg-gradient-to-r from-red-950/50 via-slate-900/60 to-red-950/40 dark:from-red-950/70 dark:via-navy-950/80 dark:to-red-950/50',
+            border: 'border-red-500/40 dark:border-red-500/50',
+            pillBg: 'bg-red-600 text-white border-red-300/80 shadow-md font-black',
+            iconBg: 'bg-red-600 text-white border-red-400/60 shadow-md shadow-red-950/40',
+            pingColor: 'bg-red-400',
+            dotColor: 'bg-red-500',
+            tagLabel: 'Alerte critique',
+            summary: 'Montée critique des eaux · Évacuez les points bas et contactez les secours (18).',
           },
         };
 
         const theme = THEMES[riskLevel] || THEMES.vert;
-        
-        // Éliminer les incohérences (ex: base contenant "risque imminent" alors que le niveau est vert)
-        const isContradictory = riskLevel === 'vert' && /imminent|grave|critique/i.test(topZone?.description || '');
-        const descriptionReelle = (!isContradictory && topZone?.description) ? topZone.description : theme.defaultDesc;
-
+        const quartierAffiche = topZone?.quartier || 'Thiaroye-sur-Mer';
         return (
-          <div
-            className={`rounded-2xl sm:rounded-3xl p-5 sm:p-7 text-white shadow-xl border bg-gradient-to-br ${theme.gradient} ${theme.border} transition-all duration-300 relative overflow-hidden mb-1`}
-          >
-            {/* Lueur subtile en arrière-plan */}
-            <div className="absolute -right-16 -top-16 w-60 h-60 rounded-full bg-white/5 blur-3xl pointer-events-none" />
+          <div className="relative w-auto -mx-3.5 sm:-mx-6 lg:-mx-8 -mt-4 sm:-mt-6 lg:-mt-8 px-4 sm:px-8 lg:px-12 pt-8 sm:pt-12 pb-14 sm:pb-20 overflow-hidden mb-3 min-h-[240px] sm:min-h-[280px] flex flex-col justify-center">
+            {/* 1. Photographie panoramique du littoral de Thiaroye-sur-Mer (Cadrage centré sur la plage dorée et les pirogues) */}
+            <img
+              src="/images/hero-littoral-thiaroye.jpg"
+              alt="Littoral de Thiaroye-sur-Mer"
+              className="absolute inset-0 w-full h-full object-cover object-[center_35%]"
+              loading="eager"
+            />
 
-            {/* Partie Supérieure : Salutation citoyenne + Localisation Thiaroye + Statut live */}
-            <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-white/15 relative z-10">
-              <div>
-                <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                  Bonjour, {nomCitoyen}
-                </h1>
-                <div className="flex items-center gap-1.5 text-slate-200 text-xs sm:text-sm mt-0.5">
-                  <MapPin size={15} className="text-[#CC131A] flex-shrink-0" />
-                  <span className="font-extrabold text-white">Thiaroye-sur-Mer</span>
-                  {topZone?.quartier && topZone.quartier !== 'Thiaroye-sur-Mer' && (
-                    <span className="text-xs text-slate-300">· Secteur {topZone.quartier}</span>
-                  )}
-                </div>
-              </div>
+            {/* 2. Voile dégradé horizontal : contraste net sur le texte à gauche, laissant la mer et les pirogues éclatantes à droite */}
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-slate-900/40 to-transparent/10 dark:from-navy-950/90 dark:via-navy-950/50 dark:to-transparent/20" />
 
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-bold text-white shadow-xs">
-                <span className="flex h-2 w-2 relative">
-                  <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${theme.dotPing}`}></span>
-                  <span className={`relative inline-flex rounded-full h-2 w-2 ${theme.dotCore}`}></span>
-                </span>
-                <span>Veille en temps réel · Thiaroye</span>
-              </div>
-            </div>
+            {/* 3. Fondu vertical doux vers le bas qui dissout organiquement le rivage dans la page */}
+            <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-navy-50 via-navy-50/60 to-transparent dark:from-navy-950 dark:via-navy-950/60 dark:to-transparent" />
 
-            {/* Partie Inférieure : Risque Réel Contextualisé avec couleurs adaptées */}
-            <div className="pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
-              <div className="max-w-xl">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-white/15 backdrop-blur-xs text-white">
-                    Votre secteur
+            {/* 4. Lueur atmosphérique subtile liée au niveau de vigilance */}
+            <div className={`absolute top-0 right-0 w-96 h-96 bg-gradient-to-br ${theme.bgAura} rounded-full blur-3xl pointer-events-none opacity-40`} />
+
+            {/* 5. Contenu textuel et indicateurs flottant librement dans l'espace ouvert */}
+            <div className="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10 text-white">
+              {/* Salutation humaine & territoriale */}
+              <div className="space-y-2 max-w-xl">
+                {/* Pastille territoriale */}
+                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/20 dark:bg-white/10 backdrop-blur-md border border-white/25 text-xs font-bold text-white shadow-xs">
+                  <MapPin size={13} className="text-[#CC131A] flex-shrink-0" />
+                  <span>{quartierAffiche}</span>
+                  <span className="text-white/60">·</span>
+                  <span className="flex items-center gap-1.5 text-emerald-300 font-extrabold text-[11px]">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    En direct
                   </span>
-                  <span className="text-xs text-slate-300">· Niveau de vigilance</span>
                 </div>
-                <div className="text-2xl sm:text-3xl font-black text-white capitalize my-1 drop-shadow-sm">
-                  Risque {riskLevel}
-                </div>
-                <p className="text-xs sm:text-sm text-slate-200 leading-relaxed max-w-lg opacity-95">
-                  {descriptionReelle}
+
+                {/* Grand titre chaleureux et accueillant */}
+                <h1 className="text-2xl sm:text-3xl md:text-5xl font-black text-white tracking-tight leading-tight drop-shadow-md">
+                  Bonjour, <span className="bg-gradient-to-r from-amber-300 via-orange-300 to-white bg-clip-text text-transparent">{nomCitoyen}</span>
+                </h1>
+                <p className="text-xs sm:text-sm font-extrabold text-amber-300 drop-shadow-xs">
+                  Dalal ak jamm · Votre sentinelle veille sur Thiaroye
+                </p>
+
+                <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-medium drop-shadow-xs max-w-lg">
+                  {theme.summary}
                 </p>
               </div>
 
-              {/* Badge d'évaluation du risque adapté */}
-              <div className="flex items-center gap-3 self-start sm:self-center flex-shrink-0">
-                <span className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider backdrop-blur-md border shadow-md flex items-center gap-2 ${theme.badgeBg}`}>
-                  <ShieldCheck size={16} />
-                  {theme.tagLabel}
-                </span>
+              {/* Statut de vigilance organique et flottant */}
+              <div className="flex items-center gap-3.5 self-start lg:self-center flex-shrink-0 bg-slate-900/75 dark:bg-navy-950/80 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/20 shadow-xl text-white">
+                <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 border ${theme.iconBg}`}>
+                  <ShieldCheck size={24} />
+                </div>
+                <div>
+                  <span className="block text-[10px] uppercase font-black tracking-wider text-slate-300">
+                    Niveau actuel
+                  </span>
+                  <span className="text-sm font-black text-white capitalize flex items-center gap-2 mt-0.5">
+                    <span>Risque {riskLevel}</span>
+                    <span className={`text-[10px] uppercase tracking-wider px-2.5 py-0.5 rounded-full font-black border ${theme.pillBg}`}>
+                      {theme.tagLabel}
+                    </span>
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -161,9 +175,6 @@ export default function AccueilPageBody() {
           Impossible de charger les zones à risque pour l’instant.
         </p>
       )}
-
-      {/* Proposition 1 : Ruban Live des Ruelles (Ticker défilant d’activités citoyennes) */}
-      <RubanLiveRuelles />
 
       {/* 2. Titre de section : Actions Rapides & Services Citoyens */}
       <div className="w-full text-center pt-2 pb-1">
@@ -232,6 +243,9 @@ export default function AccueilPageBody() {
           </p>
         </Link>
       </div>
+
+      {/* Amélioration 1 : Encart Lieu Sûr & Refuge le plus proche du quartier */}
+      <LieuSurWidget userQuartier={topZone?.quartier || 'Thiaroye'} className="w-full my-2" />
 
       {/* 3. Carrousel visuel immersif en pleine largeur */}
       <div className="w-full">
