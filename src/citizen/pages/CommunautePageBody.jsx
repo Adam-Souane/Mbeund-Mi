@@ -41,6 +41,7 @@ import { STORIES_COMMUNAUTE, COMMUNAUTE_POSTS } from '../../shared/data/riverain
 import { sanitizePublicText, sanitizePublicAuthor } from '../../shared/utils/sanitizer';
 import { getPublicAvatar } from '../../shared/utils/avatarResolver';
 import { checkContentModeration, isUserBanned, reportContent } from '../../shared/utils/moderation';
+import { formatCompactDate } from '../../shared/utils/dateFormatter';
 
 export default function CommunautePageBody() {
   const { username, user } = useAuth();
@@ -1095,16 +1096,19 @@ export default function CommunautePageBody() {
                         ) : null}
                       </div>
 
-                      {/* Ligne 2 : Quartier · Date d'observation (totalement immunisé contre tout débordement) */}
+                      {/* Ligne 2 : Quartier · Date compacte (ex: 2j, 1j, 1m, 1a) sans risque de troncature du nombre de jours */}
                       <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mt-0.5 min-w-0 overflow-hidden">
                         <span className="inline-flex items-center gap-1 text-[#CC131A] font-extrabold truncate shrink min-w-0">
                           <MapPin size={11} className="shrink-0 text-[#CC131A]" />
                           <span className="truncate">{post.author.quartier}</span>
                         </span>
                         <span className="text-slate-300 dark:text-navy-600 shrink-0">·</span>
-                        <span className="inline-flex items-center gap-1 text-slate-400 dark:text-slate-500 truncate shrink min-w-0">
-                          <Clock size={11} className="shrink-0" />
-                          <span className="truncate">{post.date}</span>
+                        <span
+                          className="inline-flex items-center gap-1 text-slate-500 dark:text-slate-400 shrink-0 font-semibold"
+                          title={post.date}
+                        >
+                          <Clock size={11} className="shrink-0 text-slate-400" />
+                          <span>{formatCompactDate(post.date)}</span>
                         </span>
                       </div>
                     </div>
