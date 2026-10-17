@@ -15,6 +15,8 @@ import {
   CornerUpLeft,
   ArrowRight,
   Flag,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import CitizenShell from '../shared/CitizenShell';
 import InteractiveMap from '../../shared/components/map/InteractiveMap';
@@ -109,6 +111,13 @@ export default function CartePageBody() {
   }, [isMapFullscreen]);
 
   const mapSectionRef = useRef(null);
+  const bottomSectionRef = useRef(null);
+
+  const scrollToBottom = () => {
+    if (bottomSectionRef.current) {
+      bottomSectionRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   const scrollToMapIfMobile = () => {
     if (typeof window !== 'undefined' && window.innerWidth < 1024 && mapSectionRef.current) {
@@ -505,7 +514,33 @@ export default function CartePageBody() {
                   {filteredSignalements.length} obs.
                 </span>
               </div>
+
+              {/* Bouton de scroll rapide pour franchir la carte sans la toucher */}
+              <button
+                type="button"
+                onClick={scrollToBottom}
+                className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-xl text-[11px] font-bold bg-slate-100 hover:bg-slate-200 dark:bg-navy-800 dark:hover:bg-navy-700 text-navy-800 dark:text-navy-200 transition-all border border-navy-100 dark:border-navy-700 shadow-2xs cursor-pointer active:scale-95 group shrink-0"
+                title="Défiler vers le bas de la page sans toucher la carte"
+                aria-label="Défiler vers le bas de la page"
+              >
+                <ChevronDown size={13} className="text-[#CC131A] transition-transform group-hover:translate-y-0.5" />
+                <span className="whitespace-nowrap">Bas de page</span>
+              </button>
             </aside>
+          </div>
+
+          {/* Ancre de bas de page et bouton de remontée fluide vers la carte */}
+          <div ref={bottomSectionRef} className="w-full flex items-center justify-between pt-2 pb-1 text-xs text-slate-500 dark:text-slate-400">
+            <span>Territoire sous surveillance · Thiaroye-sur-Mer</span>
+            <button
+              type="button"
+              onClick={() => mapSectionRef.current?.scrollIntoView({ behavior: 'smooth' })}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white dark:bg-navy-900 border border-navy-100 dark:border-navy-800 text-navy-700 dark:text-navy-300 hover:text-[#CC131A] dark:hover:text-[#CC131A] shadow-2xs transition-all cursor-pointer active:scale-95"
+              title="Remonter vers la carte"
+            >
+              <ChevronUp size={13} className="text-[#CC131A]" />
+              <span>Remonter à la carte</span>
+            </button>
           </div>
         </div>
 

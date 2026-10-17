@@ -615,7 +615,7 @@ export default function InteractiveMap({
         maxZoom={20}
         maxBounds={THIAROYE_BOUNDS}
         maxBoundsViscosity={0.85}
-        scrollWheelZoom
+        scrollWheelZoom={isFullscreen}
         dragging
         touchZoom
         zoomControl={false}
