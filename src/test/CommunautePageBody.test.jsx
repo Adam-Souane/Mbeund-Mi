@@ -281,5 +281,100 @@ describe('CommunautePageBody', () => {
     // Le commentaire envoyé est affiché dans le tiroir
     expect(screen.getByText(/Nous apportons 10 sacs supplémentaires/i)).toBeInTheDocument();
   });
+
+  it('permet a un citoyen de creer une story ephemere 24h texte ou photo via Votre story', () => {
+    localStorage.clear();
+    render(
+      <MemoryRouter>
+        <CommunautePageBody />
+      </MemoryRouter>
+    );
+
+    // Clic sur "Votre story" (+)
+    const votreStoryBtn = screen.getByRole('button', { name: /Votre story/i });
+    fireEvent.click(votreStoryBtn);
+
+    // La modale de story s'ouvre
+    expect(screen.getByText(/Votre Story éphémère \(24h\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/Flash terrain visible 24 heures par tous les riverains/i)).toBeInTheDocument();
+
+    // Saisie d'une observation terrain
+    const textarea = screen.getByPlaceholderText(/Ex: Eau en baisse rue 14/i);
+    fireEvent.change(textarea, { target: { value: 'Eau évacuée avec succès devant le CEM 44' } });
+
+    // Soumission de la story
+    const submitBtn = screen.getByRole('button', { name: /Partager ma story/i });
+    fireEvent.click(submitBtn);
+
+    // La story s'ouvre aussitôt en visualiseur
+    expect(screen.getByText(/Eau évacuée avec succès devant le CEM 44/i)).toBeInTheDocument();
+  });
+
+  it('offre un visualiseur de story avec texte compact et escamotable pour ne pas masquer la photo', () => {
+    localStorage.clear();
+    render(
+      <MemoryRouter>
+        <CommunautePageBody />
+      </MemoryRouter>
+    );
+
+    // Clic sur une story photo existante (Moussa Diop)
+    const storyButton = screen.getByRole('button', { name: /Moussa Diop/i });
+    fireEvent.click(storyButton);
+
+    // Le visualiseur est ouvert avec le bouton Détails / Réduire
+    const toggleDetailsBtn = screen.getByRole('button', { name: /Détails/i });
+    expect(toggleDetailsBtn).toBeInTheDocument();
+
+    // Clic pour déplier le texte
+    fireEvent.click(toggleDetailsBtn);
+    expect(screen.getByRole('button', { name: /Réduire/i })).toBeInTheDocument();
+  });
+
+  it('bloque la publication des propos haineux ou insultes via le filtre de moderation', () => {
+    localStorage.clear();
+    render(
+      <MemoryRouter>
+        <CommunautePageBody />
+      </MemoryRouter>
+    );
+
+    // Ouvre la modale Nouveau Post
+    const nouveauPostBtn = screen.getByRole('button', { name: /Nouveau post/i });
+    fireEvent.click(nouveauPostBtn);
+
+    const textarea = screen.getByPlaceholderText(/Que se passe-t-il dans votre ruelle/i);
+    fireEvent.change(textarea, { target: { value: 'Espèce de sale con va te faire voir' } });
+
+    const submitBtn = screen.getByRole('button', { name: /Publier le post/i });
+    fireEvent.click(submitBtn);
+
+    // Le message est bloqué et l'alerte de modération s'affiche
+    expect(screen.getByText(/Votre message contient des propos déplacés ou agressifs/i)).toBeInTheDocument();
+  });
+
+  it('permet de signaler un contenu abusif avec le bouton Flag', () => {
+    localStorage.clear();
+    render(
+      <MemoryRouter>
+        <CommunautePageBody />
+      </MemoryRouter>
+    );
+
+    // Clic sur le bouton de signalement du premier post
+    const flagButtons = screen.getAllByRole('button', { name: /Signaler ce post/i });
+    fireEvent.click(flagButtons[0]);
+
+    // La popup de signalement apparaît
+    expect(screen.getByText(/Signaler un abus ou propos déplacés/i)).toBeInTheDocument();
+
+    // Confirmation du signalement
+    const confirmBtn = screen.getByRole('button', { name: /Confirmer le signalement/i });
+    fireEvent.click(confirmBtn);
+
+    // Toast de confirmation affiché
+    expect(screen.getByText(/Signalement transmis aux modérateurs/i)).toBeInTheDocument();
+  });
 });
+
 

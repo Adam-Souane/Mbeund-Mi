@@ -23,6 +23,13 @@ import {
   Image as ImageIcon,
   Timer,
   Info,
+  Flag,
+  AlertTriangle,
+  ShieldAlert,
+  AlignLeft,
+  Palette,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import CitizenShell from '../shared/CitizenShell';
 import { useAuth } from '../../auth/AuthContext';
@@ -30,6 +37,7 @@ import { useSignalementsApercu } from '../../shared/hooks/useSignalements';
 import { STORIES_COMMUNAUTE, COMMUNAUTE_POSTS } from '../../shared/data/riverainsData';
 import { sanitizePublicText, sanitizePublicAuthor } from '../../shared/utils/sanitizer';
 import { getPublicAvatar } from '../../shared/utils/avatarResolver';
+import { checkContentModeration, isUserBanned, reportContent } from '../../shared/utils/moderation';
 
 export default function CommunautePageBody() {
   const { username, user } = useAuth();
@@ -63,6 +71,11 @@ export default function CommunautePageBody() {
     });
   };
 
+  // Vérification de suspension / bannissement exclusif de l'Espace Communauté
+  const userIsBanned = useMemo(() => {
+    return isUserBanned(username) || isUserBanned(nomCitoyen);
+  }, [username, nomCitoyen]);
+
   // État de la popup "Nouveau post"
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
   const [modalPostText, setModalPostText] = useState('');
@@ -70,6 +83,45 @@ export default function CommunautePageBody() {
   const [modalQuartier, setModalQuartier] = useState('Ndakhane (Thiaroye)');
   const [modalCategorie, setModalCategorie] = useState('Eau stagnante');
   const [modalPhotoChoice, setModalPhotoChoice] = useState('none');
+  const [modalError, setModalError] = useState(null);
+
+  // État de la popup "Créer une Story éphémère (24h)" (Photo ou Texte seul)
+  const [isStoryModalOpen, setIsStoryModalOpen] = useState(false);
+  const [storyMode, setStoryMode] = useState('texte'); // 'texte' | 'photo'
+  const [storyText, setStoryText] = useState('');
+  const [storyQuartier, setStoryQuartier] = useState('Ndakhane (Thiaroye)');
+  const [storyBgGradient, setStoryBgGradient] = useState('from-[#0B2545] via-[#103565] to-slate-950');
+  const [storyPhotoChoice, setStoryPhotoChoice] = useState('ruelle');
+  const [storyError, setStoryError] = useState(null);
+  const [isStoryTextExpanded, setIsStoryTextExpanded] = useState(false);
+
+  // Stories créées localement par l'utilisateur
+  const [userStories, setUserStories] = useState(() => {
+    try {
+      const saved = localStorage.getItem('mbeund_mi_user_stories');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Fusion de toutes les stories (Stories du citoyen connecté + Stories des relais de quartier)
+  const allStories = useMemo(() => {
+    return [...userStories, ...STORIES_COMMUNAUTE];
+  }, [userStories]);
+
+  // Signalement citoyen pour modération (pour préserver un espace sain)
+  const [reportingItem, setReportingItem] = useState(null);
+  const [reportingReason, setReportingReason] = useState('Propos inappropriés / agressifs');
+  const [reportSuccessToast, setReportSuccessToast] = useState(null);
+  const [reportedIds, setReportedIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem('mbeund_mi_user_reported_ids');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
 
   const [openComments, setOpenComments] = useState({});
   const [commentInputs, setCommentInputs] = useState({});
@@ -136,6 +188,15 @@ export default function CommunautePageBody() {
       localStorage.setItem('mbeund_mi_community_views', JSON.stringify(viewsState));
     } catch {}
   }, [viewsState]);
+
+  // Palettes de dégradés modernes pour les Stories Citoyennes de type "Texte seul"
+  const STORY_GRADIENTS = [
+    { id: 'navy', label: 'Océan Nuit', class: 'from-[#0B2545] via-[#103565] to-slate-950', previewBg: 'bg-gradient-to-br from-[#0B2545] via-[#103565] to-slate-950' },
+    { id: 'sunset', label: 'Crépuscule', class: 'from-amber-600 via-rose-600 to-purple-900', previewBg: 'bg-gradient-to-br from-amber-600 via-rose-600 to-purple-900' },
+    { id: 'emerald', label: 'Espoir Vert', class: 'from-emerald-700 via-teal-800 to-slate-950', previewBg: 'bg-gradient-to-br from-emerald-700 via-teal-800 to-slate-950' },
+    { id: 'danger', label: 'Alerte Rouge', class: 'from-red-700 via-rose-800 to-slate-950', previewBg: 'bg-gradient-to-br from-red-700 via-rose-800 to-slate-950' },
+    { id: 'purple', label: 'Sérénité', class: 'from-indigo-700 via-purple-800 to-slate-950', previewBg: 'bg-gradient-to-br from-indigo-700 via-purple-800 to-slate-950' },
+  ];
 
   // Options de photos disponibles pour la modale (enrichies avec des situations variées de Thiaroye)
   const PHOTO_PRESETS = [
@@ -348,11 +409,24 @@ export default function CommunautePageBody() {
     }
   };
 
-  // Action ajout commentaire : enregistre dans commentsByPost et incrémente aussitôt le compteur du bouton Avis
+  // Action ajout commentaire : vérifie la modération, enregistre dans commentsByPost et incrémente aussitôt le compteur du bouton Avis
   const handleAddComment = (postId, e) => {
     e.preventDefault();
+    if (userIsBanned) {
+      setReportSuccessToast("Votre participation à l'espace communauté est suspendue suite à des signalements.");
+      setTimeout(() => setReportSuccessToast(null), 4000);
+      return;
+    }
     const text = commentInputs[postId]?.trim();
     if (!text) return;
+
+    // Modération automatique (injures, propos haineux wolof/français)
+    const modCheck = checkContentModeration(text);
+    if (!modCheck.isValid) {
+      setReportSuccessToast(`⚠️ Modération Mbeund-Mi : ${modCheck.reason}`);
+      setTimeout(() => setReportSuccessToast(null), 4000);
+      return;
+    }
 
     const sanitizedComment = sanitizePublicText(text);
     const sanitizedAuthor = sanitizePublicAuthor(nomCitoyen, 'Citoyen');
@@ -373,10 +447,24 @@ export default function CommunautePageBody() {
     setOpenComments((prev) => ({ ...prev, [postId]: true }));
   };
 
-  // Action publication via la modale
+  // Action publication via la modale avec contrôle de modération strict
   const handleSubmitModalPost = (e) => {
     e.preventDefault();
+    setModalError(null);
+
+    if (userIsBanned) {
+      setModalError("Votre participation à l'espace communauté est actuellement suspendue.");
+      return;
+    }
+
     if (!modalPostText.trim()) return;
+
+    // Vérification de modération du texte du post
+    const modCheck = checkContentModeration(modalPostText);
+    if (!modCheck.isValid) {
+      setModalError(modCheck.reason);
+      return;
+    }
 
     const selectedPreset = PHOTO_PRESETS.find((p) => p.id === modalPhotoChoice);
     const chosenImage = selectedPreset ? selectedPreset.url : null;
@@ -428,7 +516,93 @@ export default function CommunautePageBody() {
     setUserPosts([newPost, ...userPosts]);
     setModalPostText('');
     setModalPhotoChoice('none');
+    setModalError(null);
     setIsPostModalOpen(false);
+  };
+
+  // Action création d'une Story éphémère 24h (Photo ou Texte seul avec dégradé stylé)
+  const handleCreateStory = (e) => {
+    e.preventDefault();
+    setStoryError(null);
+
+    if (userIsBanned) {
+      setStoryError("Votre participation à l'espace communauté est actuellement suspendue.");
+      return;
+    }
+
+    const trimmed = storyText.trim();
+    if (!trimmed) {
+      setStoryError("Veuillez saisir votre observation ou message terrain.");
+      return;
+    }
+
+    const modCheck = checkContentModeration(trimmed);
+    if (!modCheck.isValid) {
+      setStoryError(modCheck.reason);
+      return;
+    }
+
+    const cleanText = sanitizePublicText(trimmed);
+    const cleanAuthor = sanitizePublicAuthor(nomCitoyen, 'Moi');
+    const newStoryId = `user-story-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+    const userAvatar = getPublicAvatar({ name: cleanAuthor, id: newStoryId, context: cleanText });
+
+    let photoUrl = null;
+    if (storyMode === 'photo') {
+      const preset = PHOTO_PRESETS.find((p) => p.id === storyPhotoChoice);
+      photoUrl = preset && preset.url ? preset.url : '/images/communaute-ruelle.jpg';
+    }
+
+    const createdStory = {
+      id: newStoryId,
+      isUserStory: true,
+      isTextStory: storyMode === 'texte',
+      gradientClass: storyBgGradient,
+      relais: cleanAuthor,
+      avatar: userAvatar,
+      role: 'Citoyen',
+      quartier: storyQuartier,
+      heure: 'À l’instant',
+      expiration: 'Expire dans 24h',
+      dotColor: 'bg-emerald-400',
+      texte: cleanText,
+      image: photoUrl,
+    };
+
+    const updatedStories = [createdStory, ...userStories];
+    setUserStories(updatedStories);
+    try {
+      localStorage.setItem('mbeund_mi_user_stories', JSON.stringify(updatedStories));
+    } catch {}
+
+    setStoryText('');
+    setStoryError(null);
+    setIsStoryModalOpen(false);
+    handleOpenStory(createdStory);
+  };
+
+  // Action signalement d'un contenu abusif par un riverain
+  const handleConfirmReport = () => {
+    if (!reportingItem) return;
+
+    reportContent({
+      targetId: reportingItem.targetId,
+      targetType: reportingItem.targetType,
+      authorName: reportingItem.authorName,
+      reason: reportingReason,
+    });
+
+    const newReported = { ...reportedIds, [reportingItem.targetId]: true };
+    setReportedIds(newReported);
+    try {
+      localStorage.setItem('mbeund_mi_user_reported_ids', JSON.stringify(newReported));
+    } catch {}
+
+    setReportingItem(null);
+    setReportSuccessToast('Signalement transmis aux modérateurs. Merci de veiller sur la communauté.');
+    setTimeout(() => {
+      setReportSuccessToast(null);
+    }, 4000);
   };
 
   return (
@@ -472,6 +646,35 @@ export default function CommunautePageBody() {
         </div>
       </div>
 
+      {/* Toast de confirmation de signalement */}
+      {reportSuccessToast && (
+        <div className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-xs font-bold animate-in fade-in slide-in-from-top-2 duration-300 shadow-sm">
+          <ShieldCheck size={18} className="text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+          <span>{reportSuccessToast}</span>
+        </div>
+      )}
+
+      {/* Bannière d'avertissement si l'utilisateur est banni de l'espace Communauté */}
+      {userIsBanned && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-rose-50 via-red-50 to-amber-50 dark:from-red-950/50 dark:via-red-900/40 dark:to-amber-950/30 border border-red-200 dark:border-red-900/60 flex items-start gap-3.5 shadow-sm">
+          <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-900/60 text-[#CC131A] dark:text-red-300 flex items-center justify-center flex-shrink-0">
+            <ShieldAlert size={20} />
+          </div>
+          <div className="space-y-1 text-xs sm:text-sm">
+            <h4 className="font-black text-red-900 dark:text-red-200">
+              Participation à l'espace Communauté suspendue
+            </h4>
+            <p className="text-red-800 dark:text-red-300/90 leading-relaxed font-medium">
+              Suite à des signalements répétés pour non-respect des règles de respect communautaire (propos déplacés ou insultes), la publication de posts, de stories et de commentaires est temporairement bloquée.
+            </p>
+            <div className="inline-flex items-center gap-1.5 pt-1 text-[11px] font-extrabold text-navy-800 dark:text-slate-200">
+              <CheckCircle2 size={13} className="text-emerald-600" />
+              <span>Vos accès vitaux restent 100% opérationnels : Carte des zones inondées, Alertes météo et Numéros d’urgence.</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {/* 2. STORIES INSTAGRAM · ÉPHÉMÈRES (24 HEURES)                       */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
@@ -491,10 +694,21 @@ export default function CommunautePageBody() {
 
         {/* Carousel horizontal fluide avec avatars de grande taille */}
         <div className="flex items-start gap-4 sm:gap-6 overflow-x-auto pb-2 pt-1 scrollbar-none px-1">
-          {/* Cercle 1 : Ajouter sa propre observation terrain éphémère */}
-          <Link
-            to="/citoyen/signaler"
-            className="flex flex-col items-center flex-shrink-0 group cursor-pointer"
+          {/* Cercle 1 : Ajouter sa propre observation terrain éphémère (Texte ou Photo) */}
+          <button
+            type="button"
+            onClick={() => {
+              if (userIsBanned) {
+                setReportSuccessToast("Votre participation à l'espace communauté est suspendue suite à des signalements.");
+                setTimeout(() => setReportSuccessToast(null), 4000);
+                return;
+              }
+              setIsStoryModalOpen(true);
+            }}
+            disabled={userIsBanned}
+            className={`flex flex-col items-center flex-shrink-0 group text-left transition active:scale-95 ${
+              userIsBanned ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+            }`}
           >
             <div className="relative w-18 h-18 sm:w-20 sm:h-20 md:w-22 md:h-22 rounded-full p-[3px] border-2 border-dashed border-navy-300 dark:border-navy-700 group-hover:border-[#CC131A] transition-all flex items-center justify-center">
               <div className="w-full h-full rounded-full bg-navy-50 dark:bg-navy-900/60 flex items-center justify-center text-navy-600 dark:text-navy-300 group-hover:bg-red-50 dark:group-hover:bg-red-950/40 group-hover:text-[#CC131A] transition-colors">
@@ -507,10 +721,10 @@ export default function CommunautePageBody() {
             <span className="text-[10px] text-slate-400 font-semibold text-center">
               24h direct
             </span>
-          </Link>
+          </button>
 
           {/* Stories des riverains de Thiaroye (taille agrandie avec bordure dégradée Instagram si non lue, grisée si lue) */}
-          {STORIES_COMMUNAUTE.map((story) => {
+          {allStories.map((story) => {
             const isRead = !!viewedStories[story.id];
             return (
               <button
@@ -538,7 +752,7 @@ export default function CommunautePageBody() {
                   {/* Point pulsant indicateur d'alerte en direct si non lu, ou discret grisé si déjà lu */}
                   <span
                     className={`absolute bottom-0.5 right-0.5 w-4 h-4 rounded-full border-2 border-white dark:border-[#071322] ${
-                      isRead ? 'bg-slate-400' : `${story.dotColor} animate-pulse shadow-xs`
+                      isRead ? 'bg-slate-400' : `${story.dotColor || 'bg-emerald-400'} animate-pulse shadow-xs`
                     }`}
                   />
                 </div>
@@ -625,10 +839,22 @@ export default function CommunautePageBody() {
         {/* Bouton Nouveau Post positionné à droite */}
         <button
           type="button"
-          onClick={() => setIsPostModalOpen(true)}
-          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#0B2545] to-[#154275] hover:from-[#154275] hover:to-[#1e5899] text-white text-xs sm:text-sm font-black shadow-md hover:shadow-lg transition-all active:scale-95 cursor-pointer flex-shrink-0"
+          onClick={() => {
+            if (userIsBanned) {
+              setReportSuccessToast("Votre participation à l'espace communauté est suspendue suite à des signalements.");
+              setTimeout(() => setReportSuccessToast(null), 4000);
+              return;
+            }
+            setIsPostModalOpen(true);
+          }}
+          disabled={userIsBanned}
+          className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-black shadow-md transition-all flex-shrink-0 ${
+            userIsBanned
+              ? 'bg-slate-300 dark:bg-navy-800 text-slate-500 cursor-not-allowed'
+              : 'bg-gradient-to-r from-[#0B2545] to-[#154275] hover:from-[#154275] hover:to-[#1e5899] text-white hover:shadow-lg active:scale-95 cursor-pointer'
+          }`}
         >
-          <MessageSquarePlus size={16} className="text-amber-400" />
+          <MessageSquarePlus size={16} className={userIsBanned ? 'text-slate-400' : 'text-amber-400'} />
           <span>Nouveau post</span>
         </button>
       </div>
@@ -885,27 +1111,55 @@ export default function CommunautePageBody() {
                   </div>
 
                   {/* 4. Bouton PARTAGER (Violet / Pourpre élégant interactif) */}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleShare(post);
-                    }}
-                    title="Partager ce post avec les voisins"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all duration-200 active:scale-95 cursor-pointer shadow-xs bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-900/60 dark:hover:bg-purple-900/60"
-                  >
-                    {copiedShareId === post.id ? (
-                      <>
-                        <Check size={14} className="text-emerald-600 dark:text-emerald-400" />
-                        <span className="text-emerald-700 dark:text-emerald-300">Copié</span>
-                      </>
-                    ) : (
-                      <>
-                        <Share2 size={14} className="text-purple-600 dark:text-purple-400" />
-                        <span>Partager</span>
-                      </>
-                    )}
-                  </button>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {/* 4. Bouton PARTAGER (Violet / Pourpre élégant interactif) */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleShare(post);
+                      }}
+                      title="Partager ce post avec les voisins"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all duration-200 active:scale-95 cursor-pointer shadow-xs bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-900/60 dark:hover:bg-purple-900/60"
+                    >
+                      {copiedShareId === post.id ? (
+                        <>
+                          <Check size={14} className="text-emerald-600 dark:text-emerald-400" />
+                          <span className="text-emerald-700 dark:text-emerald-300">Copié</span>
+                        </>
+                      ) : (
+                        <>
+                          <Share2 size={14} className="text-purple-600 dark:text-purple-400" />
+                          <span>Partager</span>
+                        </>
+                      )}
+                    </button>
+
+                    {/* 5. Bouton SIGNALER UN ABUS (Flag) pour modération citoyenne */}
+                    <button
+                      type="button"
+                      aria-label="Signaler ce post"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (reportedIds[post.id]) return;
+                        setReportingItem({
+                          targetId: post.id,
+                          targetType: 'post',
+                          authorName: post.author.name,
+                          textSnippet: post.texte,
+                        });
+                      }}
+                      title={reportedIds[post.id] ? "Post déjà signalé pour modération" : "Signaler un contenu inapproprié ou abusif"}
+                      className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer shadow-xs ${
+                        reportedIds[post.id]
+                          ? 'bg-slate-100 dark:bg-navy-800 text-slate-400 border border-slate-200 dark:border-navy-700 cursor-default'
+                          : 'bg-slate-50 hover:bg-rose-50 text-slate-500 hover:text-red-600 border border-slate-200 dark:border-navy-800 dark:bg-navy-900/40 dark:text-slate-400 dark:hover:text-red-400'
+                      }`}
+                    >
+                      <Flag size={13} className={reportedIds[post.id] ? 'text-slate-400' : 'text-slate-400 group-hover:text-red-500'} />
+                      <span className="hidden sm:inline">{reportedIds[post.id] ? 'Signalé' : 'Signaler'}</span>
+                    </button>
+                  </div>
                 </div>
 
                 {/* Tiroir des commentaires interactif */}
@@ -917,7 +1171,29 @@ export default function CommunautePageBody() {
                           <div key={c.id} className="p-2.5 rounded-xl bg-white dark:bg-navy-800 text-xs border border-slate-200/60 dark:border-navy-700">
                             <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-bold mb-1">
                               <span>{c.author}</span>
-                              <span>{c.time}</span>
+                              <div className="flex items-center gap-2">
+                                <span>{c.time}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (reportedIds[c.id]) return;
+                                    setReportingItem({
+                                      targetId: c.id,
+                                      targetType: 'commentaire',
+                                      authorName: c.author,
+                                      textSnippet: c.text,
+                                    });
+                                  }}
+                                  title="Signaler ce commentaire"
+                                  className={`p-1 rounded-md transition ${
+                                    reportedIds[c.id]
+                                      ? 'text-slate-300 dark:text-slate-600'
+                                      : 'text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50'
+                                  }`}
+                                >
+                                  <Flag size={11} />
+                                </button>
+                              </div>
                             </div>
                             <p className="text-navy-800 dark:text-slate-200 font-medium">{c.text}</p>
                           </div>
@@ -1134,11 +1410,22 @@ export default function CommunautePageBody() {
                 </div>
               </div>
 
+              {/* Message d'erreur de modération pour le post */}
+              {modalError && (
+                <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-xs font-bold text-[#CC131A] dark:text-red-300 flex items-center gap-2">
+                  <AlertTriangle size={16} className="flex-shrink-0" />
+                  <span>{modalError}</span>
+                </div>
+              )}
+
               {/* Actions de validation */}
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-navy-800">
                 <button
                   type="button"
-                  onClick={() => setIsPostModalOpen(false)}
+                  onClick={() => {
+                    setIsPostModalOpen(false);
+                    setModalError(null);
+                  }}
                   className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-navy-700 text-slate-600 dark:text-slate-300 text-xs sm:text-sm font-bold hover:bg-slate-100 dark:hover:bg-navy-800 transition cursor-pointer"
                 >
                   Annuler
@@ -1158,26 +1445,249 @@ export default function CommunautePageBody() {
       )}
 
       {/* ═══════════════════════════════════════════════════════════════════ */}
-      {/* 6. MODALE FULLSCREEN POUR LES STORIES EN DIRECT (24H ÉPHÉMÈRES)     */}
+      {/* 6. POPUP MODALE : CRÉATION D'UNE STORY ÉPHÉMÈRE (24H DIRECT)       */}
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {isStoryModalOpen && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => {
+            setIsStoryModalOpen(false);
+            setStoryError(null);
+          }}
+        >
+          <div
+            className="relative w-full max-w-lg bg-white dark:bg-[#071322] border border-navy-100 dark:border-navy-800 rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header de la modale */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-navy-800">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-600 text-white flex items-center justify-center">
+                  <Sparkles size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-black text-navy-900 dark:text-white">
+                    Votre Story éphémère (24h)
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Flash terrain visible 24 heures par tous les riverains
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsStoryModalOpen(false);
+                  setStoryError(null);
+                }}
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-navy-800 text-slate-500 dark:text-slate-300 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-navy-700 transition cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Formulaire de création de Story */}
+            <form onSubmit={handleCreateStory} className="space-y-4">
+              {/* Choix du mode : Story Texte seul ou Story Photo */}
+              <div>
+                <label className="block text-xs font-black text-navy-900 dark:text-white uppercase tracking-wider mb-1.5">
+                  Format de votre Story
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setStoryMode('texte')}
+                    className={`p-3 rounded-xl border text-center transition cursor-pointer flex items-center justify-center gap-2 ${
+                      storyMode === 'texte'
+                        ? 'border-[#0B2545] dark:border-blue-400 bg-blue-50 dark:bg-blue-950/40 text-[#0B2545] dark:text-white font-black'
+                        : 'border-slate-200 dark:border-navy-700 bg-slate-50 dark:bg-navy-900 text-slate-600 dark:text-slate-300'
+                    }`}
+                  >
+                    <AlignLeft size={16} />
+                    <span className="text-xs">Story Texte seul</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setStoryMode('photo')}
+                    className={`p-3 rounded-xl border text-center transition cursor-pointer flex items-center justify-center gap-2 ${
+                      storyMode === 'photo'
+                        ? 'border-[#CC131A] bg-red-50 dark:bg-red-950/40 text-[#CC131A] font-black'
+                        : 'border-slate-200 dark:border-navy-700 bg-slate-50 dark:bg-navy-900 text-slate-600 dark:text-slate-300'
+                    }`}
+                  >
+                    <Camera size={16} />
+                    <span className="text-xs">Story avec Photo</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Si mode texte : Palette de fonds dégradés stylés */}
+              {storyMode === 'texte' && (
+                <div>
+                  <label className="block text-xs font-black text-navy-900 dark:text-white uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                    <Palette size={14} className="text-amber-500" />
+                    <span>Ambiance & Dégradé d’arrière-plan</span>
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {STORY_GRADIENTS.map((grad) => {
+                      const isSelected = storyBgGradient === grad.class;
+                      return (
+                        <button
+                          key={grad.id}
+                          type="button"
+                          onClick={() => setStoryBgGradient(grad.class)}
+                          className={`p-2 rounded-xl border text-left flex items-center gap-2.5 transition cursor-pointer ${
+                            isSelected
+                              ? 'border-white ring-2 ring-[#0B2545] dark:ring-blue-400 font-bold'
+                              : 'border-slate-200 dark:border-navy-700 opacity-80 hover:opacity-100'
+                          }`}
+                        >
+                          <div className={`w-6 h-6 rounded-lg ${grad.previewBg} shadow-xs flex-shrink-0`} />
+                          <span className="text-xs text-navy-900 dark:text-white truncate">
+                            {grad.label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Si mode photo : Choix de la photo terrain */}
+              {storyMode === 'photo' && (
+                <div>
+                  <label className="block text-xs font-black text-navy-900 dark:text-white uppercase tracking-wider mb-1.5">
+                    Photo du terrain
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {PHOTO_PRESETS.filter((p) => p.url).map((p) => {
+                      const isSelected = storyPhotoChoice === p.id;
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => setStoryPhotoChoice(p.id)}
+                          className={`p-1.5 rounded-xl border text-left flex flex-col items-center gap-1 transition cursor-pointer ${
+                            isSelected
+                              ? 'border-[#CC131A] bg-red-50 dark:bg-red-950/40 font-black ring-2 ring-red-400'
+                              : 'border-slate-200 dark:border-navy-700 opacity-80 hover:opacity-100'
+                          }`}
+                        >
+                          <div className="w-full h-14 rounded-lg overflow-hidden bg-slate-200">
+                            <img src={p.url} alt={p.label} className="w-full h-full object-cover" />
+                          </div>
+                          <span className="text-[10px] text-center truncate w-full">
+                            {p.label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Texte du message */}
+              <div>
+                <label className="block text-xs font-black text-navy-900 dark:text-white uppercase tracking-wider mb-1.5">
+                  Votre observation terrain (Flash 24h)
+                </label>
+                <textarea
+                  value={storyText}
+                  onChange={(e) => setStoryText(e.target.value)}
+                  placeholder="Ex: Eau en baisse rue 14, ou passage praticable sur les passerelles en bois..."
+                  rows={3}
+                  required
+                  className="w-full text-xs sm:text-sm p-3.5 rounded-2xl border border-slate-200 dark:border-navy-700 bg-slate-50 dark:bg-navy-900 text-navy-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-[#0B2545] resize-none"
+                />
+              </div>
+
+              {/* Choix du quartier */}
+              <div>
+                <label className="block text-xs font-black text-navy-900 dark:text-white uppercase tracking-wider mb-1.5">
+                  Quartier concerné
+                </label>
+                <select
+                  value={storyQuartier}
+                  onChange={(e) => setStoryQuartier(e.target.value)}
+                  className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-navy-700 bg-white dark:bg-navy-900 text-navy-900 dark:text-white font-bold"
+                >
+                  <option value="Ndakhane (Thiaroye)">📍 Ndakhane Cuvette</option>
+                  <option value="Thiaroye Plage">📍 Thiaroye Plage</option>
+                  <option value="Thiaroye Gare">📍 Thiaroye Gare</option>
+                  <option value="CEM Thiaroye 44">📍 CEM Thiaroye 44</option>
+                  <option value="Thiaroye Minam">📍 Thiaroye Minam</option>
+                </select>
+              </div>
+
+              {/* Message d'erreur de modération pour la story */}
+              {storyError && (
+                <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 text-xs font-bold text-[#CC131A] dark:text-red-300 flex items-center gap-2">
+                  <AlertTriangle size={16} className="flex-shrink-0" />
+                  <span>{storyError}</span>
+                </div>
+              )}
+
+              {/* Actions de validation */}
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-navy-800">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsStoryModalOpen(false);
+                    setStoryError(null);
+                  }}
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-navy-700 text-slate-600 dark:text-slate-300 text-xs sm:text-sm font-bold hover:bg-slate-100 dark:hover:bg-navy-800 transition cursor-pointer"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={!storyText.trim()}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-600 hover:from-amber-600 hover:to-indigo-700 text-white text-xs sm:text-sm font-black disabled:opacity-50 transition active:scale-95 shadow-md cursor-pointer"
+                >
+                  <Sparkles size={14} />
+                  <span>Partager ma story (24h)</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* 7. MODALE FULLSCREEN POUR LES STORIES : VUE DÉGAGÉE & TEXTE COMPACT */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {activeStory && (
         <div
           className="fixed inset-0 z-[9999] flex items-center justify-center p-2 sm:p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-200"
-          onClick={() => setActiveStory(null)}
+          onClick={() => {
+            setActiveStory(null);
+            setIsStoryTextExpanded(false);
+          }}
         >
           <div
-            className="relative w-full max-w-sm sm:max-w-md h-[85vh] sm:h-[80vh] rounded-3xl overflow-hidden shadow-2xl flex flex-col justify-between border border-white/20"
+            className={`relative w-full max-w-sm sm:max-w-md h-[85vh] sm:h-[82vh] rounded-3xl overflow-hidden shadow-2xl flex flex-col justify-between border border-white/20 select-none ${
+              activeStory.isTextStory || !activeStory.image
+                ? `bg-gradient-to-br ${activeStory.gradientClass || 'from-[#0B2545] via-[#103565] to-slate-950'}`
+                : 'bg-black'
+            }`}
             onClick={(e) => e.stopPropagation()}
           >
-            <img
-              src={activeStory.image}
-              alt={activeStory.texte}
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/60 pointer-events-none" />
+            {/* Si story avec photo : photo en pleine page avec vignettes légères haut/bas pour laisser la photo visible à > 80% */}
+            {activeStory.image && !activeStory.isTextStory && (
+              <>
+                <img
+                  src={activeStory.image}
+                  alt={activeStory.texte}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-transparent to-black/85 pointer-events-none" />
+              </>
+            )}
 
             {/* Header de la Story : Barre de progression + Relais + Badge 24h */}
-            <div className="relative z-10 p-4 space-y-3">
+            <div className="relative z-20 p-4 space-y-3">
               <div className="w-full bg-white/30 h-1.5 rounded-full overflow-hidden">
                 <div className="bg-white h-full w-3/4 animate-pulse rounded-full" />
               </div>
@@ -1193,7 +1703,7 @@ export default function CommunautePageBody() {
                     <div className="flex items-center gap-1.5">
                       <span className="text-sm font-black text-white">{activeStory.relais}</span>
                       <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-600 text-white font-extrabold uppercase">
-                        {activeStory.role}
+                        {activeStory.role || 'Citoyen'}
                       </span>
                     </div>
                     <div className="text-xs text-slate-300 flex items-center gap-1.5 mt-0.5">
@@ -1212,7 +1722,10 @@ export default function CommunautePageBody() {
                   </span>
                   <button
                     type="button"
-                    onClick={() => setActiveStory(null)}
+                    onClick={() => {
+                      setActiveStory(null);
+                      setIsStoryTextExpanded(false);
+                    }}
                     className="w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition cursor-pointer"
                   >
                     <X size={18} />
@@ -1221,29 +1734,69 @@ export default function CommunautePageBody() {
               </div>
             </div>
 
-            {/* Bas de la Story : Texte de l'observation + Action directe */}
-            <div className="relative z-10 p-5 space-y-4">
-              <div className="p-4 rounded-2xl bg-black/60 backdrop-blur-md border border-white/15">
-                <div className="flex items-center gap-1.5 mb-1.5 text-amber-400 text-[11px] font-black uppercase">
-                  <Sparkles size={13} />
-                  <span>Observation éphémère du terrain</span>
+            {/* Centre de la Story : Message en grand si story texte seule */}
+            {(activeStory.isTextStory || !activeStory.image) ? (
+              <div className="relative z-20 p-6 my-auto text-center space-y-4">
+                <div className="w-12 h-12 mx-auto rounded-full bg-white/10 flex items-center justify-center text-amber-300 backdrop-blur-sm">
+                  <Sparkles size={24} />
                 </div>
-                <p className="text-sm text-white leading-relaxed font-medium">
-                  {activeStory.texte}
+                <p className="text-lg sm:text-xl md:text-2xl font-black text-white leading-relaxed drop-shadow-md px-2">
+                  « {activeStory.texte} »
                 </p>
+                <div className="inline-flex items-center gap-1 text-xs font-extrabold text-white/80 bg-black/25 px-3 py-1 rounded-full">
+                  <MapPin size={12} className="text-red-400" />
+                  <span>{activeStory.quartier}</span>
+                </div>
               </div>
+            ) : (
+              /* Zone centrale vide pour laisser la photo totalement dégagée et sans obstruction */
+              <div className="flex-1" />
+            )}
 
-              <div className="flex items-center gap-3">
+            {/* Bas de la Story : Capsule de texte compacte escamotable pour ne pas masquer la photo */}
+            <div className="relative z-20 p-4 space-y-3">
+              {activeStory.image && !activeStory.isTextStory && (
+                <div className="p-3 rounded-2xl bg-black/60 backdrop-blur-md border border-white/20 transition-all">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <div className="flex items-center gap-1.5 text-amber-400 text-[10px] font-black uppercase">
+                      <Sparkles size={12} />
+                      <span>Observation terrain</span>
+                    </div>
+                    {/* Bouton pour plier / déplier le texte afin de contempler la photo */}
+                    <button
+                      type="button"
+                      onClick={() => setIsStoryTextExpanded(!isStoryTextExpanded)}
+                      className="inline-flex items-center gap-1 text-[10px] text-white/90 hover:text-white bg-white/15 px-2 py-0.5 rounded-full transition cursor-pointer"
+                    >
+                      <span>{isStoryTextExpanded ? 'Réduire' : 'Détails'}</span>
+                      {isStoryTextExpanded ? <ChevronDown size={12} /> : <ChevronUp size={12} />}
+                    </button>
+                  </div>
+
+                  <p
+                    className={`text-xs text-white leading-relaxed font-medium transition-all ${
+                      isStoryTextExpanded ? '' : 'line-clamp-2'
+                    }`}
+                  >
+                    {activeStory.texte}
+                  </p>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2">
                 <Link
                   to="/citoyen/signaler"
-                  className="flex-1 py-3 rounded-xl bg-[#CC131A] hover:bg-red-700 text-white text-xs sm:text-sm font-black text-center shadow-lg transition"
+                  className="flex-1 py-2.5 rounded-xl bg-[#CC131A] hover:bg-red-700 text-white text-xs font-black text-center shadow-lg transition active:scale-95"
                 >
-                  Confirmer ou signaler à proximité
+                  Confirmer à proximité
                 </Link>
                 <button
                   type="button"
-                  onClick={() => setActiveStory(null)}
-                  className="px-4 py-3 rounded-xl bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition"
+                  onClick={() => {
+                    setActiveStory(null);
+                    setIsStoryTextExpanded(false);
+                  }}
+                  className="px-4 py-2.5 rounded-xl bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition cursor-pointer"
                 >
                   Fermer
                 </button>
@@ -1254,7 +1807,7 @@ export default function CommunautePageBody() {
       )}
 
       {/* ═══════════════════════════════════════════════════════════════════ */}
-      {/* 7. MODALE LIGHTBOX POUR AGRANDIR LA PHOTO D'UN POST                */}
+      {/* 8. MODALE LIGHTBOX POUR AGRANDIR LA PHOTO D'UN POST                */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {previewImageModal && (
         <div
@@ -1274,6 +1827,79 @@ export default function CommunautePageBody() {
             >
               <X size={20} />
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* 9. MODALE DE SIGNALEMENT CITOYEN POUR MODÉRATION                   */}
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {reportingItem && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-150"
+          onClick={() => setReportingItem(null)}
+        >
+          <div
+            className="relative w-full max-w-md bg-white dark:bg-[#071322] border border-navy-100 dark:border-navy-800 rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 pb-3 border-b border-slate-100 dark:border-navy-800">
+              <div className="w-10 h-10 rounded-2xl bg-red-100 dark:bg-red-950/60 text-[#CC131A] dark:text-red-400 flex items-center justify-center flex-shrink-0">
+                <Flag size={20} />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-base font-black text-navy-900 dark:text-white">
+                  Signaler un abus ou propos déplacés
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                  Auteur : {reportingItem.authorName} ({reportingItem.targetType})
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 dark:text-slate-300">
+              Mbeund-Mi est un espace d'entraide et de solidarité pour les riverains. Les contenus insultants, vulgaires ou haineux seront vérifiés par l'équipe de modération.
+            </p>
+
+            {reportingItem.textSnippet && (
+              <div className="p-3 rounded-xl bg-slate-100 dark:bg-navy-900 text-xs italic text-slate-700 dark:text-slate-300 line-clamp-2 border border-slate-200 dark:border-navy-800">
+                « {reportingItem.textSnippet} »
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-black text-navy-900 dark:text-white uppercase tracking-wider mb-1.5">
+                Motif du signalement
+              </label>
+              <select
+                value={reportingReason}
+                onChange={(e) => setReportingReason(e.target.value)}
+                className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-navy-700 bg-white dark:bg-navy-900 text-navy-900 dark:text-white font-bold"
+              >
+                <option value="Propos inappropriés / agressifs">Propos inappropriés ou agressifs</option>
+                <option value="Insultes ou langage haineux">Insultes ou langage vulgaire (français/wolof)</option>
+                <option value="Fausse alerte ou désinformation">Fausse alerte / Désinformation</option>
+                <option value="Spam ou contenu hors sujet">Spam ou publicité non liée</option>
+              </select>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-navy-800">
+              <button
+                type="button"
+                onClick={() => setReportingItem(null)}
+                className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-navy-700 text-slate-600 dark:text-slate-300 text-xs font-bold hover:bg-slate-100 dark:hover:bg-navy-800 transition cursor-pointer"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmReport}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#CC131A] hover:bg-red-700 text-white text-xs font-black shadow-md transition active:scale-95 cursor-pointer"
+              >
+                <Flag size={14} />
+                <span>Confirmer le signalement</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
