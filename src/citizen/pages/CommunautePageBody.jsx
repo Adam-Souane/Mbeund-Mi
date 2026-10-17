@@ -1270,7 +1270,7 @@ export default function CommunautePageBody() {
                       </span>
                     </button>
 
-                    {/* 2. Bouton VUES / EXPLORATIONS */}
+                    {/* 2. Bouton VUES / EXPLORATIONS (format épuré : icône œil + compteur) */}
                     <button
                       type="button"
                       aria-label="Nombre d'explorations du post"
@@ -1282,13 +1282,12 @@ export default function CommunautePageBody() {
                       className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-black transition-all duration-200 active:scale-95 cursor-pointer shadow-xs bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-900/60 dark:hover:bg-sky-900/60 flex-shrink-0"
                     >
                       <Eye size={16} className="text-sky-600 dark:text-sky-400" />
-                      <span className="hidden sm:inline">Vues</span>
                       <span className="px-1.5 py-0.2 rounded-full text-[11px] font-black bg-sky-200/70 dark:bg-sky-900/70 text-sky-800 dark:text-sky-200">
                         {currentViews}
                       </span>
                     </button>
 
-                    {/* 3. Bouton COMMENTAIRES / AVIS */}
+                    {/* 3. Bouton COMMENTAIRES / AVIS (format épuré : icône message + compteur) */}
                     <button
                       type="button"
                       aria-label="Commentaires et avis riverains"
@@ -1307,7 +1306,6 @@ export default function CommunautePageBody() {
                         size={16}
                         className={areCommentsOpen ? 'text-white' : 'text-amber-600 dark:text-amber-400'}
                       />
-                      <span className="hidden sm:inline">Avis</span>
                       <span
                         data-testid={`comments-count-${post.id}`}
                         className={`px-1.5 py-0.2 rounded-full text-[11px] font-black transition-all ${
