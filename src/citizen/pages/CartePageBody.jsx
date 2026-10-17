@@ -31,6 +31,8 @@ import { useItineraireSecurise } from '../../shared/hooks/useItineraireSecurise'
 import { flattenApiErrors } from '../../shared/utils/apiErrors';
 import { COMMUNAUTE_POSTS } from '../../shared/data/riverainsData';
 import { sanitizePublicAuthor, sanitizePublicText } from '../../shared/utils/sanitizer';
+import { useAuth } from '../../auth/AuthContext';
+import { getUserCustomAvatar } from '../../shared/utils/avatarResolver';
 
 // Référentiel SIG de coordonnées pour tout Thiaroye-sur-Mer (100% sur la terre ferme habitée)
 const THIAROYE_QUARTIERS_COORDS = {
@@ -91,6 +93,24 @@ export default function CartePageBody() {
   const [searchParams, setSearchParams] = useSearchParams();
   const urlSignalementId = searchParams.get('signalementId');
   const selectedQuartier = searchParams.get('quartier');
+
+  // Détection sécurisée du citoyen connecté et de son avatar personnalisé
+  let authData = { username: '', user: null };
+  try {
+    authData = useAuth();
+  } catch {}
+  const { username = '', user = null } = authData || {};
+  const nomCitoyen = user?.prenom ? `${user.prenom} ${user.nom || ''}`.trim() : (username || '');
+
+  const [currentUserCustomAvatar, setCurrentUserCustomAvatar] = useState(() => getUserCustomAvatar(username));
+
+  useEffect(() => {
+    const handleAvatarUpdated = () => {
+      setCurrentUserCustomAvatar(getUserCustomAvatar(username));
+    };
+    window.addEventListener('mbeund_mi_avatar_updated', handleAvatarUpdated);
+    return () => window.removeEventListener('mbeund_mi_avatar_updated', handleAvatarUpdated);
+  }, [username]);
 
   // État local du signalement actif pour interaction immédiate au clic
   const [activeSignalementId, setActiveSignalementId] = useState(urlSignalementId || null);
@@ -164,7 +184,39 @@ export default function CartePageBody() {
 
   // 1. Fusion complète de tous les signalements réels et citoyens de Thiaroye
   const allSignalements = useMemo(() => {
-    const list = [...(signalementsData?.results?.features ?? [])];
+    let myPostIds = {};
+    try {
+      myPostIds = JSON.parse(localStorage.getItem('mbeund_mi_my_post_ids') || '{}');
+    } catch {}
+
+    const checkIsMine = (id, rawBackendId, isUserPost, authorName) => {
+      const sid = String(id ?? '');
+      const sraw = String(rawBackendId ?? '');
+      if (sid && myPostIds[sid]) return true;
+      if (sraw && myPostIds[sraw]) return true;
+      if (isUserPost) return true;
+      if (sid.startsWith('user-') || sid.startsWith('shared-sig-')) return true;
+      if (nomCitoyen && authorName && authorName.toLowerCase() === nomCitoyen.toLowerCase()) return true;
+      return false;
+    };
+
+    const rawList = [...(signalementsData?.results?.features ?? [])];
+    const list = rawList.map((f) => {
+      const fid = f.id ?? f.properties?.id;
+      const rawId = f.properties?.rawBackendId;
+      const authorName = f.properties?.citoyen_nom || f.properties?.author?.name || '';
+      const isMine = checkIsMine(fid, rawId, f.properties?.isUserPost, authorName);
+      if (!isMine) return f;
+      return {
+        ...f,
+        properties: {
+          ...f.properties,
+          isCurrentUser: true,
+          currentUserAvatar: currentUserCustomAvatar,
+        },
+      };
+    });
+
     const existingIds = new Set(list.map((f) => String(f.id ?? f.properties?.id)));
 
     let userPosts = [];
@@ -192,6 +244,9 @@ export default function CartePageBody() {
       const safeLat = Math.max(14.7432, coords[0] + offsetLat);
       const safeLon = coords[1] + offsetLon;
 
+      const authorName = post.author?.name || post.auteur || '';
+      const isMine = checkIsMine(post.id, post.rawBackendId, post.isUserPost, authorName);
+
       list.push({
         id: post.id,
         date_creation: post.date_creation || post.date || new Date().toISOString(),
@@ -207,18 +262,20 @@ export default function CartePageBody() {
           photo: post.image || post.photo,
           valide: post.statut === 'resolu',
           statut: post.statut || 'en_cours',
-          citoyen_nom: sanitizePublicAuthor(post.author?.name || post.auteur, 'Sentinelle Citoyenne'),
+          citoyen_nom: sanitizePublicAuthor(authorName, 'Sentinelle Citoyenne'),
           citoyen_prenom: '',
           citoyen_quartier: post.author?.quartier || post.quartier || 'Thiaroye-sur-Mer',
           rue: post.rue || null,
           date_creation: post.date_creation || post.date || new Date().toISOString(),
           isSharedOnCommunity: true,
+          isCurrentUser: isMine,
+          currentUserAvatar: isMine ? (currentUserCustomAvatar || post.author?.avatar) : null,
         },
       });
     });
 
     return list;
-  }, [signalementsData]);
+  }, [signalementsData, nomCitoyen, currentUserCustomAvatar]);
 
   // 2. Filtrage dynamique selon la période choisie et le mot-clé de recherche
   const filteredSignalements = useMemo(() => {

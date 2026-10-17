@@ -304,11 +304,65 @@
     transform: translate(-50%, -50%) scale(2);
     opacity: 0;
   }
+}
+
+/* Démarquage du citoyen connecté (Mon signalement / Vous) */
+.citizen-you-badge {
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  padding: 1px 7px;
+  border-radius: 9999px;
+  box-shadow: 0 2px 6px rgba(217, 119, 6, 0.45);
+  border: 1.5px solid #ffffff;
+  white-space: nowrap;
+  z-index: 20;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.citizen-avatar-pin.is-current-user {
+  z-index: 500 !important;
+}
+
+.citizen-avatar-pin.is-current-user .citizen-avatar-bubble {
+  box-shadow: 0 0 0 3.5px #F59E0B, 0 0 16px rgba(245, 158, 11, 0.65), 0 4px 10px rgba(0, 0, 0, 0.35) !important;
+  border: 2px solid #ffffff;
+}
+
+.citizen-avatar-pin.is-current-user .citizen-avatar-pulse {
+  background: #F59E0B !important;
+  animation: avatarPulseCurrentUser 1.8s infinite ease-out !important;
+  opacity: 0.8 !important;
+}
+
+.citizen-avatar-pin.is-current-user .citizen-avatar-tip {
+  border-top-color: #D97706 !important;
+}
+
+@keyframes avatarPulseCurrentUser {
+  0% {
+    transform: translate(-50%, -50%) scale(0.9);
+    opacity: 0.85;
+  }
+  70% {
+    transform: translate(-50%, -50%) scale(2.1);
+    opacity: 0;
+  }
   100% {
-    transform: translate(-50%, -50%) scale(2);
+    transform: translate(-50%, -50%) scale(2.1);
     opacity: 0;
   }
 }
+
 
 /* Style de la popup Leaflet personnalisée pour Thiaroye (Clair & Sombre) */
 .leaflet-popup-content-wrapper {

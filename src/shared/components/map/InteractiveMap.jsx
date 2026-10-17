@@ -24,6 +24,7 @@ import {
   LocateFixed,
   Maximize2,
   Minimize2,
+  Star,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { riskInfo } from '../RiskBadge';
@@ -98,6 +99,7 @@ function createCitizenAvatarIcon({
   category,
   zoomLevel = 15,
   quartierLabel = '',
+  isCurrentUser = false,
 }) {
   if (typeof window === 'undefined' || typeof L === 'undefined' || !L?.divIcon) {
     return undefined;
@@ -188,19 +190,27 @@ function createCitizenAvatarIcon({
     ? `<div class="citizen-avatar-label">${quartierLabel}</div>`
     : '';
 
+  const youBadgeHtml = isCurrentUser
+    ? `<div class="citizen-you-badge">
+        <svg width="8" height="8" viewBox="0 0 24 24" fill="#ffffff" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <span>Vous</span>
+      </div>`
+    : '';
+
   return L.divIcon({
-    className: `citizen-avatar-pin-wrapper ${isSelected ? 'is-selected' : ''} ${zoomClass}`,
+    className: `citizen-avatar-pin-wrapper ${isSelected ? 'is-selected' : ''} ${isCurrentUser ? 'is-current-user' : ''} ${zoomClass}`,
     html: `
-      <div class="citizen-avatar-pin ${isSelected ? 'is-selected' : ''} ${zoomClass}" style="--status-color: ${statusColor};">
+      <div class="citizen-avatar-pin ${isSelected ? 'is-selected' : ''} ${isCurrentUser ? 'is-current-user' : ''} ${zoomClass}" style="--status-color: ${statusColor};">
+        ${youBadgeHtml}
         ${labelHtml}
-        <div class="citizen-avatar-pulse" style="background: ${statusColor};"></div>
+        <div class="citizen-avatar-pulse" style="background: ${isCurrentUser ? '#F59E0B' : statusColor};"></div>
         <div class="citizen-avatar-bubble" style="box-shadow: 0 0 0 ${isSelected ? '4px' : '3px'} ${statusColor}, 0 4px 10px rgba(0, 0, 0, 0.35);">
           ${avatarContent}
           <div class="citizen-avatar-badge" style="background-color: ${statusColor};">
             ${categorySvg}
           </div>
         </div>
-        <div class="citizen-avatar-tip" style="border-top-color: ${statusColor};"></div>
+        <div class="citizen-avatar-tip" style="border-top-color: ${isCurrentUser ? '#D97706' : statusColor};"></div>
       </div>
     `,
     iconSize,
@@ -1039,14 +1049,17 @@ export default function InteractiveMap({
               String(props.rawBackendId) === String(selectedSignalementId)
             );
 
+            const isCurrentUser = Boolean(props.isCurrentUser || props.isMine);
             const isShared = checkIsSharedOnCommunity(f);
 
-            const avatarUrl = props.author?.avatar || getPublicAvatar({
-              name: author,
-              id: fid,
-              preferredAvatar: props.avatar,
-              context: props.description,
-            });
+            const avatarUrl = (isCurrentUser && props.currentUserAvatar)
+              ? props.currentUserAvatar
+              : props.author?.avatar || getPublicAvatar({
+                  name: author,
+                  id: fid,
+                  preferredAvatar: props.avatar,
+                  context: props.description,
+                });
 
             const customIcon = createCitizenAvatarIcon({
               avatarUrl,
@@ -1056,6 +1069,7 @@ export default function InteractiveMap({
               category: props.categorie,
               zoomLevel,
               quartierLabel: rue || quartier,
+              isCurrentUser,
             });
 
             const zoomBucket = zoomLevel >= 18 ? 'ultra' : zoomLevel >= 16 ? 'high' : zoomLevel === 15 ? 'norm' : 'low';
@@ -1067,9 +1081,9 @@ export default function InteractiveMap({
                   center={point}
                   radius={isSelected ? (isHighZoom ? 14 : 10) : (isHighZoom ? 5 : 4)}
                   pathOptions={{
-                    color: statusColor,
+                    color: isCurrentUser ? '#F59E0B' : statusColor,
                     weight: isSelected ? 2 : 1.2,
-                    fillColor: statusColor,
+                    fillColor: isCurrentUser ? '#F59E0B' : statusColor,
                     fillOpacity: isSelected ? 0.35 : 0.2,
                   }}
                 />
@@ -1079,6 +1093,7 @@ export default function InteractiveMap({
                   key={`sig-marker-${fid}-${zoomBucket}`}
                   position={point}
                   icon={customIcon}
+                  zIndexOffset={isCurrentUser ? 1000 : (isSelected ? 500 : 0)}
                   ref={(ref) => {
                     if (ref) markerRefs.current[fid] = ref;
                   }}
@@ -1100,7 +1115,7 @@ export default function InteractiveMap({
                           src={avatarUrl}
                           alt={author}
                           className="w-10 h-10 rounded-full object-cover ring-2 flex-shrink-0"
-                          style={{ ringColor: statusColor }}
+                          style={{ ringColor: isCurrentUser ? '#F59E0B' : statusColor }}
                           onError={(e) => {
                             e.currentTarget.src = '/images/avatar-amadou.jpg';
                           }}
@@ -1108,8 +1123,14 @@ export default function InteractiveMap({
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between gap-1">
                             <span className="font-extrabold text-sm text-navy-950 dark:text-white truncate">
-                              {author}
+                              {isCurrentUser ? `${author} (Vous)` : author}
                             </span>
+                            {isCurrentUser && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 flex-shrink-0 shadow-2xs">
+                                <Star size={10} className="fill-amber-500 text-amber-500" />
+                                Votre signalement
+                              </span>
+                            )}
                           </div>
                           <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5 truncate">
                             <MapPin size={11} className="text-[#CC131A] flex-shrink-0" />

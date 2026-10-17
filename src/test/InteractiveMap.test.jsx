@@ -24,8 +24,8 @@ vi.mock('react-leaflet', () => ({
     <div data-testid="circle-marker">{children}</div>
   ),
 
-  Marker: forwardRef(({ children }, ref) => (
-    <div ref={ref} data-testid="marker">{children}</div>
+  Marker: forwardRef(({ children, zIndexOffset }, ref) => (
+    <div ref={ref} data-testid="marker" data-zindex={zIndexOffset}>{children}</div>
   )),
 
   Popup: ({ children }) => (
@@ -80,6 +80,7 @@ vi.mock('lucide-react', () => ({
   LocateFixed: () => <span data-testid="locate-fixed-icon" />,
   Maximize2: () => <span data-testid="maximize-icon" />,
   Minimize2: () => <span data-testid="minimize-icon" />,
+  Star: () => <span data-testid="star-icon" />,
 }));
 
 describe('InteractiveMap', () => {
@@ -334,5 +335,33 @@ describe('InteractiveMap', () => {
     expect(fullscreenBtn).toBeInTheDocument();
     fireEvent.click(fullscreenBtn);
     expect(handleToggleFullscreen).toHaveBeenCalledTimes(1);
+  });
+
+  it('met en valeur le signalement du citoyen connecté avec le badge Vous et une priorité zIndexOffset élevée', () => {
+    const data = {
+      signalements: [
+        {
+          id: 999,
+          geometry: {
+            type: 'Point',
+            coordinates: [-17.385, 14.747],
+          },
+          properties: {
+            categorie: 'inondation',
+            description: 'Mon observation personnelle',
+            valide: false,
+            citoyen_nom: 'Moussa Diop',
+            isCurrentUser: true,
+          },
+        },
+      ],
+    };
+
+    render(<InteractiveMap data={data} />);
+
+    expect(screen.getByText(/Votre signalement/i)).toBeInTheDocument();
+    expect(screen.getByText(/Moussa Diop \(Vous\)/i)).toBeInTheDocument();
+    const marker = screen.getByTestId('marker');
+    expect(marker.getAttribute('data-zindex')).toBe('1000');
   });
 });
