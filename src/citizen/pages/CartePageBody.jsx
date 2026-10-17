@@ -426,7 +426,7 @@ export default function CartePageBody() {
           {/* ========================================================= */}
           {/* CARTE + BANDEAU LATÉRAL ÉTROI DE FILTRES TEMPORELS À DROITE */}
           {/* ========================================================= */}
-          <div className="w-full flex flex-col lg:flex-row gap-2.5 items-stretch">
+          <div className="w-full flex flex-col lg:flex-row gap-2.5 items-start">
             {/* CARTE INTERACTIVE (Prend l'écrasante majorité de la largeur) */}
             <div
               ref={mapSectionRef}
@@ -466,7 +466,7 @@ export default function CartePageBody() {
             {/* BANDE ÉTROITE À DROITE : Filtres temporels épurés sans texte lourd */}
             <aside
               aria-label="Filtres temporels"
-              className="w-full lg:w-28 xl:w-32 flex lg:flex-col justify-between sm:justify-start gap-1.5 p-2 bg-white dark:bg-navy-900 rounded-2xl border border-navy-100 dark:border-navy-800 shadow-2xs shrink-0 self-stretch overflow-x-auto lg:overflow-x-visible"
+              className="w-full lg:w-28 xl:w-32 flex lg:flex-col justify-between sm:justify-start gap-1.5 p-2 bg-white dark:bg-navy-900 rounded-2xl border border-navy-100 dark:border-navy-800 shadow-2xs shrink-0 self-start h-fit overflow-x-auto lg:overflow-x-visible"
             >
               <div className="hidden lg:flex items-center gap-1.5 px-1 py-1 text-[11px] font-bold text-navy-400 dark:text-navy-300 select-none">
                 <Clock size={12} className="text-[#CC131A] shrink-0" />

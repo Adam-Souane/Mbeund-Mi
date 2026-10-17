@@ -493,7 +493,7 @@ export default function InteractiveMap({
       style={{ height: typeof height === 'number' ? `${height}px` : height }}
     >
       {/* Capsules flottantes de contrôle rapide directement intégrées sur la carte (Format Waze / Google Maps) */}
-      <div className="absolute top-3 left-14 sm:left-16 z-[1000] flex items-center gap-1.5 overflow-x-auto max-w-[calc(100%-195px)] sm:max-w-[calc(100%-250px)] py-1 px-1 scrollbar-none pointer-events-auto">
+      <div className="absolute top-3 left-14 sm:left-16 z-[1000] flex items-center gap-1.5 overflow-x-auto max-w-[calc(100%-250px)] sm:max-w-[calc(100%-280px)] py-1 px-1 scrollbar-none pointer-events-auto">
         {['signalements', 'refuges', 'segments', 'zones'].map((key) => {
           if (!availableLayers.includes(key) && key !== 'signalements') return null;
           const isLayerActive = visible[key] !== false;
@@ -509,7 +509,7 @@ export default function InteractiveMap({
               key={`float-pill-${key}`}
               type="button"
               onClick={() => toggle(key)}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-black backdrop-blur-md border shadow-md transition-all active:scale-95 whitespace-nowrap cursor-pointer ${
+              className={`inline-flex items-center gap-1 px-2 py-1 rounded-xl text-[11px] font-black backdrop-blur-md border shadow-xs transition-all active:scale-95 whitespace-nowrap cursor-pointer ${
                 isLayerActive
                   ? 'bg-navy-950/90 dark:bg-white/95 text-white dark:text-navy-950 border-white/20 dark:border-navy-800'
                   : 'bg-white/70 dark:bg-navy-950/70 text-slate-500 dark:text-slate-400 border-white/40 dark:border-navy-800 line-through opacity-70'
@@ -537,7 +537,7 @@ export default function InteractiveMap({
         <button
           type="button"
           onClick={() => changeBaseMap('plan')}
-          className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-lg transition ${
+          className={`flex items-center gap-1 px-2 py-1 text-xs font-bold rounded-lg transition ${
             baseMap === 'plan'
               ? 'bg-[#1B2A40] text-white shadow-xs'
               : 'text-navy-600 dark:text-navy-200 hover:text-navy-900 dark:hover:text-white'
@@ -550,7 +550,7 @@ export default function InteractiveMap({
         <button
           type="button"
           onClick={() => changeBaseMap('satellite')}
-          className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-lg transition ${
+          className={`flex items-center gap-1 px-2 py-1 text-xs font-bold rounded-lg transition ${
             baseMap === 'satellite'
               ? 'bg-[#CC131A] text-white shadow-xs font-black'
               : 'text-navy-600 dark:text-navy-200 hover:text-navy-900 dark:hover:text-white'
@@ -558,16 +558,16 @@ export default function InteractiveMap({
           aria-label="Mode Satellite HD"
         >
           <Satellite size={13} className="flex-shrink-0" />
-          <span>Sol réel (Satellite HD)</span>
+          <span>Satellite</span>
         </button>
 
         {onToggleFullscreen && (
           <>
-            <div className="w-[1px] h-4 bg-navy-100 dark:bg-navy-800 mx-0.5" />
+            <div className="w-[1px] h-3.5 bg-navy-100 dark:bg-navy-800 mx-0.5" />
             <button
               type="button"
               onClick={onToggleFullscreen}
-              className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-lg transition text-[#CC131A] hover:bg-[#CC131A]/10 active:scale-95 cursor-pointer"
+              className="flex items-center gap-1 px-2 py-1 text-xs font-bold rounded-lg transition text-[#CC131A] hover:bg-[#CC131A]/10 active:scale-95 cursor-pointer"
               aria-label={isFullscreen ? 'Quitter le plein écran' : 'Plein écran'}
               title={isFullscreen ? 'Quitter le plein écran (Échap)' : 'Agrandir la carte en plein écran'}
             >
