@@ -75,4 +75,13 @@ describe('AccueilPageBody', () => {
     expect(screen.getByText('Signaler')).toBeInTheDocument();
     expect(screen.getByText('Carte')).toBeInTheDocument();
   });
+
+  it('affiche les 4 capsules d’actions express citoyennes', () => {
+    renderWithProviders(<AccueilPageBody />);
+
+    expect(screen.getByText('Signaler')).toBeInTheDocument();
+    expect(screen.getByText('Carte')).toBeInTheDocument();
+    expect(screen.getByText('Entraide')).toBeInTheDocument();
+    expect(screen.getByText('Prévisions')).toBeInTheDocument();
+  });
 });

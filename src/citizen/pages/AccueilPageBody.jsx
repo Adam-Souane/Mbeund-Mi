@@ -13,7 +13,6 @@ import ConseilsCarousel from '../components/ConseilsCarousel';
 import MesSignalementsWidget from '../components/MesSignalementsWidget';
 import FilActualiteStoriesWidget from '../components/FilActualiteStoriesWidget';
 import SentinellesUrgenceBanner from '../components/SentinellesUrgenceBanner';
-import LieuSurWidget from '../components/LieuSurWidget';
 
 const NIVEAU_RANK = { vert: 0, jaune: 1, orange: 2, rouge: 3 };
 
@@ -265,9 +264,6 @@ export default function AccueilPageBody() {
           </Link>
         </div>
       </div>
-
-      {/* Amélioration 1 : Encart Lieu Sûr & Refuge le plus proche du quartier */}
-      <LieuSurWidget userQuartier={topZone?.quartier || 'Thiaroye'} className="w-full my-2" />
 
       {/* 3. Carrousel visuel immersif en pleine largeur */}
       <div className="w-full">
