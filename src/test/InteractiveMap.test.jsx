@@ -364,4 +364,22 @@ describe('InteractiveMap', () => {
     const marker = screen.getByTestId('marker');
     expect(marker.getAttribute('data-zindex')).toBe('1000');
   });
+
+  it('affiche le marqueur live du citoyen connecté (Vous êtes ici) avec priorité zIndex 2000', () => {
+    const userLocation = {
+      lat: 14.7485,
+      lon: -17.3850,
+      name: 'Amadou Sow',
+      avatar: '/images/avatar-amadou.jpg',
+      quartier: 'Thiaroye-sur-Mer',
+    };
+
+    render(<InteractiveMap userLocation={userLocation} />);
+
+    expect(screen.getByText(/Amadou Sow/i)).toBeInTheDocument();
+    expect(screen.getByText(/Vous êtes ici/i)).toBeInTheDocument();
+    const markers = screen.getAllByTestId('marker');
+    const liveMarker = markers.find((m) => m.getAttribute('data-zindex') === '2000');
+    expect(liveMarker).toBeDefined();
+  });
 });

@@ -220,6 +220,47 @@ function createCitizenAvatarIcon({
 }
 
 /**
+ * Marqueur Visuel Vivant de la Position Citoyenne Directe ("Vous êtes ici")
+ */
+function createUserLiveLocationIcon({ avatarUrl, authorName, zoomLevel = 15 }) {
+  if (typeof window === 'undefined' || typeof L === 'undefined' || !L?.divIcon) {
+    return undefined;
+  }
+  const initials = authorName
+    ? authorName
+        .split(' ')
+        .map((p) => p[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase()
+    : 'MOI';
+
+  const avatarContent = avatarUrl
+    ? `<img src="${avatarUrl}" alt="${authorName || 'Vous'}" class="citizen-avatar-img" onerror="this.onerror=null; this.src='/images/avatar-amadou.jpg';" />`
+    : `<div class="citizen-avatar-initials">${initials}</div>`;
+
+  return L.divIcon({
+    className: 'citizen-avatar-pin-wrapper is-user-live-wrapper',
+    html: `
+      <div class="citizen-user-live-pin">
+        <div class="citizen-live-badge">
+          <svg width="8" height="8" viewBox="0 0 24 24" fill="#ffffff" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span>Vous êtes ici</span>
+        </div>
+        <div class="citizen-user-live-pulse"></div>
+        <div class="citizen-user-live-bubble">
+          ${avatarContent}
+        </div>
+        <div class="citizen-user-live-tip"></div>
+      </div>
+    `,
+    iconSize: [52, 58],
+    iconAnchor: [26, 56],
+    popupAnchor: [0, -54],
+  });
+}
+
+/**
  * Marqueur Visuel Vivant d'un Point de Refuge (Waze / Google Maps Urgence)
  */
 function createRefugePinIcon({ type, nom, capacite, zoomLevel }) {
@@ -478,6 +519,7 @@ export default function InteractiveMap({
   onToggleLayer = null,
   onToggleFullscreen = null,
   isFullscreen = false,
+  userLocation = null,
 }) {
   const { zones, inondations, segments, capteurs, signalements, refuges } = data;
   const markerRefs = useRef({});
@@ -1225,6 +1267,82 @@ export default function InteractiveMap({
               </span>
             );
           })}
+
+        {/* ── MARQUEUR LIVE "VOUS ÊTES ICI" (POSITION CITOYENNE DIRECTE) ── */}
+        {userLocation && typeof userLocation.lat === 'number' && typeof userLocation.lon === 'number' && (
+          <span key="user-live-location-bundle">
+            <CircleMarker
+              center={[userLocation.lat, userLocation.lon]}
+              radius={18}
+              pathOptions={{
+                color: '#2563EB',
+                weight: 2,
+                fillColor: '#3B82F6',
+                fillOpacity: 0.25,
+              }}
+            />
+            <Marker
+              position={[userLocation.lat, userLocation.lon]}
+              icon={createUserLiveLocationIcon({
+                avatarUrl: userLocation.avatar,
+                authorName: userLocation.name,
+                zoomLevel,
+              })}
+              zIndexOffset={2000}
+            >
+              <Popup
+                className="citizen-map-popup"
+                minWidth={280}
+                maxWidth={320}
+                autoPan={true}
+                autoPanPaddingTopLeft={[20, 95]}
+                autoPanPaddingBottomRight={[20, 20]}
+                keepInView={true}
+                closeButton={true}
+              >
+                <div className="text-xs space-y-2.5 p-3 min-w-[240px] max-w-[280px] font-sans">
+                  <div className="flex items-center gap-2.5 pb-2 border-b border-slate-100 dark:border-navy-800">
+                    <img
+                      src={userLocation.avatar || '/images/avatar-amadou.jpg'}
+                      alt={userLocation.name || 'Vous'}
+                      className="w-10 h-10 rounded-full object-cover ring-2 ring-blue-500 flex-shrink-0"
+                      onError={(e) => {
+                        e.currentTarget.src = '/images/avatar-amadou.jpg';
+                      }}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="font-extrabold text-sm text-navy-950 dark:text-white truncate">
+                          {userLocation.name || 'Votre compte'}
+                        </span>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 border border-blue-300 dark:border-blue-700/60 flex-shrink-0 shadow-2xs">
+                          <Star size={10} className="fill-blue-500 text-blue-500" />
+                          Vous êtes ici
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5 truncate">
+                        <MapPin size={11} className="text-blue-600 flex-shrink-0" />
+                        <span>Position sentinelle · {userLocation.quartier || 'Thiaroye-sur-Mer'}</span>
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-snug">
+                    Vous êtes positionné en direct au cœur de Thiaroye-sur-Mer. Vous pouvez observer les points de vigilance autour de vous ou signaler un problème.
+                  </p>
+                  <div className="pt-1 flex flex-col gap-1.5">
+                    <Link
+                      to="/citizen/signaler"
+                      className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg bg-[#CC131A] hover:bg-[#b01016] text-white font-bold text-[11px] shadow-sm transition active:scale-95"
+                    >
+                      <MapPin size={12} />
+                      Signaler un risque autour de moi
+                    </Link>
+                  </div>
+                </div>
+              </Popup>
+            </Marker>
+          </span>
+        )}
 
         {route?.coordinates?.length > 0 && (
           <>

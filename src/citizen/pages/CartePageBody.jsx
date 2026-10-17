@@ -277,6 +277,17 @@ export default function CartePageBody() {
     return list;
   }, [signalementsData, nomCitoyen, currentUserCustomAvatar]);
 
+  // Position sentinelle en direct du citoyen connecté au cœur de Thiaroye-sur-Mer ("Vous êtes ici")
+  const currentUserLocation = useMemo(() => {
+    return {
+      lat: 14.7485,
+      lon: -17.3850,
+      name: nomCitoyen || username || 'Sentinelle Citoyenne',
+      avatar: currentUserCustomAvatar,
+      quartier: 'Thiaroye-sur-Mer',
+    };
+  }, [nomCitoyen, username, currentUserCustomAvatar]);
+
   // 2. Filtrage dynamique selon la période choisie et le mot-clé de recherche
   const filteredSignalements = useMemo(() => {
     return allSignalements.filter((item) => {
@@ -514,6 +525,7 @@ export default function CartePageBody() {
                     signalements: filteredSignalements,
                     refuges: refugesData,
                   }}
+                  userLocation={currentUserLocation}
                   visibleLayers={layersVisibility}
                   onToggleLayer={handleToggleLayer}
                   onToggleFullscreen={() => setIsMapFullscreen((prev) => !prev)}
@@ -641,6 +653,7 @@ export default function CartePageBody() {
                   signalements: filteredSignalements,
                   refuges: refugesData,
                 }}
+                userLocation={currentUserLocation}
                 visibleLayers={layersVisibility}
                 onToggleLayer={handleToggleLayer}
                 onToggleFullscreen={() => setIsMapFullscreen(false)}
