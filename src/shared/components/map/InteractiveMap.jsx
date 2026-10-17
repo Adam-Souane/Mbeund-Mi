@@ -490,22 +490,51 @@ function FitRoute({ coordinates }) {
 // Bouton flottant de recentrage territorial immédiat sur Thiaroye
 function RecenterButton({ center = THIAROYE_CENTER, defaultZoom = 14.5 }) {
   const map = useMap();
+  const containerRef = useRef(null);
+  const [isSpinning, setIsSpinning] = useState(false);
+
+  useEffect(() => {
+    if (containerRef.current && typeof L !== 'undefined' && L.DomEvent) {
+      L.DomEvent.disableClickPropagation(containerRef.current);
+      L.DomEvent.disableScrollPropagation(containerRef.current);
+    }
+  }, []);
+
+  const handleRecenter = (e) => {
+    if (e) {
+      if (typeof e.preventDefault === 'function') e.preventDefault();
+      if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    }
+    if (map && typeof map.flyTo === 'function') {
+      setIsSpinning(true);
+      map.flyTo(center, defaultZoom, { duration: 0.7 });
+      setTimeout(() => setIsSpinning(false), 800);
+    }
+  };
+
   return (
     <div
-      className="leaflet-bottom leaflet-right pointer-events-auto"
-      style={{ marginBottom: '18px', marginRight: '14px', zIndex: 1000 }}
+      ref={containerRef}
+      className="leaflet-bottom leaflet-right pointer-events-auto select-none"
+      style={{ marginBottom: '28px', marginRight: '14px', zIndex: 1000 }}
+      onMouseDown={(e) => e.stopPropagation()}
+      onTouchStart={(e) => e.stopPropagation()}
+      onClick={handleRecenter}
     >
       <button
         type="button"
-        onClick={() => {
-          map.flyTo(center, defaultZoom, { duration: 0.8 });
-        }}
+        onClick={handleRecenter}
         className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/95 dark:bg-[#071322]/95 backdrop-blur-md border border-navy-100 dark:border-navy-800 text-navy-900 dark:text-white hover:text-[#CC131A] dark:hover:text-red-400 font-extrabold text-xs shadow-lg transition-all active:scale-95 cursor-pointer"
-        title="Recentrer la vue sur Thiaroye-sur-Mer"
+        title="Recentrer la vue panoramique sur Thiaroye-sur-Mer"
         aria-label="Recentrer la carte"
       >
-        <Compass size={15} className="text-[#CC131A] animate-[spin_12s_linear_infinite]" />
-        <span className="hidden sm:inline">Recentrer Thiaroye</span>
+        <Compass
+          size={16}
+          className={`text-[#CC131A] transition-transform duration-700 ${
+            isSpinning ? 'animate-[spin_0.7s_ease-out]' : 'hover:rotate-45'
+          }`}
+        />
+        <span className="hidden sm:inline font-black">Recentrer Thiaroye</span>
       </button>
     </div>
   );
