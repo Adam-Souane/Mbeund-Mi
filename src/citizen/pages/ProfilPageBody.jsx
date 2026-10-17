@@ -167,18 +167,7 @@ export default function ProfilPageBody() {
               </button>
             </div>
             <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <p className="text-base font-extrabold truncate">{username ?? 'Utilisateur'}</p>
-                <button
-                  type="button"
-                  onClick={() => setAvatarModalOpen(true)}
-                  className="p-1 rounded-md text-slate-400 hover:text-[#CC131A] hover:bg-slate-100 dark:hover:bg-navy-800 transition cursor-pointer"
-                  title="Modifier l'avatar"
-                  aria-label="Modifier l'avatar"
-                >
-                  <Pencil size={14} />
-                </button>
-              </div>
+              <p className="text-base font-extrabold truncate">{username ?? 'Utilisateur'}</p>
               <span className="inline-flex items-center gap-1.5 text-xs font-bold text-navy-600 dark:text-navy-200 mt-1">
                 <ShieldCheck size={13} />
                 {ROLE_LABELS[role] ?? role}

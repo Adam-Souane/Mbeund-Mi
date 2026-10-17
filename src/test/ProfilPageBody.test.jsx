@@ -82,12 +82,12 @@ describe('ProfilPageBody', () => {
     localStorage.clear();
     renderWithProviders(<ProfilPageBody />);
 
-    // Bouton crayon présent
-    const pencilButtons = screen.getAllByRole('button', { name: /Modifier l'avatar/i });
-    expect(pencilButtons.length).toBeGreaterThan(0);
+    // Unique bouton crayon présent sur le cercle d'avatar
+    const pencilButton = screen.getByRole('button', { name: /Modifier l'avatar/i });
+    expect(pencilButton).toBeInTheDocument();
 
     // Clic pour ouvrir la modale
-    fireEvent.click(pencilButtons[0]);
+    fireEvent.click(pencilButton);
 
     // Modale ouverte avec les deux sections
     expect(screen.getByRole('dialog')).toBeInTheDocument();
