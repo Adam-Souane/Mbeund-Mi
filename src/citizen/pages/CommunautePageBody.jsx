@@ -1095,49 +1095,43 @@ export default function CommunautePageBody() {
                         ) : null}
                       </div>
 
-                      {/* Ligne 2 : Quartier · Date d'observation */}
-                      <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mt-0.5 min-w-0">
-                        <span className="flex items-center gap-1 text-[#CC131A] font-extrabold truncate flex-shrink-0 max-w-[140px] sm:max-w-[200px]">
-                          <MapPin size={12} className="flex-shrink-0 text-[#CC131A]" />
-                          {post.author.quartier}
+                      {/* Ligne 2 : Quartier · Date d'observation (totalement immunisé contre tout débordement) */}
+                      <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mt-0.5 min-w-0 overflow-hidden">
+                        <span className="inline-flex items-center gap-1 text-[#CC131A] font-extrabold truncate shrink min-w-0">
+                          <MapPin size={11} className="shrink-0 text-[#CC131A]" />
+                          <span className="truncate">{post.author.quartier}</span>
                         </span>
-                        <span className="text-slate-300 dark:text-navy-600 flex-shrink-0">·</span>
-                        <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400 truncate flex-shrink-0">
-                          <Clock size={11} className="text-slate-400 flex-shrink-0" />
-                          {post.date}
+                        <span className="text-slate-300 dark:text-navy-600 shrink-0">·</span>
+                        <span className="inline-flex items-center gap-1 text-slate-400 dark:text-slate-500 truncate shrink min-w-0">
+                          <Clock size={11} className="shrink-0" />
+                          <span className="truncate">{post.date}</span>
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Côté droit : Badges de catégorie & Statut + Menu 3 points universel (style Facebook / Instagram) */}
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <div className="flex flex-col items-end gap-0.5">
-                      {post.typePost === 'signalement' && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-full bg-red-50 dark:bg-red-950/40 text-[#CC131A] dark:text-red-300 border border-red-200 dark:border-red-900">
-                          <Camera size={12} />
-                          Signalement terrain
-                        </span>
-                      )}
-
-                      {post.typePost === 'entraide' && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-                          <Flame size={12} />
-                          Entraide & Mobilisation
-                        </span>
-                      )}
-
-                      {post.typePost === 'resolu' && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                          <CheckCircle2 size={12} />
-                          Résolu & Sécurisé
-                        </span>
-                      )}
-
-                      <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 truncate max-w-[140px] text-right">
-                        {post.statutLabel}
+                  {/* Côté droit : Badge de type unifié centré verticalement + Menu 3 points (style Facebook / Instagram) */}
+                  <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                    {post.typePost === 'signalement' && (
+                      <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-black px-2 sm:px-2.5 py-1 rounded-full bg-red-50 dark:bg-red-950/40 text-[#CC131A] dark:text-red-300 border border-red-200 dark:border-red-900 shrink-0 whitespace-nowrap">
+                        <Camera size={12} className="shrink-0" />
+                        <span>Signalement terrain</span>
                       </span>
-                    </div>
+                    )}
+
+                    {post.typePost === 'entraide' && (
+                      <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-black px-2 sm:px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 shrink-0 whitespace-nowrap">
+                        <Flame size={12} className="shrink-0" />
+                        <span>Entraide & Mobilisation</span>
+                      </span>
+                    )}
+
+                    {post.typePost === 'resolu' && (
+                      <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-black px-2 sm:px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shrink-0 whitespace-nowrap">
+                        <CheckCircle2 size={12} className="shrink-0" />
+                        <span>Résolu & Sécurisé</span>
+                      </span>
+                    )}
 
                     {/* Menu 3 points unifié sur toutes les publications (Supprimer pour auteur, Signaler pour autrui) */}
                     <div className="relative" onClick={(e) => e.stopPropagation()}>
@@ -1229,6 +1223,11 @@ export default function CommunautePageBody() {
                       <span className="text-[11px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-900">
                         {post.categorie}
                       </span>
+                      {post.statutLabel && (
+                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-navy-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-navy-700">
+                          {post.statutLabel}
+                        </span>
+                      )}
                       {post.titre && post.titre !== post.categorie && (
                         <span className="text-xs font-black text-navy-800 dark:text-slate-200">
                           {post.titre}
