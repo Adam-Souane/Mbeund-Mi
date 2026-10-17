@@ -30,4 +30,8 @@ describe('formatCompactDate', () => {
     const hier = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
     expect(formatCompactDate(hier)).toBe('1j');
   });
+
+  it('ne produit jamais un âge absurde (25a) pour une date localisée ambiguë', () => {
+    expect(formatCompactDate('16 oct., 12:00')).not.toMatch(/\d+a$/);
+  });
 });

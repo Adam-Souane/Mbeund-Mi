@@ -46,10 +46,11 @@ export function formatCompactDate(rawDate) {
     return `${matchMin[1]} min`;
   }
 
-  // 2. Si c'est une date convertible (ISO, format date JS)
-  const timestamp = Date.parse(str);
+  // 2. Date ISO fiable uniquement (Date.parse sur d'autres formats peut supposer l'année 2001)
+  const isIso = /^\d{4}-\d{2}-\d{2}/.test(str);
+  const timestamp = isIso ? Date.parse(str) : NaN;
   if (!isNaN(timestamp)) {
-    const diffMs = Date.now() - timestamp;
+    const diffMs = Math.max(0, Date.now() - timestamp);
     const diffSec = Math.floor(diffMs / 1000);
     const diffMin = Math.floor(diffSec / 60);
     const diffHeures = Math.floor(diffMin / 60);

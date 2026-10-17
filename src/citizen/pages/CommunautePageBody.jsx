@@ -442,6 +442,7 @@ export default function CommunautePageBody() {
           quartier: p.citoyen_quartier || p.quartier || 'Thiaroye-sur-Mer',
           role: 'Résident',
         },
+        dateRaw: p.date_creation || null,
         date: p.date_creation
           ? new Date(p.date_creation).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
           : 'Récemment',
@@ -1108,7 +1109,7 @@ export default function CommunautePageBody() {
                           title={post.date}
                         >
                           <Clock size={11} className="shrink-0 text-slate-400" />
-                          <span>{formatCompactDate(post.date)}</span>
+                          <span>{formatCompactDate(post.dateRaw || post.date)}</span>
                         </span>
                       </div>
                     </div>
