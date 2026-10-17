@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { MapContainer, TileLayer, Polygon, Polyline, CircleMarker, Marker, Popup, useMap, ZoomControl } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -378,25 +378,32 @@ function createZoneTotemIcon({ quartier, niveauRisque, scorePct }) {
   });
 }
 
-function MapZoomListener({ onZoomChange }) {
+function MapViewportListener({ onViewportChange }) {
   const map = useMap();
   useEffect(() => {
     if (!map) return;
-    if (typeof map.getZoom === 'function') {
-      onZoomChange(map.getZoom());
-    }
+    const notify = () => {
+      let b = null;
+      if (typeof map.getBounds === 'function') {
+        const raw = map.getBounds();
+        b = typeof raw?.pad === 'function' ? raw.pad(0.2) : raw;
+      }
+      const z = typeof map.getZoom === 'function' ? map.getZoom() : 15;
+      onViewportChange({ zoom: z, bounds: b });
+    };
+
+    notify();
     if (typeof map.on === 'function') {
-      const handleZoom = () => onZoomChange(map.getZoom());
-      map.on('zoomend', handleZoom);
-      map.on('zoom', handleZoom);
+      map.on('moveend', notify);
+      map.on('zoomend', notify);
       return () => {
         if (typeof map.off === 'function') {
-          map.off('zoomend', handleZoom);
-          map.off('zoom', handleZoom);
+          map.off('moveend', notify);
+          map.off('zoomend', notify);
         }
       };
     }
-  }, [map, onZoomChange]);
+  }, [map, onViewportChange]);
   return null;
 }
 
@@ -544,6 +551,13 @@ export default function InteractiveMap({
     return defaultBaseMap;
   });
   const [zoomLevel, setZoomLevel] = useState(15);
+  const [viewportBounds, setViewportBounds] = useState(null);
+
+  const handleViewportChange = useCallback(({ zoom, bounds }) => {
+    setZoomLevel(zoom);
+    setViewportBounds(bounds);
+  }, []);
+
   const isHighZoom = zoomLevel >= 16;
 
   const changeBaseMap = (mode) => {
@@ -697,7 +711,7 @@ export default function InteractiveMap({
       >
         <ZoomControl position="topleft" />
         <MapAutoResizer />
-        <MapZoomListener onZoomChange={setZoomLevel} />
+        <MapViewportListener onViewportChange={handleViewportChange} />
         <RecenterButton center={THIAROYE_CENTER} defaultZoom={14.5} />
 
         {/* Triple couche Satellite Ultra-Précision :
@@ -929,6 +943,9 @@ export default function InteractiveMap({
           (refuges?.features || refuges?.results?.features || (Array.isArray(refuges) ? refuges : []))?.map((f) => {
             const point = pointToLatLng(f.geometry || f.localisation);
             if (!point) return null;
+            if (viewportBounds && typeof viewportBounds.contains === 'function' && !viewportBounds.contains(point)) {
+              return null;
+            }
             const props = f.properties || f;
             const fid = f.id ?? props.id;
             const refugeIcon = createRefugePinIcon({
@@ -1092,6 +1109,16 @@ export default function InteractiveMap({
             );
 
             const isCurrentUser = Boolean(props.isCurrentUser || props.isMine);
+
+            // OPTIMISATION SCALABILITÉ : Viewport Bounding Box Culling
+            // Ne rendre dans le DOM que les signalements visibles à l'écran (+ marge de confort de 20%)
+            // Le signalement sélectionné et celui du citoyen connecté sont TOUJOURS conservés.
+            if (viewportBounds && !isSelected && !isCurrentUser) {
+              if (typeof viewportBounds.contains === 'function' && !viewportBounds.contains(point)) {
+                return null;
+              }
+            }
+
             const isShared = checkIsSharedOnCommunity(f);
 
             const avatarUrl = (isCurrentUser && props.currentUserAvatar)
