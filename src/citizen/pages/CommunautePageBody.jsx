@@ -1064,7 +1064,7 @@ export default function CommunautePageBody() {
               <article
                 key={post.id}
                 onClick={() => handleIncrementView(post.id)}
-                className="bg-white dark:bg-[#071322] border border-navy-100 dark:border-navy-800 rounded-2xl sm:rounded-3xl overflow-hidden shadow-xs hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
+                className="bg-white dark:bg-[#0B1E36] border border-slate-200 dark:border-navy-800/90 rounded-2xl sm:rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between ring-1 ring-slate-900/5 dark:ring-white/5"
               >
                 {/* Haut de la carte : Auteur + Quartier + Badges Filtre & Statut */}
                 <div className="p-4 sm:p-5 flex items-center justify-between gap-3 border-b border-navy-50 dark:border-navy-800/80">
@@ -1173,7 +1173,28 @@ export default function CommunautePageBody() {
                   </div>
                 </div>
 
-                {/* Corps du post : Catégorie + Texte */}
+                {/* 1. Image du post placée en PREMIER sous le header (comme sur Instagram et Facebook) */}
+                {post.image && (
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPreviewImageModal(post.image);
+                    }}
+                    className="relative w-full h-52 sm:h-60 md:h-68 bg-slate-950 overflow-hidden cursor-pointer group"
+                  >
+                    <img
+                      src={post.image}
+                      alt={post.texte}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-black gap-1.5 backdrop-blur-2xs">
+                      <Eye size={16} />
+                      <span>Agrandir la photo</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* 2. Corps du post : Catégorie + Texte descriptif placé EN DESSOUS de la photo */}
                 <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
                   <div>
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
@@ -1192,38 +1213,17 @@ export default function CommunautePageBody() {
                     </p>
                   </div>
 
-                  {/* Image du post si présente, ou bloc stylisé pour post sans image */}
-                  <div className="mt-3.5">
-                    {post.image ? (
-                      <div
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setPreviewImageModal(post.image);
-                        }}
-                        className="relative w-full h-48 sm:h-56 bg-slate-100 dark:bg-navy-950 rounded-2xl overflow-hidden cursor-pointer group border border-navy-50 dark:border-navy-800 shadow-xs"
-                      >
-                        <img
-                          src={post.image}
-                          alt={post.texte}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-black gap-1.5 backdrop-blur-2xs">
-                          <Eye size={16} />
-                          <span>Agrandir la photo</span>
-                        </div>
+                  {/* Format stylisé si le post ne comporte pas de photo */}
+                  {!post.image && (
+                    <div className="mt-3.5 p-3.5 rounded-2xl bg-gradient-to-r from-blue-50/70 to-slate-50 dark:from-navy-900/60 dark:to-navy-950/40 border-l-4 border-[#0B2545] dark:border-blue-400 border-y border-r border-slate-200/80 dark:border-navy-800 flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-blue-100 dark:bg-blue-950/80 text-[#0B2545] dark:text-blue-300 flex items-center justify-center flex-shrink-0">
+                        <Droplets size={18} />
                       </div>
-                    ) : (
-                      /* Format typographique moderne pour publication textuelle sans photo */
-                      <div className="p-3.5 rounded-2xl bg-gradient-to-r from-blue-50/70 to-slate-50 dark:from-navy-900/60 dark:to-navy-950/40 border-l-4 border-[#0B2545] dark:border-blue-400 border-y border-r border-slate-200/80 dark:border-navy-800 flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-blue-100 dark:bg-blue-950/80 text-[#0B2545] dark:text-blue-300 flex items-center justify-center flex-shrink-0">
-                          <Droplets size={18} />
-                        </div>
-                        <p className="text-xs text-navy-700 dark:text-slate-300 leading-snug">
-                          <span className="font-bold">Point de situation sans photo</span> · Partagé pour coordination et maintien de la vigilance riveraine.
-                        </p>
-                      </div>
-                    )}
-                  </div>
+                      <p className="text-xs text-navy-700 dark:text-slate-300 leading-snug">
+                        <span className="font-bold">Point de situation sans photo</span> · Partagé pour coordination et maintien de la vigilance riveraine.
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* ═══════════════════════════════════════════════════════════════ */}
