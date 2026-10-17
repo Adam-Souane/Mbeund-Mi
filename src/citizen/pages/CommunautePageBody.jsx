@@ -32,6 +32,7 @@ import {
   Tag,
   Upload,
   Trash2,
+  MoreVertical,
 } from 'lucide-react';
 import CitizenShell from '../shared/CitizenShell';
 import { useAuth } from '../../auth/AuthContext';
@@ -185,6 +186,90 @@ export default function CommunautePageBody() {
       return [];
     }
   });
+
+  // Sauvegarde des posts utilisateur dans le localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('mbeund_mi_user_community_posts', JSON.stringify(userPosts));
+    } catch {}
+  }, [userPosts]);
+
+  // Menu 3 points d'options ouvert (identifiant du post dont le dropdown est actif)
+  const [openMenuPostId, setOpenMenuPostId] = useState(null);
+  // Post sélectionné pour confirmation de suppression de l'espace Communauté
+  const [postToDelete, setPostToDelete] = useState(null);
+
+  // Fermeture automatique du menu 3 points au clic en dehors
+  useEffect(() => {
+    const handleGlobalClick = () => {
+      setOpenMenuPostId(null);
+    };
+    if (openMenuPostId) {
+      window.addEventListener('click', handleGlobalClick);
+    }
+    return () => {
+      window.removeEventListener('click', handleGlobalClick);
+    };
+  }, [openMenuPostId]);
+
+  // Détection stricte de l'appartenance d'un post au citoyen connecté
+  const isPostOwner = (post) => {
+    if (!post) return false;
+    if (post.isUserPost) return true;
+    if (typeof post.id === 'string' && (post.id.startsWith('user-') || post.id.startsWith('shared-sig-'))) {
+      return true;
+    }
+    if (userPosts.some((up) => up.id === post.id)) return true;
+    try {
+      const myPostIds = JSON.parse(localStorage.getItem('mbeund_mi_my_post_ids') || '{}');
+      if (myPostIds[post.id] || (post.rawBackendId && myPostIds[post.rawBackendId])) return true;
+    } catch {}
+    if (nomCitoyen && post.author?.name && post.author.name.toLowerCase() === nomCitoyen.toLowerCase()) {
+      return true;
+    }
+    return false;
+  };
+
+  // Suppression ciblée d'une publication par son auteur (exclusivement de l'espace Communauté)
+  // Aucun impact sur l'espace d'administration / autorité
+  const handleDeletePost = (post) => {
+    if (!post) return;
+    const postId = post.id;
+
+    // Retrait immédiat de l'état local des posts de l'utilisateur
+    setUserPosts((prev) => prev.filter((p) => p.id !== postId));
+
+    // Mémorisation dans la liste des posts retirés de la communauté
+    try {
+      const deletedMap = JSON.parse(localStorage.getItem('mbeund_mi_community_deleted_post_ids') || '{}');
+      deletedMap[postId] = true;
+      if (post.rawBackendId) deletedMap[post.rawBackendId] = true;
+      if (post.rawBackendId) deletedMap[`backend-sig-${post.rawBackendId}`] = true;
+      if (post.texte) deletedMap[post.texte.trim()] = true;
+      localStorage.setItem('mbeund_mi_community_deleted_post_ids', JSON.stringify(deletedMap));
+
+      // Mémorisation dans les signalements privés si le post provenait d'un signalement
+      const privates = JSON.parse(localStorage.getItem('mbeund_mi_private_signalement_ids') || '{}');
+      privates[postId] = true;
+      if (post.rawBackendId) privates[post.rawBackendId] = true;
+      if (post.rawBackendId) privates[`backend-sig-${post.rawBackendId}`] = true;
+      if (post.texte) privates[post.texte.trim()] = true;
+      localStorage.setItem('mbeund_mi_private_signalement_ids', JSON.stringify(privates));
+
+      // Nettoyage immédiat du localStorage des posts utilisateurs
+      const savedUserPosts = JSON.parse(localStorage.getItem('mbeund_mi_user_community_posts') || '[]');
+      const filtered = savedUserPosts.filter((p) => p.id !== postId);
+      localStorage.setItem('mbeund_mi_user_community_posts', JSON.stringify(filtered));
+    } catch {}
+
+    setOpenMenuPostId(null);
+    setPostToDelete(null);
+    setReportSuccessToast("Publication retirée de l'espace Communauté. Les signalements officiels transmis aux autorités restent inchangés.");
+    setTimeout(() => {
+      setReportSuccessToast(null);
+    }, 4000);
+  };
+
   const [copiedShareId, setCopiedShareId] = useState(null);
   const [previewImageModal, setPreviewImageModal] = useState(null);
 
@@ -313,6 +398,11 @@ export default function CommunautePageBody() {
       privateMap = JSON.parse(localStorage.getItem('mbeund_mi_private_signalement_ids') || '{}');
     } catch {}
 
+    let deletedPostsMap = {};
+    try {
+      deletedPostsMap = JSON.parse(localStorage.getItem('mbeund_mi_community_deleted_post_ids') || '{}');
+    } catch {}
+
     rawFeatures.forEach((feat, idx) => {
       const p = feat.properties || feat;
       const isResolu = !!p.valide;
@@ -320,12 +410,15 @@ export default function CommunautePageBody() {
       const uniqueRawId = feat.id ?? p.id ?? feat.pk ?? p.pk ?? `idx-${idx}`;
       const sigId = `backend-sig-${uniqueRawId}`;
 
-      // Si le citoyen a décoché le partage communautaire, ce signalement est confidentiel pour les autorités
+      // Si le citoyen a décoché le partage communautaire ou supprimé le post de la communauté, ce signalement reste uniquement pour les autorités
       if (
         privateMap[uniqueRawId] ||
         privateMap[feat.id] ||
         privateMap[p.id] ||
-        (p.description && privateMap[p.description.trim()])
+        (p.description && privateMap[p.description.trim()]) ||
+        deletedPostsMap[sigId] ||
+        deletedPostsMap[uniqueRawId] ||
+        (p.description && deletedPostsMap[p.description.trim()])
       ) {
         return;
       }
@@ -395,7 +488,10 @@ export default function CommunautePageBody() {
       };
     });
 
-    return [...userPosts, ...backendItems, ...riverainsItems];
+    const combined = [...userPosts, ...backendItems, ...riverainsItems];
+    return combined.filter(
+      (post) => !deletedPostsMap[post.id] && (!post.texte || !deletedPostsMap[post.texte.trim()])
+    );
   }, [signalementsData, userPosts]);
 
   // Compteurs par filtre
@@ -560,6 +656,7 @@ export default function CommunautePageBody() {
 
     const newPost = {
       id: newPostId,
+      isUserPost: true,
       isBackendSignalement: false,
       typePost: modalType,
       badgeFiltre: badgeLabel,
@@ -581,6 +678,12 @@ export default function CommunautePageBody() {
       baseViews: 1,
       comments: [],
     };
+
+    try {
+      const myPostIds = JSON.parse(localStorage.getItem('mbeund_mi_my_post_ids') || '{}');
+      myPostIds[newPostId] = true;
+      localStorage.setItem('mbeund_mi_my_post_ids', JSON.stringify(myPostIds));
+    } catch {}
 
     setUserPosts([newPost, ...userPosts]);
     setModalPostText('');
@@ -999,32 +1102,74 @@ export default function CommunautePageBody() {
                     </div>
                   </div>
 
-                  {/* Badges explicites selon le filtrage demandé */}
-                  <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                    {post.typePost === 'signalement' && (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-full bg-red-50 dark:bg-red-950/40 text-[#CC131A] dark:text-red-300 border border-red-200 dark:border-red-900">
-                        <Camera size={12} />
-                        Signalement terrain
-                      </span>
-                    )}
+                  {/* Badges explicites selon le filtrage demandé + Menu 3 points (pour l'auteur) */}
+                  <div className="flex items-start gap-2 flex-shrink-0">
+                    <div className="flex flex-col items-end gap-1">
+                      {post.typePost === 'signalement' && (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-full bg-red-50 dark:bg-red-950/40 text-[#CC131A] dark:text-red-300 border border-red-200 dark:border-red-900">
+                          <Camera size={12} />
+                          Signalement terrain
+                        </span>
+                      )}
 
-                    {post.typePost === 'entraide' && (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
-                        <Flame size={12} />
-                        Entraide & Mobilisation
-                      </span>
-                    )}
+                      {post.typePost === 'entraide' && (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                          <Flame size={12} />
+                          Entraide & Mobilisation
+                        </span>
+                      )}
 
-                    {post.typePost === 'resolu' && (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                        <CheckCircle2 size={12} />
-                        Résolu & Sécurisé
-                      </span>
-                    )}
+                      {post.typePost === 'resolu' && (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                          <CheckCircle2 size={12} />
+                          Résolu & Sécurisé
+                        </span>
+                      )}
 
-                    <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">
-                      {post.statutLabel}
-                    </span>
+                      <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">
+                        {post.statutLabel}
+                      </span>
+                    </div>
+
+                    {/* Menu 3 points uniquement pour les posts créés par le citoyen lui-même */}
+                    {isPostOwner(post) && (
+                      <div className="relative" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          aria-label="Options de la publication"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenMenuPostId((prev) => (prev === post.id ? null : post.id));
+                          }}
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-navy-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-navy-800 transition cursor-pointer"
+                          title="Options de la publication"
+                        >
+                          <MoreVertical size={18} />
+                        </button>
+
+                        {/* Menu contextuel déroulant */}
+                        {openMenuPostId === post.id && (
+                          <div
+                            role="menu"
+                            className="absolute right-0 top-9 w-52 bg-white dark:bg-[#071322] border border-slate-200 dark:border-navy-700 rounded-xl shadow-xl z-20 py-1.5 animate-in fade-in zoom-in-95 duration-150"
+                          >
+                            <button
+                              type="button"
+                              role="menuitem"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenMenuPostId(null);
+                                setPostToDelete(post);
+                              }}
+                              className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition cursor-pointer text-left"
+                            >
+                              <Trash2 size={15} className="flex-shrink-0" />
+                              <span>Supprimer la publication</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -1199,30 +1344,32 @@ export default function CommunautePageBody() {
                       )}
                     </button>
 
-                    {/* 5. Bouton SIGNALER UN ABUS (Flag) pour modération citoyenne */}
-                    <button
-                      type="button"
-                      aria-label="Signaler ce post"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (reportedIds[post.id]) return;
-                        setReportingItem({
-                          targetId: post.id,
-                          targetType: 'post',
-                          authorName: post.author.name,
-                          textSnippet: post.texte,
-                        });
-                      }}
-                      title={reportedIds[post.id] ? "Post déjà signalé pour modération" : "Signaler un contenu inapproprié ou abusif"}
-                      className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer shadow-xs ${
-                        reportedIds[post.id]
-                          ? 'bg-slate-100 dark:bg-navy-800 text-slate-400 border border-slate-200 dark:border-navy-700 cursor-default'
-                          : 'bg-slate-50 hover:bg-rose-50 text-slate-500 hover:text-red-600 border border-slate-200 dark:border-navy-800 dark:bg-navy-900/40 dark:text-slate-400 dark:hover:text-red-400'
-                      }`}
-                    >
-                      <Flag size={13} className={reportedIds[post.id] ? 'text-slate-400' : 'text-slate-400 group-hover:text-red-500'} />
-                      <span className="hidden sm:inline">{reportedIds[post.id] ? 'Signalé' : 'Signaler'}</span>
-                    </button>
+                    {/* 5. Bouton SIGNALER UN ABUS (Flag) pour modération citoyenne (uniquement sur les posts d'autres riverains) */}
+                    {!isPostOwner(post) && (
+                      <button
+                        type="button"
+                        aria-label="Signaler ce post"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (reportedIds[post.id]) return;
+                          setReportingItem({
+                            targetId: post.id,
+                            targetType: 'post',
+                            authorName: post.author.name,
+                            textSnippet: post.texte,
+                          });
+                        }}
+                        title={reportedIds[post.id] ? "Post déjà signalé pour modération" : "Signaler un contenu inapproprié ou abusif"}
+                        className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer shadow-xs ${
+                          reportedIds[post.id]
+                            ? 'bg-slate-100 dark:bg-navy-800 text-slate-400 border border-slate-200 dark:border-navy-700 cursor-default'
+                            : 'bg-slate-50 hover:bg-rose-50 text-slate-500 hover:text-red-600 border border-slate-200 dark:border-navy-800 dark:bg-navy-900/40 dark:text-slate-400 dark:hover:text-red-400'
+                        }`}
+                      >
+                        <Flag size={13} className={reportedIds[post.id] ? 'text-slate-400' : 'text-slate-400 group-hover:text-red-500'} />
+                        <span className="hidden sm:inline">{reportedIds[post.id] ? 'Signalé' : 'Signaler'}</span>
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -2043,6 +2190,55 @@ export default function CommunautePageBody() {
               >
                 <Flag size={14} />
                 <span>Confirmer le signalement</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modale de confirmation de suppression d'une publication par son auteur */}
+      {postToDelete && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+          onClick={() => setPostToDelete(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white dark:bg-[#0B1E36] rounded-2xl sm:rounded-3xl max-w-md w-full p-6 shadow-2xl border border-navy-100 dark:border-navy-800 space-y-4"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 flex items-center justify-center mx-auto">
+              <Trash2 size={24} />
+            </div>
+
+            <div className="text-center space-y-2">
+              <h3 className="text-base sm:text-lg font-black text-navy-900 dark:text-white">
+                Supprimer cette publication ?
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                Cette publication sera définitivement retirée du fil public de la Communauté.
+              </p>
+              <div className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800 text-left">
+                ℹ️ <strong>Espace Autorités préservé :</strong> Cette action retire la publication du fil citoyen sans altérer les signalements officiels enregistrés dans le système.
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setPostToDelete(null)}
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-navy-700 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-navy-800 transition cursor-pointer"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDeletePost(postToDelete)}
+                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm font-black shadow-md transition cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <Trash2 size={16} />
+                <span>Supprimer</span>
               </button>
             </div>
           </div>

@@ -63,6 +63,8 @@ export default function SignalerPageBody() {
         try {
           const sharedPost = {
             id: `shared-sig-${rawId}`,
+            rawBackendId: rawId,
+            isUserPost: true,
             isBackendSignalement: true,
             typePost: 'signalement',
             badgeFiltre: 'Signalement terrain',
@@ -86,6 +88,12 @@ export default function SignalerPageBody() {
           };
           const existing = JSON.parse(localStorage.getItem('mbeund_mi_user_community_posts') || '[]');
           localStorage.setItem('mbeund_mi_user_community_posts', JSON.stringify([sharedPost, ...existing]));
+
+          const myPostIds = JSON.parse(localStorage.getItem('mbeund_mi_my_post_ids') || '{}');
+          myPostIds[`shared-sig-${rawId}`] = true;
+          myPostIds[`backend-sig-${rawId}`] = true;
+          myPostIds[rawId] = true;
+          localStorage.setItem('mbeund_mi_my_post_ids', JSON.stringify(myPostIds));
         } catch {}
       }
 

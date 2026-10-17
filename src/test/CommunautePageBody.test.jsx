@@ -391,6 +391,55 @@ describe('CommunautePageBody', () => {
     // Toast de confirmation affiché
     expect(screen.getByText(/Signalement transmis aux modérateurs/i)).toBeInTheDocument();
   });
+
+  it('affiche le menu 3 points uniquement sur les publications de l’auteur et permet de la supprimer de la communaute sans toucher aux autorites', () => {
+    localStorage.clear();
+    render(
+      <MemoryRouter>
+        <CommunautePageBody />
+      </MemoryRouter>
+    );
+
+    // 1. Publier un nouveau post
+    const nouveauPostBtn = screen.getByRole('button', { name: /Nouveau post/i });
+    fireEvent.click(nouveauPostBtn);
+
+    const textarea = screen.getByPlaceholderText(/Que se passe-t-il dans votre ruelle/i);
+    fireEvent.change(textarea, { target: { value: 'Post citoyen à tester pour suppression' } });
+
+    const submitBtn = screen.getByRole('button', { name: /Publier le post/i });
+    fireEvent.click(submitBtn);
+
+    // Le post est visible
+    expect(screen.getByText(/Post citoyen à tester pour suppression/i)).toBeInTheDocument();
+
+    // 2. Le bouton 3 points est présent pour ce post
+    const moreOptionsButtons = screen.getAllByRole('button', { name: /Options de la publication/i });
+    expect(moreOptionsButtons.length).toBeGreaterThanOrEqual(1);
+
+    // 3. Ouvrir le menu 3 points
+    fireEvent.click(moreOptionsButtons[0]);
+
+    // L'option "Supprimer la publication" apparaît
+    const deleteOption = screen.getByRole('menuitem', { name: /Supprimer la publication/i });
+    expect(deleteOption).toBeInTheDocument();
+
+    // 4. Clic sur "Supprimer la publication" pour ouvrir la modale de confirmation
+    fireEvent.click(deleteOption);
+
+    expect(screen.getByText(/Supprimer cette publication \?/i)).toBeInTheDocument();
+    expect(screen.getByText(/Espace Autorités préservé/i)).toBeInTheDocument();
+
+    // 5. Confirmer la suppression
+    const confirmDeleteBtn = screen.getByRole('button', { name: /^Supprimer$/i });
+    fireEvent.click(confirmDeleteBtn);
+
+    // 6. Le post a disparu de la communauté
+    expect(screen.queryByText(/Post citoyen à tester pour suppression/i)).not.toBeInTheDocument();
+
+    // 7. Toast de succès affiché
+    expect(screen.getByText(/Publication retirée de l'espace Communauté/i)).toBeInTheDocument();
+  });
 });
 
 
