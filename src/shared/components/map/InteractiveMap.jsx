@@ -798,7 +798,7 @@ export default function InteractiveMap({
                       closeButton={true}
                     >
                       <div className="text-xs space-y-2.5 p-3 min-w-[220px] font-sans">
-                        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-navy-800">
+                        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-navy-800 pr-7">
                           <span className="font-extrabold text-sm text-navy-950 dark:text-white">{props.quartier}</span>
                           <span
                             className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider"
@@ -913,7 +913,7 @@ export default function InteractiveMap({
                   closeButton={true}
                 >
                   <div className="text-xs space-y-2 p-3 min-w-[200px] font-sans">
-                    <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-navy-800">
+                    <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-navy-800 pr-7">
                       <div className={`w-8 h-8 rounded-xl text-white flex items-center justify-center flex-shrink-0 ${f.properties.actif ? 'bg-emerald-600' : 'bg-slate-500'}`}>
                         <Radio size={16} />
                       </div>
@@ -982,7 +982,7 @@ export default function InteractiveMap({
                 >
                   <div className="text-xs space-y-2.5 p-3 min-w-[240px] max-w-[290px] font-sans">
                     {/* En-tête : Icône Refuge/Bâtiment + Nom + Quartier */}
-                    <div className="flex items-center gap-2.5 pb-2.5 border-b border-slate-100 dark:border-navy-800">
+                    <div className="flex items-center gap-2.5 pb-2.5 border-b border-slate-100 dark:border-navy-800 pr-7">
                       <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm shadow-emerald-600/30">
                         <Building2 size={20} />
                       </div>
@@ -1179,7 +1179,7 @@ export default function InteractiveMap({
                   >
                     <div className="text-xs space-y-2.5 p-3 min-w-[240px] max-w-[290px] font-sans">
                       {/* En-tête : Avatar + Identité + Quartier */}
-                      <div className="flex items-center gap-2.5 pb-2 border-b border-slate-100 dark:border-navy-800">
+                      <div className="flex items-center gap-2.5 pb-2 border-b border-slate-100 dark:border-navy-800 pr-7">
                         <img
                           src={avatarUrl}
                           alt={author}
@@ -1328,7 +1328,7 @@ export default function InteractiveMap({
                 closeButton={true}
               >
                 <div className="text-xs space-y-2.5 p-3 min-w-[240px] max-w-[280px] font-sans">
-                  <div className="flex items-center gap-2.5 pb-2 border-b border-slate-100 dark:border-navy-800">
+                  <div className="flex items-center gap-2.5 pb-2 border-b border-slate-100 dark:border-navy-800 pr-7">
                     <img
                       src={userLocation.avatar || '/images/avatar-amadou.jpg'}
                       alt={userLocation.name || 'Vous'}
