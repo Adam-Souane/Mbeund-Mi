@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import CommunautePageBody from '../citizen/pages/CommunautePageBody';
@@ -76,6 +76,12 @@ describe('CommunautePageBody', () => {
     // La modale s'ouvre
     expect(screen.getByText(/Nouveau post communautaire/i)).toBeInTheDocument();
     expect(screen.getByText(/Publication durable · Visible plusieurs jours par les riverains/i)).toBeInTheDocument();
+
+    // Vérification des types autorisés pour le citoyen (uniquement Signalement terrain et Entraide & Mobilisation)
+    const dialogModal = screen.getByRole('dialog');
+    expect(within(dialogModal).getByRole('button', { name: /Signalement terrain/i })).toBeInTheDocument();
+    expect(within(dialogModal).getByRole('button', { name: /Entraide & Mobilisation/i })).toBeInTheDocument();
+    expect(within(dialogModal).queryByRole('button', { name: /Résolu & Sécurisé/i })).not.toBeInTheDocument();
 
     // Remplissage du texte
     const textarea = screen.getByPlaceholderText(/Que se passe-t-il dans votre ruelle/i);

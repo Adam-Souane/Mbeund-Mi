@@ -30,6 +30,7 @@ import {
   Palette,
   ChevronDown,
   ChevronUp,
+  Tag,
 } from 'lucide-react';
 import CitizenShell from '../shared/CitizenShell';
 import { useAuth } from '../../auth/AuthContext';
@@ -217,25 +218,19 @@ export default function CommunautePageBody() {
     { id: 'passerelle', label: 'Passerelle piétonne', url: '/images/communaute-passerelle.jpg' },
   ];
 
-  // Options de catégories selon le type de post sélectionné
+  // Options de catégories selon le type de post sélectionné (sans émojis, stylisé par composants d'icônes React)
   const CATEGORIES_BY_TYPE = {
     signalement: [
-      { value: 'Eau stagnante', label: '💧 Eau stagnante' },
-      { value: 'Caniveau bouché', label: '🚰 Caniveau bouché' },
-      { value: 'Pompage requis', label: '🚜 Pompage requis' },
-      { value: 'Reflux ruissellement', label: '🌊 Reflux ruissellement' },
+      { value: 'Eau stagnante', label: 'Eau stagnante' },
+      { value: 'Caniveau bouché', label: 'Caniveau bouché' },
+      { value: 'Pompage requis', label: 'Pompage requis' },
+      { value: 'Reflux ruissellement', label: 'Reflux ruissellement' },
     ],
     entraide: [
-      { value: 'Entraide sacs de sable', label: '🧱 Entraide sacs de sable' },
-      { value: 'Volontaires & Bénévoles', label: '🤝 Volontaires & Bénévoles' },
-      { value: 'Besoin d’outils (pelles/brouettes)', label: '🛠️ Besoin d’outils' },
-      { value: 'Soutien aux concessions', label: '🏠 Soutien aux concessions' },
-    ],
-    resolu: [
-      { value: 'Passage piéton aménagé', label: '🚶 Passage piéton aménagé' },
-      { value: 'Décrue constatée', label: '📉 Décrue constatée' },
-      { value: 'Voie sécurisée & Canaux dégagés', label: '✅ Voie sécurisée' },
-      { value: 'Pompage terminé', label: '✨ Pompage terminé' },
+      { value: 'Entraide sacs de sable', label: 'Entraide sacs de sable' },
+      { value: 'Volontaires & Bénévoles', label: 'Volontaires & Bénévoles' },
+      { value: 'Besoin d’outils (pelles/brouettes)', label: 'Besoin d’outils (pelles/brouettes)' },
+      { value: 'Soutien aux concessions', label: 'Soutien aux concessions' },
     ],
   };
 
@@ -1265,6 +1260,9 @@ export default function CommunautePageBody() {
           onClick={() => setIsPostModalOpen(false)}
         >
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Nouveau post communautaire"
             className="relative w-full max-w-lg bg-white dark:bg-[#071322] border border-navy-100 dark:border-navy-800 rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
@@ -1308,7 +1306,7 @@ export default function CommunautePageBody() {
                 <label className="block text-xs font-black text-navy-900 dark:text-white uppercase tracking-wider mb-1.5">
                   Type de publication
                 </label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => handleTypeChange('signalement')}
@@ -1334,19 +1332,6 @@ export default function CommunautePageBody() {
                     <Flame size={16} />
                     <span className="text-[11px] leading-tight">Entraide & Mobilisation</span>
                   </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleTypeChange('resolu')}
-                    className={`p-2.5 rounded-xl border text-center transition cursor-pointer flex flex-col items-center gap-1 ${
-                      modalType === 'resolu'
-                        ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-black'
-                        : 'border-slate-200 dark:border-navy-700 bg-slate-50 dark:bg-navy-900 text-slate-600 dark:text-slate-300'
-                    }`}
-                  >
-                    <CheckCircle2 size={16} />
-                    <span className="text-[11px] leading-tight">Résolu & Sécurisé</span>
-                  </button>
                 </div>
               </div>
 
@@ -1366,37 +1351,45 @@ export default function CommunautePageBody() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-black text-navy-900 dark:text-white uppercase tracking-wider mb-1.5">
-                    Quartier
+                  <label className="flex items-center gap-1.5 text-xs font-black text-navy-900 dark:text-white uppercase tracking-wider mb-1.5">
+                    <MapPin size={13} className="text-[#0B2545] dark:text-blue-400" />
+                    <span>Quartier</span>
                   </label>
-                  <select
-                    value={modalQuartier}
-                    onChange={(e) => setModalQuartier(e.target.value)}
-                    className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-navy-700 bg-white dark:bg-navy-900 text-navy-900 dark:text-white font-bold"
-                  >
-                    <option value="Ndakhane (Thiaroye)">📍 Ndakhane Cuvette</option>
-                    <option value="Thiaroye Plage">📍 Thiaroye Plage</option>
-                    <option value="Thiaroye Gare">📍 Thiaroye Gare</option>
-                    <option value="CEM Thiaroye 44">📍 CEM Thiaroye 44</option>
-                    <option value="Thiaroye Minam">📍 Thiaroye Minam</option>
-                  </select>
+                  <div className="relative">
+                    <MapPin size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
+                    <select
+                      value={modalQuartier}
+                      onChange={(e) => setModalQuartier(e.target.value)}
+                      className="w-full text-xs pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 dark:border-navy-700 bg-white dark:bg-navy-900 text-navy-900 dark:text-white font-bold cursor-pointer"
+                    >
+                      <option value="Ndakhane (Thiaroye)">Ndakhane Cuvette</option>
+                      <option value="Thiaroye Plage">Thiaroye Plage</option>
+                      <option value="Thiaroye Gare">Thiaroye Gare</option>
+                      <option value="CEM Thiaroye 44">CEM Thiaroye 44</option>
+                      <option value="Thiaroye Minam">Thiaroye Minam</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-black text-navy-900 dark:text-white uppercase tracking-wider mb-1.5">
-                    Catégorie
+                  <label className="flex items-center gap-1.5 text-xs font-black text-navy-900 dark:text-white uppercase tracking-wider mb-1.5">
+                    <Tag size={13} className="text-[#0B2545] dark:text-blue-400" />
+                    <span>Catégorie</span>
                   </label>
-                  <select
-                    value={modalCategorie}
-                    onChange={(e) => setModalCategorie(e.target.value)}
-                    className="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-navy-700 bg-white dark:bg-navy-900 text-navy-900 dark:text-white font-bold"
-                  >
-                    {(CATEGORIES_BY_TYPE[modalType] || []).map((cat) => (
-                      <option key={cat.value} value={cat.value}>
-                        {cat.label}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <Tag size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
+                    <select
+                      value={modalCategorie}
+                      onChange={(e) => setModalCategorie(e.target.value)}
+                      className="w-full text-xs pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 dark:border-navy-700 bg-white dark:bg-navy-900 text-navy-900 dark:text-white font-bold cursor-pointer"
+                    >
+                      {(CATEGORIES_BY_TYPE[modalType] || []).map((cat) => (
+                        <option key={cat.value} value={cat.value}>
+                          {cat.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
 
