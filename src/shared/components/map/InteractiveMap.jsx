@@ -379,18 +379,40 @@ function FocusSignalement({ signalements, selectedId, selectedQuartier, markerRe
         const key = target.id ?? target.properties?.id;
         if (lastFocusedIdRef.current !== `${key}-${selectedId}`) {
           lastFocusedIdRef.current = `${key}-${selectedId}`;
-          map.flyTo(point, 16.5, { duration: 0.9 });
-          setTimeout(() => {
+          map.flyTo(point, 16.5, { duration: 0.6 });
+          map.once('moveend', () => {
             const marker = markerRefs.current?.[key];
             if (marker && typeof marker.openPopup === 'function') {
               marker.openPopup();
             }
-          }, 350);
+          });
         }
       }
     }
   }, [signalements, selectedId, selectedQuartier, map, markerRefs]);
 
+  return null;
+}
+
+// Recalibre immédiatement les dimensions internes de Leaflet dès que le conteneur change
+function MapAutoResizer() {
+  const map = useMap();
+  useEffect(() => {
+    const handleResize = () => {
+      if (typeof map?.invalidateSize === 'function') {
+        map.invalidateSize({ animate: false });
+      }
+    };
+    handleResize();
+    const t1 = setTimeout(handleResize, 100);
+    const t2 = setTimeout(handleResize, 350);
+    window.addEventListener('resize', handleResize);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [map]);
   return null;
 }
 
@@ -622,6 +644,7 @@ export default function InteractiveMap({
         style={{ width: '100%', height: '100%' }}
       >
         <ZoomControl position="topleft" />
+        <MapAutoResizer />
         <MapZoomListener onZoomChange={setZoomLevel} />
         <RecenterButton center={THIAROYE_CENTER} defaultZoom={14.5} />
 
@@ -698,22 +721,14 @@ export default function InteractiveMap({
                   <Marker
                     position={center}
                     icon={totemIcon}
-                    eventHandlers={{
-                      click: (e) => {
-                        const map = e.target._map;
-                        if (map) {
-                          map.flyTo(center, Math.max(map.getZoom(), 15.5), {
-                            duration: 0.8,
-                          });
-                        }
-                      },
-                    }}
                   >
                     <Popup
                       className="citizen-map-popup"
                       minWidth={260}
                       maxWidth={320}
                       autoPan={true}
+                      autoPanPaddingTopLeft={[20, 95]}
+                      autoPanPaddingBottomRight={[20, 20]}
                       closeButton={true}
                     >
                       <div className="text-xs space-y-2.5 p-3 min-w-[220px] font-sans">
@@ -885,24 +900,14 @@ export default function InteractiveMap({
                 key={`refuge-pin-${fid}-${zoomLevel >= 15 ? 'hi' : 'low'}`}
                 position={point}
                 icon={refugeIcon}
-                eventHandlers={{
-                  click: (e) => {
-                    const map = e.target._map;
-                    if (map) {
-                      map.flyTo(point, Math.max(map.getZoom(), 16.5), {
-                        duration: 0.8,
-                        easeLinearity: 0.25,
-                      });
-                    }
-                  },
-                }}
               >
                 <Popup
                   className="citizen-map-popup"
                   minWidth={290}
                   maxWidth={340}
                   autoPan={true}
-                  autoPanPadding={[50, 70]}
+                  autoPanPaddingTopLeft={[20, 95]}
+                  autoPanPaddingBottomRight={[20, 20]}
                   keepInView={true}
                   closeButton={true}
                 >
@@ -1077,24 +1082,14 @@ export default function InteractiveMap({
                   ref={(ref) => {
                     if (ref) markerRefs.current[fid] = ref;
                   }}
-                  eventHandlers={{
-                    click: (e) => {
-                      const map = e.target._map;
-                      if (map) {
-                        map.flyTo(point, Math.max(map.getZoom(), 16.5), {
-                          duration: 0.8,
-                          easeLinearity: 0.25,
-                        });
-                      }
-                    },
-                  }}
                 >
                   <Popup
                     className="citizen-map-popup"
-                    minWidth={310}
-                    maxWidth={360}
+                    minWidth={300}
+                    maxWidth={350}
                     autoPan={true}
-                    autoPanPadding={[50, 70]}
+                    autoPanPaddingTopLeft={[20, 95]}
+                    autoPanPaddingBottomRight={[20, 20]}
                     keepInView={true}
                     closeButton={true}
                   >
