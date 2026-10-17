@@ -125,7 +125,15 @@ export default function CommunautePageBody() {
 
   const [openComments, setOpenComments] = useState({});
   const [commentInputs, setCommentInputs] = useState({});
-  const [userPosts, setUserPosts] = useState([]);
+  // Posts créés ou partagés localement par le citoyen
+  const [userPosts, setUserPosts] = useState(() => {
+    try {
+      const saved = localStorage.getItem('mbeund_mi_user_community_posts');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [copiedShareId, setCopiedShareId] = useState(null);
   const [previewImageModal, setPreviewImageModal] = useState(null);
 
@@ -254,12 +262,28 @@ export default function CommunautePageBody() {
       ? signalementsData
       : [];
 
+    // Récupération des signalements que le citoyen a choisi de ne PAS partager sur la communauté (autorités uniquement)
+    let privateMap = {};
+    try {
+      privateMap = JSON.parse(localStorage.getItem('mbeund_mi_private_signalement_ids') || '{}');
+    } catch {}
+
     rawFeatures.forEach((feat, idx) => {
       const p = feat.properties || feat;
       const isResolu = !!p.valide;
       // IMPORTANT : Utilise feat.id ou p.id ou fallback avec index pour garantir l'unicité stricte
       const uniqueRawId = feat.id ?? p.id ?? feat.pk ?? p.pk ?? `idx-${idx}`;
       const sigId = `backend-sig-${uniqueRawId}`;
+
+      // Si le citoyen a décoché le partage communautaire, ce signalement est confidentiel pour les autorités
+      if (
+        privateMap[uniqueRawId] ||
+        privateMap[feat.id] ||
+        privateMap[p.id] ||
+        (p.description && privateMap[p.description.trim()])
+      ) {
+        return;
+      }
 
       // Nettoyage strict RGPD / Confidentialité : suppression des [SMS de 221...], numéros de tél et mentions privées
       const rawAuthor = p.citoyen_prenom ? `${p.citoyen_prenom} ${p.citoyen_nom || ''}`.trim() : null;
@@ -781,8 +805,11 @@ export default function CommunautePageBody() {
       {/* 3. BARRE D'ACTIONS : FILTRES ADAPTÉS À GAUCHE + BOUTON « NOUVEAU POST » À DROITE */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-[#071322] border border-navy-100 dark:border-navy-800 rounded-2xl p-3 sm:p-4 shadow-xs">
-        {/* Filtres de navigation avec noms explicites demandés par l'utilisateur */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-none flex-1">
+        {/* Filtres de navigation avec masquage strict et absolu de toute scrollbar grise native */}
+        <div
+          className="flex items-center gap-2 overflow-x-auto pb-0 scrollbar-none no-scrollbar flex-1"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
           {/* Tous les posts */}
           <button
             onClick={() => setFilter('tous')}

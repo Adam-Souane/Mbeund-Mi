@@ -85,6 +85,9 @@ vi.mock('lucide-react', () => ({
   LocateFixed: () => <span data-testid="locate-icon" />,
   CheckCircle2: () => <span data-testid="check-icon" />,
   Loader2: () => <span data-testid="loader-icon" />,
+  ShieldCheck: () => <span data-testid="shield-icon" />,
+  Users: () => <span data-testid="users-icon" />,
+  EyeOff: () => <span data-testid="eye-off-icon" />,
 }));
 
 describe('SignalerPageBody', () => {
@@ -264,5 +267,61 @@ describe('SignalerPageBody', () => {
 
     expect(resetMock).toHaveBeenCalled();
     expect(mutateMock).toHaveBeenCalled();
+  });
+
+  it('affiche le carré de choix et permet d envoyer en diffusion publique ou confidentielle', async () => {
+    localStorage.clear();
+    render(<SignalerPageBody />);
+
+    const checkbox = screen.getByRole('checkbox', {
+      name: /Partager également sur l'Espace Communauté/i,
+    });
+    expect(checkbox).toBeInTheDocument();
+    expect(checkbox).toBeChecked();
+    expect(screen.getByText(/visible par les riverains sur le fil public/i)).toBeInTheDocument();
+
+    // Décocher la case pour rendre le signalement confidentiel (autorité uniquement)
+    fireEvent.click(checkbox);
+    expect(checkbox).not.toBeChecked();
+    expect(screen.queryByText(/visible par les riverains sur le fil public/i)).not.toBeInTheDocument();
+
+    // Saisie d'une description et envoi
+    fireEvent.change(screen.getByPlaceholderText(/Eau stagnante devant/i), {
+      target: { value: 'Fuite égout discrète' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Envoyer le signalement' }));
+
+    await waitFor(() => {
+      expect(createSignalementMock).toHaveBeenCalled();
+    });
+
+    // L'écran de succès indique la transmission confidentielle aux autorités
+    expect(screen.getByText(/Votre signalement a été transmis en toute confidentialité aux autorités uniquement/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Voir dans la Communauté/i })).not.toBeInTheDocument();
+  });
+
+  it('permet de partager sur la communaute quand la case est cochee et affiche le bouton Voir dans la Communaute', async () => {
+    localStorage.clear();
+    render(<SignalerPageBody />);
+
+    const checkbox = screen.getByRole('checkbox', {
+      name: /Partager également sur l'Espace Communauté/i,
+    });
+    expect(checkbox).toBeChecked();
+
+    fireEvent.change(screen.getByPlaceholderText(/Eau stagnante devant/i), {
+      target: { value: 'Inondation majeure rue 12' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Envoyer le signalement' }));
+
+    await waitFor(() => {
+      expect(createSignalementMock).toHaveBeenCalled();
+    });
+
+    // Écran de succès avec bouton Communauté
+    expect(screen.getByText(/partagé avec les riverains sur l'espace Communauté/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Voir dans la Communauté/i })).toBeInTheDocument();
   });
 });
