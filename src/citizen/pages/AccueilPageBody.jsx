@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Camera, MapPin as MapPinIcon, CloudRain, PhoneCall, MapPin, ShieldCheck, ChevronRight } from 'lucide-react';
+import { Camera, MapPin as MapPinIcon, CloudRain, PhoneCall, MapPin, ShieldCheck, ChevronRight, Users } from 'lucide-react';
 import CitizenShell from '../shared/CitizenShell';
 import GaugeRisk from '../../shared/components/GaugeRisk';
 import WeatherWidget from '../../shared/components/WeatherWidget';
@@ -176,72 +176,94 @@ export default function AccueilPageBody() {
         </p>
       )}
 
-      {/* 2. Titre de section : Actions Rapides & Services Citoyens */}
-      <div className="w-full text-center pt-2 pb-1">
-        <div className="inline-flex items-center justify-center gap-2 mb-1">
-          <div className="w-2 h-4 rounded-full bg-[#CC131A]" />
-          <h2 className="text-lg sm:text-xl font-black text-navy-900 dark:text-white tracking-tight">
-            Actions Prioritaires & Services
-          </h2>
-          <div className="w-2 h-4 rounded-full bg-[#CC131A]" />
+      {/* 2. Capsules d'Actions Express Citoyennes (Flottantes, légères & vivantes) */}
+      <div className="w-full pt-1 pb-2">
+        <div className="flex items-center justify-between mb-2.5 px-1">
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-3.5 rounded-full bg-[#CC131A]" />
+            <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-navy-900 dark:text-white">
+              Actions Express & Services
+            </h2>
+          </div>
+          <span className="text-[11px] font-bold text-navy-400 dark:text-navy-500">
+            Accès direct
+          </span>
         </div>
-        <p className="text-xs sm:text-sm text-navy-500 dark:text-navy-400 max-w-xl mx-auto">
-          Accédez rapidement aux outils essentiels : signalez une inondation, explorez la carte ou consultez les alertes.
-        </p>
-      </div>
 
-      {/* 3 tuiles prioritaires sur la même ligne (grid-cols-3 sur tous les écrans, mobile inclus) */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-4 md:gap-5 w-full pb-2">
-        {/* Tuile 1 : Signaler */}
-        <Link
-          to="/citoyen/signaler"
-          className="group flex flex-col items-center justify-center text-center p-2.5 sm:p-5 rounded-2xl sm:rounded-3xl bg-white dark:bg-[#071322] border-2 border-red-100/80 dark:border-red-950/60 hover:border-red-400 dark:hover:border-red-700 shadow-xs hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 active:scale-95 cursor-pointer"
-        >
-          <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-red-50 dark:bg-red-950/60 text-red-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform shadow-xs mb-1.5 sm:mb-2">
-            <Camera size={22} className="sm:hidden" />
-            <Camera size={26} className="hidden sm:block" />
-          </div>
-          <h4 className="text-xs sm:text-base font-black text-navy-900 dark:text-white group-hover:text-red-600 transition-colors leading-tight">
-            Signaler
-          </h4>
-          <p className="text-[10px] sm:text-xs text-navy-500 dark:text-navy-400 truncate w-full mt-0.5">
-            Zone inondée
-          </p>
-        </Link>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5 w-full">
+          {/* Capsule 1 : Signaler */}
+          <Link
+            to="/citoyen/signaler"
+            className="group relative overflow-hidden flex items-center gap-3 p-3 sm:p-3.5 rounded-2xl bg-white dark:bg-[#071322] border border-red-200/80 dark:border-red-950/60 hover:border-red-400 dark:hover:border-red-700 shadow-xs hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer"
+          >
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-red-500 to-[#CC131A] text-white flex items-center justify-center flex-shrink-0 shadow-sm shadow-red-500/30 group-hover:scale-105 transition-transform">
+              <Camera size={19} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-xs sm:text-sm font-black text-navy-900 dark:text-white group-hover:text-red-600 transition-colors leading-tight truncate">
+                Signaler
+              </h3>
+              <p className="text-[10px] sm:text-[11px] text-navy-500 dark:text-navy-400 font-medium truncate mt-0.5">
+                Zone inondée
+              </p>
+            </div>
+            <span className="w-2 h-2 rounded-full bg-[#CC131A] animate-pulse flex-shrink-0 mr-0.5" title="Action prioritaire" />
+          </Link>
 
-        {/* Tuile 2 : Carte */}
-        <Link
-          to="/citoyen/carte"
-          className="group flex flex-col items-center justify-center text-center p-2.5 sm:p-5 rounded-2xl sm:rounded-3xl bg-white dark:bg-[#071322] border-2 border-blue-100/80 dark:border-blue-950/60 hover:border-blue-400 dark:hover:border-blue-700 shadow-xs hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 active:scale-95 cursor-pointer"
-        >
-          <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform shadow-xs mb-1.5 sm:mb-2">
-            <MapPin size={22} className="sm:hidden" />
-            <MapPin size={26} className="hidden sm:block" />
-          </div>
-          <h4 className="text-xs sm:text-base font-black text-navy-900 dark:text-white group-hover:text-blue-600 transition-colors leading-tight">
-            Carte
-          </h4>
-          <p className="text-[10px] sm:text-xs text-navy-500 dark:text-navy-400 truncate w-full mt-0.5">
-            Risques direct
-          </p>
-        </Link>
+          {/* Capsule 2 : Carte */}
+          <Link
+            to="/citoyen/carte"
+            className="group relative overflow-hidden flex items-center gap-3 p-3 sm:p-3.5 rounded-2xl bg-white dark:bg-[#071322] border border-blue-200/80 dark:border-blue-950/60 hover:border-blue-400 dark:hover:border-blue-700 shadow-xs hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer"
+          >
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm shadow-blue-500/30 group-hover:scale-105 transition-transform">
+              <MapPin size={19} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-xs sm:text-sm font-black text-navy-900 dark:text-white group-hover:text-blue-600 transition-colors leading-tight truncate">
+                Carte
+              </h3>
+              <p className="text-[10px] sm:text-[11px] text-navy-500 dark:text-navy-400 font-medium truncate mt-0.5">
+                Ruelles & risques
+              </p>
+            </div>
+          </Link>
 
-        {/* Tuile 3 : Prévisions */}
-        <Link
-          to="/citoyen/alertes"
-          className="group flex flex-col items-center justify-center text-center p-2.5 sm:p-5 rounded-2xl sm:rounded-3xl bg-white dark:bg-[#071322] border-2 border-sky-100/80 dark:border-sky-950/60 hover:border-sky-400 dark:hover:border-sky-700 shadow-xs hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 active:scale-95 cursor-pointer"
-        >
-          <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-sky-50 dark:bg-sky-950/60 text-sky-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform shadow-xs mb-1.5 sm:mb-2">
-            <CloudRain size={22} className="sm:hidden" />
-            <CloudRain size={26} className="hidden sm:block" />
-          </div>
-          <h4 className="text-xs sm:text-base font-black text-navy-900 dark:text-white group-hover:text-sky-600 transition-colors leading-tight">
-            Prévisions
-          </h4>
-          <p className="text-[10px] sm:text-xs text-navy-500 dark:text-navy-400 truncate w-full mt-0.5">
-            Météo & pluie
-          </p>
-        </Link>
+          {/* Capsule 3 : Entraide */}
+          <Link
+            to="/citoyen/communaute"
+            className="group relative overflow-hidden flex items-center gap-3 p-3 sm:p-3.5 rounded-2xl bg-white dark:bg-[#071322] border border-emerald-200/80 dark:border-emerald-950/60 hover:border-emerald-400 dark:hover:border-emerald-700 shadow-xs hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer"
+          >
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm shadow-emerald-500/30 group-hover:scale-105 transition-transform">
+              <Users size={19} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-xs sm:text-sm font-black text-navy-900 dark:text-white group-hover:text-emerald-600 transition-colors leading-tight truncate">
+                Entraide
+              </h3>
+              <p className="text-[10px] sm:text-[11px] text-navy-500 dark:text-navy-400 font-medium truncate mt-0.5">
+                Stories du quartier
+              </p>
+            </div>
+          </Link>
+
+          {/* Capsule 4 : Prévisions */}
+          <Link
+            to="/citoyen/alertes"
+            className="group relative overflow-hidden flex items-center gap-3 p-3 sm:p-3.5 rounded-2xl bg-white dark:bg-[#071322] border border-amber-200/80 dark:border-amber-950/60 hover:border-amber-400 dark:hover:border-amber-700 shadow-xs hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer"
+          >
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 text-white flex items-center justify-center flex-shrink-0 shadow-sm shadow-amber-500/30 group-hover:scale-105 transition-transform">
+              <CloudRain size={19} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-xs sm:text-sm font-black text-navy-900 dark:text-white group-hover:text-amber-600 transition-colors leading-tight truncate">
+                Prévisions
+              </h3>
+              <p className="text-[10px] sm:text-[11px] text-navy-500 dark:text-navy-400 font-medium truncate mt-0.5">
+                Pluies & alertes
+              </p>
+            </div>
+          </Link>
+        </div>
       </div>
 
       {/* Amélioration 1 : Encart Lieu Sûr & Refuge le plus proche du quartier */}
