@@ -120,9 +120,9 @@ export default function AccueilPageBody() {
             <div className={`absolute top-0 right-0 w-96 h-96 bg-gradient-to-br ${theme.bgAura} rounded-full blur-3xl pointer-events-none opacity-40`} />
 
             {/* 5. Contenu textuel et indicateurs flottant librement dans l'espace ouvert */}
-            <div className="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10 text-white">
+            <div className="w-full max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center justify-between gap-8 lg:gap-12 xl:gap-16 relative z-10 text-white">
               {/* Salutation humaine & territoriale */}
-              <div className="space-y-2 max-w-xl">
+              <div className="space-y-2 flex-1 min-w-0 max-w-2xl">
                 {/* Pastille territoriale */}
                 <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/20 dark:bg-white/10 backdrop-blur-md border border-white/25 text-xs font-bold text-white shadow-xs">
                   <MapPin size={13} className="text-[#CC131A] flex-shrink-0" />
@@ -135,7 +135,7 @@ export default function AccueilPageBody() {
                 </div>
 
                 {/* Grand titre chaleureux et accueillant */}
-                <h1 className="text-2xl sm:text-3xl md:text-5xl font-black text-white tracking-tight leading-tight drop-shadow-md">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight drop-shadow-md break-words">
                   Bonjour, <span className="bg-gradient-to-r from-amber-300 via-orange-300 to-white bg-clip-text text-transparent">{nomCitoyen}</span>
                 </h1>
                 <p className="text-xs sm:text-sm font-extrabold text-amber-300 drop-shadow-xs">
@@ -147,8 +147,8 @@ export default function AccueilPageBody() {
                 </p>
               </div>
 
-              {/* Statut de vigilance organique et flottant */}
-              <div className="flex items-center gap-3.5 self-start lg:self-center flex-shrink-0 bg-slate-900/75 dark:bg-navy-950/80 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/20 shadow-xl text-white">
+              {/* Statut de vigilance organique et flottant bien ancré à droite avec marge garantie */}
+              <div className="flex items-center gap-3.5 self-start lg:self-center flex-shrink-0 bg-slate-900/75 dark:bg-navy-950/80 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/20 shadow-xl text-white lg:ml-4">
                 <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 border ${theme.iconBg}`}>
                   <ShieldCheck size={24} />
                 </div>
