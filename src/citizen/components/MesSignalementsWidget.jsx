@@ -116,16 +116,15 @@ export default function MesSignalementsWidget({ className = '' }) {
             </div>
           </div>
 
-          {/* Bouton "Voir mes signalements" (Option B choisie par l'utilisateur) */}
-          <button
-            type="button"
-            onClick={() => setShowHistoriqueModal(true)}
+          {/* Lien "Voir mes signalements" redirigeant vers la page d'historique complète */}
+          <Link
+            to="/citoyen/mes-signalements"
             className="text-xs font-bold text-[#CC131A] dark:text-red-400 hover:underline flex items-center gap-0.5 cursor-pointer py-1 px-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 transition"
             title="Consulter l'historique complet de mes signalements"
           >
             <span>Voir mes signalements</span>
             <ChevronRight size={14} />
-          </button>
+          </Link>
         </div>
 
         {/* ── LISTE DES 3 SIGNALEMENTS AVEC PHOTOS RÉALISTES DE THIAROYE ── */}
