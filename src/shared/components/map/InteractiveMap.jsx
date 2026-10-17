@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { MapContainer, TileLayer, Polygon, Polyline, CircleMarker, Marker, Popup, useMap, ZoomControl } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -540,6 +540,46 @@ function RecenterButton({ center = THIAROYE_CENTER, defaultZoom = 14.5 }) {
   );
 }
 
+function createClusterIcon(count, statusColor) {
+  return L.divIcon({
+    className: 'custom-leaflet-cluster-pin',
+    html: `
+      <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; cursor: pointer;">
+        <span style="position: absolute; width: 100%; height: 100%; border-radius: 9999px; background-color: ${statusColor}; opacity: 0.35; animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></span>
+        <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 9999px; background: ${statusColor}; color: white; font-weight: 900; font-size: 13px; box-shadow: 0 8px 16px -2px rgba(0, 0, 0, 0.35); border: 2.5px solid white; user-select: none;">
+          ${count}
+        </div>
+      </div>
+    `,
+    iconSize: [44, 44],
+    iconAnchor: [22, 22],
+  });
+}
+
+function ClusterMarker({ position, count, highestSeverity }) {
+  const map = useMap();
+  const clusterIcon = useMemo(
+    () => createClusterIcon(count, highestSeverity),
+    [count, highestSeverity]
+  );
+
+  return (
+    <Marker
+      position={position}
+      icon={clusterIcon}
+      zIndexOffset={800}
+      eventHandlers={{
+        click: () => {
+          if (map && typeof map.flyTo === 'function') {
+            const currentZoom = map.getZoom ? map.getZoom() : 13;
+            map.flyTo(position, Math.min(currentZoom + 2.5, 16.5), { duration: 0.6 });
+          }
+        },
+      }}
+    />
+  );
+}
+
 /**
  * Carte SIG partagée citoyen/autorité avec Avatars Vivants style "Snap Map" / Waze.
  */
@@ -603,6 +643,78 @@ export default function InteractiveMap({
       setInternalVisible((v) => ({ ...v, [key]: !v[key] }));
     }
   };
+
+  // OPTIMISATION SCALABILITÉ : Clustering spatial par grille lorsque zoom < 14 et densité > 15 signalements
+  const shouldClusterSignalements = zoomLevel < 14 && (signalements?.length || 0) > 15;
+
+  const { clusteredSignalements, individualSignalements } = useMemo(() => {
+    if (!shouldClusterSignalements || !signalements?.length) {
+      return { clusteredSignalements: [], individualSignalements: signalements || [] };
+    }
+
+    const step = zoomLevel <= 11 ? 0.025 : zoomLevel === 12 ? 0.015 : 0.008;
+    const grid = new Map();
+    const direct = [];
+
+    for (const f of signalements) {
+      const point = pointToLatLng(f.geometry || f.localisation);
+      if (!point) continue;
+      const props = f.properties || f;
+      const fid = f.id ?? props.id;
+      const isSelected = !!selectedSignalementId && (
+        String(fid) === String(selectedSignalementId) ||
+        String(fid) === String(selectedSignalementId).replace('backend-sig-', '').replace('shared-sig-', '') ||
+        String(props.rawBackendId) === String(selectedSignalementId)
+      );
+      const isCurrentUser = Boolean(props.isCurrentUser || props.isMine);
+
+      if (isSelected || isCurrentUser) {
+        direct.push(f);
+        continue;
+      }
+
+      if (viewportBounds && typeof viewportBounds.contains === 'function' && !viewportBounds.contains(point)) {
+        continue;
+      }
+
+      const gridKey = `${Math.floor(point[0] / step)}_${Math.floor(point[1] / step)}`;
+      if (!grid.has(gridKey)) {
+        grid.set(gridKey, []);
+      }
+      grid.get(gridKey).push({ item: f, point });
+    }
+
+    const clusters = [];
+    grid.forEach((group, key) => {
+      if (group.length === 1) {
+        direct.push(group[0].item);
+      } else {
+        const avgLat = group.reduce((acc, g) => acc + g.point[0], 0) / group.length;
+        const avgLng = group.reduce((acc, g) => acc + g.point[1], 0) / group.length;
+
+        let hasActive = false;
+        let hasEnCours = false;
+        for (const g of group) {
+          const p = g.item.properties || g.item;
+          const isRes = !!p.valide || p.statut === 'resolu';
+          const isEnc = p.statut === 'en_cours';
+          if (!isRes && !isEnc) hasActive = true;
+          if (isEnc) hasEnCours = true;
+        }
+
+        const highestColor = hasActive ? '#DC2626' : (hasEnCours ? '#F59E0B' : '#10B981');
+
+        clusters.push({
+          id: `cluster-${key}`,
+          position: [avgLat, avgLng],
+          count: group.length,
+          highestColor,
+        });
+      }
+    });
+
+    return { clusteredSignalements: clusters, individualSignalements: direct };
+  }, [signalements, shouldClusterSignalements, zoomLevel, viewportBounds, selectedSignalementId]);
 
   return (
     <div
@@ -1093,8 +1205,19 @@ export default function InteractiveMap({
             );
           })}
 
+        {/* Clusters de signalements quand le zoom est dézoomé */}
         {visible.signalements !== false &&
-          signalements?.map((f) => {
+          clusteredSignalements.map((c) => (
+            <ClusterMarker
+              key={c.id}
+              position={c.position}
+              count={c.count}
+              highestSeverity={c.highestColor}
+            />
+          ))}
+
+        {visible.signalements !== false &&
+          individualSignalements?.map((f) => {
             const point = pointToLatLng(f.geometry || f.localisation);
             if (!point) return null;
             const props = f.properties || f;

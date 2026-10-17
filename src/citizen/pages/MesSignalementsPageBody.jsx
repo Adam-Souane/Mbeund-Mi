@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import CitizenShell from '../shared/CitizenShell';
 import { useMySignalements } from '../../shared/hooks/useMySignalements';
+import { useDebounce } from '../../shared/hooks/useDebounce';
 import { formatCompactDate } from '../../shared/utils/dateFormatter';
 
 // Photos de remplacement authentiques de Thiaroye en cas de défaut de chargement
@@ -141,6 +142,7 @@ export default function MesSignalementsPageBody() {
   const [highlightedId, setHighlightedId] = useState(null);
 
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebounce(searchQuery, 200);
   const [filterStatut, setFilterStatut] = useState('tous'); // 'tous' | 'en_attente' | 'en_cours' | 'resolus'
   const [activePhotoModal, setActivePhotoModal] = useState(null);
 
@@ -174,7 +176,7 @@ export default function MesSignalementsPageBody() {
 
   // Filtrage combiné par statut et par recherche (quartier ou mot-clé)
   const filteredSignalements = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
+    const q = debouncedSearchQuery.trim().toLowerCase();
     return signalementsList.filter((item) => {
       // Filtre statut
       if (filterStatut !== 'tous' && item.statutCode !== filterStatut) {
@@ -192,7 +194,7 @@ export default function MesSignalementsPageBody() {
       }
       return true;
     });
-  }, [signalementsList, filterStatut, searchQuery]);
+  }, [signalementsList, filterStatut, debouncedSearchQuery]);
 
   // Compteurs pour chaque onglet
   const counts = useMemo(() => {
