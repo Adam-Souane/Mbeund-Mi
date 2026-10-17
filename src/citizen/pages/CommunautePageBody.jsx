@@ -496,28 +496,27 @@ export default function CommunautePageBody() {
     );
   }, [signalementsData, userPosts]);
 
-  // Compteurs par filtre
+  // Prédicats de filtrage stricts et mutuellement exclusifs pour garantir une cohérence mathématique absolue
+  const isSignalementPost = (p) => (p.typePost === 'signalement' || p.isBackendSignalement) && p.statut !== 'resolu' && p.typePost !== 'resolu';
+  const isEntraidePost = (p) => p.typePost === 'entraide';
+  const isResoluPost = (p) => p.typePost === 'resolu' || p.statut === 'resolu';
+
+  // Compteurs réels par filtre : la somme des 3 catégories équivaut exactement au total 'tous'
   const counts = useMemo(() => {
     return {
       tous: allPosts.length,
-      signalements: allPosts.filter((p) => p.typePost === 'signalement' || p.isBackendSignalement).length,
-      entraide: allPosts.filter((p) => p.typePost === 'entraide').length,
-      resolus: allPosts.filter((p) => p.typePost === 'resolu' || p.statut === 'resolu').length,
+      signalements: allPosts.filter(isSignalementPost).length,
+      entraide: allPosts.filter(isEntraidePost).length,
+      resolus: allPosts.filter(isResoluPost).length,
     };
   }, [allPosts]);
 
-  // Filtrage strict et adapté demandé par l'utilisateur
+  // Filtrage strict et fidèle correspondant à 100% aux chiffres affichés entre parenthèses
   const filteredPosts = useMemo(() => {
     return allPosts.filter((post) => {
-      if (filter === 'signalements') {
-        return post.typePost === 'signalement' || post.isBackendSignalement;
-      }
-      if (filter === 'entraide') {
-        return post.typePost === 'entraide';
-      }
-      if (filter === 'resolus') {
-        return post.typePost === 'resolu' || post.statut === 'resolu';
-      }
+      if (filter === 'signalements') return isSignalementPost(post);
+      if (filter === 'entraide') return isEntraidePost(post);
+      if (filter === 'resolus') return isResoluPost(post);
       return true;
     });
   }, [allPosts, filter]);

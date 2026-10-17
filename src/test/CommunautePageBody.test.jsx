@@ -452,6 +452,40 @@ describe('CommunautePageBody', () => {
     // 7. Toast de succès affiché
     expect(screen.getByText(/Publication retirée de l'espace Communauté/i)).toBeInTheDocument();
   });
+
+  it('affiche des compteurs entre parenthèses rigoureusement exacts dont la somme égale le total', () => {
+    localStorage.clear();
+    render(
+      <MemoryRouter>
+        <CommunautePageBody />
+      </MemoryRouter>
+    );
+
+    // Extraction des textes des boutons de filtres
+    const tousBtn = screen.getByRole('button', { name: /Tous les posts/i });
+    const sigBtn = screen.getByRole('button', { name: /Signalements terrain/i });
+    const entBtn = screen.getByRole('button', { name: /Entraide & Mobilisation/i });
+    const resBtn = screen.getByRole('button', { name: /Résolus & Sécurisés/i });
+
+    const extractCount = (btn) => {
+      const match = btn.textContent.match(/\((\d+)\)/);
+      return match ? parseInt(match[1], 10) : 0;
+    };
+
+    const countTous = extractCount(tousBtn);
+    const countSig = extractCount(sigBtn);
+    const countEnt = extractCount(entBtn);
+    const countRes = extractCount(resBtn);
+
+    // Vérifie que les compteurs sont réels (> 0)
+    expect(countTous).toBeGreaterThan(0);
+    expect(countSig).toBeGreaterThan(0);
+    expect(countEnt).toBeGreaterThan(0);
+    expect(countRes).toBeGreaterThan(0);
+
+    // La somme des 3 filtres exclusifs doit égaler STRICTEMENT le total 'Tous les posts'
+    expect(countSig + countEnt + countRes).toBe(countTous);
+  });
 });
 
 
