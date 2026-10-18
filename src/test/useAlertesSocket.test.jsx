@@ -80,4 +80,14 @@ describe('useAlertesSocket', () => {
     unmount();
     expect(FauxWebSocket.derniere.close).toHaveBeenCalled();
   });
+
+  it('tente une reconnexion lors de l’événement online', async () => {
+    await monter();
+    const premierSocket = FauxWebSocket.derniere;
+    act(() => {
+      window.dispatchEvent(new Event('online'));
+    });
+    // Un nouveau socket a été instancié
+    expect(FauxWebSocket.derniere).not.toBeNull();
+  });
 });

@@ -66,6 +66,52 @@ export default function LoginPage() {
           </div>
         )}
 
+        {/* Raccourcis Démo PFE (1-Clic) */}
+        <div className="mb-5 p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-left">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold text-[#0B2545] flex items-center gap-1.5">
+              <span>🎯</span>
+              <span>Boutons Démo Soutenance (1-Clic) :</span>
+            </span>
+            <span className="text-[10px] text-slate-500 font-medium">Pré-remplissage</span>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setUsername('citoyen');
+                setPassword('Password123!');
+                setError(null);
+              }}
+              className="py-2 px-2 rounded-lg bg-white border border-slate-200 hover:border-[#0B2545] hover:bg-slate-100 text-xs font-bold text-slate-700 transition cursor-pointer text-center shadow-xs"
+            >
+              👤 Citoyen
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setUsername('autorite');
+                setPassword('Password123!');
+                setError(null);
+              }}
+              className="py-2 px-2 rounded-lg bg-white border border-slate-200 hover:border-[#0B2545] hover:bg-slate-100 text-xs font-bold text-slate-700 transition cursor-pointer text-center shadow-xs"
+            >
+              🏛️ Autorité
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setUsername('admin');
+                setPassword('Password123!');
+                setError(null);
+              }}
+              className="py-2 px-2 rounded-lg bg-white border border-slate-200 hover:border-[#0B2545] hover:bg-slate-100 text-xs font-bold text-slate-700 transition cursor-pointer text-center shadow-xs"
+            >
+              🛡️ Admin
+            </button>
+          </div>
+        </div>
+
         {/* Formulaire de connexion */}
         <form onSubmit={handleSubmit} className="space-y-4 text-left">
           {/* Identifiant ou numéro de téléphone */}

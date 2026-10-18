@@ -50,47 +50,91 @@ export function useAlertesSocket() {
     if (!isAuthenticated) return undefined;
 
     const wsUrl = import.meta.env.VITE_WS_URL || 'wss://mbeund-mi.onrender.com/ws/alertes/';
-    const accessToken = getAccessToken();
-    if (!wsUrl || !accessToken) return undefined;
+    let actif = true;
+    let socket = null;
+    let timerReconnexion = null;
+    let tentatives = 0;
 
-    let socket;
-    try {
-      socket = new WebSocket(wsUrl, [SOUS_PROTOCOLE_JWT, accessToken]);
-    } catch {
-      return undefined;
+    function planifierReconnexion() {
+      if (!actif || timerReconnexion) return;
+      // Reconnexion automatique avec backoff exponentiel (2s, 4s, 8s, 16s... max 30s)
+      const delai = Math.min(2000 * Math.pow(2, tentatives), 30000);
+      tentatives += 1;
+      timerReconnexion = setTimeout(() => {
+        timerReconnexion = null;
+        connecter();
+      }, delai);
     }
 
-    // La fermeture d'un ancien socket (effet relancé, mode strict de React)
-    // arrive après l'ouverture du nouveau : on ignore les sockets remplacés.
-    let actif = true;
-    socket.onopen = () => {
-      if (actif) definirConnexion(true);
-    };
-    socket.onclose = () => {
-      if (actif) definirConnexion(false);
-    };
+    function connecter() {
+      if (!actif) return;
+      const accessToken = getAccessToken();
+      if (!wsUrl || !accessToken) return;
 
-    socket.onmessage = (event) => {
-      let message;
       try {
-        message = JSON.parse(event.data);
+        socket = new WebSocket(wsUrl, [SOUS_PROTOCOLE_JWT, accessToken]);
       } catch {
+        planifierReconnexion();
         return;
       }
-      const traiter = TRAITEMENTS[message.type];
-      if (!traiter) return;
-      const { cles, toast } = traiter(message.data ?? {});
-      cles.forEach((queryKey) => queryClient.invalidateQueries({ queryKey }));
-      if (toast) showToast(toast);
-    };
 
-    // Pas de reconnexion automatique : une coupure de Redis/Channels ne doit
-    // ni spammer la console ni bloquer le reste de l'app.
-    socket.onerror = () => {};
+      socket.onopen = () => {
+        if (!actif) {
+          socket.close();
+          return;
+        }
+        tentatives = 0;
+        definirConnexion(true);
+      };
+
+      socket.onclose = () => {
+        if (!actif) return;
+        definirConnexion(false);
+        planifierReconnexion();
+      };
+
+      socket.onerror = () => {
+        // En cas d'erreur de transport, la fermeture déclenche la reconnexion via onclose
+      };
+
+      socket.onmessage = (event) => {
+        let message;
+        try {
+          message = JSON.parse(event.data);
+        } catch {
+          return;
+        }
+        const traiter = TRAITEMENTS[message.type];
+        if (!traiter) return;
+        const { cles, toast } = traiter(message.data ?? {});
+        cles.forEach((queryKey) => queryClient.invalidateQueries({ queryKey }));
+        if (toast) showToast(toast);
+      };
+    }
+
+    function gererEnLigne() {
+      if (!actif) return;
+      if (timerReconnexion) {
+        clearTimeout(timerReconnexion);
+        timerReconnexion = null;
+      }
+      tentatives = 0;
+      connecter();
+    }
+
+    window.addEventListener('online', gererEnLigne);
+    connecter();
 
     return () => {
       actif = false;
-      socket.close();
+      if (timerReconnexion) {
+        clearTimeout(timerReconnexion);
+        timerReconnexion = null;
+      }
+      window.removeEventListener('online', gererEnLigne);
+      if (socket) {
+        socket.close();
+      }
       definirConnexion(false);
     };
   }, [isAuthenticated, queryClient, showToast]);

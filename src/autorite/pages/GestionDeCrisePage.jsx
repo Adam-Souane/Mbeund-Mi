@@ -71,6 +71,36 @@ function NouvelleAlerteForm() {
         Émettre une nouvelle alerte
       </h3>
 
+      <div className="flex flex-wrap items-center gap-2 pt-1 pb-1">
+        <span className="text-xs font-semibold text-navy-500 dark:text-navy-400">Scénarios démo jury :</span>
+        <button
+          type="button"
+          onClick={() => {
+            const targetZone = zones.find((z) => (z.quartier || '').toLowerCase().includes('gare')) || zones[0];
+            if (targetZone) setZoneId(String(targetZone.id));
+            setNiveau('rouge');
+            setMessage("Alerte Rouge Démo : Montée rapide des eaux constatée à Thiaroye. Rejoignez immédiatement les points de refuge.");
+            setCanaux('sms,push');
+          }}
+          className="px-2.5 py-1 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 dark:bg-red-950/40 dark:hover:bg-red-900/50 dark:text-red-300 text-xs font-bold transition cursor-pointer border border-red-200 dark:border-red-800"
+        >
+          🚨 Crue Critique (Rouge)
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            const targetZone = zones.find((z) => (z.quartier || '').toLowerCase().includes('cuvette')) || zones[0];
+            if (targetZone) setZoneId(String(targetZone.id));
+            setNiveau('orange');
+            setMessage("Vigilance Démo : Fortes pluies orageuses prévues dans 2h sur la Cuvette Ouest. Risque d'engorgement élevé.");
+            setCanaux('sms,push');
+          }}
+          className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:hover:bg-amber-900/50 dark:text-amber-300 text-xs font-bold transition cursor-pointer border border-amber-200 dark:border-amber-800"
+        >
+          ⚠️ Vigilance Orage (Orange)
+        </button>
+      </div>
+
       <div className="grid sm:grid-cols-2 gap-3">
         <label className="block">
           <span className="block text-sm font-semibold mb-1.5" id="zone-label">Zone</span>

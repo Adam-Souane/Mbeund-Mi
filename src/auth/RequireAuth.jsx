@@ -21,12 +21,13 @@ export default function RequireAuth({ space, children }) {
   }
 
   const isAutoriteRole = AUTORITE_ROLES.includes(role);
-  const wrongSpace = (space === 'autorite' && !isAutoriteRole) || (space === 'citoyen' && isAutoriteRole);
+  // Seul l'espace autorité est strictement restreint aux citoyens normaux.
+  // Les autorités et administrateurs peuvent librement naviguer dans l'espace citoyen pour tester et superviser.
+  const wrongSpace = space === 'autorite' && !isAutoriteRole;
 
   if (wrongSpace) {
-    // Le rôle réel du compte (claim JWT) prime toujours sur l'URL demandée —
-    // jamais d'écran d'erreur, on ramène simplement vers le bon espace.
-    return <Navigate to={homeRouteForRole(role)} replace />;
+    // Un citoyen qui tente d'accéder à l'espace autorité est redirigé vers l'accueil citoyen.
+    return <Navigate to="/citoyen/accueil" replace />;
   }
 
   return children;

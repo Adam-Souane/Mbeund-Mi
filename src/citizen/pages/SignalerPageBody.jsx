@@ -15,6 +15,7 @@ import {
   RefreshCw,
   Plus,
   AlertCircle,
+  WifiOff,
 } from 'lucide-react';
 import CitizenShell from '../shared/CitizenShell';
 import { createSignalement } from '../../api/endpoints/signalements';
@@ -25,6 +26,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { getPublicAvatar } from '../../shared/utils/avatarResolver';
 import { sanitizePublicAuthor } from '../../shared/utils/sanitizer';
 import { compressImageClient } from '../../shared/utils/imageCompressor';
+import { sauvegarderSignalementHorsLigne, useOfflineSignalements } from '../../shared/utils/offlineSignalementsQueue';
 
 const CATEGORIES = [
   { value: 'inondation', label: 'Inondation' },
@@ -60,6 +62,8 @@ export default function SignalerPageBody() {
   const replaceInputRefs = useRef({});
 
   const [submitted, setSubmitted] = useState(false);
+  const [submittedOffline, setSubmittedOffline] = useState(false);
+  const { pendingCount } = useOfflineSignalements(createSignalement);
   // Checklist : choix du citoyen de partager ou non sur l'espace communautaire public
   const [partagerCommunaute, setPartagerCommunaute] = useState(true);
 
@@ -226,13 +230,73 @@ export default function SignalerPageBody() {
       });
       setSubmitted(true);
     },
+    onError: async (error) => {
+      const isReseau = !navigator.onLine || error.message === 'Network Error' || error.code === 'ECONNABORTED';
+      if (isReseau) {
+        await sauvegarderSignalementHorsLigne({
+          description,
+          categorie,
+          longitude: (position ?? THIAROYE_CENTER).lon,
+          latitude: (position ?? THIAROYE_CENTER).lat,
+          photos: photos.map((p) => p.file),
+        });
+        addNotification({
+          type: 'signalement',
+          data: {
+            titre: 'Signalement sauvegardé hors-ligne',
+            message: 'Vous êtes hors-ligne. Votre signalement sera transmis dès le rétablissement de la connexion.',
+          },
+        });
+        setSubmittedOffline(true);
+      }
+    },
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!navigator.onLine) {
+      await sauvegarderSignalementHorsLigne({
+        description,
+        categorie,
+        longitude: (position ?? THIAROYE_CENTER).lon,
+        latitude: (position ?? THIAROYE_CENTER).lat,
+        photos: photos.map((p) => p.file),
+      });
+      addNotification({
+        type: 'signalement',
+        data: {
+          titre: 'Signalement sauvegardé hors-ligne',
+          message: 'Enregistré sur votre appareil. Envoi automatique dès le retour du réseau.',
+        },
+      });
+      setSubmittedOffline(true);
+      return;
+    }
     mutation.reset();
     mutation.mutate();
   };
+
+  if (submittedOffline) {
+    return (
+      <div className="min-h-screen bg-navy-50 dark:bg-navy-950 text-navy dark:text-navy-50 flex flex-col items-center justify-center px-6 text-center gap-4">
+        <div className="w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center text-amber-600 dark:text-amber-400">
+          <WifiOff size={36} />
+        </div>
+        <h1 className="text-xl font-extrabold">Signalement sauvegardé en local</h1>
+        <p className="text-sm text-navy-600 dark:text-navy-200 max-w-sm">
+          Vous êtes actuellement hors-ligne ou le réseau est saturé. Votre observation ({categorie}) a été mise en file d&apos;attente sur votre appareil et sera <strong>automatiquement envoyée dès que le réseau sera rétabli</strong>.
+        </p>
+        <div className="flex flex-col sm:flex-row items-center gap-2 mt-2">
+          <button
+            onClick={() => navigate('/citoyen/accueil')}
+            className="bg-[#0B2545] hover:bg-[#154275] text-white font-bold text-sm px-6 py-3 rounded-md transition shadow-sm cursor-pointer"
+          >
+            Retour à l’accueil
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (submitted) {
     return (
@@ -340,6 +404,15 @@ export default function SignalerPageBody() {
             </button>
           </div>
         </div>
+
+        {pendingCount > 0 && (
+          <div className="lg:col-span-2 flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl text-amber-800 dark:text-amber-200 text-xs font-semibold">
+            <WifiOff size={16} className="shrink-0 text-amber-600 dark:text-amber-400" />
+            <span>
+              {pendingCount} signalement(s) sauvegardé(s) hors-ligne sur votre appareil — synchronisation automatique dès le retour du réseau.
+            </span>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 lg:h-full">
           <div>

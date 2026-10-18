@@ -14,6 +14,8 @@ import MesSignalementsWidget from '../components/MesSignalementsWidget';
 import FilActualiteStoriesWidget from '../components/FilActualiteStoriesWidget';
 import SentinellesUrgenceBanner from '../components/SentinellesUrgenceBanner';
 import MareeVentMarinWidget from '../components/MareeVentMarinWidget';
+import CockpitCapteursIoT from '../components/CockpitCapteursIoT';
+import MiniRadarThiaroye from '../components/MiniRadarThiaroye';
 
 const NIVEAU_RANK = { vert: 0, jaune: 1, orange: 2, rouge: 3 };
 
@@ -329,6 +331,12 @@ export default function AccueilPageBody() {
       {/* 3. Indicateur dynamique Côtier : Marée & Vent Marin de Thiaroye (Organique & Aéré) */}
       <div className="w-full pt-1 pb-3">
         <MareeVentMarinWidget />
+      </div>
+
+      {/* Cockpit Cartographique & Réseau IoT Thiaroye-sur-Mer */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full pt-1 pb-3">
+        <MiniRadarThiaroye className="h-full min-h-[340px]" />
+        <CockpitCapteursIoT className="h-full min-h-[340px]" />
       </div>
 
       {/* 4. Carrousel visuel immersif en pleine largeur */}

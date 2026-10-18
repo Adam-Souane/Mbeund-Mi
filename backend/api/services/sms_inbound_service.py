@@ -5,8 +5,10 @@ Crée automatiquement un SignalementCitoyen à partir du SMS.
 import logging
 import re
 from typing import Optional, Tuple
-from django.utils import timezone
-from django.contrib.gis.geos import Point
+try:
+    from django.contrib.gis.geos import Point
+except (ImportError, Exception):
+    Point = None
 from alertes.models import SMSSignalement, SignalementCitoyen
 
 logger = logging.getLogger(__name__)
@@ -49,7 +51,10 @@ class SMSInboundService:
 
             # 3. Si coordonnées trouvées, créer Point géométrique
             if lat is not None and lon is not None:
-                sms_sig.localisation_geom = Point(lon, lat, srid=4326)
+                if Point:
+                    sms_sig.localisation_geom = Point(lon, lat, srid=4326)
+                else:
+                    sms_sig.localisation_geom = f"{lon},{lat}"
 
             # 4. Créer le SignalementCitoyen
             try:

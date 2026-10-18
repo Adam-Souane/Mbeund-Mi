@@ -1008,7 +1008,7 @@ export default function InteractiveMap({
         dragging
         touchZoom
         zoomControl={false}
-        style={{ width: '100%', height: '100%' }}
+        style={{ width: '100%', height: '100%', backgroundColor: '#0e1c2e' }}
       >
         <ZoomControl position="topleft" />
         <MapAutoResizer />
