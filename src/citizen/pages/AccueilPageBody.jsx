@@ -328,12 +328,6 @@ export default function AccueilPageBody() {
         </div>
       </div>
 
-      {/* Cockpit Cartographique & Réseau IoT Thiaroye-sur-Mer */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full pt-1 pb-3">
-        <MiniRadarThiaroye className="h-full min-h-[340px]" />
-        <CockpitCapteursIoT className="h-full min-h-[340px]" />
-      </div>
-
       {/* 3. Carrousel visuel immersif en pleine largeur */}
       <div className="w-full">
         <ConseilsCarousel />
@@ -374,6 +368,12 @@ export default function AccueilPageBody() {
         <div className="h-full flex flex-col min-h-0">
           <FilActualiteStoriesWidget className="h-full flex-1" />
         </div>
+      </div>
+
+      {/* Cockpit Cartographique (Radar SIG) & Réseau de Capteurs IoT Thiaroye-sur-Mer */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full pt-4 pb-1">
+        <MiniRadarThiaroye className="h-full min-h-[340px]" />
+        <CockpitCapteursIoT className="h-full min-h-[340px]" />
       </div>
 
       {/* 6. Indicateur dynamique Côtier : Marée & Vent Marin de Thiaroye */}
