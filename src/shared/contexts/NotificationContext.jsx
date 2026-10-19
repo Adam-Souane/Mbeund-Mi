@@ -55,14 +55,31 @@ export function NotificationProvider({ children }) {
     }
   });
 
+  // Identifiants des notifications déjà consultées/lues par l'utilisateur
+  const [readIds, setReadIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem('mbeund_mi_read_notification_ids');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
   const nextIdRef = useRef(100);
 
-  // Sauvegarde automatique dans le localStorage
+  // Sauvegarde automatique des notifications dans le localStorage
   useEffect(() => {
     try {
       localStorage.setItem('mbeund_mi_notifications', JSON.stringify(notifications));
     } catch {}
   }, [notifications]);
+
+  // Sauvegarde automatique des identifiants lus dans le localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('mbeund_mi_read_notification_ids', JSON.stringify(readIds));
+    } catch {}
+  }, [readIds]);
 
   const addNotification = useCallback((notification) => {
     setNotifications((prev) => {
@@ -71,7 +88,7 @@ export function NotificationProvider({ children }) {
         return prev;
       }
 
-      const id = nextIdRef.current++;
+      const id = notification.id || nextIdRef.current++;
       const fullNotification = {
         id,
         timestamp: new Date().toISOString(),
@@ -82,20 +99,70 @@ export function NotificationProvider({ children }) {
     });
   }, []);
 
+  // Marquer une notification spécifique comme lue (décrémente le compteur de 1)
+  const markAsRead = useCallback((id) => {
+    if (id == null) return;
+    setReadIds((prev) => {
+      if (prev[String(id)]) return prev;
+      const next = { ...prev, [String(id)]: true };
+      try {
+        localStorage.setItem('mbeund_mi_read_notification_ids', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  }, []);
+
+  // Marquer toutes les notifications comme lues (le compteur passe à zéro et ne s'affiche plus)
+  const markAllAsRead = useCallback(() => {
+    setReadIds((prev) => {
+      const next = { ...prev };
+      notifications.forEach((n) => {
+        next[String(n.id)] = true;
+      });
+      try {
+        localStorage.setItem('mbeund_mi_read_notification_ids', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  }, [notifications]);
+
+  const isRead = useCallback(
+    (id) => {
+      if (id == null) return false;
+      return !!readIds[String(id)];
+    },
+    [readIds]
+  );
+
+  // Calcul dynamique du nombre de notifications non lues
+  const unreadCount = notifications.filter((n) => !readIds[String(n.id)]).length;
+
   const removeNotification = useCallback((id) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
   }, []);
 
   const clearNotifications = useCallback(() => {
     setNotifications([]);
+    setReadIds({});
     try {
       localStorage.setItem('mbeund_mi_notifications', JSON.stringify([]));
+      localStorage.setItem('mbeund_mi_read_notification_ids', JSON.stringify({}));
     } catch {}
   }, []);
 
   return (
     <NotificationContext.Provider
-      value={{ notifications, addNotification, removeNotification, clearNotifications }}
+      value={{
+        notifications,
+        unreadCount,
+        readIds,
+        markAsRead,
+        markAllAsRead,
+        isRead,
+        addNotification,
+        removeNotification,
+        clearNotifications,
+      }}
     >
       {children}
     </NotificationContext.Provider>

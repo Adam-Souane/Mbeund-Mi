@@ -488,15 +488,32 @@ export default function SignalerPageBody() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['signalements'] });
 
+      try {
+        const myPostIds = JSON.parse(localStorage.getItem('mbeund_mi_my_post_ids') || '{}');
+        if (data?.id) {
+          myPostIds[data.id] = true;
+          myPostIds[`backend-sig-${data.id}`] = true;
+          myPostIds[`post-sig-${data.id}`] = true;
+          myPostIds[`my-sig-${data.id}`] = true;
+        }
+        localStorage.setItem('mbeund_mi_my_post_ids', JSON.stringify(myPostIds));
+      } catch {}
+
       if (partagerCommunaute) {
         try {
           const authorAvatar = getPublicAvatar(user);
           const rawPosts = localStorage.getItem('mbeund_mi_community_posts_v1');
           const posts = rawPosts ? JSON.parse(rawPosts) : [];
 
+          const newPostId = `post-sig-${data?.id || Date.now()}`;
           const newPost = {
-            id: `post-sig-${data?.id || Date.now()}`,
+            id: newPostId,
+            rawBackendId: data?.id,
             signalementId: data?.id,
+            isUserPost: true,
+            isBackendSignalement: true,
+            typePost: 'signalement',
+            badgeFiltre: 'Signalement terrain',
             authorName: sanitizePublicAuthor(nomCitoyen),
             authorRole: 'Sentinelle citoyenne',
             authorAvatar,
@@ -517,9 +534,48 @@ export default function SignalerPageBody() {
 
           posts.unshift(newPost);
           localStorage.setItem('mbeund_mi_community_posts_v1', JSON.stringify(posts));
+
+          // Enregistrement également dans mbeund_mi_user_community_posts pour Mon espace personnel
+          const userPosts = JSON.parse(localStorage.getItem('mbeund_mi_user_community_posts') || '[]');
+          userPosts.unshift({
+            ...newPost,
+            author: {
+              name: sanitizePublicAuthor(nomCitoyen, 'Citoyen'),
+              avatar: authorAvatar,
+              quartier: activeSecteur ? activeSecteur.nom : 'Thiaroye-sur-Mer',
+              role: 'Résident',
+            },
+            date: 'À l’instant',
+            dureeType: 'Post durable',
+            titre: categorie || 'Observation terrain',
+            texte: description,
+            image: photos[0]?.previewUrl || null,
+            statut: 'en_cours',
+            statutLabel: 'Signalement actif · Traitement requis',
+            baseLikes: 1,
+            baseViews: 1,
+          });
+          localStorage.setItem('mbeund_mi_user_community_posts', JSON.stringify(userPosts));
+
+          try {
+            window.dispatchEvent(
+              new CustomEvent('mbeund_mi_new_community_post', { detail: newPost })
+            );
+          } catch {}
         } catch {
           // Erreur silencieuse
         }
+      } else {
+        try {
+          const privates = JSON.parse(localStorage.getItem('mbeund_mi_private_signalement_ids') || '{}');
+          if (data?.id) {
+            privates[data.id] = true;
+            privates[`backend-sig-${data.id}`] = true;
+            privates[`post-sig-${data.id}`] = true;
+            privates[`my-sig-${data.id}`] = true;
+          }
+          localStorage.setItem('mbeund_mi_private_signalement_ids', JSON.stringify(privates));
+        } catch {}
       }
 
       addNotification({
@@ -857,7 +913,7 @@ export default function SignalerPageBody() {
             {/* CONTENEUR CARTE (À GAUCHE, PREND L'ESPACE MAJEUR) */}
             <div
               ref={mapContainerRef}
-              className="flex-1 min-w-0 relative z-0 isolate rounded-2xl overflow-hidden border-[1.5px] border-navy-200 dark:border-navy-800 shadow-md min-h-[460px] sm:min-h-[520px] lg:min-h-[540px] bg-slate-900"
+              className="flex-1 min-w-0 relative z-0 isolate rounded-2xl overflow-hidden border-[1.5px] border-navy-200 dark:border-navy-800 shadow-md h-[320px] sm:h-[440px] lg:h-[540px] min-h-[300px] sm:min-h-[420px] lg:min-h-[540px] bg-slate-900"
             >
               <MapContainer
                 center={[activeCoords.lat, activeCoords.lon]}
@@ -870,7 +926,7 @@ export default function SignalerPageBody() {
                 scrollWheelZoom={true}
                 touchZoom={true}
                 zoomControl={false}
-                style={{ width: '100%', height: '100%', minHeight: '460px', backgroundColor: '#0e1c2e' }}
+                style={{ width: '100%', height: '100%', minHeight: '300px', backgroundColor: '#0e1c2e' }}
               >
                 {baseMap === 'satellite' ? (
                   <>
@@ -1125,7 +1181,7 @@ export default function SignalerPageBody() {
                     <span>Accès rapide par quartier :</span>
                   </span>
 
-                  <div className="grid grid-cols-2 gap-1.5">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-1.5">
                     {QUARTIERS_THIAROYE.map((q) => {
                       const isActive = activeSecteur?.nom === q.nom;
                       return (

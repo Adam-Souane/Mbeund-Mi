@@ -33,10 +33,17 @@ import {
   Upload,
   Trash2,
   MoreVertical,
+  Video,
+  Volume2,
+  VolumeX,
+  Circle,
+  Square,
+  RefreshCw,
 } from 'lucide-react';
 import CitizenShell from '../shared/CitizenShell';
 import { useAuth } from '../../auth/AuthContext';
 import { useSignalementsApercu } from '../../shared/hooks/useSignalements';
+import { useMySignalements } from '../../shared/hooks/useMySignalements';
 import { STORIES_COMMUNAUTE, COMMUNAUTE_POSTS } from '../../shared/data/riverainsData';
 import { sanitizePublicText, sanitizePublicAuthor } from '../../shared/utils/sanitizer';
 import { getPublicAvatar } from '../../shared/utils/avatarResolver';
@@ -50,6 +57,8 @@ export default function CommunautePageBody() {
 
   // Récupération des signalements citoyens réels depuis le backend Django
   const { data: signalementsData } = useSignalementsApercu();
+  // Récupération des signalements spécifiques au citoyen connecté (tous statuts)
+  const { data: mySignalementsData } = useMySignalements();
 
   const [searchParams] = useSearchParams();
   const targetPostId = searchParams.get('postId') || searchParams.get('signalementId');
@@ -91,35 +100,327 @@ export default function CommunautePageBody() {
   const [modalType, setModalType] = useState('signalement'); // 'signalement' | 'entraide' | 'resolu'
   const [modalQuartier, setModalQuartier] = useState('Ndakhane (Thiaroye)');
   const [modalCategorie, setModalCategorie] = useState('Eau stagnante');
-  const [modalPhotoChoice, setModalPhotoChoice] = useState('none');
-  const [modalCustomPhoto, setModalCustomPhoto] = useState(null);
+  const [modalMediaFile, setModalMediaFile] = useState(null);
+  const [modalMediaPreview, setModalMediaPreview] = useState(null);
+  const [modalMediaType, setModalMediaType] = useState(null); // 'image' | 'video'
   const [modalError, setModalError] = useState(null);
   const modalUploadRef = useRef(null);
   const modalCameraRef = useRef(null);
 
-  const handleModalPhotoFile = (e) => {
+  const handleModalMediaFile = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const result = event.target?.result;
-      if (typeof result === 'string') {
-        setModalCustomPhoto(result);
-        setModalPhotoChoice('custom');
-      }
-    };
-    reader.readAsDataURL(file);
+
+    if (file.size > 25 * 1024 * 1024) {
+      setModalError("Le fichier est trop volumineux (25 Mo maximum).");
+      return;
+    }
+
+    setModalError(null);
+    const isVideo = file.type.startsWith('video/');
+    const isImage = file.type.startsWith('image/');
+
+    if (!isVideo && !isImage) {
+      setModalError("Format non supporté. Veuillez choisir une photo (JPG, PNG) ou une vidéo (MP4, WEBM).");
+      return;
+    }
+
+    setModalMediaFile(file);
+    setModalMediaType(isVideo ? 'video' : 'image');
+
+    if (isVideo) {
+      const videoUrl = URL.createObjectURL(file);
+      setModalMediaPreview(videoUrl);
+    } else {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result;
+        if (typeof result === 'string') {
+          setModalMediaPreview(result);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
-  // État de la popup "Créer une Story éphémère (24h)" (Photo ou Texte seul)
+  // État de l'Espace Personnel du citoyen dans la communauté (Volet latéral / Option 1)
+  const [isMySpaceOpen, setIsMySpaceOpen] = useState(false);
+  const [mySpaceTab, setMySpaceTab] = useState('posts'); // 'posts' | 'stories'
+  const [storyToDelete, setStoryToDelete] = useState(null);
+
+  // État de la popup "Créer une Story éphémère (24h)" (Photo / Vidéo ou Texte seul)
   const [isStoryModalOpen, setIsStoryModalOpen] = useState(false);
-  const [storyMode, setStoryMode] = useState('texte'); // 'texte' | 'photo'
+  const [storyMode, setStoryMode] = useState('texte'); // 'texte' | 'media'
   const [storyText, setStoryText] = useState('');
   const [storyQuartier, setStoryQuartier] = useState('Ndakhane (Thiaroye)');
   const [storyBgGradient, setStoryBgGradient] = useState('from-[#0B2545] via-[#103565] to-slate-950');
-  const [storyPhotoChoice, setStoryPhotoChoice] = useState('ruelle');
+  const [storyMediaFile, setStoryMediaFile] = useState(null);
+  const [storyMediaPreview, setStoryMediaPreview] = useState(null);
+  const [storyMediaType, setStoryMediaType] = useState(null); // 'image' | 'video'
   const [storyError, setStoryError] = useState(null);
   const [isStoryTextExpanded, setIsStoryTextExpanded] = useState(false);
+  const [isStoryVideoMuted, setIsStoryVideoMuted] = useState(true);
+  const storyUploadRef = useRef(null);
+  const storyCameraRef = useRef(null);
+
+  // Gestion du viseur Caméra réelle en direct (Webcam / Capteur téléphone)
+  const [liveCameraTarget, setLiveCameraTarget] = useState(null); // null | 'story' | 'post'
+  const [liveFacingMode, setLiveFacingMode] = useState('environment'); // 'environment' | 'user'
+  const [liveCaptureMode, setLiveCaptureMode] = useState(null); // null | 'photo' | 'video'
+  const [isLiveRecording, setIsLiveRecording] = useState(false);
+  const [liveRecordingSeconds, setLiveRecordingSeconds] = useState(0);
+  const [liveCameraError, setLiveCameraError] = useState(null);
+  const liveVideoRef = useRef(null);
+  const mediaStreamRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const recordedChunksRef = useRef([]);
+  const recordingTimerRef = useRef(null);
+
+  const stopLiveCamera = () => {
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      try {
+        mediaRecorderRef.current.stop();
+      } catch {}
+    }
+    if (mediaStreamRef.current) {
+      try {
+        mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+      } catch {}
+      mediaStreamRef.current = null;
+    }
+    if (liveVideoRef.current) {
+      liveVideoRef.current.srcObject = null;
+    }
+    setLiveCameraTarget(null);
+    setLiveCaptureMode(null);
+    setIsLiveRecording(false);
+    setLiveRecordingSeconds(0);
+    setLiveCameraError(null);
+  };
+
+  const startLiveCamera = async (target, facing = liveFacingMode, initialMode = null) => {
+    if (mediaStreamRef.current) {
+      try {
+        mediaStreamRef.current.getTracks().forEach((t) => t.stop());
+      } catch {}
+      mediaStreamRef.current = null;
+    }
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
+
+    setLiveCameraTarget(target);
+    setLiveCaptureMode(initialMode);
+    setLiveCameraError(null);
+    setIsLiveRecording(false);
+    setLiveRecordingSeconds(0);
+    setLiveFacingMode(facing);
+
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+      setLiveCameraError("L'accès direct à la caméra n'est pas supporté par ce navigateur. Vous pouvez utiliser le sélecteur ci-dessous ou importer un fichier.");
+      return;
+    }
+
+    try {
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: facing },
+          audio: true,
+        });
+      } catch {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: facing },
+          audio: false,
+        });
+      }
+
+      mediaStreamRef.current = stream;
+      if (liveVideoRef.current) {
+        liveVideoRef.current.srcObject = stream;
+        try {
+          await liveVideoRef.current.play();
+        } catch {}
+      }
+    } catch {
+      setLiveCameraError("Impossible d'accéder à la caméra. Vérifiez les autorisations de votre navigateur ou utilisez le sélecteur ci-dessous.");
+    }
+  };
+
+  const flipLiveCamera = () => {
+    const nextFacing = liveFacingMode === 'environment' ? 'user' : 'environment';
+    if (liveCameraTarget) {
+      startLiveCamera(liveCameraTarget, nextFacing);
+    }
+  };
+
+  const captureLivePhoto = () => {
+    const video = liveVideoRef.current;
+    if (!video) return;
+
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth || 1280;
+      canvas.height = video.videoHeight || 720;
+      const ctx = canvas.getContext('2d');
+      if (liveFacingMode === 'user') {
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+      }
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+
+      if (liveCameraTarget === 'story') {
+        setStoryMediaPreview(dataUrl);
+        setStoryMediaType('image');
+        setStoryMediaFile(null);
+        setStoryError(null);
+      } else if (liveCameraTarget === 'post') {
+        setModalMediaPreview(dataUrl);
+        setModalMediaType('image');
+        setModalMediaFile(null);
+        setModalError(null);
+      }
+    } catch (err) {
+      console.error("Erreur capture photo :", err);
+    } finally {
+      stopLiveCamera();
+    }
+  };
+
+  const startLiveVideoRecording = () => {
+    if (!mediaStreamRef.current) return;
+    recordedChunksRef.current = [];
+
+    let options = {};
+    if (typeof MediaRecorder !== 'undefined') {
+      if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')) {
+        options = { mimeType: 'video/webm;codecs=vp8,opus' };
+      } else if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('video/mp4')) {
+        options = { mimeType: 'video/mp4' };
+      }
+    }
+
+    try {
+      const recorder = new MediaRecorder(mediaStreamRef.current, options);
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          recordedChunksRef.current.push(e.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        if (recordedChunksRef.current.length > 0) {
+          const mimeType = recorder.mimeType || 'video/webm';
+          const blob = new Blob(recordedChunksRef.current, { type: mimeType });
+          const videoUrl = URL.createObjectURL(blob);
+
+          if (liveCameraTarget === 'story') {
+            setStoryMediaPreview(videoUrl);
+            setStoryMediaType('video');
+            setStoryMediaFile(blob);
+            setStoryError(null);
+          } else if (liveCameraTarget === 'post') {
+            setModalMediaPreview(videoUrl);
+            setModalMediaType('video');
+            setModalMediaFile(blob);
+            setModalError(null);
+          }
+        }
+        stopLiveCamera();
+      };
+
+      recorder.start(250);
+      mediaRecorderRef.current = recorder;
+      setIsLiveRecording(true);
+      setLiveRecordingSeconds(0);
+
+      recordingTimerRef.current = setInterval(() => {
+        setLiveRecordingSeconds((prev) => {
+          if (prev >= 29) {
+            stopLiveVideoRecording();
+            return 30;
+          }
+          return prev + 1;
+        });
+      }, 1000);
+    } catch (err) {
+      console.error("Erreur démarrage enregistrement vidéo :", err);
+    }
+  };
+
+  const stopLiveVideoRecording = () => {
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      try {
+        mediaRecorderRef.current.stop();
+      } catch {}
+    }
+  };
+
+  // Attachement du flux vidéo lors du rendu du composant vidéo
+  useEffect(() => {
+    if (liveCameraTarget && liveVideoRef.current && mediaStreamRef.current) {
+      if (liveVideoRef.current.srcObject !== mediaStreamRef.current) {
+        liveVideoRef.current.srcObject = mediaStreamRef.current;
+        liveVideoRef.current.play().catch(() => {});
+      }
+    }
+  });
+
+  // Nettoyage au démontage du composant
+  useEffect(() => {
+    return () => {
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, []);
+
+  const handleStoryMediaFile = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 25 * 1024 * 1024) {
+      setStoryError("Le fichier est trop volumineux (25 Mo maximum).");
+      return;
+    }
+
+    setStoryError(null);
+    const isVideo = file.type.startsWith('video/');
+    const isImage = file.type.startsWith('image/');
+
+    if (!isVideo && !isImage) {
+      setStoryError("Format non supporté. Veuillez choisir une photo (JPG, PNG) ou une vidéo (MP4, WEBM).");
+      return;
+    }
+
+    setStoryMediaFile(file);
+    setStoryMediaType(isVideo ? 'video' : 'image');
+
+    if (isVideo) {
+      const videoUrl = URL.createObjectURL(file);
+      setStoryMediaPreview(videoUrl);
+    } else {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result;
+        if (typeof result === 'string') {
+          setStoryMediaPreview(result);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   // Stories créées localement par l'utilisateur
   const [userStories, setUserStories] = useState(() => {
@@ -183,11 +484,53 @@ export default function CommunautePageBody() {
 
   const [openComments, setOpenComments] = useState({});
   const [commentInputs, setCommentInputs] = useState({});
-  // Posts créés ou partagés localement par le citoyen
+  // Posts créés ou partagés localement par le citoyen (fusion des posts créés et signalements partagés)
   const [userPosts, setUserPosts] = useState(() => {
     try {
-      const saved = localStorage.getItem('mbeund_mi_user_community_posts');
-      return saved ? JSON.parse(saved) : [];
+      const savedUserPosts = JSON.parse(localStorage.getItem('mbeund_mi_user_community_posts') || '[]');
+      const savedV1Posts = JSON.parse(localStorage.getItem('mbeund_mi_community_posts_v1') || '[]');
+      const deletedMap = JSON.parse(localStorage.getItem('mbeund_mi_community_deleted_post_ids') || '{}');
+      const privateMap = JSON.parse(localStorage.getItem('mbeund_mi_private_signalement_ids') || '{}');
+
+      // Conversion des posts v1 (créés depuis la page Signaler) s'ils ne sont pas déjà dans savedUserPosts
+      const existingIds = new Set(savedUserPosts.map((p) => p.id));
+      const convertedV1 = [];
+
+      savedV1Posts.forEach((p) => {
+        if (!p?.id || existingIds.has(p.id)) return;
+        if (deletedMap[p.id] || privateMap[p.id] || (p.signalementId && (deletedMap[p.signalementId] || privateMap[p.signalementId]))) return;
+
+        convertedV1.push({
+          id: p.id,
+          rawBackendId: p.signalementId,
+          signalementId: p.signalementId,
+          isUserPost: true,
+          isBackendSignalement: true,
+          typePost: 'signalement',
+          badgeFiltre: 'Signalement terrain',
+          author: {
+            name: p.authorName || 'Citoyen',
+            avatar: p.authorAvatar || getPublicAvatar({ name: p.authorName, id: p.id }),
+            quartier: p.zone || 'Thiaroye-sur-Mer',
+            role: p.authorRole || 'Résident',
+          },
+          date: p.timestamp || 'Récemment',
+          dureeType: 'Post durable',
+          categorie: p.categorie || 'Signalement terrain',
+          titre: p.categorie || 'Observation terrain',
+          texte: p.content || '',
+          image: p.photoUrl || null,
+          statut: 'en_cours',
+          statutLabel: 'Signalement actif · Traitement requis',
+          baseLikes: p.likesCount || 1,
+          baseViews: 1,
+          comments: p.comments || [],
+        });
+      });
+
+      return [...savedUserPosts, ...convertedV1].filter(
+        (p) => !deletedMap[p.id] && (!p.rawBackendId || !deletedMap[p.rawBackendId])
+      );
     } catch {
       return [];
     }
@@ -199,6 +542,21 @@ export default function CommunautePageBody() {
       localStorage.setItem('mbeund_mi_user_community_posts', JSON.stringify(userPosts));
     } catch {}
   }, [userPosts]);
+
+  // Ensemble des identifiants des signalements appartenant au citoyen connecté
+  const mySignalementsIdSet = useMemo(() => {
+    const set = new Set();
+    const list = mySignalementsData?.results ?? (Array.isArray(mySignalementsData) ? mySignalementsData : []);
+    list.forEach((s) => {
+      if (s?.id != null) {
+        set.add(String(s.id));
+        set.add(`backend-sig-${s.id}`);
+        set.add(`post-sig-${s.id}`);
+        set.add(`my-sig-${s.id}`);
+      }
+    });
+    return set;
+  }, [mySignalementsData]);
 
   // Menu 3 points d'options ouvert (identifiant du post dont le dropdown est actif)
   const [openMenuPostId, setOpenMenuPostId] = useState(null);
@@ -218,21 +576,87 @@ export default function CommunautePageBody() {
     };
   }, [openMenuPostId]);
 
+  const [copiedShareId, setCopiedShareId] = useState(null);
+  const [justLikedPostId, setJustLikedPostId] = useState(null);
+  const [justConfirmedPostId, setJustConfirmedPostId] = useState(null);
+  const likeFeedbackTimerRef = useRef(null);
+  const confirmFeedbackTimerRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (likeFeedbackTimerRef.current) clearTimeout(likeFeedbackTimerRef.current);
+      if (confirmFeedbackTimerRef.current) clearTimeout(confirmFeedbackTimerRef.current);
+    };
+  }, []);
+
+  const [previewImageModal, setPreviewImageModal] = useState(null);
+
+  // Verrouillage du scroll d'arrière-plan lorsque Mon Espace Personnel ou une modale est ouvert(e)
+  const isAnyOverlayActive =
+    isMySpaceOpen ||
+    isPostModalOpen ||
+    isStoryModalOpen ||
+    !!activeStory ||
+    !!liveCameraTarget ||
+    !!reportingItem ||
+    !!previewImageModal ||
+    !!postToDelete ||
+    !!storyToDelete;
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (isAnyOverlayActive) {
+      const originalOverflow = document.body.style.overflow;
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      document.body.style.overflow = 'hidden';
+      if (scrollbarWidth > 0) {
+        document.body.style.paddingRight = `${scrollbarWidth}px`;
+      }
+      return () => {
+        document.body.style.overflow = originalOverflow;
+        document.body.style.paddingRight = '';
+      };
+    }
+  }, [isAnyOverlayActive]);
+
   // Détection stricte de l'appartenance d'un post au citoyen connecté
   const isPostOwner = (post) => {
     if (!post) return false;
     if (post.isUserPost) return true;
-    if (typeof post.id === 'string' && (post.id.startsWith('user-') || post.id.startsWith('shared-sig-'))) {
+    if (typeof post.id === 'string' && (post.id.startsWith('user-') || post.id.startsWith('post-sig-') || post.id.startsWith('my-sig-') || post.id.startsWith('shared-sig-'))) {
       return true;
     }
-    if (userPosts.some((up) => up.id === post.id)) return true;
+    if (userPosts.some((up) => up.id === post.id || (post.rawBackendId && up.rawBackendId === post.rawBackendId))) {
+      return true;
+    }
+
+    // Détection via les identifiants de signalements retournés pour ce compte
+    if (post.rawBackendId && mySignalementsIdSet.has(String(post.rawBackendId))) return true;
+    if (post.signalementId && mySignalementsIdSet.has(String(post.signalementId))) return true;
+    if (mySignalementsIdSet.has(String(post.id))) return true;
+
     try {
       const myPostIds = JSON.parse(localStorage.getItem('mbeund_mi_my_post_ids') || '{}');
-      if (myPostIds[post.id] || (post.rawBackendId && myPostIds[post.rawBackendId])) return true;
+      if (
+        myPostIds[post.id] ||
+        (post.rawBackendId && myPostIds[post.rawBackendId]) ||
+        (post.rawBackendId && myPostIds[`backend-sig-${post.rawBackendId}`]) ||
+        (post.signalementId && myPostIds[post.signalementId])
+      ) {
+        return true;
+      }
     } catch {}
+
     if (nomCitoyen && post.author?.name && post.author.name.toLowerCase() === nomCitoyen.toLowerCase()) {
       return true;
     }
+    if (username && post.author?.name && post.author.name.toLowerCase().includes(username.toLowerCase())) {
+      return true;
+    }
+    if (user?.prenom && post.author?.name && post.author.name.toLowerCase().includes(user.prenom.toLowerCase())) {
+      return true;
+    }
+
     return false;
   };
 
@@ -243,29 +667,65 @@ export default function CommunautePageBody() {
     const postId = post.id;
 
     // Retrait immédiat de l'état local des posts de l'utilisateur
-    setUserPosts((prev) => prev.filter((p) => p.id !== postId));
+    setUserPosts((prev) => prev.filter((p) => p.id !== postId && (!post.rawBackendId || p.rawBackendId !== post.rawBackendId)));
 
     // Mémorisation dans la liste des posts retirés de la communauté
     try {
       const deletedMap = JSON.parse(localStorage.getItem('mbeund_mi_community_deleted_post_ids') || '{}');
       deletedMap[postId] = true;
-      if (post.rawBackendId) deletedMap[post.rawBackendId] = true;
-      if (post.rawBackendId) deletedMap[`backend-sig-${post.rawBackendId}`] = true;
+      if (post.rawBackendId) {
+        deletedMap[post.rawBackendId] = true;
+        deletedMap[`backend-sig-${post.rawBackendId}`] = true;
+        deletedMap[`post-sig-${post.rawBackendId}`] = true;
+        deletedMap[`my-sig-${post.rawBackendId}`] = true;
+      }
+      if (post.signalementId) {
+        deletedMap[post.signalementId] = true;
+        deletedMap[`backend-sig-${post.signalementId}`] = true;
+        deletedMap[`post-sig-${post.signalementId}`] = true;
+        deletedMap[`my-sig-${post.signalementId}`] = true;
+      }
       if (post.texte) deletedMap[post.texte.trim()] = true;
       localStorage.setItem('mbeund_mi_community_deleted_post_ids', JSON.stringify(deletedMap));
 
       // Mémorisation dans les signalements privés si le post provenait d'un signalement
       const privates = JSON.parse(localStorage.getItem('mbeund_mi_private_signalement_ids') || '{}');
       privates[postId] = true;
-      if (post.rawBackendId) privates[post.rawBackendId] = true;
-      if (post.rawBackendId) privates[`backend-sig-${post.rawBackendId}`] = true;
+      if (post.rawBackendId) {
+        privates[post.rawBackendId] = true;
+        privates[`backend-sig-${post.rawBackendId}`] = true;
+        privates[`post-sig-${post.rawBackendId}`] = true;
+        privates[`my-sig-${post.rawBackendId}`] = true;
+      }
+      if (post.signalementId) {
+        privates[post.signalementId] = true;
+      }
       if (post.texte) privates[post.texte.trim()] = true;
       localStorage.setItem('mbeund_mi_private_signalement_ids', JSON.stringify(privates));
 
       // Nettoyage immédiat du localStorage des posts utilisateurs
       const savedUserPosts = JSON.parse(localStorage.getItem('mbeund_mi_user_community_posts') || '[]');
-      const filtered = savedUserPosts.filter((p) => p.id !== postId);
+      const filtered = savedUserPosts.filter((p) => p.id !== postId && (!post.rawBackendId || p.rawBackendId !== post.rawBackendId));
       localStorage.setItem('mbeund_mi_user_community_posts', JSON.stringify(filtered));
+
+      // Nettoyage de community_posts_v1
+      const savedV1 = JSON.parse(localStorage.getItem('mbeund_mi_community_posts_v1') || '[]');
+      const filteredV1 = savedV1.filter((p) => p.id !== postId && p.signalementId !== post.rawBackendId && p.signalementId !== post.signalementId);
+      localStorage.setItem('mbeund_mi_community_posts_v1', JSON.stringify(filteredV1));
+
+      // Nettoyage de my_post_ids
+      const myPostIds = JSON.parse(localStorage.getItem('mbeund_mi_my_post_ids') || '{}');
+      delete myPostIds[postId];
+      if (post.rawBackendId) {
+        delete myPostIds[post.rawBackendId];
+        delete myPostIds[`backend-sig-${post.rawBackendId}`];
+        delete myPostIds[`post-sig-${post.rawBackendId}`];
+        delete myPostIds[`my-sig-${post.rawBackendId}`];
+      }
+      if (post.signalementId) {
+        delete myPostIds[post.signalementId];
+      }
+      localStorage.setItem('mbeund_mi_my_post_ids', JSON.stringify(myPostIds));
     } catch {}
 
     setOpenMenuPostId(null);
@@ -275,9 +735,6 @@ export default function CommunautePageBody() {
       setReportSuccessToast(null);
     }, 4000);
   };
-
-  const [copiedShareId, setCopiedShareId] = useState(null);
-  const [previewImageModal, setPreviewImageModal] = useState(null);
 
   // Commentaires stockés en local par identifiant de post pour incrémenter instantanément le bouton Avis
   const [commentsByPost, setCommentsByPost] = useState(() => {
@@ -339,6 +796,43 @@ export default function CommunautePageBody() {
     } catch {}
   }, [viewsState]);
 
+  // Partages gérés en local avec persistance
+  const [sharesState, setSharesState] = useState(() => {
+    try {
+      const saved = localStorage.getItem('mbeund_mi_community_shares');
+      if (!saved) return {};
+      const parsed = JSON.parse(saved);
+      delete parsed['undefined'];
+      delete parsed['backend-undefined'];
+      delete parsed['null'];
+      return parsed;
+    } catch {
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('mbeund_mi_community_shares', JSON.stringify(sharesState));
+    } catch {}
+  }, [sharesState]);
+
+  // Confirmations citoyennes "C'est vrai" (attestations terrain persistées)
+  const [confirmationsState, setConfirmationsState] = useState(() => {
+    try {
+      const saved = localStorage.getItem('mbeund_mi_community_confirmations');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('mbeund_mi_community_confirmations', JSON.stringify(confirmationsState));
+    } catch {}
+  }, [confirmationsState]);
+
   // Palettes de dégradés modernes pour les Stories Citoyennes de type "Texte seul"
   const STORY_GRADIENTS = [
     { id: 'navy', label: 'Océan Nuit', class: 'from-[#0B2545] via-[#103565] to-slate-950', previewBg: 'bg-gradient-to-br from-[#0B2545] via-[#103565] to-slate-950' },
@@ -383,6 +877,11 @@ export default function CommunautePageBody() {
       setModalCategorie(available[0].value);
     }
   };
+
+  // Avatar haute définition du citoyen connecté
+  const currentUserAvatar = useMemo(() => {
+    return user?.avatar || getPublicAvatar({ name: nomCitoyen, id: 'current-citizen-avatar', context: 'Citoyen connecté' });
+  }, [user?.avatar, nomCitoyen]);
 
   // Fusion des publications locales + signalements réels du backend avec identifiants strictement uniques
   const allPosts = useMemo(() => {
@@ -465,6 +964,72 @@ export default function CommunautePageBody() {
       });
     });
 
+    // 1. bis. Signalements du citoyen connecté (tous statuts : en attente ou validés)
+    const myApiList = mySignalementsData?.results ?? (Array.isArray(mySignalementsData) ? mySignalementsData : []);
+    const userOwnedSignalementPosts = [];
+
+    myApiList.forEach((s) => {
+      const sigRawId = s.id;
+      const sigId = `my-sig-${sigRawId}`;
+
+      if (
+        deletedPostsMap[sigId] ||
+        deletedPostsMap[sigRawId] ||
+        deletedPostsMap[`backend-sig-${sigRawId}`] ||
+        deletedPostsMap[`post-sig-${sigRawId}`] ||
+        privateMap[sigRawId] ||
+        privateMap[sigId] ||
+        privateMap[`backend-sig-${sigRawId}`] ||
+        (s.description && (deletedPostsMap[s.description.trim()] || privateMap[s.description.trim()]))
+      ) {
+        return;
+      }
+
+      const alreadyInBackend = backendItems.some((b) => String(b.rawBackendId) === String(sigRawId));
+      const alreadyInUserPosts = userPosts.some(
+        (u) => String(u.rawBackendId) === String(sigRawId) || String(u.signalementId) === String(sigRawId) || String(u.id) === String(sigId)
+      );
+      if (alreadyInBackend || alreadyInUserPosts) {
+        return;
+      }
+
+      const isResolu = !!s.valide;
+      const cleanAuthor = sanitizePublicAuthor(nomCitoyen, 'Citoyen');
+      const cleanTitre = sanitizePublicText(s.categorie_display || s.categorie || 'Observation terrain');
+      const cleanTexte = sanitizePublicText(s.description || 'Montée des eaux observée sur la voie publique.');
+      const uniqueAvatar = currentUserAvatar || getPublicAvatar({ name: cleanAuthor, id: sigId, context: cleanTexte });
+
+      userOwnedSignalementPosts.push({
+        id: sigId,
+        rawBackendId: sigRawId,
+        signalementId: sigRawId,
+        isUserPost: true,
+        isBackendSignalement: true,
+        typePost: isResolu ? 'resolu' : 'signalement',
+        badgeFiltre: isResolu ? 'Résolu & Sécurisé' : 'Signalement terrain',
+        author: {
+          name: cleanAuthor,
+          avatar: uniqueAvatar,
+          quartier: s.citoyen_quartier || s.quartier || 'Thiaroye-sur-Mer',
+          role: 'Résident',
+        },
+        dateRaw: s.date_creation || null,
+        date: s.date_creation
+          ? new Date(s.date_creation).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+          : 'Récemment',
+        dureeType: 'Post durable',
+        categorie: s.categorie_display || s.categorie || 'Inondation',
+        titre: cleanTitre,
+        texte: cleanTexte,
+        image: s.photo || null,
+        statut: isResolu ? 'resolu' : 'en_cours',
+        statutLabel: isResolu ? 'Vérifié par la mairie' : 'En attente de traitement',
+        baseLikes: 1,
+        baseViews: 1,
+        comments: [],
+      });
+    });
+
     // 2. Posts durables de la communauté avec nouvelles images de Thiaroye et posts sans images
     const riverainsItems = COMMUNAUTE_POSTS.map((r) => {
       const authorAvatar = getPublicAvatar({ name: r.auteur, id: r.id, preferredAvatar: r.avatar, context: r.description });
@@ -496,11 +1061,16 @@ export default function CommunautePageBody() {
       };
     });
 
-    const combined = [...userPosts, ...backendItems, ...riverainsItems];
+    const combined = [...userPosts, ...userOwnedSignalementPosts, ...backendItems, ...riverainsItems];
     return combined.filter(
-      (post) => !deletedPostsMap[post.id] && (!post.texte || !deletedPostsMap[post.texte.trim()])
+      (post) =>
+        !deletedPostsMap[post.id] &&
+        (!post.rawBackendId || !deletedPostsMap[post.rawBackendId]) &&
+        (!post.rawBackendId || !deletedPostsMap[`backend-sig-${post.rawBackendId}`]) &&
+        (!post.signalementId || !deletedPostsMap[post.signalementId]) &&
+        (!post.texte || !deletedPostsMap[post.texte.trim()])
     );
-  }, [signalementsData, userPosts]);
+  }, [signalementsData, mySignalementsData, userPosts]);
 
   // Prédicats de filtrage stricts et mutuellement exclusifs pour garantir une cohérence mathématique absolue
   const isSignalementPost = (p) => (p.typePost === 'signalement' || p.isBackendSignalement) && p.statut !== 'resolu' && p.typePost !== 'resolu';
@@ -526,6 +1096,27 @@ export default function CommunautePageBody() {
       return true;
     });
   }, [allPosts, filter]);
+
+  // Publications du citoyen connecté (pour son Espace Personnel)
+  const myPosts = useMemo(() => {
+    return allPosts.filter((post) => isPostOwner(post));
+  }, [allPosts, userPosts, nomCitoyen, mySignalementsIdSet]);
+
+  // Stories actives du citoyen connecté
+  const myStories = useMemo(() => {
+    return userStories;
+  }, [userStories]);
+
+  const getLikesCount = (postId, baseLikes) => {
+    if (!postId) return baseLikes || 1;
+    const isLiked = !!likesState[postId];
+    return (baseLikes || 1) + (isLiked ? 1 : 0);
+  };
+
+  // Cumul des soutiens / likes reçus par l'utilisateur sur ses publications
+  const myTotalLikes = useMemo(() => {
+    return myPosts.reduce((acc, p) => acc + (getLikesCount(p.id, p.baseLikes || 1)), 0);
+  }, [myPosts, likesState]);
 
   // Deep-linking automatique : scrolle et met en évidence le post ciblé (ex: depuis la Carte ou l'Historique)
   useEffect(() => {
@@ -577,22 +1168,25 @@ export default function CommunautePageBody() {
     }
   }, [targetPostId, allPosts]);
 
-  // Action like / cœurs : bascule UNIQUEMENT le post ciblé par son identifiant unique
+  // Action like / cœurs : bascule UNIQUEMENT le post ciblé par son identifiant unique avec feedback éphémère
   const handleToggleLike = (postId) => {
     if (!postId) return;
     setLikesState((prev) => {
-      const isCurrentlyLiked = !!prev[postId];
+      const isCurrentlyLiked = !prev[postId];
+      if (isCurrentlyLiked) {
+        if (likeFeedbackTimerRef.current) clearTimeout(likeFeedbackTimerRef.current);
+        setJustLikedPostId(postId);
+        likeFeedbackTimerRef.current = setTimeout(() => {
+          setJustLikedPostId(null);
+        }, 1800);
+      } else {
+        setJustLikedPostId(null);
+      }
       return {
         ...prev,
-        [postId]: !isCurrentlyLiked,
+        [postId]: isCurrentlyLiked,
       };
     });
-  };
-
-  const getLikesCount = (postId, baseLikes) => {
-    if (!postId) return baseLikes;
-    const isLiked = !!likesState[postId];
-    return baseLikes + (isLiked ? 1 : 0);
   };
 
   // Action vues : incrémente UNIQUEMENT le post ciblé
@@ -613,8 +1207,50 @@ export default function CommunautePageBody() {
     });
   };
 
-  // Action partage
+  // Action confirmation citoyenne "C'est vrai" (attestation terrain)
+  const getConfirmationsCount = (postId, baseCount) => {
+    if (!postId) return baseCount || 1;
+    const defaultBase = baseCount || Math.max(1, (parseInt(String(postId).replace(/\D/g, '').slice(-2) || '2', 10) % 5) + 1);
+    const extra = confirmationsState[postId] ? 1 : 0;
+    return defaultBase + extra;
+  };
+
+  const handleToggleConfirmation = (postId) => {
+    if (!postId) return;
+    const isAlreadyConfirmed = !!confirmationsState[postId];
+    setConfirmationsState((prev) => ({
+      ...prev,
+      [postId]: !isAlreadyConfirmed,
+    }));
+    if (!isAlreadyConfirmed) {
+      if (confirmFeedbackTimerRef.current) clearTimeout(confirmFeedbackTimerRef.current);
+      setJustConfirmedPostId(postId);
+      confirmFeedbackTimerRef.current = setTimeout(() => {
+        setJustConfirmedPostId(null);
+      }, 1800);
+      setReportSuccessToast("Attestation enregistrée ! Vous confirmez cette situation sur le terrain (« C'est vrai »).");
+      setTimeout(() => setReportSuccessToast(null), 3500);
+    } else {
+      setJustConfirmedPostId(null);
+    }
+  };
+
+  // Action partages : comptage dynamique des partages
+  const getSharesCount = (postId, baseShares) => {
+    if (!postId) return baseShares || 2;
+    const defaultBase = baseShares || Math.max(1, (parseInt(String(postId).replace(/\D/g, '').slice(-2) || '4', 10) % 6) + 1);
+    const extra = sharesState[postId] || 0;
+    return defaultBase + extra;
+  };
+
+  // Action partage : incrémente le compteur et copie le lien / ouvre le partage natif
   const handleShare = async (post) => {
+    if (!post?.id) return;
+    setSharesState((prev) => ({
+      ...prev,
+      [post.id]: (prev[post.id] || 0) + 1,
+    }));
+
     const shareData = {
       title: `Observation Mbeund-Mi : ${post.categorie}`,
       text: `${post.author.name} (${post.author.quartier}) : ${post.texte}`,
@@ -688,8 +1324,8 @@ export default function CommunautePageBody() {
       return;
     }
 
-    const selectedPreset = PHOTO_PRESETS.find((p) => p.id === modalPhotoChoice);
-    const chosenImage = modalCustomPhoto || (selectedPreset ? selectedPreset.url : null);
+    const chosenImage = modalMediaType === 'image' ? modalMediaPreview : null;
+    const chosenVideo = modalMediaType === 'video' ? modalMediaPreview : null;
 
     const badgeLabel =
       modalType === 'signalement'
@@ -729,6 +1365,7 @@ export default function CommunautePageBody() {
       titre: cleanCategorie,
       texte: cleanText,
       image: chosenImage,
+      video: chosenVideo,
       statut: modalType === 'resolu' ? 'resolu' : 'en_cours',
       statutLabel,
       baseLikes: 1,
@@ -744,13 +1381,35 @@ export default function CommunautePageBody() {
 
     setUserPosts([newPost, ...userPosts]);
     setModalPostText('');
-    setModalPhotoChoice('none');
-    setModalCustomPhoto(null);
+    setModalMediaFile(null);
+    setModalMediaPreview(null);
+    setModalMediaType(null);
     setModalError(null);
     setIsPostModalOpen(false);
+
+    try {
+      window.dispatchEvent(
+        new CustomEvent('mbeund_mi_new_community_post', { detail: newPost })
+      );
+    } catch {}
   };
 
-  // Action création d'une Story éphémère 24h (Photo ou Texte seul avec dégradé stylé)
+  // Suppression d'une Story créée par l'utilisateur
+  const handleDeleteStory = (story) => {
+    if (!story) return;
+    setUserStories((prev) => {
+      const next = prev.filter((s) => s.id !== story.id);
+      try {
+        localStorage.setItem('mbeund_mi_user_stories', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+    setStoryToDelete(null);
+    setReportSuccessToast("Story éphémère retirée de vos publications.");
+    setTimeout(() => setReportSuccessToast(null), 3000);
+  };
+
+  // Action création d'une Story éphémère 24h (Photo / Vidéo ou Texte seul avec dégradé stylé)
   const handleCreateStory = (e) => {
     e.preventDefault();
     setStoryError(null);
@@ -766,6 +1425,11 @@ export default function CommunautePageBody() {
       return;
     }
 
+    if (storyMode === 'media' && !storyMediaPreview) {
+      setStoryError("Veuillez prendre ou sélectionner une photo ou une vidéo.");
+      return;
+    }
+
     const modCheck = checkContentModeration(trimmed);
     if (!modCheck.isValid) {
       setStoryError(modCheck.reason);
@@ -778,15 +1442,20 @@ export default function CommunautePageBody() {
     const userAvatar = getPublicAvatar({ name: cleanAuthor, id: newStoryId, context: cleanText });
 
     let photoUrl = null;
-    if (storyMode === 'photo') {
-      const preset = PHOTO_PRESETS.find((p) => p.id === storyPhotoChoice);
-      photoUrl = preset && preset.url ? preset.url : '/images/communaute-ruelle.jpg';
+    let videoUrl = null;
+    if (storyMode === 'media') {
+      if (storyMediaType === 'video') {
+        videoUrl = storyMediaPreview;
+      } else {
+        photoUrl = storyMediaPreview;
+      }
     }
 
     const createdStory = {
       id: newStoryId,
       isUserStory: true,
       isTextStory: storyMode === 'texte',
+      mediaType: storyMode === 'texte' ? 'texte' : storyMediaType,
       gradientClass: storyBgGradient,
       relais: cleanAuthor,
       avatar: userAvatar,
@@ -797,6 +1466,7 @@ export default function CommunautePageBody() {
       dotColor: 'bg-emerald-400',
       texte: cleanText,
       image: photoUrl,
+      video: videoUrl,
     };
 
     const updatedStories = [createdStory, ...userStories];
@@ -806,6 +1476,9 @@ export default function CommunautePageBody() {
     } catch {}
 
     setStoryText('');
+    setStoryMediaFile(null);
+    setStoryMediaPreview(null);
+    setStoryMediaType(null);
     setStoryError(null);
     setIsStoryModalOpen(false);
     handleOpenStory(createdStory);
@@ -857,13 +1530,30 @@ export default function CommunautePageBody() {
             </p>
           </div>
 
-          <Link
-            to="/citoyen/signaler"
-            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#CC131A] hover:bg-red-700 text-white text-xs sm:text-sm font-black shadow-md transition active:scale-95 cursor-pointer shrink-0 w-full sm:w-auto"
-          >
-            <Camera size={16} />
-            Signaler avec photo
-          </Link>
+          <div className="flex items-center gap-2.5 shrink-0">
+            {/* Bouton avec l'avatar du citoyen connecté (Mon espace personnel) */}
+            <button
+              type="button"
+              onClick={() => setIsMySpaceOpen(true)}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/25 text-white transition active:scale-95 cursor-pointer shrink-0 shadow-xs group"
+              title="Mon espace personnel dans la communauté"
+              aria-label="Ouvrir mon espace personnel"
+            >
+              <div className="relative w-7 h-7 rounded-full overflow-hidden ring-2 ring-amber-400 group-hover:ring-white transition">
+                <img
+                  src={currentUserAvatar}
+                  alt={nomCitoyen}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <span className="hidden sm:inline text-xs font-black tracking-tight">Mon espace</span>
+              {myPosts.length > 0 && (
+                <span className="w-5 h-5 rounded-full bg-amber-500 text-navy-950 font-black text-[10px] flex items-center justify-center shadow-xs">
+                  {myPosts.length}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -915,7 +1605,7 @@ export default function CommunautePageBody() {
 
         {/* Carousel horizontal fluide avec avatars et swipe tactile natif */}
         <div
-          className="flex items-start gap-3 sm:gap-5 md:gap-6 overflow-x-auto pb-2 pt-1 scrollbar-none px-1 touch-pan-x"
+          className="flex items-start gap-3 sm:gap-5 md:gap-6 overflow-x-auto pb-2 pt-1 scrollbar-none px-1 touch-pan-x snap-x snap-mandatory"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {/* Cercle 1 : Ajouter sa propre observation terrain éphémère (Texte ou Photo) */}
@@ -930,24 +1620,24 @@ export default function CommunautePageBody() {
               setIsStoryModalOpen(true);
             }}
             disabled={userIsBanned}
-            className={`flex flex-col items-center flex-shrink-0 group text-left transition active:scale-95 ${
+            className={`flex flex-col items-center flex-shrink-0 snap-start group text-left transition active:scale-95 ${
               userIsBanned ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
             }`}
           >
-            <div className="relative w-18 h-18 sm:w-20 sm:h-20 md:w-22 md:h-22 rounded-full p-[3px] border-2 border-dashed border-navy-300 dark:border-navy-700 group-hover:border-[#CC131A] transition-all flex items-center justify-center">
+            <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full p-[2px] border-2 border-dashed border-navy-300 dark:border-navy-700 group-hover:border-[#CC131A] transition-all flex items-center justify-center">
               <div className="w-full h-full rounded-full bg-navy-50 dark:bg-navy-900/60 flex items-center justify-center text-navy-600 dark:text-navy-300 group-hover:bg-red-50 dark:group-hover:bg-red-950/40 group-hover:text-[#CC131A] transition-colors">
-                <Plus size={28} className="transition-transform group-hover:scale-110" />
+                <Plus size={20} className="transition-transform group-hover:scale-110" />
               </div>
             </div>
-            <span className="text-xs font-black text-navy-800 dark:text-slate-200 mt-2 text-center truncate max-w-[76px] sm:max-w-[88px]">
+            <span className="text-[11px] sm:text-xs font-black text-navy-800 dark:text-slate-200 mt-1.5 text-center truncate max-w-[64px] sm:max-w-[72px]">
               Votre story
             </span>
-            <span className="text-[10px] text-slate-400 font-semibold text-center">
+            <span className="text-[9px] sm:text-[10px] text-slate-400 font-semibold text-center">
               24h direct
             </span>
           </button>
 
-          {/* Stories des riverains de Thiaroye (taille agrandie avec bordure dégradée Instagram si non lue, grisée si lue) */}
+          {/* Stories des riverains de Thiaroye (format compact et proportionné, bordure dégradée Instagram si non lue, grisée si lue) */}
           {allStories.map((story) => {
             const isRead = !!viewedStories[story.id];
             return (
@@ -955,17 +1645,17 @@ export default function CommunautePageBody() {
                 key={story.id}
                 type="button"
                 onClick={() => handleOpenStory(story)}
-                className="flex flex-col items-center flex-shrink-0 group cursor-pointer text-left transition-transform active:scale-95"
+                className="flex flex-col items-center flex-shrink-0 snap-start group cursor-pointer text-left transition-transform active:scale-95"
               >
                 <div
                   data-testid={`story-ring-${story.id}`}
-                  className={`relative w-18 h-18 sm:w-20 sm:h-20 md:w-22 md:h-22 rounded-full p-[3px] transition-all duration-300 ${
+                  className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-full p-[2px] transition-all duration-300 ${
                     isRead
                       ? 'bg-slate-300 dark:bg-slate-700 opacity-70 group-hover:opacity-95 group-hover:bg-slate-400'
-                      : 'bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-600 group-hover:from-red-600 group-hover:to-amber-400 shadow-md group-hover:shadow-lg'
+                      : 'bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-600 group-hover:from-red-600 group-hover:to-amber-400 shadow-sm group-hover:shadow-md'
                   }`}
                 >
-                  <div className="w-full h-full rounded-full overflow-hidden bg-white dark:bg-navy-950 p-[2px]">
+                  <div className="w-full h-full rounded-full overflow-hidden bg-white dark:bg-navy-950 p-[1.5px]">
                     <img
                       src={story.avatar}
                       alt={story.relais}
@@ -975,21 +1665,21 @@ export default function CommunautePageBody() {
 
                   {/* Point pulsant indicateur d'alerte en direct si non lu, ou discret grisé si déjà lu */}
                   <span
-                    className={`absolute bottom-0.5 right-0.5 w-4 h-4 rounded-full border-2 border-white dark:border-[#071322] ${
+                    className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-[#071322] ${
                       isRead ? 'bg-slate-400' : `${story.dotColor || 'bg-emerald-400'} animate-pulse shadow-xs`
                     }`}
                   />
                 </div>
 
                 <span
-                  className={`text-xs mt-2 text-center truncate max-w-[76px] sm:max-w-[88px] ${
+                  className={`text-[11px] sm:text-xs mt-1.5 text-center truncate max-w-[64px] sm:max-w-[72px] ${
                     isRead ? 'font-bold text-slate-500 dark:text-slate-400' : 'font-black text-navy-900 dark:text-white'
                   }`}
                 >
                   {story.relais}
                 </span>
                 <span
-                  className={`text-[10px] text-center truncate max-w-[76px] sm:max-w-[88px] ${
+                  className={`text-[9px] sm:text-[10px] text-center truncate max-w-[64px] sm:max-w-[72px] ${
                     isRead ? 'font-semibold text-slate-400 dark:text-slate-500' : 'font-extrabold text-[#CC131A] dark:text-red-400'
                   }`}
                 >
@@ -1112,9 +1802,12 @@ export default function CommunautePageBody() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           {filteredPosts.map((post) => {
             const isLiked = !!likesState[post.id];
+            const isConfirmed = !!confirmationsState[post.id];
             const areCommentsOpen = !!openComments[post.id];
             const currentLikes = getLikesCount(post.id, post.baseLikes);
+            const currentConfirmations = getConfirmationsCount(post.id, post.baseConfirmations);
             const currentViews = getViewsCount(post.id, post.baseViews);
+            const currentShares = getSharesCount(post.id, post.baseShares || post.shares);
             const postComments = [
               ...(post.comments || []),
               ...(commentsByPost[post.id] || []),
@@ -1206,21 +1899,24 @@ export default function CommunautePageBody() {
                     {post.typePost === 'signalement' && (
                       <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-black px-2 sm:px-2.5 py-1 rounded-full bg-red-50 dark:bg-red-950/40 text-[#CC131A] dark:text-red-300 border border-red-200 dark:border-red-900 shrink-0 whitespace-nowrap">
                         <Camera size={12} className="shrink-0" />
-                        <span>Signalement terrain</span>
+                        <span className="sm:hidden">Signalement</span>
+                        <span className="hidden sm:inline">Signalement terrain</span>
                       </span>
                     )}
 
                     {post.typePost === 'entraide' && (
                       <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-black px-2 sm:px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 shrink-0 whitespace-nowrap">
                         <Flame size={12} className="shrink-0" />
-                        <span>Entraide & Mobilisation</span>
+                        <span className="sm:hidden">Entraide</span>
+                        <span className="hidden sm:inline">Entraide & Mobilisation</span>
                       </span>
                     )}
 
                     {post.typePost === 'resolu' && (
                       <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-black px-2 sm:px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shrink-0 whitespace-nowrap">
                         <CheckCircle2 size={12} className="shrink-0" />
-                        <span>Résolu & Sécurisé</span>
+                        <span className="sm:hidden">Résolu</span>
+                        <span className="hidden sm:inline">Résolu & Sécurisé</span>
                       </span>
                     )}
 
@@ -1243,7 +1939,7 @@ export default function CommunautePageBody() {
                       {openMenuPostId === post.id && (
                         <div
                           role="menu"
-                          className="absolute right-0 top-9 w-52 bg-white dark:bg-[#071322] border border-slate-200 dark:border-navy-700 rounded-xl shadow-xl z-20 py-1.5 animate-in fade-in zoom-in-95 duration-150"
+                          className="absolute right-0 top-9 w-52 max-w-[calc(100vw-32px)] bg-white dark:bg-[#071322] border border-slate-200 dark:border-navy-700 rounded-xl shadow-xl z-20 py-1.5 animate-in fade-in zoom-in-95 duration-150"
                         >
                           <button
                             type="button"
@@ -1299,8 +1995,17 @@ export default function CommunautePageBody() {
                   </div>
                 </div>
 
-                {/* 1. Conteneur visuel unifié sous le header : Photo OU Texte stylisé (hauteur identique sur tous les posts) */}
-                {post.image ? (
+                {/* 1. Conteneur visuel unifié sous le header : Vidéo, Photo OU Texte stylisé (hauteur identique sur tous les posts) */}
+                {post.video ? (
+                  <div className="relative w-full h-52 sm:h-60 md:h-68 bg-black overflow-hidden flex items-center justify-center">
+                    <video
+                      src={post.video}
+                      controls
+                      playsInline
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                ) : post.image ? (
                   <div
                     onClick={(e) => {
                       e.stopPropagation();
@@ -1373,15 +2078,17 @@ export default function CommunautePageBody() {
 
                 {/* ═══════════════════════════════════════════════════════════════ */}
                 {/* ═══════════════════════════════════════════════════════════════ */}
-                {/* BARRE D'ACTIONS SOCIALES ALIGNÉE SUR UNE SEULE LIGNE SANS WRAP */}
-                {/* Clic isolé strictement sur le post avec e.stopPropagation()    */}
+                {/* BARRE D'ACTIONS SOCIALES UNIFIÉE EN BLEU                         */}
+                {/* À GAUCHE : Cœur, Vues, Commentaires                              */}
+                {/* À DROITE : Carte & Partages (épurés sans texte)                 */}
                 {/* ═══════════════════════════════════════════════════════════════ */}
                 <div
                   onClick={(e) => e.stopPropagation()}
-                  className="px-3 sm:px-4 py-2.5 border-t border-navy-50 dark:border-navy-800/80 bg-slate-50/70 dark:bg-navy-900/40 flex items-center justify-between gap-1.5 sm:gap-2"
+                  className="px-2 sm:px-3 sm:px-4 py-2 sm:py-2.5 border-t border-navy-50 dark:border-navy-800/80 bg-slate-50/70 dark:bg-navy-900/40 flex items-center justify-between gap-1 sm:gap-2"
                 >
-                  <div className="flex items-center gap-1 sm:gap-2 flex-1 min-w-0">
-                    {/* 1. Bouton CŒUR (sans texte "J'aime" encombrant, cœur remarquable avec compteur) */}
+                  {/* BLOC GAUCHE : Interactions directes (Cœur, "C'est vrai" / Confirmation, Vues passives, Commentaires) */}
+                  <div className="flex items-center gap-1 sm:gap-1.5 flex-1 min-w-0 overflow-x-auto no-scrollbar">
+                    {/* 1. Bouton CŒUR (soutien moral avec feedback éphémère "J'aime !") */}
                     <button
                       type="button"
                       aria-label="J'aime le post"
@@ -1389,50 +2096,91 @@ export default function CommunautePageBody() {
                         e.stopPropagation();
                         handleToggleLike(post.id);
                       }}
-                      title="J'aime cette observation"
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-black transition-all duration-300 active:scale-90 cursor-pointer shadow-xs select-none flex-shrink-0 ${
+                      title="Soutenir cette publication"
+                      className={`inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-black transition-colors duration-200 active:scale-95 cursor-pointer select-none shrink-0 border ${
                         isLiked
-                          ? 'bg-rose-600 text-white border border-rose-600 shadow-md ring-2 ring-rose-400 dark:ring-rose-800 scale-[1.02]'
-                          : 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/60 dark:hover:bg-rose-900/60'
+                          ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
+                          : 'bg-blue-50/80 hover:bg-blue-100/90 text-[#0B2545] border-blue-200/70 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900/60 dark:hover:bg-blue-900/60'
                       }`}
                     >
                       <Heart
-                        size={17}
-                        className={`transition-all duration-300 ${
+                        size={14}
+                        className={`transition-transform duration-200 ${
                           isLiked
-                            ? 'fill-white text-white scale-110 animate-pulse'
-                            : 'fill-rose-500/20 text-rose-600 dark:text-rose-400'
+                            ? 'fill-white text-white'
+                            : 'fill-blue-500/20 text-[#0B2545] dark:text-blue-400'
                         }`}
                       />
-                      <span
-                        className={`px-1.5 py-0.2 rounded-full text-[11px] font-black transition-colors ${
-                          isLiked
-                            ? 'bg-white/20 text-white'
-                            : 'bg-rose-200/70 dark:bg-rose-900/70 text-rose-800 dark:text-rose-200'
-                        }`}
-                      >
-                        {currentLikes}
-                      </span>
+                      {justLikedPostId === post.id ? (
+                        <span className="px-1.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black bg-white/25 text-white animate-in fade-in zoom-in-95 duration-200">
+                          J'aime !
+                        </span>
+                      ) : (
+                        <span
+                          className={`px-1.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black transition-colors ${
+                            isLiked
+                              ? 'bg-black/20 text-white'
+                              : 'bg-blue-200/70 dark:bg-blue-900/70 text-blue-900 dark:text-blue-200'
+                          }`}
+                        >
+                          {currentLikes}
+                        </span>
+                      )}
                     </button>
 
-                    {/* 2. Bouton VUES / EXPLORATIONS (format épuré : icône œil + compteur) */}
+                    {/* 2. Bouton "C'EST VRAI" (Attestation citoyenne terrain avec feedback éphémère "Confirmé !") */}
                     <button
                       type="button"
-                      aria-label="Nombre d'explorations du post"
+                      aria-label="Confirmer cette situation (C'est vrai)"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleIncrementView(post.id);
+                        handleToggleConfirmation(post.id);
                       }}
-                      title="Explorations : personnes ayant consulté ce post"
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-black transition-all duration-200 active:scale-95 cursor-pointer shadow-xs bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-900/60 dark:hover:bg-sky-900/60 flex-shrink-0"
+                      title="C'est vrai : J'atteste avoir vu cette situation dans le quartier"
+                      className={`inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-black transition-colors duration-200 active:scale-95 cursor-pointer select-none shrink-0 border ${
+                        isConfirmed
+                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                          : 'bg-blue-50/80 hover:bg-emerald-50 text-[#0B2545] hover:text-emerald-700 border-blue-200/70 hover:border-emerald-400 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900/60 dark:hover:bg-emerald-950/50 dark:hover:text-emerald-300'
+                      }`}
                     >
-                      <Eye size={16} className="text-sky-600 dark:text-sky-400" />
-                      <span className="px-1.5 py-0.2 rounded-full text-[11px] font-black bg-sky-200/70 dark:bg-sky-900/70 text-sky-800 dark:text-sky-200">
+                      <CheckCircle2
+                        size={14}
+                        className={`transition-transform duration-200 ${
+                          isConfirmed ? 'text-white' : 'text-[#0B2545] dark:text-blue-400'
+                        }`}
+                      />
+                      {justConfirmedPostId === post.id ? (
+                        <span className="px-1.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black bg-white/25 text-white animate-in fade-in zoom-in-95 duration-200">
+                          Confirmé !
+                        </span>
+                      ) : (
+                        <span
+                          className={`px-1.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black transition-colors ${
+                            isConfirmed
+                              ? 'bg-black/20 text-white'
+                              : 'bg-blue-200/70 dark:bg-blue-900/70 text-blue-900 dark:text-blue-200'
+                          }`}
+                        >
+                          {currentConfirmations}
+                        </span>
+                      )}
+                    </button>
+
+                    {/* 3. Badge VUES / AUDIENCE : Passif (lecture seule, reflète l'audience réelle) */}
+                    <button
+                      type="button"
+                      disabled
+                      aria-label="Nombre d'explorations du post"
+                      title="Audience : nombre de consultations réelles du post"
+                      className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-black shrink-0 bg-blue-50/80 text-[#0B2545] border border-blue-200/70 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900/60 cursor-default select-none opacity-90 shadow-xs"
+                    >
+                      <Eye size={14} className="text-[#0B2545] dark:text-blue-400" />
+                      <span className="px-1.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black bg-blue-200/70 dark:bg-blue-900/70 text-blue-900 dark:text-blue-200">
                         {currentViews}
                       </span>
                     </button>
 
-                    {/* 3. Bouton COMMENTAIRES / AVIS (format épuré : icône message + compteur) */}
+                    {/* 4. Bouton COMMENTAIRES / AVIS */}
                     <button
                       type="button"
                       aria-label="Commentaires et avis riverains"
@@ -1441,22 +2189,22 @@ export default function CommunautePageBody() {
                         setOpenComments((prev) => ({ ...prev, [post.id]: !prev[post.id] }));
                       }}
                       title="Commentaires et avis riverains"
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-black transition-all duration-200 active:scale-95 cursor-pointer shadow-xs flex-shrink-0 ${
+                      className={`inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-black transition-colors duration-200 active:scale-95 cursor-pointer shadow-xs shrink-0 border ${
                         areCommentsOpen
-                          ? 'bg-amber-500 text-white border border-amber-500 shadow-md ring-2 ring-amber-300 dark:ring-amber-900/50'
-                          : 'bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/60 dark:hover:bg-amber-900/60'
+                          ? 'bg-[#0B2545] text-white border-[#0B2545]'
+                          : 'bg-blue-50/80 hover:bg-blue-100/90 text-[#0B2545] border-blue-200/70 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900/60 dark:hover:bg-blue-900/60'
                       }`}
                     >
                       <MessageCircle
-                        size={16}
-                        className={areCommentsOpen ? 'text-white' : 'text-amber-600 dark:text-amber-400'}
+                        size={14}
+                        className={areCommentsOpen ? 'text-white' : 'text-[#0B2545] dark:text-blue-400'}
                       />
                       <span
                         data-testid={`comments-count-${post.id}`}
-                        className={`px-1.5 py-0.2 rounded-full text-[11px] font-black transition-all ${
+                        className={`px-1.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black transition-all ${
                           areCommentsOpen
                             ? 'bg-white/20 text-white'
-                            : 'bg-amber-200/70 dark:bg-amber-900/70 text-amber-800 dark:text-amber-200'
+                            : 'bg-blue-200/70 dark:bg-blue-900/70 text-blue-900 dark:text-blue-200'
                         }`}
                       >
                         {postComments.length}
@@ -1464,68 +2212,47 @@ export default function CommunautePageBody() {
                     </button>
                   </div>
 
-                  {/* 4. Bouton CARTE & PARTAGER + Optionnel SIGNALER */}
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                  {/* BLOC DROITE : Carte & Partager (épurés sans texte à l'intérieur) */}
+                  <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
+                    {/* 4. Bouton CARTE (icône seule sans texte, survol bleu soutenu) */}
                     <button
                       type="button"
+                      aria-label="Localiser sur la carte interactive"
                       onClick={(e) => {
                         e.stopPropagation();
                         navigate(`/citoyen/carte?signalementId=${post.rawBackendId || post.id}&quartier=${encodeURIComponent(post.author.quartier || '')}`);
                       }}
                       title="Localiser sur la carte interactive avec son avatar"
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-black transition-all duration-200 active:scale-95 cursor-pointer shadow-xs bg-red-50 hover:bg-red-100 text-[#CC131A] border border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-900/60 dark:hover:bg-red-900/60 flex-shrink-0"
+                      className="group inline-flex items-center justify-center p-1.5 sm:p-2 rounded-xl text-xs font-black transition-all duration-200 active:scale-95 cursor-pointer shadow-xs flex-shrink-0 bg-blue-50/80 hover:bg-[#0B2545] text-[#0B2545] hover:text-white border border-blue-200/70 hover:border-[#0B2545] dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900/60 dark:hover:bg-blue-600 dark:hover:text-white hover:shadow-md"
                     >
-                      <MapPin size={15} className="text-[#CC131A] dark:text-red-400" />
-                      <span>Carte</span>
+                      <MapPin size={15} className="text-[#0B2545] dark:text-blue-400 group-hover:text-white transition-colors" />
                     </button>
 
+                    {/* 5. Bouton PARTAGER (icône + compteur de partages, survol bleu soutenu) */}
                     <button
                       type="button"
+                      aria-label="Partager ce post"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleShare(post);
                       }}
                       title="Partager ce post avec les voisins"
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-black transition-all duration-200 active:scale-95 cursor-pointer shadow-xs bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-900/60 dark:hover:bg-purple-900/60 flex-shrink-0"
+                      className="group inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-xl text-[10px] sm:text-xs font-black transition-all duration-200 active:scale-95 cursor-pointer shadow-xs flex-shrink-0 bg-blue-50/80 hover:bg-[#0B2545] text-[#0B2545] hover:text-white border border-blue-200/70 hover:border-[#0B2545] dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900/60 dark:hover:bg-blue-600 dark:hover:text-white hover:shadow-md"
                     >
                       {copiedShareId === post.id ? (
                         <>
-                          <Check size={15} className="text-emerald-600 dark:text-emerald-400" />
-                          <span className="text-emerald-700 dark:text-emerald-300 font-bold">Copié</span>
+                          <Check size={15} className="text-emerald-600 dark:text-emerald-400 group-hover:text-white" />
+                          <span className="px-1.5 py-0.2 rounded-full text-[10px] sm:text-[11px] font-black bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">Copié</span>
                         </>
                       ) : (
                         <>
-                          <Share2 size={15} className="text-purple-600 dark:text-purple-400" />
-                          <span>Partager</span>
+                          <Share2 size={15} className="text-[#0B2545] dark:text-blue-400 group-hover:text-white transition-colors" />
+                          <span className="px-1 sm:px-1.5 py-0.2 rounded-full text-[10px] sm:text-[11px] font-black bg-blue-200/70 dark:bg-blue-900/70 text-blue-900 dark:text-blue-200 group-hover:bg-white/20 group-hover:text-white transition-colors">
+                            {currentShares}
+                          </span>
                         </>
                       )}
                     </button>
-
-                    {/* 5. Bouton SIGNALER UN ABUS (Flag) pour modération citoyenne (uniquement sur les posts d'autres riverains) */}
-                    {!isPostOwner(post) && (
-                      <button
-                        type="button"
-                        aria-label="Signaler ce post"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (reportedIds[post.id]) return;
-                          setReportingItem({
-                            targetId: post.id,
-                            targetType: 'post',
-                            authorName: post.author.name,
-                            textSnippet: post.texte,
-                          });
-                        }}
-                        title={reportedIds[post.id] ? "Post déjà signalé pour modération" : "Signaler un contenu inapproprié ou abusif"}
-                        className={`inline-flex items-center justify-center p-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer shadow-xs flex-shrink-0 ${
-                          reportedIds[post.id]
-                            ? 'bg-slate-100 dark:bg-navy-800 text-slate-400 border border-slate-200 dark:border-navy-700 cursor-default'
-                            : 'bg-slate-50 hover:bg-rose-50 text-slate-500 hover:text-red-600 border border-slate-200 dark:border-navy-800 dark:bg-navy-900/40 dark:text-slate-400 dark:hover:text-red-400'
-                        }`}
-                      >
-                        <Flag size={14} className={reportedIds[post.id] ? 'text-slate-400' : 'text-slate-400 group-hover:text-red-500'} />
-                      </button>
-                    )}
                   </div>
                 </div>
 
@@ -1742,114 +2469,90 @@ export default function CommunautePageBody() {
                 </div>
               </div>
 
-              {/* Sélection d'image : Prise directe, Upload ou Bibliothèque */}
+              {/* Sélection de média : Prise directe ou Upload de photo / vidéo (Optionnel) */}
               <div>
                 <label className="block text-xs font-black text-navy-900 dark:text-white uppercase tracking-wider mb-2">
-                  Illustration de la situation (Optionnel)
+                  Photo ou Vidéo du constat (Optionnel)
                 </label>
 
-                {/* Inputs cachés pour la prise de photo et l'upload */}
+                {/* Inputs cachés pour la prise de photo/vidéo et l'upload */}
                 <input
                   type="file"
                   ref={modalCameraRef}
-                  accept="image/*"
+                  accept="image/*,video/*"
                   capture="environment"
                   className="hidden"
-                  onChange={handleModalPhotoFile}
+                  onChange={handleModalMediaFile}
                 />
                 <input
                   type="file"
                   ref={modalUploadRef}
-                  accept="image/*"
+                  accept="image/*,video/*"
                   className="hidden"
-                  onChange={handleModalPhotoFile}
+                  onChange={handleModalMediaFile}
                 />
 
-                {/* Boutons d'action pour prendre ou uploader une photo */}
+                {/* Boutons d'action pour prendre ou importer une photo / vidéo */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
                   <button
                     type="button"
-                    onClick={() => modalCameraRef.current?.click()}
-                    className="flex items-center justify-center gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-navy-700 bg-white dark:bg-navy-900 hover:border-[#CC131A] dark:hover:border-[#CC131A] text-navy-900 dark:text-white font-bold text-xs transition cursor-pointer active:scale-95 shadow-2xs group"
+                    onClick={() => startLiveCamera('post')}
+                    className="flex items-center justify-center gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-navy-700 bg-slate-50 dark:bg-navy-900 hover:border-slate-400 dark:hover:border-slate-500 text-slate-800 dark:text-slate-200 font-bold text-xs transition cursor-pointer active:scale-95 shadow-2xs group"
                   >
-                    <Camera size={16} className="text-[#CC131A] group-hover:scale-110 transition" />
-                    <span>Prendre une photo</span>
+                    <Camera size={16} className="text-slate-600 dark:text-slate-300 group-hover:scale-110 transition" />
+                    <span>Prendre photo / vidéo</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => modalUploadRef.current?.click()}
-                    className="flex items-center justify-center gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-navy-700 bg-white dark:bg-navy-900 hover:border-[#0B2545] dark:hover:border-blue-400 text-navy-900 dark:text-white font-bold text-xs transition cursor-pointer active:scale-95 shadow-2xs group"
+                    className="flex items-center justify-center gap-2 p-2.5 rounded-xl border border-slate-200 dark:border-navy-700 bg-slate-50 dark:bg-navy-900 hover:border-slate-400 dark:hover:border-slate-500 text-slate-800 dark:text-slate-200 font-bold text-xs transition cursor-pointer active:scale-95 shadow-2xs group"
                   >
-                    <Upload size={16} className="text-[#0B2545] dark:text-blue-400 group-hover:scale-110 transition" />
+                    <Upload size={16} className="text-slate-600 dark:text-slate-300 group-hover:scale-110 transition" />
                     <span>Importer depuis l'appareil</span>
                   </button>
                 </div>
 
-                {/* Aperçu si une photo a été prise ou uploadée */}
-                {modalCustomPhoto && (
+                {/* Aperçu si un média (photo ou vidéo) a été sélectionné */}
+                {modalMediaPreview ? (
                   <div className="relative mb-3 rounded-2xl overflow-hidden border-2 border-emerald-500/80 bg-slate-900 shadow-sm animate-in fade-in duration-200">
-                    <img
-                      src={modalCustomPhoto}
-                      alt="Photo capturée pour le post"
-                      className="w-full h-36 sm:h-44 object-cover"
-                    />
+                    {modalMediaType === 'video' ? (
+                      <video
+                        src={modalMediaPreview}
+                        controls
+                        playsInline
+                        className="w-full h-40 sm:h-48 object-contain bg-black"
+                      />
+                    ) : (
+                      <img
+                        src={modalMediaPreview}
+                        alt="Photo capturée pour le post"
+                        className="w-full h-36 sm:h-44 object-cover"
+                      />
+                    )}
                     <div className="absolute top-2 left-2 px-2.5 py-1 rounded-full bg-emerald-600/90 text-white text-[11px] font-black flex items-center gap-1 shadow-xs">
                       <Check size={12} strokeWidth={3} />
-                      <span>Votre photo est prête</span>
+                      <span>{modalMediaType === 'video' ? 'Vidéo prête' : 'Photo prête'}</span>
                     </div>
                     <button
                       type="button"
                       onClick={() => {
-                        setModalCustomPhoto(null);
-                        setModalPhotoChoice('none');
+                        setModalMediaFile(null);
+                        setModalMediaPreview(null);
+                        setModalMediaType(null);
                       }}
                       className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/70 hover:bg-red-600 text-white flex items-center justify-center transition cursor-pointer shadow-xs"
-                      title="Retirer cette photo"
-                      aria-label="Retirer cette photo"
+                      title="Retirer ce média"
+                      aria-label="Retirer ce média"
                     >
                       <Trash2 size={13} />
                     </button>
                   </div>
+                ) : (
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 italic">
+                    Astuce : Les publications avec photo ou vidéo sont plus rapidement remarquées et confirmées par vos voisins.
+                  </p>
                 )}
-
-                {/* Bibliothèque d'illustrations locales */}
-                <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1.5">
-                  Ou choisir une illustration de la communauté :
-                </p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {PHOTO_PRESETS.map((p) => {
-                    const isSelected = !modalCustomPhoto && modalPhotoChoice === p.id;
-                    return (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => {
-                          setModalCustomPhoto(null);
-                          setModalPhotoChoice(p.id);
-                        }}
-                        className={`p-1.5 rounded-xl border text-left flex flex-col items-center gap-1 transition-all cursor-pointer ${
-                          isSelected
-                            ? 'border-[#0B2545] dark:border-blue-400 bg-blue-50 dark:bg-blue-950/40 text-[#0B2545] dark:text-white font-black ring-2 ring-[#0B2545]/20'
-                            : 'border-slate-200 dark:border-navy-700 bg-slate-50 dark:bg-navy-900/40 text-slate-600 dark:text-slate-300'
-                        }`}
-                      >
-                        {p.url ? (
-                          <div className="w-full h-12 rounded-lg overflow-hidden bg-slate-200">
-                            <img src={p.url} alt={p.label} className="w-full h-full object-cover" />
-                          </div>
-                        ) : (
-                          <div className="w-full h-12 rounded-lg bg-slate-100 dark:bg-navy-800 flex items-center justify-center text-slate-400">
-                            <ImageIcon size={18} />
-                          </div>
-                        )}
-                        <span className="text-[10px] truncate w-full text-center">
-                          {p.label}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
               </div>
 
               {/* Message d'erreur de modération pour le post */}
@@ -1922,6 +2625,9 @@ export default function CommunautePageBody() {
                 onClick={() => {
                   setIsStoryModalOpen(false);
                   setStoryError(null);
+                  setStoryMediaFile(null);
+                  setStoryMediaPreview(null);
+                  setStoryMediaType(null);
                 }}
                 className="w-8 h-8 rounded-full bg-slate-100 dark:bg-navy-800 text-slate-500 dark:text-slate-300 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-navy-700 transition cursor-pointer"
               >
@@ -1931,7 +2637,7 @@ export default function CommunautePageBody() {
 
             {/* Formulaire de création de Story */}
             <form onSubmit={handleCreateStory} className="space-y-4">
-              {/* Choix du mode : Story Texte seul ou Story Photo */}
+              {/* Choix du mode : Story Texte seul ou Story Photo ou Vidéo */}
               <div>
                 <label className="block text-xs font-black text-navy-900 dark:text-white uppercase tracking-wider mb-1.5">
                   Format de votre Story
@@ -1939,7 +2645,10 @@ export default function CommunautePageBody() {
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
-                    onClick={() => setStoryMode('texte')}
+                    onClick={() => {
+                      setStoryMode('texte');
+                      setStoryError(null);
+                    }}
                     className={`p-3 rounded-xl border text-center transition cursor-pointer flex items-center justify-center gap-2 ${
                       storyMode === 'texte'
                         ? 'border-[#0B2545] dark:border-blue-400 bg-blue-50 dark:bg-blue-950/40 text-[#0B2545] dark:text-white font-black'
@@ -1952,15 +2661,21 @@ export default function CommunautePageBody() {
 
                   <button
                     type="button"
-                    onClick={() => setStoryMode('photo')}
+                    onClick={() => {
+                      setStoryMode('media');
+                      setStoryError(null);
+                    }}
                     className={`p-3 rounded-xl border text-center transition cursor-pointer flex items-center justify-center gap-2 ${
-                      storyMode === 'photo'
+                      storyMode === 'media'
                         ? 'border-[#CC131A] bg-red-50 dark:bg-red-950/40 text-[#CC131A] font-black'
                         : 'border-slate-200 dark:border-navy-700 bg-slate-50 dark:bg-navy-900 text-slate-600 dark:text-slate-300'
                     }`}
                   >
-                    <Camera size={16} />
-                    <span className="text-xs">Story avec Photo</span>
+                    <div className="flex items-center gap-1">
+                      <Camera size={15} />
+                      <Video size={15} />
+                    </div>
+                    <span className="text-xs">Story Photo ou Vidéo</span>
                   </button>
                 </div>
               </div>
@@ -1997,36 +2712,94 @@ export default function CommunautePageBody() {
                 </div>
               )}
 
-              {/* Si mode photo : Choix de la photo terrain */}
-              {storyMode === 'photo' && (
-                <div>
-                  <label className="block text-xs font-black text-navy-900 dark:text-white uppercase tracking-wider mb-1.5">
-                    Photo du terrain
+              {/* Si mode photo ou vidéo : Prise de vue directe ou Import de fichier */}
+              {storyMode === 'media' && (
+                <div className="space-y-3">
+                  <label className="block text-xs font-black text-navy-900 dark:text-white uppercase tracking-wider">
+                    Photo ou Vidéo du terrain
                   </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {PHOTO_PRESETS.filter((p) => p.url).map((p) => {
-                      const isSelected = storyPhotoChoice === p.id;
-                      return (
-                        <button
-                          key={p.id}
-                          type="button"
-                          onClick={() => setStoryPhotoChoice(p.id)}
-                          className={`p-1.5 rounded-xl border text-left flex flex-col items-center gap-1 transition cursor-pointer ${
-                            isSelected
-                              ? 'border-[#CC131A] bg-red-50 dark:bg-red-950/40 font-black ring-2 ring-red-400'
-                              : 'border-slate-200 dark:border-navy-700 opacity-80 hover:opacity-100'
-                          }`}
-                        >
-                          <div className="w-full h-14 rounded-lg overflow-hidden bg-slate-200">
-                            <img src={p.url} alt={p.label} className="w-full h-full object-cover" />
-                          </div>
-                          <span className="text-[10px] text-center truncate w-full">
-                            {p.label}
-                          </span>
-                        </button>
-                      );
-                    })}
+
+                  {/* Inputs réels cachés */}
+                  <input
+                    ref={storyCameraRef}
+                    type="file"
+                    accept="image/*,video/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={handleStoryMediaFile}
+                  />
+                  <input
+                    ref={storyUploadRef}
+                    type="file"
+                    accept="image/*,video/*"
+                    className="hidden"
+                    onChange={handleStoryMediaFile}
+                  />
+
+                  {/* Boutons d'action pour capturer ou uploader */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => startLiveCamera('story')}
+                      className="flex items-center justify-center gap-2 p-3 rounded-xl border border-slate-200 dark:border-navy-700 bg-slate-50 dark:bg-navy-900 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-navy-800 transition font-bold text-xs cursor-pointer shadow-xs group"
+                    >
+                      <Camera size={16} className="text-slate-600 dark:text-slate-300 group-hover:scale-110 transition" />
+                      <span>Prendre photo / vidéo</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => storyUploadRef.current?.click()}
+                      className="flex items-center justify-center gap-2 p-3 rounded-xl border border-slate-200 dark:border-navy-700 bg-slate-50 dark:bg-navy-900 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-navy-800 transition font-bold text-xs cursor-pointer shadow-xs group"
+                    >
+                      <Upload size={16} className="text-slate-600 dark:text-slate-300 group-hover:scale-110 transition" />
+                      <span>Importer un fichier</span>
+                    </button>
                   </div>
+
+                  {/* Prévisualisation du média chargé */}
+                  {storyMediaPreview ? (
+                    <div className="relative rounded-2xl overflow-hidden border-2 border-red-500/40 bg-black max-h-56">
+                      {storyMediaType === 'video' ? (
+                        <video
+                          src={storyMediaPreview}
+                          controls
+                          playsInline
+                          className="w-full max-h-56 object-contain mx-auto"
+                        />
+                      ) : (
+                        <img
+                          src={storyMediaPreview}
+                          alt="Aperçu Story"
+                          className="w-full max-h-56 object-cover"
+                        />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setStoryMediaFile(null);
+                          setStoryMediaPreview(null);
+                          setStoryMediaType(null);
+                        }}
+                        className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/75 hover:bg-red-600 text-white flex items-center justify-center transition cursor-pointer shadow-md"
+                        title="Retirer ce média"
+                        aria-label="Retirer ce média"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                      <div className="absolute bottom-2 left-2 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-xs text-[10px] font-bold text-white flex items-center gap-1.5">
+                        {storyMediaType === 'video' ? (
+                          <Video size={12} className="text-amber-400" />
+                        ) : (
+                          <Camera size={12} className="text-emerald-400" />
+                        )}
+                        <span>{storyMediaType === 'video' ? 'Vidéo prête' : 'Photo prête'}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-4 rounded-xl border border-dashed border-slate-300 dark:border-navy-700 bg-slate-50/50 dark:bg-navy-900/30 text-center text-xs text-slate-500 dark:text-slate-400">
+                      Prenez une photo ou vidéo en direct ou importez un fichier (MP4, MOV, JPG, PNG · max 25 Mo).
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -2082,6 +2855,9 @@ export default function CommunautePageBody() {
                   onClick={() => {
                     setIsStoryModalOpen(false);
                     setStoryError(null);
+                    setStoryMediaFile(null);
+                    setStoryMediaPreview(null);
+                    setStoryMediaType(null);
                   }}
                   className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-navy-700 text-slate-600 dark:text-slate-300 text-xs sm:text-sm font-bold hover:bg-slate-100 dark:hover:bg-navy-800 transition cursor-pointer"
                 >
@@ -2102,6 +2878,229 @@ export default function CommunautePageBody() {
       )}
 
       {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* 6. BIS. VISEUR CAMÉRA EN DIRECT (PHOTO / VIDÉO RÉEL SUR TÉLÉPHONE/PC) */}
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {liveCameraTarget && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Viseur Caméra en Direct"
+          className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-5 bg-black/90 backdrop-blur-md animate-in fade-in duration-200"
+          onClick={stopLiveCamera}
+        >
+          <div
+            className="relative w-full max-w-md bg-slate-950 border border-white/20 rounded-3xl overflow-hidden shadow-2xl flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header du viseur */}
+            <div className="flex items-center justify-between p-3.5 sm:p-4 bg-black/60 border-b border-white/10 z-10">
+              <div className="flex items-center gap-2">
+                <div className={`w-3 h-3 rounded-full ${isLiveRecording ? 'bg-red-500 animate-ping' : 'bg-emerald-500'}`} />
+                <span className="text-xs font-black text-white uppercase tracking-wider">
+                  {isLiveRecording
+                    ? `Enregistrement 00:${liveRecordingSeconds < 10 ? '0' : ''}${liveRecordingSeconds} / 00:30`
+                    : liveCameraTarget === 'story'
+                    ? 'Caméra Direct · Story 24h'
+                    : 'Caméra Direct · Nouveau Post'}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {/* Bascule Caméra Avant / Arrière */}
+                <button
+                  type="button"
+                  onClick={flipLiveCamera}
+                  title="Changer de caméra (avant/arrière)"
+                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer"
+                >
+                  <RefreshCw size={14} />
+                </button>
+                {/* Fermer */}
+                <button
+                  type="button"
+                  onClick={stopLiveCamera}
+                  title="Fermer la caméra"
+                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Viseur / Vidéo en direct */}
+            <div className="relative w-full aspect-[4/3] sm:aspect-[9/16] max-h-[55vh] bg-black flex items-center justify-center overflow-hidden">
+              {liveCameraError ? (
+                <div className="p-6 text-center space-y-3">
+                  <AlertTriangle size={36} className="text-amber-400 mx-auto" />
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    {liveCameraError}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const target = liveCameraTarget;
+                      stopLiveCamera();
+                      if (target === 'story') {
+                        storyCameraRef.current?.click();
+                      } else {
+                        modalCameraRef.current?.click();
+                      }
+                    }}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-bold transition cursor-pointer"
+                  >
+                    <Upload size={14} />
+                    <span>Ouvrir l'appareil via sélecteur système</span>
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <video
+                    ref={liveVideoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className={`w-full h-full object-cover ${liveFacingMode === 'user' ? 'scale-x-[-1]' : ''}`}
+                  />
+                  {/* Coins de visée graphique */}
+                  <div className="absolute inset-4 border border-white/20 rounded-2xl pointer-events-none flex flex-col justify-between p-2">
+                    <div className="flex justify-between">
+                      <span className="w-4 h-4 border-t-2 border-l-2 border-white/70" />
+                      <span className="w-4 h-4 border-t-2 border-r-2 border-white/70" />
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="w-4 h-4 border-b-2 border-l-2 border-white/70" />
+                      <span className="w-4 h-4 border-b-2 border-r-2 border-white/70" />
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Commandes d'action en bas */}
+            {!liveCameraError && (
+              <div className="p-4 bg-slate-900 border-t border-white/10 flex flex-col gap-3">
+                {/* Sélecteur de mode en onglets (Neutres au départ, l'actif devient rouge) */}
+                {!isLiveRecording && (
+                  <div className="flex items-center justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setLiveCaptureMode('photo')}
+                      className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                        liveCaptureMode === 'photo'
+                          ? 'bg-red-600 text-white shadow-md shadow-red-600/40 ring-2 ring-red-400'
+                          : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
+                      }`}
+                    >
+                      Photo
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLiveCaptureMode('video')}
+                      className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                        liveCaptureMode === 'video'
+                          ? 'bg-red-600 text-white shadow-md shadow-red-600/40 ring-2 ring-red-400'
+                          : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
+                      }`}
+                    >
+                      Vidéo
+                    </button>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-around">
+                  {!isLiveRecording ? (
+                    <>
+                      {/* Bouton Prendre Photo */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setLiveCaptureMode('photo');
+                          captureLivePhoto();
+                        }}
+                        className="flex flex-col items-center gap-1 group cursor-pointer"
+                        title="Prendre une photo instantanée"
+                      >
+                        <div
+                          className={`w-14 h-14 rounded-full border-4 flex items-center justify-center transition active:scale-95 shadow-lg ${
+                            liveCaptureMode === 'photo'
+                              ? 'border-red-400 bg-red-600 group-hover:scale-105 group-hover:bg-red-500 shadow-red-600/50'
+                              : 'border-white/40 bg-white/10 group-hover:border-white group-hover:bg-white/20'
+                          }`}
+                        >
+                          <Camera
+                            size={22}
+                            className={liveCaptureMode === 'photo' ? 'text-white' : 'text-white'}
+                          />
+                        </div>
+                        <span
+                          className={`text-[11px] font-black transition-colors ${
+                            liveCaptureMode === 'photo' ? 'text-red-400' : 'text-white'
+                          }`}
+                        >
+                          Prendre photo
+                        </span>
+                      </button>
+
+                      {/* Bouton Filmer Vidéo */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setLiveCaptureMode('video');
+                          startLiveVideoRecording();
+                        }}
+                        className="flex flex-col items-center gap-1 group cursor-pointer"
+                        title="Enregistrer une vidéo du terrain (max 30s)"
+                      >
+                        <div
+                          className={`w-14 h-14 rounded-full border-4 flex items-center justify-center transition active:scale-95 shadow-lg ${
+                            liveCaptureMode === 'video'
+                              ? 'border-red-400 bg-red-600 group-hover:scale-105 group-hover:bg-red-500 shadow-red-600/50'
+                              : 'border-white/40 bg-white/10 group-hover:border-white group-hover:bg-white/20'
+                          }`}
+                        >
+                          <Video
+                            size={22}
+                            className={liveCaptureMode === 'video' ? 'text-white' : 'text-white'}
+                          />
+                        </div>
+                        <span
+                          className={`text-[11px] font-black transition-colors ${
+                            liveCaptureMode === 'video' ? 'text-red-400' : 'text-white'
+                          }`}
+                        >
+                          Filmer vidéo
+                        </span>
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={stopLiveVideoRecording}
+                      className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-red-600 hover:bg-red-500 text-white font-black text-sm transition active:scale-95 shadow-xl cursor-pointer"
+                    >
+                      <Square size={18} className="fill-white" />
+                      <span>Arrêter et valider la vidéo</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Indication visuelle d'état */}
+                {!isLiveRecording && (
+                  <p className="text-[11px] text-center text-slate-400 italic">
+                    {liveCaptureMode === 'photo'
+                      ? 'Mode Photo sélectionné en rouge · Prêt à capturer'
+                      : liveCaptureMode === 'video'
+                      ? 'Mode Vidéo sélectionné en rouge · Prêt à enregistrer (max 30s)'
+                      : 'Faites votre choix : cliquez sur Photo ou Vidéo pour activer'}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════════ */}
       {/* 7. MODALE FULLSCREEN POUR LES STORIES : VUE DÉGAGÉE & TEXTE COMPACT */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {activeStory && (
@@ -2114,21 +3113,45 @@ export default function CommunautePageBody() {
         >
           <div
             className={`relative w-full max-w-sm sm:max-w-md h-[85vh] sm:h-[82vh] rounded-3xl overflow-hidden shadow-2xl flex flex-col justify-between border border-white/20 select-none ${
-              activeStory.isTextStory || !activeStory.image
+              activeStory.isTextStory || (!activeStory.image && !activeStory.video)
                 ? `bg-gradient-to-br ${activeStory.gradientClass || 'from-[#0B2545] via-[#103565] to-slate-950'}`
                 : 'bg-black'
             }`}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Si story avec photo : photo en pleine page avec vignettes légères haut/bas pour laisser la photo visible à > 80% */}
-            {activeStory.image && !activeStory.isTextStory && (
+            {/* Si story avec photo ou vidéo : affichage en pleine page */}
+            {!activeStory.isTextStory && (activeStory.video || activeStory.image) && (
               <>
-                <img
-                  src={activeStory.image}
-                  alt={activeStory.texte}
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
+                {activeStory.video || activeStory.mediaType === 'video' ? (
+                  <video
+                    src={activeStory.video}
+                    autoPlay
+                    playsInline
+                    muted={isStoryVideoMuted}
+                    loop
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                ) : (
+                  <img
+                    src={activeStory.image}
+                    alt={activeStory.texte}
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                )}
                 <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-transparent to-black/85 pointer-events-none" />
+
+                {/* Bouton pour couper ou réactiver le son sur les vidéos */}
+                {(activeStory.video || activeStory.mediaType === 'video') && (
+                  <button
+                    type="button"
+                    onClick={() => setIsStoryVideoMuted(!isStoryVideoMuted)}
+                    className="absolute top-20 right-4 z-30 w-9 h-9 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 transition cursor-pointer backdrop-blur-xs shadow-md border border-white/20"
+                    title={isStoryVideoMuted ? 'Activer le son' : 'Couper le son'}
+                    aria-label={isStoryVideoMuted ? 'Activer le son' : 'Couper le son'}
+                  >
+                    {isStoryVideoMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                  </button>
+                )}
               </>
             )}
 
@@ -2181,7 +3204,7 @@ export default function CommunautePageBody() {
             </div>
 
             {/* Centre de la Story : Message en grand si story texte seule */}
-            {(activeStory.isTextStory || !activeStory.image) ? (
+            {(activeStory.isTextStory || (!activeStory.image && !activeStory.video)) ? (
               <div className="relative z-20 p-6 my-auto text-center space-y-4">
                 <div className="w-12 h-12 mx-auto rounded-full bg-white/10 flex items-center justify-center text-amber-300 backdrop-blur-sm">
                   <Sparkles size={24} />
@@ -2195,13 +3218,13 @@ export default function CommunautePageBody() {
                 </div>
               </div>
             ) : (
-              /* Zone centrale vide pour laisser la photo totalement dégagée et sans obstruction */
+              /* Zone centrale vide pour laisser la photo ou vidéo totalement dégagée */
               <div className="flex-1" />
             )}
 
-            {/* Bas de la Story : Capsule de texte compacte escamotable pour ne pas masquer la photo */}
+            {/* Bas de la Story : Capsule de texte compacte escamotable pour ne pas masquer le média */}
             <div className="relative z-20 p-4 space-y-3">
-              {activeStory.image && !activeStory.isTextStory && (
+              {(activeStory.image || activeStory.video) && !activeStory.isTextStory && (
                 <div className="p-3 rounded-2xl bg-black/60 backdrop-blur-md border border-white/20 transition-all">
                   <div className="flex items-center justify-between gap-2 mb-1">
                     <div className="flex items-center gap-1.5 text-amber-400 text-[10px] font-black uppercase">
@@ -2267,7 +3290,7 @@ export default function CommunautePageBody() {
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {previewImageModal && (
         <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-150"
+          className="fixed inset-0 z-[10002] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-150"
           onClick={() => setPreviewImageModal(null)}
         >
           <div className="relative max-w-4xl max-h-[85vh] rounded-3xl overflow-hidden shadow-2xl border border-white/20">
@@ -2360,12 +3383,346 @@ export default function CommunautePageBody() {
         </div>
       )}
 
-      {/* Modale de confirmation de suppression d'une publication par son auteur */}
+
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* 10. VOLET COULISSANT : MON ESPACE PERSONNEL COMMUNAUTAIRE (OPTION 1) */}
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {isMySpaceOpen && (
+        <div
+          role="dialog"
+          aria-label="Mon espace communautaire"
+          className="fixed inset-0 z-[9999] flex justify-end bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 overflow-hidden overscroll-contain"
+          onClick={() => setIsMySpaceOpen(false)}
+          onWheel={(e) => e.stopPropagation()}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            onWheel={(e) => e.stopPropagation()}
+            className="relative w-full max-w-md sm:max-w-lg h-full bg-white dark:bg-[#071322] border-l border-navy-100 dark:border-navy-800 shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-300 overflow-hidden overscroll-contain"
+          >
+            {/* En-tête du volet avec profil citoyen */}
+            <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-navy-800 bg-gradient-to-br from-[#0B2545] via-[#103565] to-slate-950 text-white relative flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsMySpaceOpen(false)}
+                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer"
+                title="Fermer mon espace"
+                aria-label="Fermer mon espace"
+              >
+                <X size={18} />
+              </button>
+
+              <div className="flex items-center gap-3.5 pt-1">
+                <div className="relative w-14 h-14 rounded-2xl overflow-hidden ring-2 ring-amber-400 shrink-0 shadow-md">
+                  <img src={currentUserAvatar} alt={nomCitoyen} className="w-full h-full object-cover" />
+                </div>
+                <div className="min-w-0 flex-1 pr-6">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-base sm:text-lg font-black truncate">{nomCitoyen}</h2>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/40 shrink-0">
+                      Mon espace
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-300 flex items-center gap-1 mt-0.5">
+                    <MapPin size={12} className="text-red-400 shrink-0" />
+                    <span>Résident de Thiaroye-sur-Mer</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* 3 mini compteurs d'impact citoyen */}
+              <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-white/15 text-center">
+                <div className="p-2 rounded-xl bg-white/10 backdrop-blur-2xs">
+                  <span className="block text-base font-black text-white">{myPosts.length}</span>
+                  <span className="text-[10px] text-slate-300 font-semibold">Publications</span>
+                </div>
+                <div className="p-2 rounded-xl bg-white/10 backdrop-blur-2xs">
+                  <span className="block text-base font-black text-amber-300">{myStories.length}</span>
+                  <span className="text-[10px] text-slate-300 font-semibold">Stories 24h</span>
+                </div>
+                <div className="p-2 rounded-xl bg-white/10 backdrop-blur-2xs">
+                  <span className="block text-base font-black text-rose-300">{myTotalLikes}</span>
+                  <span className="text-[10px] text-slate-300 font-semibold">Soutiens reçus</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Sélecteur d'onglets du volet : Mes Posts vs Mes Stories */}
+            <div className="flex items-center border-b border-slate-100 dark:border-navy-800 bg-slate-50 dark:bg-navy-900/60 p-2 gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setMySpaceTab('posts')}
+                className={`flex-1 py-2 rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                  mySpaceTab === 'posts'
+                    ? 'bg-white dark:bg-[#071322] text-[#0B2545] dark:text-white shadow-xs border border-slate-200 dark:border-navy-700'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-navy-900 dark:hover:text-white'
+                }`}
+              >
+                <Users size={14} />
+                <span>Mes publications ({myPosts.length})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMySpaceTab('stories')}
+                className={`flex-1 py-2 rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                  mySpaceTab === 'stories'
+                    ? 'bg-white dark:bg-[#071322] text-[#CC131A] dark:text-rose-400 shadow-xs border border-slate-200 dark:border-navy-700'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-navy-900 dark:hover:text-white'
+                }`}
+              >
+                <Sparkles size={14} />
+                <span>Mes Stories 24h ({myStories.length})</span>
+              </button>
+            </div>
+
+            {/* Contenu défilable de l'espace personnel (isolation stricte du scroll) */}
+            <div
+              className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5 space-y-3"
+              style={{ WebkitOverflowScrolling: 'touch' }}
+            >
+              {mySpaceTab === 'posts' ? (
+                myPosts.length === 0 ? (
+                  <div className="text-center py-12 px-4 space-y-3">
+                    <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-navy-900 flex items-center justify-center mx-auto text-slate-400">
+                      <MessageSquarePlus size={24} />
+                    </div>
+                    <h4 className="text-sm font-black text-navy-900 dark:text-white">
+                      Aucune publication partagée
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
+                      Vos constats et appels à l'entraide pour vos voisins de quartier apparaîtront ici.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMySpaceOpen(false);
+                        setIsPostModalOpen(true);
+                      }}
+                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0B2545] hover:bg-[#154275] text-white text-xs font-black shadow-md transition active:scale-95 cursor-pointer mt-2"
+                    >
+                      <Plus size={14} />
+                      <span>Créer un post</span>
+                    </button>
+                  </div>
+                ) : (
+                  myPosts.map((post) => (
+                    <div
+                      key={post.id}
+                      className="p-4 rounded-2xl border border-slate-200 dark:border-navy-800 bg-slate-50/50 dark:bg-navy-900/40 space-y-2.5 transition hover:border-slate-300 dark:hover:border-navy-700"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-blue-100/80 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300">
+                            {post.categorie || post.badgeFiltre}
+                          </span>
+                          <span className="text-[11px] text-slate-400 font-semibold">
+                            {post.date}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setPostToDelete(post)}
+                          className="w-7 h-7 rounded-lg bg-red-50 dark:bg-red-950/40 text-[#CC131A] hover:bg-red-100 dark:hover:bg-red-900/60 flex items-center justify-center transition cursor-pointer"
+                          title="Supprimer cette publication"
+                          aria-label="Supprimer cette publication"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+
+                      {/* Aperçu média si existant avec agrandissement au clic */}
+                      {post.video ? (
+                        <div className="w-full h-36 rounded-xl overflow-hidden bg-black flex items-center justify-center border border-slate-200 dark:border-navy-700">
+                          <video src={post.video} controls playsInline className="w-full h-full object-contain" />
+                        </div>
+                      ) : (post.image || post.photo || post.photoUrl) ? (
+                        <div
+                          onClick={() => setPreviewImageModal(post.image || post.photo || post.photoUrl)}
+                          className="relative w-full h-40 rounded-xl overflow-hidden bg-slate-200 dark:bg-navy-950 cursor-pointer group shadow-xs border border-slate-200 dark:border-navy-700"
+                          title="Cliquer pour agrandir la photo"
+                        >
+                          <img
+                            src={post.image || post.photo || post.photoUrl}
+                            alt={post.texte || 'Aperçu du signalement'}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          />
+                          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1.5 backdrop-blur-2xs">
+                            <Eye size={15} />
+                            <span>Agrandir la photo</span>
+                          </div>
+                        </div>
+                      ) : null}
+
+                      <p className="text-xs text-navy-900 dark:text-white leading-relaxed line-clamp-3">
+                        {post.texte}
+                      </p>
+
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 dark:border-navy-800 text-[11px] text-slate-500 font-semibold">
+                        <span className="flex items-center gap-1 text-rose-600 dark:text-rose-400 font-black">
+                          <Heart size={12} className="fill-current" />
+                          <span>{getLikesCount(post.id, post.baseLikes || 1)} soutiens</span>
+                        </span>
+                        <span>{getViewsCount(post.id, post.baseViews || 15)} vues</span>
+                        <span>{(commentsByPost[post.id]?.length || 0)} avis</span>
+                      </div>
+                    </div>
+                  ))
+                )
+              ) : (
+                myStories.length === 0 ? (
+                  <div className="text-center py-12 px-4 space-y-3">
+                    <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-500 flex items-center justify-center mx-auto">
+                      <Sparkles size={24} />
+                    </div>
+                    <h4 className="text-sm font-black text-navy-900 dark:text-white">
+                      Aucune Story active
+                    </h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
+                      Les stories vous permettent de partager un flash d'observation terrain visible 24h par vos voisins.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMySpaceOpen(false);
+                        setIsStoryModalOpen(true);
+                      }}
+                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white text-xs font-black shadow-md transition active:scale-95 cursor-pointer mt-2"
+                    >
+                      <Sparkles size={14} />
+                      <span>Ajouter une story 24h</span>
+                    </button>
+                  </div>
+                ) : (
+                  myStories.map((story) => (
+                    <div
+                      key={story.id}
+                      className="p-3.5 rounded-2xl border border-slate-200 dark:border-navy-800 bg-slate-50/50 dark:bg-navy-900/40 flex items-center justify-between gap-3"
+                    >
+                      <div
+                        onClick={() => handleOpenStory(story)}
+                        className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer group"
+                      >
+                        <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-900 shrink-0 relative">
+                          {story.video ? (
+                            <div className="w-full h-full flex items-center justify-center bg-black text-amber-400">
+                              <Video size={18} />
+                            </div>
+                          ) : story.image ? (
+                            <img src={story.image} alt={story.texte} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className={`w-full h-full bg-gradient-to-br ${story.gradientClass || 'from-[#0B2545] to-slate-950'} flex items-center justify-center text-white text-[10px] font-black`}>
+                              Texte
+                            </div>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-navy-900 dark:text-white truncate group-hover:text-red-500 transition">
+                            {story.texte}
+                          </p>
+                          <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-0.5">
+                            <span className="text-emerald-500 font-extrabold flex items-center gap-1">
+                              <Timer size={10} />
+                              <span>{story.expiration || '24h actif'}</span>
+                            </span>
+                            <span>·</span>
+                            <span>{story.quartier}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenStory(story)}
+                          className="px-2.5 py-1.5 rounded-lg bg-slate-200 dark:bg-navy-800 text-navy-900 dark:text-white text-xs font-bold hover:bg-slate-300 transition cursor-pointer"
+                        >
+                          Voir
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setStoryToDelete(story)}
+                          className="w-8 h-8 rounded-lg bg-red-50 dark:bg-red-950/40 text-[#CC131A] hover:bg-red-100 flex items-center justify-center transition cursor-pointer"
+                          title="Supprimer cette story"
+                          aria-label="Supprimer cette story"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )
+              )}
+            </div>
+
+            {/* Pied du volet */}
+            <div className="p-4 border-t border-slate-100 dark:border-navy-800 bg-slate-50 dark:bg-navy-900/50 flex items-center justify-between gap-3 shrink-0">
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                Espace solidaire Thiaroye-sur-Mer
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsMySpaceOpen(false)}
+                className="px-4 py-2 rounded-xl bg-slate-200 dark:bg-navy-800 hover:bg-slate-300 text-navy-900 dark:text-white text-xs font-bold transition cursor-pointer"
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modale de confirmation de suppression d'une Story par son auteur */}
+      {storyToDelete && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[10001] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+          onClick={() => setStoryToDelete(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white dark:bg-[#0B1E36] rounded-2xl sm:rounded-3xl max-w-md w-full p-6 shadow-2xl border border-navy-100 dark:border-navy-800 space-y-4"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 flex items-center justify-center mx-auto">
+              <Trash2 size={24} />
+            </div>
+
+            <div className="text-center space-y-2">
+              <h3 className="text-base sm:text-lg font-black text-navy-900 dark:text-white">
+                Supprimer cette Story ?
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                Votre observation flash 24h sera immédiatement retirée de l'espace Communauté.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setStoryToDelete(null)}
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-navy-700 text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-navy-800 transition cursor-pointer"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDeleteStory(storyToDelete)}
+                className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm font-black shadow-md transition cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <Trash2 size={16} />
+                <span>Supprimer</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modale de confirmation de suppression d'une publication par son auteur (au-dessus de Mon Espace) */}
       {postToDelete && (
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+          className="fixed inset-0 z-[10001] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
           onClick={() => setPostToDelete(null)}
         >
           <div

@@ -38,11 +38,11 @@ import { sanitizePublicAuthor, sanitizePublicText } from '../../utils/sanitizer'
 // (du littoral et de la plage au sud, à la cuvette ouest, jusqu'à la gare et Guinaw Rail)
 const THIAROYE_CENTER = [14.747, -17.385];
 
-// Limites géographiques strictes de Thiaroye-sur-Mer et de ses abords immédiats (Pikine / Yeumbeul)
-// Empêche toute dérive de la caméra vers le large de l'océan Atlantique ou hors zone
+// Limites géographiques de sécurité élargies (Presqu'île du Cap-Vert, Dakar et abords de Thiaroye)
+// Évite tout blocage du moteur Leaflet lorsque le viewport mobile/tablette dépasse le territoire restreint
 const THIAROYE_BOUNDS = [
-  [14.718, -17.435], // Sud-Ouest maritime (baie de Hann / estran immédiat)
-  [14.785, -17.345], // Nord-Est terrestre (Guinaw Rail / Yeumbeul / Tally Diallo)
+  [14.580, -17.580], // Sud-Ouest maritime étendu
+  [14.880, -17.220], // Nord-Est terrestre étendu
 ];
 
 export const LAYER_LABELS = {
@@ -1008,144 +1008,127 @@ export default function InteractiveMap({
 
   return (
     <div
-      className="relative rounded-xl overflow-hidden border border-navy-50 dark:border-navy-800 isolate z-10 w-full"
+      className="relative rounded-xl overflow-hidden border border-navy-50 dark:border-navy-800 isolate z-10 w-full h-full min-h-[360px]"
       style={{ height: typeof height === 'number' ? `${height}px` : height }}
     >
-      {/* Capsules flottantes de contrôle rapide directement intégrées sur la carte (Format Waze / Google Maps) */}
-      <div className="absolute top-3 left-14 sm:left-16 z-[1000] flex items-center gap-1.5 overflow-x-auto max-w-[calc(100%-250px)] sm:max-w-[calc(100%-280px)] py-1 px-1 scrollbar-none pointer-events-auto">
-        {['signalements', 'refuges', 'segments', 'zones'].map((key) => {
-          if (!availableLayers.includes(key) && key !== 'signalements') return null;
-          const isLayerActive = visible[key] !== false;
-          const Icon = LAYER_ICONS[key] || MapPin;
-          const count = key === 'signalements'
-            ? (signalements?.length || 0)
-            : key === 'refuges'
-            ? (refuges?.features?.length || refuges?.length || 0)
-            : null;
+      {/* Barre de contrôle supérieure unifiée : Couches à gauche (défilable) et Switcher Plan/Satellite à droite. Zéro chevauchement garanti sur tout écran */}
+      <div className="absolute top-2.5 left-2.5 right-2.5 z-[1000] flex items-center justify-between gap-2 pointer-events-none select-none">
+        {/* Capsules de couches filtrables (Signalements, Refuges, Segments, Zones) */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 pointer-events-auto min-w-0 flex-1">
+          {['signalements', 'refuges', 'segments', 'zones'].map((key) => {
+            if (!availableLayers.includes(key) && key !== 'signalements') return null;
+            const isLayerActive = visible[key] !== false;
+            const Icon = LAYER_ICONS[key] || MapPin;
+            const count = key === 'signalements'
+              ? (signalements?.length || 0)
+              : key === 'refuges'
+              ? (refuges?.features?.length || refuges?.length || 0)
+              : null;
 
-          return (
-            <button
-              key={`float-pill-${key}`}
-              type="button"
-              onClick={() => toggle(key)}
-              className={`inline-flex items-center gap-1 px-2 py-1 rounded-xl text-[11px] font-black backdrop-blur-md border shadow-xs transition-all active:scale-95 whitespace-nowrap cursor-pointer ${
-                isLayerActive
-                  ? 'bg-navy-950/90 dark:bg-white/95 text-white dark:text-navy-950 border-white/20 dark:border-navy-800'
-                  : 'bg-white/70 dark:bg-navy-950/70 text-slate-500 dark:text-slate-400 border-white/40 dark:border-navy-800 line-through opacity-70'
-              }`}
-              title={`Afficher ou masquer : ${LAYER_LABELS[key]}`}
-            >
-              <Icon size={12} className={isLayerActive ? 'text-[#CC131A]' : 'opacity-40'} />
-              <span>{LAYER_SHORT_LABELS[key] || LAYER_LABELS[key]}</span>
-              {count !== null && (
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+            return (
+              <button
+                key={`float-pill-${key}`}
+                type="button"
+                onClick={() => toggle(key)}
+                className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-black backdrop-blur-md border shadow-xs transition-all active:scale-95 whitespace-nowrap cursor-pointer ${
                   isLayerActive
-                    ? 'bg-red-500/20 text-red-300 dark:text-red-700'
-                    : 'bg-slate-200 dark:bg-navy-800 text-slate-500'
-                }`}>
-                  {count}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+                    ? 'bg-navy-950/90 dark:bg-white/95 text-white dark:text-navy-950 border-white/20 dark:border-navy-800'
+                    : 'bg-white/80 dark:bg-navy-950/80 text-slate-500 dark:text-slate-400 border-white/40 dark:border-navy-800 line-through opacity-70'
+                }`}
+                title={`Afficher ou masquer : ${LAYER_LABELS[key]}`}
+              >
+                <Icon size={13} className={isLayerActive ? 'text-[#CC131A]' : 'opacity-40'} />
+                <span>{LAYER_SHORT_LABELS[key] || LAYER_LABELS[key]}</span>
+                {count !== null && (
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                    isLayerActive
+                      ? 'bg-red-500/20 text-red-300 dark:text-red-700'
+                      : 'bg-slate-200 dark:bg-navy-800 text-slate-500'
+                  }`}>
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
 
-      {/* Sélecteur de fond de carte à l'intérieur de la carte : Plan vs Sol Réel (Satellite HD) */}
-      <div className="absolute top-3 right-3 z-[1000] flex items-center gap-1 bg-white/95 dark:bg-navy/95 backdrop-blur p-1 rounded-xl border border-navy-50 dark:border-navy-800 shadow-md">
-        <button
-          type="button"
-          onClick={() => changeBaseMap('plan')}
-          className={`flex items-center gap-1 px-2 py-1 text-xs font-bold rounded-lg transition ${
-            baseMap === 'plan'
-              ? 'bg-[#1B2A40] text-white shadow-xs'
-              : 'text-navy-600 dark:text-navy-200 hover:text-navy-900 dark:hover:text-white'
-          }`}
-          aria-label="Mode Plan standard"
-        >
-          <MapIcon size={13} className="flex-shrink-0" />
-          <span>Plan</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => changeBaseMap('satellite')}
-          className={`flex items-center gap-1 px-2 py-1 text-xs font-bold rounded-lg transition ${
-            baseMap === 'satellite'
-              ? 'bg-[#CC131A] text-white shadow-xs font-black'
-              : 'text-navy-600 dark:text-navy-200 hover:text-navy-900 dark:hover:text-white'
-          }`}
-          aria-label="Mode Satellite HD"
-        >
-          <Satellite size={13} className="flex-shrink-0" />
-          <span>Satellite</span>
-        </button>
-
-        {onToggleFullscreen && (
-          <>
-            <div className="w-[1px] h-3.5 bg-navy-100 dark:bg-navy-800 mx-0.5" />
-            <button
-              type="button"
-              onClick={onToggleFullscreen}
-              className="flex items-center gap-1 px-2 py-1 text-xs font-bold rounded-lg transition text-[#CC131A] hover:bg-[#CC131A]/10 active:scale-95 cursor-pointer"
-              aria-label={isFullscreen ? 'Quitter le plein écran' : 'Plein écran'}
-              title={isFullscreen ? 'Quitter le plein écran (Échap)' : 'Agrandir la carte en plein écran'}
-            >
-              {isFullscreen ? (
-                <>
-                  <Minimize2 size={13} className="flex-shrink-0" />
-                  <span className="hidden sm:inline">Réduire</span>
-                </>
-              ) : (
-                <>
-                  <Maximize2 size={13} className="flex-shrink-0" />
-                  <span className="hidden sm:inline">Plein écran</span>
-                </>
-              )}
-            </button>
-          </>
-        )}
-      </div>
-
-      {/* Incitation contextuelle au fort zoom pour révéler le sol réel si en mode plan */}
-      {isHighZoom && baseMap === 'plan' && (
-        <div className="absolute top-14 right-3 z-[1000] bg-white/95 dark:bg-navy/95 backdrop-blur-md border border-red-300 dark:border-red-900 shadow-xl rounded-xl p-2.5 max-w-[210px] text-left transition-all">
-          <div className="flex items-center gap-1.5 text-[11px] font-black text-navy-950 dark:text-white">
-            <Satellite size={13} className="text-[#CC131A] flex-shrink-0" />
-            <span>Sol réel haute précision</span>
-          </div>
-          <p className="text-[10px] text-slate-600 dark:text-slate-300 mt-0.5 leading-tight">
-            Activez le mode Satellite HD pour visualiser les ruelles et toitures réelles.
-          </p>
+        {/* Sélecteur de fond de carte à l'intérieur de la carte : Plan vs Sol Réel (Satellite HD) */}
+        <div className="flex items-center gap-1 bg-white/95 dark:bg-navy/95 backdrop-blur-md p-1 rounded-xl border border-navy-50 dark:border-navy-800 shadow-md shrink-0 pointer-events-auto">
+          <button
+            type="button"
+            onClick={() => changeBaseMap('plan')}
+            className={`flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
+              baseMap === 'plan'
+                ? 'bg-[#1B2A40] text-white shadow-xs'
+                : 'text-navy-600 dark:text-navy-200 hover:text-navy-900 dark:hover:text-white'
+            }`}
+            aria-label="Mode Plan standard"
+          >
+            <MapIcon size={13} className="flex-shrink-0" />
+            <span>Plan</span>
+          </button>
           <button
             type="button"
             onClick={() => changeBaseMap('satellite')}
-            className="mt-1.5 w-full py-1 px-2 text-[10px] font-black text-white bg-[#CC131A] hover:bg-[#b01016] rounded-md transition shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+            className={`flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
+              baseMap === 'satellite'
+                ? 'bg-[#CC131A] text-white shadow-xs font-black'
+                : 'text-navy-600 dark:text-navy-200 hover:text-navy-900 dark:hover:text-white'
+            }`}
+            aria-label="Mode Satellite HD"
           >
-            <Satellite size={12} />
-            <span>Passer en Satellite HD</span>
+            <Satellite size={13} className="flex-shrink-0" />
+            <span>Satellite</span>
           </button>
+
+          {onToggleFullscreen && (
+            <>
+              <div className="w-[1px] h-3.5 bg-navy-100 dark:bg-navy-800 mx-0.5" />
+              <button
+                type="button"
+                onClick={onToggleFullscreen}
+                className="flex items-center gap-1 px-2 py-1 text-xs font-bold rounded-lg transition text-[#CC131A] hover:bg-[#CC131A]/10 active:scale-95 cursor-pointer"
+                aria-label={isFullscreen ? 'Quitter le plein écran' : 'Plein écran'}
+                title={isFullscreen ? 'Quitter le plein écran (Échap)' : 'Agrandir la carte en plein écran'}
+              >
+                {isFullscreen ? (
+                  <>
+                    <Minimize2 size={13} className="flex-shrink-0" />
+                    <span className="hidden sm:inline">Réduire</span>
+                  </>
+                ) : (
+                  <>
+                    <Maximize2 size={13} className="flex-shrink-0" />
+                    <span className="hidden sm:inline">Plein écran</span>
+                  </>
+                )}
+              </button>
+            </>
+          )}
         </div>
-      )}
+      </div>
 
       <MapContainer
         center={THIAROYE_CENTER}
-        zoom={14.5}
-        minZoom={12}
+        zoom={14}
+        minZoom={11}
         maxZoom={20}
+        zoomSnap={0.5}
         maxBounds={THIAROYE_BOUNDS}
-        maxBoundsViscosity={0.85}
+        maxBoundsViscosity={0.5}
         scrollWheelZoom
         dragging
         touchZoom
         zoomControl={false}
-        style={{ width: '100%', height: '100%' }}
+        style={{ width: '100%', height: '100%', minHeight: '380px' }}
       >
-        <ZoomControl position="topleft" />
+        <ZoomControl position="bottomleft" />
         <MapAutoResizer />
         <MapInstanceCapture onMap={handleMapReady} />
         <MapPopupAutoPanner />
         <MapViewportListener onViewportChange={handleViewportChange} />
-        <RecenterButton center={THIAROYE_CENTER} defaultZoom={14.5} />
+        <RecenterButton center={THIAROYE_CENTER} defaultZoom={14} />
 
         {/* Triple couche Satellite Ultra-Précision :
             1. Photo aérienne satellite HD réelle (Esri World Imagery)
@@ -1178,8 +1161,9 @@ export default function InteractiveMap({
         ) : (
           <TileLayer
             key="plan-layer"
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+            subdomains="abcd"
             maxZoom={20}
             maxNativeZoom={19}
           />
