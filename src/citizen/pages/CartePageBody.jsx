@@ -94,6 +94,7 @@ export default function CartePageBody() {
   const [searchParams, setSearchParams] = useSearchParams();
   const urlSignalementId = searchParams.get('signalementId');
   const selectedQuartier = searchParams.get('quartier');
+  const urlRefugeId = searchParams.get('refugeId');
 
   // Détection sécurisée du citoyen connecté et de son avatar personnalisé
   let authData = { username: '', user: null };
@@ -152,7 +153,6 @@ export default function CartePageBody() {
   const [layersVisibility, setLayersVisibility] = useState({
     zones: true,
     signalements: true,
-    segments: true,
     refuges: true,
   });
 
@@ -264,16 +264,78 @@ export default function CartePageBody() {
     return list;
   }, [signalementsData, nomCitoyen, currentUserCustomAvatar]);
 
-  // Position sentinelle en direct du citoyen connecté au cœur de Thiaroye-sur-Mer ("Vous êtes ici")
+  // Position physique enregistrée du citoyen (par défaut : Thiaroye-sur-Mer)
+  const [userSavedPosition, setUserSavedPosition] = useState({
+    lat: 14.7485,
+    lon: -17.3850,
+    quartier: 'Thiaroye-sur-Mer',
+    isSafe: false,
+    refugeNom: null,
+  });
+
+  // Déclencheur pour zoomer sur la déviation lors d'un clic sur le badge d'évitement
+  const [focusAvoidedRoadTrigger, setFocusAvoidedRoadTrigger] = useState(0);
+
+  // Position dynamique en direct ("Vous êtes ici", "Étape X", "Mis à l'abri")
   const currentUserLocation = useMemo(() => {
+    const coords = itineraire.data?.route?.coordinates || [];
+    const instructions = itineraire.data?.instructions || [];
+
+    // 1. En cours de navigation pas-à-pas : l'avatar avance le long des étapes
+    if (isNavigating && coords.length > 0) {
+      const totalSteps = instructions.length || 1;
+      const ratio = totalSteps > 1 ? currentStepIndex / (totalSteps - 1) : 0;
+      const coordIdx = Math.min(
+        coords.length - 1,
+        Math.max(0, Math.round(ratio * (coords.length - 1)))
+      );
+      const stepCoord = coords[coordIdx]; // [lon, lat]
+      const curStep = instructions[currentStepIndex];
+
+      return {
+        lat: stepCoord[1],
+        lon: stepCoord[0],
+        name: nomCitoyen || username || 'Sentinelle Citoyenne',
+        avatar: currentUserCustomAvatar,
+        quartier: curStep?.ruelle || `En marche (Étape ${currentStepIndex + 1}/${instructions.length})`,
+        isNavigating: true,
+        currentStepIndex,
+        isSafe: false,
+      };
+    }
+
+    // 2. Si le citoyen est arrivé en zone de refuge sûre
+    if (userSavedPosition.isSafe) {
+      return {
+        lat: userSavedPosition.lat,
+        lon: userSavedPosition.lon,
+        name: nomCitoyen || username || 'Sentinelle Citoyenne',
+        avatar: currentUserCustomAvatar,
+        quartier: userSavedPosition.quartier,
+        isSafe: true,
+        refugeNom: userSavedPosition.refugeNom,
+      };
+    }
+
+    // 3. Position par défaut au cœur de Thiaroye-sur-Mer
     return {
-      lat: 14.7485,
-      lon: -17.3850,
+      lat: userSavedPosition.lat,
+      lon: userSavedPosition.lon,
       name: nomCitoyen || username || 'Sentinelle Citoyenne',
       avatar: currentUserCustomAvatar,
-      quartier: 'Thiaroye-sur-Mer',
+      quartier: userSavedPosition.quartier,
+      isSafe: false,
     };
-  }, [nomCitoyen, username, currentUserCustomAvatar]);
+  }, [
+    isNavigating,
+    currentStepIndex,
+    itineraire.data?.route?.coordinates,
+    itineraire.data?.instructions,
+    userSavedPosition,
+    nomCitoyen,
+    username,
+    currentUserCustomAvatar,
+  ]);
 
   // 2. Filtrage dynamique selon la période choisie et le mot-clé de recherche
   const filteredSignalements = useMemo(() => {
@@ -299,6 +361,11 @@ export default function CartePageBody() {
   }, [allSignalements, timeFilter]);
 
   const handleItineraire = () => {
+    // Recentrage visuel immédiat sur la carte interactive
+    if (mapSectionRef.current) {
+      mapSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
     let startLat = 14.7385;
     let startLon = -17.3920;
 
@@ -317,6 +384,9 @@ export default function CartePageBody() {
       setIsNavigating(false);
       setCurrentStepIndex(0);
       itineraire.mutate({ lat, lon });
+      if (mapSectionRef.current) {
+        mapSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     };
 
     if (!navigator.geolocation) {
@@ -351,7 +421,46 @@ export default function CartePageBody() {
     );
   };
 
+  // Déclenchement automatique et navigation vers la carte si un refuge ciblé est passé en URL
+  useEffect(() => {
+    if (urlRefugeId && refugesData) {
+      handleItineraire();
+    }
+  }, [urlRefugeId, refugesData]);
+
+  const handleFinishNavigation = () => {
+    const coords = itineraire.data?.route?.coordinates;
+    const refugeNom = itineraire.data?.zone_arrivee?.quartier || 'Refuge sécurisé';
+    if (coords?.length > 0) {
+      const endCoord = coords[coords.length - 1]; // [lon, lat]
+      setUserSavedPosition({
+        lat: endCoord[1],
+        lon: endCoord[0],
+        quartier: `Mis à l'abri · ${refugeNom}`,
+        isSafe: true,
+        refugeNom,
+      });
+    }
+    setIsNavigating(false);
+    setCurrentStepIndex(0);
+  };
+
+  const handleResetPositionToOrigin = () => {
+    setUserSavedPosition({
+      lat: 14.7485,
+      lon: -17.3850,
+      quartier: 'Thiaroye-sur-Mer',
+      isSafe: false,
+      refugeNom: null,
+    });
+  };
+
   const handleCloseItineraire = () => {
+    const total = itineraire.data?.instructions?.length || 0;
+    if (isNavigating && currentStepIndex >= total - 1) {
+      handleFinishNavigation();
+      return;
+    }
     itineraire.reset();
     setIsNavigating(false);
     setCurrentStepIndex(0);
@@ -380,28 +489,63 @@ export default function CartePageBody() {
 
             <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
               {itineraire.data ? (
-                <button
-                  type="button"
-                  onClick={handleCloseItineraire}
-                  className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-black border border-white/20 transition active:scale-95 cursor-pointer w-full sm:w-auto"
-                >
-                  <X size={16} />
-                  <span>Fermer l’itinéraire</span>
-                </button>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <button
+                    type="button"
+                    onClick={() => setIsNavigating((prev) => !prev)}
+                    className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-black transition active:scale-95 cursor-pointer flex-1 sm:flex-initial shadow-md ${
+                      isNavigating
+                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                        : 'bg-[#2563EB] hover:bg-blue-700 text-white'
+                    }`}
+                  >
+                    <Navigation size={16} />
+                    <span>{isNavigating ? 'Guidage actif' : 'Démarrer le guidage'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCloseItineraire}
+                    className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-black border border-white/20 transition active:scale-95 cursor-pointer"
+                    title="Fermer l’itinéraire"
+                  >
+                    <X size={16} />
+                    <span className="hidden md:inline">Fermer</span>
+                  </button>
+                </div>
               ) : (
                 <button
                   type="button"
                   onClick={handleItineraire}
                   disabled={itineraire.isPending}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#CC131A] hover:bg-red-700 text-white text-xs sm:text-sm font-black shadow-md transition active:scale-95 disabled:opacity-60 cursor-pointer w-full sm:w-auto"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white text-xs sm:text-sm font-black shadow-md transition active:scale-95 disabled:opacity-60 cursor-pointer w-full sm:w-auto"
+                  title="Calculer un itinéraire sécurisé contournant les voies inondées"
                 >
                   {itineraire.isPending ? <Loader2 size={16} className="animate-spin" /> : <Navigation size={16} />}
-                  <span>Itinéraire vers un lieu sûr</span>
+                  <span>Mode Déviations & Voies Sûres</span>
                 </button>
               )}
             </div>
           </div>
         </div>
+
+        {/* Bandeau indicateur lorsque le mode déviations/navigation est actif */}
+        {itineraire.data && (
+          <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-blue-950 dark:text-blue-100 text-xs animate-in fade-in slide-in-from-top-1 duration-200">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-600 dark:bg-blue-400 animate-pulse shrink-0" />
+              <p className="font-bold truncate">
+                <span className="font-extrabold text-[#2563EB] dark:text-blue-300">Mode Déviations actif :</span> Les voies inondées sont automatiquement contournées et la carte est aérée pour une lisibilité maximale.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleCloseItineraire}
+              className="text-xs font-bold text-blue-700 dark:text-blue-300 hover:underline shrink-0 cursor-pointer"
+            >
+              Désactiver
+            </button>
+          </div>
+        )}
 
         {itineraire.isError && (
           <div className="flex items-start gap-2 px-3.5 py-2 rounded-lg bg-red-50 dark:bg-red/15 text-red-900 dark:text-red-200 text-xs flex-shrink-0">
@@ -455,6 +599,8 @@ export default function CartePageBody() {
                     height="100%"
                     selectedSignalementId={activeSignalementId || urlSignalementId}
                     selectedQuartier={selectedQuartier}
+                    onResetUserPosition={handleResetPositionToOrigin}
+                    focusAvoidedRoadTrigger={focusAvoidedRoadTrigger}
                     onCalculateRouteFromPoint={({ lat, lon }) => {
                       setIsNavigating(false);
                       setCurrentStepIndex(0);
@@ -471,6 +617,8 @@ export default function CartePageBody() {
                       setCurrentStepIndex(0);
                     }}
                     onClose={handleCloseItineraire}
+                    onFinishNavigation={handleFinishNavigation}
+                    onFocusAvoidedRoads={() => setFocusAvoidedRoadTrigger((prev) => prev + 1)}
                     currentStepIndex={currentStepIndex}
                     onPrevStep={() => setCurrentStepIndex((prev) => Math.max(0, prev - 1))}
                     onNextStep={() => {

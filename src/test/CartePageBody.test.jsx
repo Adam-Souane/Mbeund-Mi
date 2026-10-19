@@ -19,13 +19,11 @@ vi.mock('../shared/components/map/InteractiveMap', () => ({
   LAYER_LABELS: {
     zones: 'Zones à risque',
     signalements: 'Signalements citoyens',
-    segments: 'Rues & drainage',
     refuges: 'Points de refuge',
   },
   LAYER_SHORT_LABELS: {
     zones: 'Zones',
     signalements: 'Signalements',
-    segments: 'Rues',
     refuges: 'Refuges',
   },
   LAYER_ICONS: {},
@@ -127,6 +125,11 @@ describe('CartePageBody', () => {
       expect.objectContaining({
         onToggleFullscreen: expect.any(Function),
         isFullscreen: false,
+        userLocation: expect.objectContaining({
+          lat: 14.7485,
+          lon: -17.3850,
+        }),
+        onResetUserPosition: expect.any(Function),
       })
     );
   });
