@@ -7,6 +7,7 @@ import { ToastProvider } from './shared/toast/ToastContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { useAlertesSocket } from './realtime/useAlertesSocket';
 import { useSyncAlertesToNotifications } from './shared/hooks/useSyncAlertesToNotifications';
+import { useSyncCommunauteToNotifications } from './shared/hooks/useSyncCommunauteToNotifications';
 import AppRoutes from './routes';
 
 const queryClient = new QueryClient({
@@ -21,6 +22,7 @@ const queryClient = new QueryClient({
 function RealtimeAlertes() {
   useAlertesSocket();
   useSyncAlertesToNotifications();
+  useSyncCommunauteToNotifications();
   return null;
 }
 

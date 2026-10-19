@@ -112,6 +112,30 @@ describe('ItineraireNavigationOverlay', () => {
 
     expect(screen.getByText('Étape 3 sur 3')).toBeInTheDocument();
     expect(screen.getByText(/Arrivée en zone sûre/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Arrivé en zone sûre · Terminer/i })).toBeInTheDocument();
+    const btnTerminer = screen.getByRole('button', { name: /Arrivé en zone sûre · Terminer/i });
+    expect(btnTerminer).toBeInTheDocument();
+  });
+
+  it('appelle onFinishNavigation à la fin du guidage et onFocusAvoidedRoads au clic sur la déviation', () => {
+    const onFinish = vi.fn();
+    const onFocusDeviations = vi.fn();
+
+    render(
+      <ItineraireNavigationOverlay
+        itineraireData={mockItineraire}
+        isNavigating={true}
+        currentStepIndex={2}
+        onFinishNavigation={onFinish}
+        onFocusAvoidedRoads={onFocusDeviations}
+      />
+    );
+
+    const btnDeviations = screen.getByTitle(/Voir la déviation sécurisée/i);
+    fireEvent.click(btnDeviations);
+    expect(onFocusDeviations).toHaveBeenCalledTimes(1);
+
+    const btnTerminer = screen.getByRole('button', { name: /Arrivé en zone sûre · Terminer/i });
+    fireEvent.click(btnTerminer);
+    expect(onFinish).toHaveBeenCalledTimes(1);
   });
 });

@@ -328,18 +328,13 @@ export default function AccueilPageBody() {
         </div>
       </div>
 
-      {/* 3. Indicateur dynamique Côtier : Marée & Vent Marin de Thiaroye (Organique & Aéré) */}
-      <div className="w-full pt-1 pb-3">
-        <MareeVentMarinWidget />
-      </div>
-
       {/* Cockpit Cartographique & Réseau IoT Thiaroye-sur-Mer */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full pt-1 pb-3">
         <MiniRadarThiaroye className="h-full min-h-[340px]" />
         <CockpitCapteursIoT className="h-full min-h-[340px]" />
       </div>
 
-      {/* 4. Carrousel visuel immersif en pleine largeur */}
+      {/* 3. Carrousel visuel immersif en pleine largeur */}
       <div className="w-full">
         <ConseilsCarousel />
       </div>
@@ -379,6 +374,11 @@ export default function AccueilPageBody() {
         <div className="h-full flex flex-col min-h-0">
           <FilActualiteStoriesWidget className="h-full flex-1" />
         </div>
+      </div>
+
+      {/* 6. Indicateur dynamique Côtier : Marée & Vent Marin de Thiaroye */}
+      <div className="w-full pt-3 pb-1">
+        <MareeVentMarinWidget />
       </div>
 
       {/* 6. Diagnostic Territorial, Vos Observations & Alertes officielles */}

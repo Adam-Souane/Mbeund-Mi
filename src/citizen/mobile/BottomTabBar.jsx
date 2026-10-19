@@ -1,16 +1,14 @@
 import { NavLink } from 'react-router-dom';
-import { Home, Map, Camera, MessageCircle, Settings } from 'lucide-react';
+import { Home, Map, Camera, MessageCircle, Users } from 'lucide-react';
 
 const SIDE_ITEMS_LEFT = [
   { to: '/citoyen/accueil', label: 'Accueil', icon: Home },
   { to: '/citoyen/carte', label: 'Carte', icon: Map },
 ];
 
-// MessageCircle plutôt que l'icône "vague" de la marque NDAM — doit se lire
-// comme "ouvre une conversation" au premier coup d'œil.
 const SIDE_ITEMS_RIGHT = [
+  { to: '/citoyen/communaute', label: 'Communauté', icon: Users },
   { to: '/citoyen/chat', label: 'NDAM', icon: MessageCircle },
-  { to: '/citoyen/parametres', label: 'Paramètres', icon: Settings },
 ];
 
 function TabLink({ to, label, icon: Icon }) {

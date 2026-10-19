@@ -20,12 +20,12 @@ vi.mock('react-leaflet', () => ({
     <div data-testid="polyline">{children}</div>
   ),
 
-  CircleMarker: ({ children }) => (
-    <div data-testid="circle-marker">{children}</div>
-  ),
+  CircleMarker: forwardRef(({ children, eventHandlers }, ref) => (
+    <div ref={ref} data-testid="circle-marker" onClick={eventHandlers?.click}>{children}</div>
+  )),
 
-  Marker: forwardRef(({ children, zIndexOffset }, ref) => (
-    <div ref={ref} data-testid="marker" data-zindex={zIndexOffset}>{children}</div>
+  Marker: forwardRef(({ children, zIndexOffset, eventHandlers }, ref) => (
+    <div ref={ref} data-testid="marker" data-zindex={zIndexOffset} onClick={eventHandlers?.click}>{children}</div>
   )),
 
   Popup: ({ children }) => (
@@ -81,6 +81,8 @@ vi.mock('lucide-react', () => ({
   Maximize2: () => <span data-testid="maximize-icon" />,
   Minimize2: () => <span data-testid="minimize-icon" />,
   Star: () => <span data-testid="star-icon" />,
+  AlertTriangle: () => <span data-testid="alert-triangle-icon" />,
+  RotateCcw: () => <span data-testid="rotate-ccw-icon" />,
 }));
 
 describe('InteractiveMap', () => {
@@ -383,7 +385,7 @@ describe('InteractiveMap', () => {
     expect(liveMarker).toBeDefined();
   });
 
-  it('affiche les libellés courts explicites des capsules dont "Refuges" et "Rues"', () => {
+  it('affiche les libellés courts explicites des capsules dont "Refuges" et "Zones" sans la capsule "Rues"', () => {
     const testData = {
       refuges: { features: [{ id: 1, geometry: { coordinates: [-17.38, 14.74] }, properties: { nom: 'Refuge 1' } }] },
       segments: { features: [{ id: 1, geometry: { coordinates: [[-17.38, 14.74], [-17.39, 14.75]] }, properties: { nom: 'Rue 1' } }] },
@@ -393,12 +395,12 @@ describe('InteractiveMap', () => {
     render(<InteractiveMap data={testData} />);
 
     expect(screen.getByText('Refuges')).toBeInTheDocument();
-    expect(screen.getByText('Rues')).toBeInTheDocument();
+    expect(screen.queryByText('Rues')).not.toBeInTheDocument();
     expect(screen.getByText('Zones')).toBeInTheDocument();
     expect(screen.getByText('Signalements')).toBeInTheDocument();
   });
 
-  it('affiche le marqueur d’étape actif et son popup "À suivre" lors de la navigation guidée', () => {
+  it('affiche le marqueur d’étape actif sur le tracé sans popup blanche doublon', () => {
     const route = {
       coordinates: [
         [-17.38, 14.75],
@@ -419,7 +421,141 @@ describe('InteractiveMap', () => {
       />
     );
 
-    expect(screen.getByText('À suivre')).toBeInTheDocument();
-    expect(screen.getByText(/Tournez à droite sur la Rue du Débarcadère/i)).toBeInTheDocument();
+    // Le marqueur d'étape est rendu sur la carte avec zIndex 2200
+    const markers = screen.getAllByTestId('marker');
+    const stepMarker = markers.find((m) => m.getAttribute('data-zindex') === '2200');
+    expect(stepMarker).toBeDefined();
+
+    // Et aucune popup blanche intempestive "À suivre" n'est affichée (réservé au bandeau bas)
+    expect(screen.queryByText('À suivre')).not.toBeInTheDocument();
+  });
+
+  it('met au premier plan (z-index élevé) un avatar superposé lorsqu’il est cliqué', () => {
+    const data = {
+      signalements: [
+        {
+          id: 101,
+          geometry: { type: 'Point', coordinates: [-17.385, 14.747] },
+          properties: { id: 101, categorie: 'inondation', description: 'Premier avatar', citoyen_nom: 'Fatou Sow' },
+        },
+        {
+          id: 102,
+          geometry: { type: 'Point', coordinates: [-17.385, 14.747] },
+          properties: { id: 102, categorie: 'inondation', description: 'Deuxième avatar empilé', citoyen_nom: 'Ousmane Ba' },
+        },
+      ],
+    };
+
+    render(<InteractiveMap data={data} />);
+
+    const markers = screen.getAllByTestId('marker');
+    expect(markers).toHaveLength(2);
+
+    // Initialement, les marqueurs ont un z-index normal (0)
+    expect(markers[0].getAttribute('data-zindex')).toBe('0');
+    expect(markers[1].getAttribute('data-zindex')).toBe('0');
+
+    // Clic sur le second marqueur pour le passer au premier plan
+    fireEvent.click(markers[1]);
+
+    // Le marqueur cliqué passe au premier plan avec zIndex 20000
+    expect(markers[1].getAttribute('data-zindex')).toBe('20000');
+
+    // Clic sur le premier marqueur : il passe au premier plan à son tour et l'autre repasse derrière
+    fireEvent.click(markers[0]);
+    expect(markers[0].getAttribute('data-zindex')).toBe('20000');
+    expect(markers[1].getAttribute('data-zindex')).toBe('0');
+  });
+
+  it('met au premier plan la carte totem de niveau de risque de zone (ex: Modéré, Critique) lorsqu’on clique dessus', () => {
+    const data = {
+      zones: [
+        {
+          id: 1,
+          geometry: {
+            type: 'Polygon',
+            coordinates: [
+              [
+                [-17.388, 14.745],
+                [-17.382, 14.745],
+                [-17.382, 14.749],
+                [-17.388, 14.749],
+                [-17.388, 14.745],
+              ],
+            ],
+          },
+          properties: {
+            id: 1,
+            quartier: 'Thiaroye Gare',
+            niveau_risque: 'critique',
+            score_risque_moyen: 0.85,
+          },
+        },
+      ],
+    };
+
+    render(<InteractiveMap data={data} />);
+
+    const markers = screen.getAllByTestId('marker');
+    expect(markers.length).toBeGreaterThanOrEqual(1);
+    const totemMarker = markers[0];
+
+    // Initialement le totem a un zIndex de base 200
+    expect(totemMarker.getAttribute('data-zindex')).toBe('200');
+
+    // Clic sur la carte totem de zone
+    fireEvent.click(totemMarker);
+
+    // La carte totem passe au premier plan absolu avec zIndex 25000
+    expect(totemMarker.getAttribute('data-zindex')).toBe('25000');
+  });
+
+  it('affiche l avatar citoyen mis à l abri au refuge avec le statut sécurisé et sans popup blanche doublon d étape', () => {
+    const route = {
+      coordinates: [
+        [-17.385, 14.748],
+        [-17.384, 14.749],
+        [-17.382, 14.751],
+      ],
+    };
+    const instructions = [
+      { instruction: 'Départ sécurisé', direction: 'depart', distance_m: 100 },
+      { instruction: 'Continuer tout droit', direction: 'tout_droit', distance_m: 150 },
+      { instruction: 'Arrivée au refuge', direction: 'arrivee', distance_m: 0 },
+    ];
+    const userLocation = {
+      lat: 14.751,
+      lon: -17.382,
+      name: 'Amadou Sow',
+      avatar: '/images/avatar-amadou.jpg',
+      quartier: 'Mis à l’abri · Lycée de Thiaroye',
+      isSafe: true,
+      refugeNom: 'Lycée de Thiaroye',
+    };
+    const onResetUserPosition = vi.fn();
+
+    render(
+      <InteractiveMap
+        data={{}}
+        route={route}
+        itineraireInstructions={instructions}
+        isNavigating={true}
+        currentStepIndex={1}
+        userLocation={userLocation}
+        onResetUserPosition={onResetUserPosition}
+      />
+    );
+
+    // 1. Vérification : aucune popup blanche Leaflet d'étape avec texte doublon
+    expect(screen.queryByText(/Continuer tout droit/)).not.toBeInTheDocument();
+
+    // 2. Vérification : le statut sécurisé "Mis à l'abri" apparaît dans le popup de l'avatar
+    expect(screen.getByText("Mis à l'abri")).toBeInTheDocument();
+    expect(screen.getByText(/Arrivé en lieu sûr !/)).toBeInTheDocument();
+
+    // 3. Vérification : le bouton de réinitialisation fonctionne
+    const resetBtn = screen.getByText('Repartir de la position initiale');
+    fireEvent.click(resetBtn);
+    expect(onResetUserPosition).toHaveBeenCalledTimes(1);
   });
 });

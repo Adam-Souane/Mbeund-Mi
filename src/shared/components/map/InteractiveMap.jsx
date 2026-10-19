@@ -25,6 +25,8 @@ import {
   Maximize2,
   Minimize2,
   Star,
+  AlertTriangle,
+  RotateCcw,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { riskInfo } from '../RiskBadge';
@@ -36,16 +38,15 @@ import { sanitizePublicAuthor, sanitizePublicText } from '../../utils/sanitizer'
 // (du littoral et de la plage au sud, à la cuvette ouest, jusqu'à la gare et Guinaw Rail)
 const THIAROYE_CENTER = [14.747, -17.385];
 
-// Limites géographiques strictes de Thiaroye-sur-Mer et de ses abords immédiats (Pikine / Yeumbeul)
-// Empêche toute dérive de la caméra vers le large de l'océan Atlantique ou hors zone
+// Limites géographiques de sécurité élargies (Presqu'île du Cap-Vert, Dakar et abords de Thiaroye)
+// Évite tout blocage du moteur Leaflet lorsque le viewport mobile/tablette dépasse le territoire restreint
 const THIAROYE_BOUNDS = [
-  [14.718, -17.435], // Sud-Ouest maritime (baie de Hann / estran immédiat)
-  [14.785, -17.345], // Nord-Est terrestre (Guinaw Rail / Yeumbeul / Tally Diallo)
+  [14.580, -17.580], // Sud-Ouest maritime étendu
+  [14.880, -17.220], // Nord-Est terrestre étendu
 ];
 
 export const LAYER_LABELS = {
   zones: 'Zones à risque',
-  segments: 'Rues & drainage',
   capteurs: 'Capteurs',
   signalements: 'Signalements citoyens',
   refuges: 'Points de refuge',
@@ -53,7 +54,6 @@ export const LAYER_LABELS = {
 
 export const LAYER_SHORT_LABELS = {
   zones: 'Zones',
-  segments: 'Rues',
   capteurs: 'Capteurs',
   signalements: 'Signalements',
   refuges: 'Refuges',
@@ -61,7 +61,6 @@ export const LAYER_SHORT_LABELS = {
 
 export const LAYER_ICONS = {
   zones: ShieldAlert,
-  segments: Route,
   capteurs: Radio,
   signalements: MapPin,
   refuges: Building2,
@@ -103,6 +102,7 @@ function createCitizenAvatarIcon({
   avatarUrl,
   statusColor,
   isSelected,
+  isFront = false,
   authorName,
   category,
   zoomLevel = 15,
@@ -206,9 +206,9 @@ function createCitizenAvatarIcon({
     : '';
 
   return L.divIcon({
-    className: `citizen-avatar-pin-wrapper ${isSelected ? 'is-selected' : ''} ${isCurrentUser ? 'is-current-user' : ''} ${zoomClass}`,
+    className: `citizen-avatar-pin-wrapper ${isSelected ? 'is-selected' : ''} ${isFront ? 'is-front-marker' : ''} ${isCurrentUser ? 'is-current-user' : ''} ${zoomClass}`,
     html: `
-      <div class="citizen-avatar-pin ${isSelected ? 'is-selected' : ''} ${isCurrentUser ? 'is-current-user' : ''} ${zoomClass}" style="--status-color: ${statusColor};">
+      <div class="citizen-avatar-pin ${isSelected ? 'is-selected' : ''} ${isFront ? 'is-front-marker' : ''} ${isCurrentUser ? 'is-current-user' : ''} ${zoomClass}" style="--status-color: ${statusColor};">
         ${youBadgeHtml}
         ${labelHtml}
         <div class="citizen-avatar-pulse" style="background: ${isCurrentUser ? '#F59E0B' : statusColor};"></div>
@@ -228,9 +228,16 @@ function createCitizenAvatarIcon({
 }
 
 /**
- * Marqueur Visuel Vivant de la Position Citoyenne Directe ("Vous êtes ici")
+ * Marqueur Visuel Vivant de la Position Citoyenne Directe ("Vous êtes ici", "Étape X", "Mis à l'abri")
  */
-function createUserLiveLocationIcon({ avatarUrl, authorName, zoomLevel = 15 }) {
+function createUserLiveLocationIcon({
+  avatarUrl,
+  authorName,
+  zoomLevel = 15,
+  isSafe = false,
+  isNavigating = false,
+  stepNumber = null,
+}) {
   if (typeof window === 'undefined' || typeof L === 'undefined' || !L?.divIcon) {
     return undefined;
   }
@@ -247,31 +254,54 @@ function createUserLiveLocationIcon({ avatarUrl, authorName, zoomLevel = 15 }) {
     ? `<img src="${avatarUrl}" alt="${authorName || 'Vous'}" class="citizen-avatar-img" onerror="this.onerror=null; this.src='/images/avatar-amadou.jpg';" />`
     : `<div class="citizen-avatar-initials">${initials}</div>`;
 
+  let badgeHtml = `
+    <div class="citizen-live-badge">
+      <svg width="8" height="8" viewBox="0 0 24 24" fill="#ffffff" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      <span>Vous êtes ici</span>
+    </div>
+  `;
+  let extraClass = '';
+
+  if (isSafe) {
+    extraClass = 'is-user-safe';
+    badgeHtml = `
+      <div class="citizen-live-badge citizen-safe-badge">
+        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span>Mis à l'abri</span>
+      </div>
+    `;
+  } else if (isNavigating) {
+    extraClass = 'is-user-navigating';
+    badgeHtml = `
+      <div class="citizen-live-badge citizen-nav-badge">
+        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+        <span>Étape ${stepNumber || 1}</span>
+      </div>
+    `;
+  }
+
   return L.divIcon({
-    className: 'citizen-avatar-pin-wrapper is-user-live-wrapper',
+    className: `citizen-avatar-pin-wrapper is-user-live-wrapper ${extraClass}`,
     html: `
-      <div class="citizen-user-live-pin">
-        <div class="citizen-live-badge">
-          <svg width="8" height="8" viewBox="0 0 24 24" fill="#ffffff" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          <span>Vous êtes ici</span>
-        </div>
-        <div class="citizen-user-live-pulse"></div>
-        <div class="citizen-user-live-bubble">
+      <div class="citizen-user-live-pin ${extraClass}">
+        ${badgeHtml}
+        <div class="citizen-user-live-pulse ${extraClass}"></div>
+        <div class="citizen-user-live-bubble ${extraClass}">
           ${avatarContent}
         </div>
-        <div class="citizen-user-live-tip"></div>
+        <div class="citizen-user-live-tip ${extraClass}"></div>
       </div>
     `,
-    iconSize: [52, 58],
-    iconAnchor: [26, 56],
-    popupAnchor: [0, -54],
+    iconSize: [54, 60],
+    iconAnchor: [27, 58],
+    popupAnchor: [0, -56],
   });
 }
 
 /**
  * Marqueur Visuel Vivant d'un Point de Refuge (Waze / Google Maps Urgence)
  */
-function createRefugePinIcon({ type, nom, capacite, zoomLevel }) {
+function createRefugePinIcon({ type, nom, capacite, zoomLevel, isFront = false }) {
   if (typeof window === 'undefined' || typeof L === 'undefined' || !L?.divIcon) {
     return undefined;
   }
@@ -330,14 +360,21 @@ function createRefugePinIcon({ type, nom, capacite, zoomLevel }) {
     `;
   }
 
-  const labelHtml = (isHighZoom && nom)
-    ? `<div class="refuge-pin-label font-sans">${nom}${capacite ? ` <span class="refuge-pin-cap">· ${capacite} pl.</span>` : ''}</div>`
+  const labelHtml = isHighZoom
+    ? `<div class="refuge-mini-badge font-sans">
+        <svg width="8" height="8" viewBox="0 0 24 24" fill="#ffffff" stroke="none">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+        <span>Refuge</span>
+      </div>`
     : '';
 
+  const cleanTitle = nom ? `${nom}${capacite ? ` (${capacite} places)` : ''}` : 'Point de refuge sécurisé';
+
   return L.divIcon({
-    className: 'refuge-pin-wrapper-div',
+    className: `refuge-pin-wrapper-div ${isFront ? 'is-front-marker' : ''}`,
     html: `
-      <div class="refuge-pin-box" style="--refuge-color: ${typeColor};">
+      <div class="refuge-pin-box ${isFront ? 'is-front-marker' : ''}" style="--refuge-color: ${typeColor};" title="${cleanTitle}">
         ${labelHtml}
         <div class="refuge-pin-bubble" style="border-color: ${typeColor};">
           <div class="refuge-pin-icon" style="color: ${typeColor};">
@@ -361,16 +398,16 @@ function createRefugePinIcon({ type, nom, capacite, zoomLevel }) {
 /**
  * Totem SIG d'en-tête de Zone à Risque
  */
-function createZoneTotemIcon({ quartier, niveauRisque, scorePct }) {
+function createZoneTotemIcon({ quartier, niveauRisque, scorePct, isFront = false }) {
   if (typeof window === 'undefined' || typeof L === 'undefined' || !L?.divIcon) {
     return undefined;
   }
   const { hex, label } = riskInfo(niveauRisque);
 
   return L.divIcon({
-    className: 'zone-totem-wrapper-div',
+    className: `zone-totem-wrapper-div ${isFront ? 'is-front-marker' : ''}`,
     html: `
-      <div class="zone-totem-card" style="--zone-color: ${hex}; border-color: ${hex};">
+      <div class="zone-totem-card ${isFront ? 'is-front-marker' : ''}" style="--zone-color: ${hex}; border-color: ${hex};">
         <div class="zone-totem-pulse" style="background-color: ${hex};"></div>
         <div class="zone-totem-body font-sans">
           <span class="zone-totem-title">${quartier}</span>
@@ -432,6 +469,30 @@ function createNavigationStepIcon({ stepNumber }) {
     iconSize: [64, 62],
     iconAnchor: [32, 22],
     popupAnchor: [0, -26],
+  });
+}
+
+function createAvoidedFloodedRoadIcon({ nom }) {
+  if (typeof window === 'undefined' || typeof L === 'undefined' || !L?.divIcon) return undefined;
+  return L.divIcon({
+    className: 'avoided-road-pin-div',
+    html: `
+      <div style="position: relative; display: flex; flex-direction: column; align-items: center; cursor: pointer;">
+        <span style="position: absolute; top: 0; width: 32px; height: 32px; border-radius: 9999px; background-color: #EF4444; opacity: 0.45; animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></span>
+        <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 9999px; background: #DC2626; color: white; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.5); border: 2px solid white;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+          </svg>
+        </div>
+        <div style="margin-top: 2px; padding: 1px 6px; border-radius: 6px; background: #7F1D1D; color: #FCA5A5; font-size: 9px; font-weight: 800; border: 1px solid #EF4444; box-shadow: 0 2px 6px rgba(0,0,0,0.4); white-space: nowrap;">
+          Axe inondé évité
+        </div>
+      </div>
+    `,
+    iconSize: [86, 50],
+    iconAnchor: [43, 16],
+    popupAnchor: [0, -18],
   });
 }
 
@@ -536,6 +597,17 @@ function MapAutoResizer() {
   return null;
 }
 
+// Capture de référence vers l'instance Leaflet globale du conteneur
+function MapInstanceCapture({ onMap }) {
+  const map = useMap();
+  useEffect(() => {
+    if (map && onMap) {
+      onMap(map);
+    }
+  }, [map, onMap]);
+  return null;
+}
+
 // Auto-recentre la vue dès qu'un popup s'ouvre pour garantir qu'il soit toujours 100% visible
 function MapPopupAutoPanner() {
   const map = useMap();
@@ -571,26 +643,34 @@ function MapPopupAutoPanner() {
 }
 
 // Recentre/zoome automatiquement sur l'itinéraire dès qu'il apparaît avec marges adaptées
-function FitRoute({ coordinates }) {
+function FitRoute({ coordinates, arrivalMarkerRef }) {
   const map = useMap();
   useEffect(() => {
     if (!coordinates?.length || !map || typeof map.fitBounds !== 'function') return;
     try {
       const bounds = coordinates.map(([lon, lat]) => [lat, lon]);
       map.fitBounds(bounds, {
-        paddingTopLeft: [50, 90],
-        paddingBottomRight: [50, 160],
+        paddingTopLeft: [50, 50],
+        paddingBottomRight: [50, 220],
         maxZoom: 16.5,
         animate: true,
         duration: 0.6,
       });
+
+      const timer = setTimeout(() => {
+        if (arrivalMarkerRef?.current && typeof arrivalMarkerRef.current.openPopup === 'function') {
+          arrivalMarkerRef.current.openPopup();
+        }
+      }, 700);
+
+      return () => clearTimeout(timer);
     } catch {}
-  }, [coordinates, map]);
+  }, [coordinates, map, arrivalMarkerRef]);
   return null;
 }
 
 // Accompagne visuellement le guidage pas-à-pas le long des ruelles
-function NavigationStepFollower({ isNavigating, currentStepIndex, instructions, coordinates, stepMarkerRef }) {
+function NavigationStepFollower({ isNavigating, currentStepIndex, instructions, coordinates }) {
   const map = useMap();
 
   useEffect(() => {
@@ -608,21 +688,17 @@ function NavigationStepFollower({ isNavigating, currentStepIndex, instructions, 
     const targetPoint = [coord[1], coord[0]];
     if (typeof map.project === 'function' && typeof map.unproject === 'function') {
       const px = map.project(targetPoint);
-      px.y -= 110;
+      // Décalage vers le bas (+115px) : positionne le citoyen et l'étape dans la moitié haute dégagée de la carte,
+      // restant 100% visibles sans être masqués par le bandeau de guidage du bas
+      px.y += 115;
       const targetLatLng = map.unproject(px);
       if (typeof map.flyTo === 'function') {
-        map.flyTo(targetLatLng, 17, { duration: 0.6 });
+        map.flyTo(targetLatLng, 17.5, { duration: 0.55 });
       }
+    } else if (typeof map.flyTo === 'function') {
+      map.flyTo(targetPoint, 17.5, { duration: 0.55 });
     }
-
-    const timer = setTimeout(() => {
-      if (stepMarkerRef?.current && typeof stepMarkerRef.current.openPopup === 'function') {
-        stepMarkerRef.current.openPopup();
-      }
-    }, 650);
-
-    return () => clearTimeout(timer);
-  }, [isNavigating, currentStepIndex, instructions, coordinates, map, stepMarkerRef]);
+  }, [isNavigating, currentStepIndex, instructions, coordinates, map]);
 
   return null;
 }
@@ -739,10 +815,55 @@ export default function InteractiveMap({
   onToggleFullscreen = null,
   isFullscreen = false,
   userLocation = null,
+  onResetUserPosition = null,
+  focusAvoidedRoadTrigger = null,
 }) {
   const { zones, inondations, segments, capteurs, signalements, refuges } = data;
   const markerRefs = useRef({});
   const navStepMarkerRef = useRef(null);
+  const arrivalMarkerRef = useRef(null);
+  const mapInstanceRef = useRef(null);
+  const [frontSignalementId, setFrontSignalementId] = useState(null);
+  const [frontElementId, setFrontElementId] = useState(null);
+
+  const handleMapReady = useCallback((m) => {
+    mapInstanceRef.current = m;
+  }, []);
+
+  const panMapTo = useCallback((point, offsetPxY = 120, targetZoom = null) => {
+    const map = mapInstanceRef.current;
+    if (!map || !point) return;
+    try {
+      if (targetZoom && typeof map.flyTo === 'function') {
+        map.flyTo(point, targetZoom, { animate: true, duration: 0.45 });
+        setTimeout(() => {
+          try {
+            if (typeof map.project === 'function' && typeof map.unproject === 'function') {
+              const px = map.project(point);
+              px.y -= offsetPxY;
+              const target = map.unproject(px);
+              if (typeof map.panTo === 'function') {
+                map.panTo(target, { animate: true, duration: 0.3 });
+              }
+            }
+          } catch {}
+        }, 450);
+        return;
+      }
+      if (typeof map.project === 'function' && typeof map.unproject === 'function') {
+        const px = map.project(point);
+        px.y -= offsetPxY;
+        const target = map.unproject(px);
+        if (typeof map.panTo === 'function') {
+          map.panTo(target, { animate: true, duration: 0.45 });
+        }
+      } else if (typeof map.panTo === 'function') {
+        map.panTo(point, { animate: true, duration: 0.45 });
+      }
+    } catch {
+      // fallback gracieux
+    }
+  }, []);
 
   const instructions = itineraireInstructions || [];
   const currentStep = instructions[currentStepIndex] || instructions[0] || null;
@@ -757,6 +878,15 @@ export default function InteractiveMap({
     const c = route.coordinates[coordIdx];
     return c ? [c[1], c[0]] : null;
   }, [route?.coordinates, instructions.length, currentStepIndex]);
+
+  const segmentsList = segments?.features || segments?.results?.features || (Array.isArray(segments) ? segments : []);
+  const segmentsRiskHigh = useMemo(() => {
+    if (!route?.coordinates?.length) return [];
+    return segmentsList.filter((s) => {
+      const score = Number(s.properties?.score_risque_actuel ?? s.score_risque_actuel ?? 0);
+      return score >= 0.45;
+    });
+  }, [segmentsList, route?.coordinates?.length]);
 
   const availableLayers = Object.keys(LAYER_LABELS).filter((key) => {
     if (key === 'signalements') return !!signalements?.length;
@@ -878,150 +1008,127 @@ export default function InteractiveMap({
 
   return (
     <div
-      className="relative rounded-xl overflow-hidden border border-navy-50 dark:border-navy-800 isolate z-10 w-full"
+      className="relative rounded-xl overflow-hidden border border-navy-50 dark:border-navy-800 isolate z-10 w-full h-full min-h-[360px]"
       style={{ height: typeof height === 'number' ? `${height}px` : height }}
     >
-      {/* Capsules flottantes de contrôle rapide directement intégrées sur la carte (Format Waze / Google Maps) */}
-      <div className="absolute top-3 left-14 sm:left-16 z-[1000] flex items-center gap-1.5 overflow-x-auto max-w-[calc(100%-250px)] sm:max-w-[calc(100%-280px)] py-1 px-1 scrollbar-none pointer-events-auto">
-        {['signalements', 'refuges', 'segments', 'zones'].map((key) => {
-          if (!availableLayers.includes(key) && key !== 'signalements') return null;
-          const isLayerActive = visible[key] !== false;
-          const Icon = LAYER_ICONS[key] || MapPin;
-          const count = key === 'signalements'
-            ? (signalements?.length || 0)
-            : key === 'refuges'
-            ? (refuges?.features?.length || refuges?.length || 0)
-            : null;
+      {/* Barre de contrôle supérieure unifiée : Couches à gauche (défilable) et Switcher Plan/Satellite à droite. Zéro chevauchement garanti sur tout écran */}
+      <div className="absolute top-2.5 left-2.5 right-2.5 z-[1000] flex items-center justify-between gap-2 pointer-events-none select-none">
+        {/* Capsules de couches filtrables (Signalements, Refuges, Segments, Zones) */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 pointer-events-auto min-w-0 flex-1">
+          {['signalements', 'refuges', 'segments', 'zones'].map((key) => {
+            if (!availableLayers.includes(key) && key !== 'signalements') return null;
+            const isLayerActive = visible[key] !== false;
+            const Icon = LAYER_ICONS[key] || MapPin;
+            const count = key === 'signalements'
+              ? (signalements?.length || 0)
+              : key === 'refuges'
+              ? (refuges?.features?.length || refuges?.length || 0)
+              : null;
 
-          return (
-            <button
-              key={`float-pill-${key}`}
-              type="button"
-              onClick={() => toggle(key)}
-              className={`inline-flex items-center gap-1 px-2 py-1 rounded-xl text-[11px] font-black backdrop-blur-md border shadow-xs transition-all active:scale-95 whitespace-nowrap cursor-pointer ${
-                isLayerActive
-                  ? 'bg-navy-950/90 dark:bg-white/95 text-white dark:text-navy-950 border-white/20 dark:border-navy-800'
-                  : 'bg-white/70 dark:bg-navy-950/70 text-slate-500 dark:text-slate-400 border-white/40 dark:border-navy-800 line-through opacity-70'
-              }`}
-              title={`Afficher ou masquer : ${LAYER_LABELS[key]}`}
-            >
-              <Icon size={12} className={isLayerActive ? 'text-[#CC131A]' : 'opacity-40'} />
-              <span>{LAYER_SHORT_LABELS[key] || LAYER_LABELS[key]}</span>
-              {count !== null && (
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+            return (
+              <button
+                key={`float-pill-${key}`}
+                type="button"
+                onClick={() => toggle(key)}
+                className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-black backdrop-blur-md border shadow-xs transition-all active:scale-95 whitespace-nowrap cursor-pointer ${
                   isLayerActive
-                    ? 'bg-red-500/20 text-red-300 dark:text-red-700'
-                    : 'bg-slate-200 dark:bg-navy-800 text-slate-500'
-                }`}>
-                  {count}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+                    ? 'bg-navy-950/90 dark:bg-white/95 text-white dark:text-navy-950 border-white/20 dark:border-navy-800'
+                    : 'bg-white/80 dark:bg-navy-950/80 text-slate-500 dark:text-slate-400 border-white/40 dark:border-navy-800 line-through opacity-70'
+                }`}
+                title={`Afficher ou masquer : ${LAYER_LABELS[key]}`}
+              >
+                <Icon size={13} className={isLayerActive ? 'text-[#CC131A]' : 'opacity-40'} />
+                <span>{LAYER_SHORT_LABELS[key] || LAYER_LABELS[key]}</span>
+                {count !== null && (
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                    isLayerActive
+                      ? 'bg-red-500/20 text-red-300 dark:text-red-700'
+                      : 'bg-slate-200 dark:bg-navy-800 text-slate-500'
+                  }`}>
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
 
-      {/* Sélecteur de fond de carte à l'intérieur de la carte : Plan vs Sol Réel (Satellite HD) */}
-      <div className="absolute top-3 right-3 z-[1000] flex items-center gap-1 bg-white/95 dark:bg-navy/95 backdrop-blur p-1 rounded-xl border border-navy-50 dark:border-navy-800 shadow-md">
-        <button
-          type="button"
-          onClick={() => changeBaseMap('plan')}
-          className={`flex items-center gap-1 px-2 py-1 text-xs font-bold rounded-lg transition ${
-            baseMap === 'plan'
-              ? 'bg-[#1B2A40] text-white shadow-xs'
-              : 'text-navy-600 dark:text-navy-200 hover:text-navy-900 dark:hover:text-white'
-          }`}
-          aria-label="Mode Plan standard"
-        >
-          <MapIcon size={13} className="flex-shrink-0" />
-          <span>Plan</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => changeBaseMap('satellite')}
-          className={`flex items-center gap-1 px-2 py-1 text-xs font-bold rounded-lg transition ${
-            baseMap === 'satellite'
-              ? 'bg-[#CC131A] text-white shadow-xs font-black'
-              : 'text-navy-600 dark:text-navy-200 hover:text-navy-900 dark:hover:text-white'
-          }`}
-          aria-label="Mode Satellite HD"
-        >
-          <Satellite size={13} className="flex-shrink-0" />
-          <span>Satellite</span>
-        </button>
-
-        {onToggleFullscreen && (
-          <>
-            <div className="w-[1px] h-3.5 bg-navy-100 dark:bg-navy-800 mx-0.5" />
-            <button
-              type="button"
-              onClick={onToggleFullscreen}
-              className="flex items-center gap-1 px-2 py-1 text-xs font-bold rounded-lg transition text-[#CC131A] hover:bg-[#CC131A]/10 active:scale-95 cursor-pointer"
-              aria-label={isFullscreen ? 'Quitter le plein écran' : 'Plein écran'}
-              title={isFullscreen ? 'Quitter le plein écran (Échap)' : 'Agrandir la carte en plein écran'}
-            >
-              {isFullscreen ? (
-                <>
-                  <Minimize2 size={13} className="flex-shrink-0" />
-                  <span className="hidden sm:inline">Réduire</span>
-                </>
-              ) : (
-                <>
-                  <Maximize2 size={13} className="flex-shrink-0" />
-                  <span className="hidden sm:inline">Plein écran</span>
-                </>
-              )}
-            </button>
-          </>
-        )}
-      </div>
-
-      {/* Incitation contextuelle au fort zoom pour révéler le sol réel si en mode plan */}
-      {isHighZoom && baseMap === 'plan' && (
-        <div className="absolute top-14 right-3 z-[1000] bg-white/95 dark:bg-navy/95 backdrop-blur-md border border-red-300 dark:border-red-900 shadow-xl rounded-xl p-2.5 max-w-[210px] text-left transition-all">
-          <div className="flex items-center gap-1.5 text-[11px] font-black text-navy-950 dark:text-white">
-            <Satellite size={13} className="text-[#CC131A] flex-shrink-0" />
-            <span>Sol réel haute précision</span>
-          </div>
-          <p className="text-[10px] text-slate-600 dark:text-slate-300 mt-0.5 leading-tight">
-            Activez le mode Satellite HD pour visualiser les ruelles et toitures réelles.
-          </p>
+        {/* Sélecteur de fond de carte à l'intérieur de la carte : Plan vs Sol Réel (Satellite HD) */}
+        <div className="flex items-center gap-1 bg-white/95 dark:bg-navy/95 backdrop-blur-md p-1 rounded-xl border border-navy-50 dark:border-navy-800 shadow-md shrink-0 pointer-events-auto">
+          <button
+            type="button"
+            onClick={() => changeBaseMap('plan')}
+            className={`flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
+              baseMap === 'plan'
+                ? 'bg-[#1B2A40] text-white shadow-xs'
+                : 'text-navy-600 dark:text-navy-200 hover:text-navy-900 dark:hover:text-white'
+            }`}
+            aria-label="Mode Plan standard"
+          >
+            <MapIcon size={13} className="flex-shrink-0" />
+            <span>Plan</span>
+          </button>
           <button
             type="button"
             onClick={() => changeBaseMap('satellite')}
-            className="mt-1.5 w-full py-1 px-2 text-[10px] font-black text-white bg-[#CC131A] hover:bg-[#b01016] rounded-md transition shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+            className={`flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
+              baseMap === 'satellite'
+                ? 'bg-[#CC131A] text-white shadow-xs font-black'
+                : 'text-navy-600 dark:text-navy-200 hover:text-navy-900 dark:hover:text-white'
+            }`}
+            aria-label="Mode Satellite HD"
           >
-            <Satellite size={12} />
-            <span>Passer en Satellite HD</span>
+            <Satellite size={13} className="flex-shrink-0" />
+            <span>Satellite</span>
           </button>
+
+          {onToggleFullscreen && (
+            <>
+              <div className="w-[1px] h-3.5 bg-navy-100 dark:bg-navy-800 mx-0.5" />
+              <button
+                type="button"
+                onClick={onToggleFullscreen}
+                className="flex items-center gap-1 px-2 py-1 text-xs font-bold rounded-lg transition text-[#CC131A] hover:bg-[#CC131A]/10 active:scale-95 cursor-pointer"
+                aria-label={isFullscreen ? 'Quitter le plein écran' : 'Plein écran'}
+                title={isFullscreen ? 'Quitter le plein écran (Échap)' : 'Agrandir la carte en plein écran'}
+              >
+                {isFullscreen ? (
+                  <>
+                    <Minimize2 size={13} className="flex-shrink-0" />
+                    <span className="hidden sm:inline">Réduire</span>
+                  </>
+                ) : (
+                  <>
+                    <Maximize2 size={13} className="flex-shrink-0" />
+                    <span className="hidden sm:inline">Plein écran</span>
+                  </>
+                )}
+              </button>
+            </>
+          )}
         </div>
-      )}
+      </div>
 
       <MapContainer
         center={THIAROYE_CENTER}
-        zoom={14.5}
-        minZoom={12}
+        zoom={14}
+        minZoom={11}
         maxZoom={20}
+        zoomSnap={0.5}
         maxBounds={THIAROYE_BOUNDS}
-        maxBoundsViscosity={0.85}
+        maxBoundsViscosity={0.5}
         scrollWheelZoom
         dragging
         touchZoom
         zoomControl={false}
-        style={{ width: '100%', height: '100%', backgroundColor: '#0e1c2e' }}
+        style={{ width: '100%', height: '100%', minHeight: '380px', backgroundColor: '#0e1c2e' }}
       >
-        <ZoomControl position="topleft" />
+        <ZoomControl position="bottomleft" />
         <MapAutoResizer />
+        <MapInstanceCapture onMap={handleMapReady} />
         <MapPopupAutoPanner />
-        <NavigationStepFollower
-          isNavigating={isNavigating}
-          currentStepIndex={currentStepIndex}
-          instructions={instructions}
-          coordinates={route?.coordinates}
-          stepMarkerRef={navStepMarkerRef}
-        />
         <MapViewportListener onViewportChange={handleViewportChange} />
-        <RecenterButton center={THIAROYE_CENTER} defaultZoom={14.5} />
+        <RecenterButton center={THIAROYE_CENTER} defaultZoom={14} />
 
         {/* Triple couche Satellite Ultra-Précision :
             1. Photo aérienne satellite HD réelle (Esri World Imagery)
@@ -1054,8 +1161,9 @@ export default function InteractiveMap({
         ) : (
           <TileLayer
             key="plan-layer"
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+            subdomains="abcd"
             maxZoom={20}
             maxNativeZoom={19}
           />
@@ -1075,14 +1183,18 @@ export default function InteractiveMap({
             const { hex, label } = riskInfo(niveau);
             const scorePct = Math.round(Number(props.score_risque_moyen ?? 0) * 100);
             const center = getPolygonCenter(f.geometry);
+            const zoneId = f.id ?? props.id ?? props.quartier;
+            const zoneKey = `zone-${zoneId}`;
+            const isFrontZone = frontElementId === zoneKey;
             const totemIcon = createZoneTotemIcon({
               quartier: props.quartier,
               niveauRisque: niveau,
               scorePct,
+              isFront: isFrontZone,
             });
 
             return (
-              <span key={`zone-bundle-${f.id ?? props.id}`}>
+              <span key={`zone-bundle-${zoneId}`}>
                 <Polygon
                   positions={polygonToLatLngs(f.geometry)}
                   pathOptions={{
@@ -1096,6 +1208,26 @@ export default function InteractiveMap({
                   <Marker
                     position={center}
                     icon={totemIcon}
+                    zIndexOffset={isFrontZone ? 25000 : 200}
+                    eventHandlers={{
+                      click: (e) => {
+                        setFrontElementId(zoneKey);
+                        if (e?.target && typeof e.target.setZIndexOffset === 'function') {
+                          e.target.setZIndexOffset(25000);
+                        }
+                        panMapTo(center, 90);
+                      },
+                      mouseover: (e) => {
+                        if (e?.target && typeof e.target.setZIndexOffset === 'function') {
+                          e.target.setZIndexOffset(25000);
+                        }
+                      },
+                      mouseout: (e) => {
+                        if (frontElementId !== zoneKey && e?.target && typeof e.target.setZIndexOffset === 'function') {
+                          e.target.setZIndexOffset(200);
+                        }
+                      },
+                    }}
                   >
                     <Popup
                       className="citizen-map-popup"
@@ -1148,55 +1280,7 @@ export default function InteractiveMap({
 
 
 
-        {visible.segments !== false &&
-          (segments?.features || segments?.results?.features || (Array.isArray(segments) ? segments : []))?.map((f) => {
-            const segScore = Number(f.properties?.score_risque_actuel ?? f.score_risque_actuel ?? 0);
-            const segPct = Math.round(segScore * 100);
-            const color = segmentColor(segScore);
-            return (
-              <Polyline
-                key={`segment-${f.id}`}
-                positions={lineToLatLngs(f.geometry)}
-                pathOptions={{
-                  color,
-                  weight: isHighZoom ? 6.5 : 4.5,
-                  opacity: 0.95,
-                }}
-              >
-                <Popup
-                  className="citizen-map-popup"
-                  minWidth={260}
-                  maxWidth={320}
-                  autoPan={true}
-                  closeButton={true}
-                >
-                  <div className="text-xs space-y-2.5 p-3 min-w-[210px] font-sans">
-                    <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-navy-800">
-                      <div className="w-8 h-8 rounded-xl text-white flex items-center justify-center flex-shrink-0" style={{ backgroundColor: color }}>
-                        <Route size={16} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <span className="font-extrabold text-sm text-navy-950 dark:text-white block truncate">{f.properties.nom || 'Rue'}</span>
-                        <p className="text-[10px] text-slate-500">Drainage : {f.properties.etat_drainage || 'Non renseigné'}</p>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex justify-between items-center text-[11px] mb-1">
-                        <span className="text-slate-600 dark:text-slate-400 font-medium">Vulnérabilité ruissellement :</span>
-                        <span className="font-extrabold" style={{ color }}>{segPct} %</span>
-                      </div>
-                      <div className="w-full bg-slate-100 dark:bg-navy-800 rounded-full h-1.5 overflow-hidden">
-                        <div
-                          className="h-full rounded-full"
-                          style={{ width: `${Math.min(100, Math.max(5, segPct))}%`, backgroundColor: color }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </Popup>
-              </Polyline>
-            );
-          })}
+
 
         {visible.capteurs !== false &&
           (capteurs?.features || (Array.isArray(capteurs) ? capteurs : []))?.map((f) => {
@@ -1257,11 +1341,14 @@ export default function InteractiveMap({
             }
             const props = f.properties || f;
             const fid = f.id ?? props.id;
+            const refugeKey = `refuge-${fid}`;
+            const isFrontRefuge = frontElementId === refugeKey;
             const refugeIcon = createRefugePinIcon({
               type: props.type_refuge,
               nom: props.nom,
               capacite: props.capacite,
               zoomLevel,
+              isFront: isFrontRefuge,
             });
 
             const typeLabel = {
@@ -1278,13 +1365,23 @@ export default function InteractiveMap({
                 key={`refuge-pin-${fid}`}
                 position={point}
                 icon={refugeIcon}
-                zIndexOffset={400}
+                zIndexOffset={isFrontRefuge ? 22000 : 400}
                 eventHandlers={{
-                  click: () => {
-                    if (map && typeof map.panTo === 'function') {
-                      const px = map.project(point);
-                      px.y -= 120;
-                      map.panTo(map.unproject(px), { animate: true, duration: 0.45 });
+                  click: (e) => {
+                    setFrontElementId(refugeKey);
+                    if (e?.target && typeof e.target.setZIndexOffset === 'function') {
+                      e.target.setZIndexOffset(22000);
+                    }
+                    panMapTo(point, 120);
+                  },
+                  mouseover: (e) => {
+                    if (e?.target && typeof e.target.setZIndexOffset === 'function') {
+                      e.target.setZIndexOffset(22000);
+                    }
+                  },
+                  mouseout: (e) => {
+                    if (frontElementId !== refugeKey && e?.target && typeof e.target.setZIndexOffset === 'function') {
+                      e.target.setZIndexOffset(400);
                     }
                   },
                 }}
@@ -1383,8 +1480,8 @@ export default function InteractiveMap({
             );
           })}
 
-        {/* Clusters de signalements quand le zoom est dézoomé */}
-        {visible.signalements !== false &&
+        {/* Clusters de signalements quand le zoom est dézoomé (masqués en guidage pour aérer la voirie) */}
+        {visible.signalements !== false && !isNavigating &&
           clusteredSignalements.map((c) => (
             <ClusterMarker
               key={c.id}
@@ -1394,7 +1491,7 @@ export default function InteractiveMap({
             />
           ))}
 
-        {visible.signalements !== false &&
+        {visible.signalements !== false && !isNavigating &&
           individualSignalements?.map((f) => {
             const point = pointToLatLng(f.geometry || f.localisation);
             if (!point) return null;
@@ -1460,10 +1557,14 @@ export default function InteractiveMap({
                   context: props.description,
                 });
 
+            const sigKey = `sig-${fid}`;
+            const isFront = frontElementId === sigKey || String(frontSignalementId) === String(fid);
+
             const customIcon = createCitizenAvatarIcon({
               avatarUrl,
               statusColor,
               isSelected,
+              isFront,
               authorName: author,
               category: props.categorie,
               zoomLevel,
@@ -1478,16 +1579,19 @@ export default function InteractiveMap({
                 {/* 1. Point d'impact radar au sol : très précis et discret pour laisser la ruelle 100% visible */}
                 <CircleMarker
                   center={point}
-                  radius={isSelected ? (isHighZoom ? 14 : 10) : (isHighZoom ? 5 : 4)}
+                  radius={isSelected || isFront ? (isHighZoom ? 14 : 10) : (isHighZoom ? 5 : 4)}
                   pathOptions={{
                     color: isCurrentUser ? '#F59E0B' : statusColor,
-                    weight: isSelected ? 2 : 1.2,
+                    weight: isSelected || isFront ? 2 : 1.2,
                     fillColor: isCurrentUser ? '#F59E0B' : statusColor,
-                    fillOpacity: isSelected ? 0.35 : 0.2,
+                    fillOpacity: isSelected || isFront ? 0.35 : 0.2,
                   }}
                   eventHandlers={{
                     click: () => {
+                      setFrontElementId(sigKey);
+                      setFrontSignalementId(fid);
                       const m = markerRefs.current?.[fid];
+                      if (m && typeof m.setZIndexOffset === 'function') m.setZIndexOffset(20000);
                       if (m && typeof m.openPopup === 'function') m.openPopup();
                     },
                   }}
@@ -1498,16 +1602,27 @@ export default function InteractiveMap({
                   key={`sig-marker-${fid}`}
                   position={point}
                   icon={customIcon}
-                  zIndexOffset={isCurrentUser ? 1000 : (isSelected ? 500 : 0)}
+                  zIndexOffset={isFront ? 20000 : (isCurrentUser ? 1000 : (isSelected ? 500 : 0))}
                   ref={(ref) => {
                     if (ref) markerRefs.current[fid] = ref;
                   }}
                   eventHandlers={{
-                    click: () => {
-                      if (map && typeof map.panTo === 'function') {
-                        const px = map.project(point);
-                        px.y -= 120;
-                        map.panTo(map.unproject(px), { animate: true, duration: 0.45 });
+                    click: (e) => {
+                      setFrontElementId(sigKey);
+                      setFrontSignalementId(fid);
+                      if (e?.target && typeof e.target.setZIndexOffset === 'function') {
+                        e.target.setZIndexOffset(20000);
+                      }
+                      panMapTo(point, 120);
+                    },
+                    mouseover: (e) => {
+                      if (e?.target && typeof e.target.setZIndexOffset === 'function') {
+                        e.target.setZIndexOffset(20000);
+                      }
+                    },
+                    mouseout: (e) => {
+                      if (frontElementId !== sigKey && String(frontSignalementId) !== String(fid) && e?.target && typeof e.target.setZIndexOffset === 'function') {
+                        e.target.setZIndexOffset(isCurrentUser ? 1000 : (isSelected ? 500 : 0));
                       }
                     },
                   }}
@@ -1640,17 +1755,17 @@ export default function InteractiveMap({
             );
           })}
 
-        {/* ── MARQUEUR LIVE "VOUS ÊTES ICI" (POSITION CITOYENNE DIRECTE) ── */}
+        {/* ── MARQUEUR LIVE "VOUS ÊTES ICI" (POSITION CITOYENNE DIRECTE DYNAMIQUE) ── */}
         {userLocation && typeof userLocation.lat === 'number' && typeof userLocation.lon === 'number' && (
           <span key="user-live-location-bundle">
             <CircleMarker
               center={[userLocation.lat, userLocation.lon]}
-              radius={18}
+              radius={userLocation.isSafe ? 24 : 18}
               pathOptions={{
-                color: '#2563EB',
+                color: userLocation.isSafe ? '#059669' : (userLocation.isNavigating ? '#0284C7' : '#2563EB'),
                 weight: 2,
-                fillColor: '#3B82F6',
-                fillOpacity: 0.25,
+                fillColor: userLocation.isSafe ? '#10B981' : (userLocation.isNavigating ? '#38BDF8' : '#3B82F6'),
+                fillOpacity: userLocation.isSafe ? 0.35 : 0.25,
               }}
             />
             <Marker
@@ -1659,15 +1774,14 @@ export default function InteractiveMap({
                 avatarUrl: userLocation.avatar,
                 authorName: userLocation.name,
                 zoomLevel,
+                isSafe: userLocation.isSafe,
+                isNavigating: userLocation.isNavigating,
+                stepNumber: (userLocation.currentStepIndex ?? currentStepIndex) + 1,
               })}
-              zIndexOffset={2000}
+              zIndexOffset={userLocation.isSafe ? 20000 : 2000}
               eventHandlers={{
                 click: () => {
-                  if (map && typeof map.panTo === 'function') {
-                    const px = map.project([userLocation.lat, userLocation.lon]);
-                    px.y -= 120;
-                    map.panTo(map.unproject(px), { animate: true, duration: 0.45 });
-                  }
+                  panMapTo([userLocation.lat, userLocation.lon], 120);
                 },
               }}
             >
@@ -1686,7 +1800,9 @@ export default function InteractiveMap({
                     <img
                       src={userLocation.avatar || '/images/avatar-amadou.jpg'}
                       alt={userLocation.name || 'Vous'}
-                      className="w-10 h-10 rounded-full object-cover ring-2 ring-blue-500 flex-shrink-0"
+                      className={`w-10 h-10 rounded-full object-cover ring-2 flex-shrink-0 ${
+                        userLocation.isSafe ? 'ring-emerald-500' : 'ring-blue-500'
+                      }`}
                       onError={(e) => {
                         e.currentTarget.src = '/images/avatar-amadou.jpg';
                       }}
@@ -1696,29 +1812,64 @@ export default function InteractiveMap({
                         <span className="font-extrabold text-sm text-navy-950 dark:text-white truncate">
                           {userLocation.name || 'Votre compte'}
                         </span>
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 border border-blue-300 dark:border-blue-700/60 flex-shrink-0 shadow-2xs">
-                          <Star size={10} className="fill-blue-500 text-blue-500" />
-                          Vous êtes ici
-                        </span>
+                        {userLocation.isSafe ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/60 flex-shrink-0 shadow-2xs">
+                            <ShieldCheck size={10} className="text-emerald-600 dark:text-emerald-400" />
+                            Mis à l'abri
+                          </span>
+                        ) : userLocation.isNavigating ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300 border border-sky-300 dark:border-sky-700/60 flex-shrink-0 shadow-2xs">
+                            <Navigation size={10} className="text-sky-600 dark:text-sky-400" />
+                            En route
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 border border-blue-300 dark:border-blue-700/60 flex-shrink-0 shadow-2xs">
+                            <Star size={10} className="fill-blue-500 text-blue-500" />
+                            Vous êtes ici
+                          </span>
+                        )}
                       </div>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5 truncate">
-                        <MapPin size={11} className="text-blue-600 flex-shrink-0" />
-                        <span>Position sentinelle · {userLocation.quartier || 'Thiaroye-sur-Mer'}</span>
+                        <MapPin size={11} className={userLocation.isSafe ? 'text-emerald-600' : 'text-blue-600'} />
+                        <span>{userLocation.quartier || 'Thiaroye-sur-Mer'}</span>
                       </p>
                     </div>
                   </div>
-                  <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-snug">
-                    Vous êtes positionné en direct au cœur de Thiaroye-sur-Mer. Vous pouvez observer les points de vigilance autour de vous ou signaler un problème.
-                  </p>
-                  <div className="pt-1 flex flex-col gap-1.5">
-                    <Link
-                      to="/citizen/signaler"
-                      className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg bg-[#CC131A] hover:bg-[#b01016] text-white font-bold text-[11px] shadow-sm transition active:scale-95"
-                    >
-                      <MapPin size={12} />
-                      Signaler un risque autour de moi
-                    </Link>
-                  </div>
+
+                  {userLocation.isSafe ? (
+                    <div className="space-y-2">
+                      <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-[11px] text-emerald-900 dark:text-emerald-200 leading-snug">
+                        <strong>Arrivé en lieu sûr !</strong> Votre avatar est positionné au refuge de destination, hors de tout risque d'inondation.
+                      </div>
+                      {onResetUserPosition && (
+                        <button
+                          type="button"
+                          onClick={onResetUserPosition}
+                          className="w-full py-1.5 px-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-navy-800 dark:hover:bg-navy-700 text-slate-700 dark:text-slate-200 font-bold text-[11px] flex items-center justify-center gap-1.5 transition cursor-pointer"
+                        >
+                          <RotateCcw size={12} />
+                          <span>Repartir de la position initiale</span>
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-snug">
+                        {userLocation.isNavigating
+                          ? "Vous suivez l'itinéraire de secours pas-à-pas vers le refuge. Chaque étape est guidée en bas de l'écran."
+                          : "Vous êtes positionné en direct au cœur de Thiaroye-sur-Mer. Vous pouvez observer les points de vigilance autour de vous ou signaler un problème."}
+                      </p>
+                      <div className="pt-1 flex flex-col gap-1.5">
+                        <Link
+                          to="/citizen/signaler"
+                          className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg bg-[#CC131A] hover:bg-[#b01016] text-white font-bold text-[11px] shadow-sm transition active:scale-95"
+                        >
+                          <MapPin size={12} />
+                          Signaler un risque autour de moi
+                        </Link>
+                      </div>
+                    </>
+                  )}
                 </div>
               </Popup>
             </Marker>
@@ -1727,101 +1878,144 @@ export default function InteractiveMap({
 
         {route?.coordinates?.length > 0 && (
           <>
+            {/* 1. SECTIONS INONDÉES ÉVITÉES (Déviations affichées en rouge pointillé avec badge d'alerte) */}
+            {segmentsRiskHigh?.map((seg, idx) => {
+              const coords = seg.geometry?.coordinates || seg.coordinates;
+              if (!coords || !coords.length) return null;
+              const latlngs = coords.map(([lon, lat]) => [lat, lon]);
+              const midCoord = latlngs[Math.floor(latlngs.length / 2)] || latlngs[0];
+              const nom = seg.properties?.nom || seg.nom || `Axe à risque #${idx + 1}`;
+              return (
+                <span key={`avoided-road-${seg.id || idx}`}>
+                  <Polyline
+                    positions={latlngs}
+                    pathOptions={{ color: '#DC2626', weight: 4.5, dashArray: '6, 8', opacity: 0.85, lineCap: 'round' }}
+                  />
+                  <Marker
+                    position={midCoord}
+                    icon={createAvoidedFloodedRoadIcon({ nom })}
+                    zIndexOffset={1600}
+                    eventHandlers={{
+                      click: () => {
+                        panMapTo(midCoord, 120, 16.5);
+                      },
+                    }}
+                  >
+                    <Popup
+                      className="citizen-map-popup"
+                      autoPan={true}
+                      autoPanPaddingTopLeft={[20, 90]}
+                      autoPanPaddingBottomRight={[20, 200]}
+                    >
+                      <div className="text-xs p-2.5 font-sans space-y-1 max-w-[240px]">
+                        <div className="flex items-center gap-1.5 font-black text-red-600 dark:text-red-400">
+                          <AlertTriangle size={14} />
+                          <span>Voie inondée évitée</span>
+                        </div>
+                        <p className="font-bold text-navy-950 dark:text-white text-[11px] leading-snug">
+                          {nom}
+                        </p>
+                        <p className="text-[10px] text-slate-500 font-medium">
+                          Axe submergé contourné par l’algorithme pour garantir votre sécurité.
+                        </p>
+                      </div>
+                    </Popup>
+                  </Marker>
+                </span>
+              );
+            })}
+
+            {/* 2. TRACÉ PRINCIPAL STYLE GOOGLE MAPS (Double couche : Halo blanc de contraste + Bleu vif #2563EB) */}
             <Polyline
               positions={route.coordinates.map(([lon, lat]) => [lat, lon])}
-              pathOptions={{ color: '#0D9488', weight: 8, opacity: 0.35 }}
+              pathOptions={{ color: '#FFFFFF', weight: 9, opacity: 0.95, lineCap: 'round', lineJoin: 'round' }}
             />
             <Polyline
               positions={route.coordinates.map(([lon, lat]) => [lat, lon])}
-              pathOptions={{ color: '#0D9488', weight: 4.5, dashArray: '4,10', lineCap: 'round' }}
+              pathOptions={{ color: '#2563EB', weight: 5.5, opacity: 1, lineCap: 'round', lineJoin: 'round' }}
             />
 
-            {/* Marqueur du point de départ avec auto-recentrage au clic */}
+            {/* 3. MARQUEUR DU POINT DE DÉPART */}
             <CircleMarker
               center={[route.coordinates[0][1], route.coordinates[0][0]]}
               radius={8}
-              pathOptions={{ color: '#fff', weight: 2.5, fillColor: '#0284C7', fillOpacity: 1 }}
+              pathOptions={{ color: '#ffffff', weight: 2.5, fillColor: '#2563EB', fillOpacity: 1 }}
               eventHandlers={{
                 click: () => {
-                  if (map && typeof map.panTo === 'function') {
-                    const px = map.project([route.coordinates[0][1], route.coordinates[0][0]]);
-                    px.y -= 110;
-                    map.panTo(map.unproject(px), { animate: true, duration: 0.45 });
-                  }
+                  panMapTo([route.coordinates[0][1], route.coordinates[0][0]], 110);
                 },
               }}
             >
-              <Popup className="citizen-map-popup" autoPan={false}>
-                <div className="text-xs p-2 font-sans space-y-1">
-                  <div className="flex items-center gap-1.5 font-black text-sky-600 dark:text-sky-400">
-                    <MapPin size={13} />
+              <Popup
+                className="citizen-map-popup"
+                autoPan={true}
+                autoPanPaddingTopLeft={[20, 80]}
+                autoPanPaddingBottomRight={[20, 200]}
+              >
+                <div className="text-xs p-2.5 font-sans space-y-1">
+                  <div className="flex items-center gap-1.5 font-black text-[#2563EB] dark:text-blue-400">
+                    <MapPin size={14} />
                     <span>Départ</span>
                   </div>
-                  <p className="text-[11px] text-slate-500 font-medium">
-                    Début du trajet d’évacuation sécurisé
+                  <p className="text-[11px] text-slate-600 dark:text-slate-300 font-medium">
+                    Début du trajet d’évacuation sécurisé.
                   </p>
                 </div>
               </Popup>
             </CircleMarker>
 
-            {/* Marqueur du point d'arrivée (Lieu sûr) avec auto-recentrage au clic */}
+            {/* 4. MARQUEUR DU POINT D'ARRIVÉE (REFUGE EN ZONE SÛRE) AVEC FOCUS AUTOMATIQUE */}
             <CircleMarker
-              center={[route.coordinates.at(-1)[1], route.coordinates.at(-1)[0]]}
-              radius={9}
-              pathOptions={{ color: '#fff', weight: 2.5, fillColor: '#059669', fillOpacity: 1 }}
+              center={[
+                route.coordinates[route.coordinates.length - 1][1],
+                route.coordinates[route.coordinates.length - 1][0],
+              ]}
+              radius={10}
+              pathOptions={{ color: '#ffffff', weight: 2.5, fillColor: '#059669', fillOpacity: 1 }}
+              ref={arrivalMarkerRef}
               eventHandlers={{
                 click: () => {
-                  if (map && typeof map.panTo === 'function') {
-                    const px = map.project([route.coordinates.at(-1)[1], route.coordinates.at(-1)[0]]);
-                    px.y -= 110;
-                    map.panTo(map.unproject(px), { animate: true, duration: 0.45 });
-                  }
+                  const end = route.coordinates[route.coordinates.length - 1];
+                  panMapTo([end[1], end[0]], 110);
                 },
               }}
             >
-              <Popup className="citizen-map-popup" autoPan={false}>
-                <div className="text-xs p-2 font-sans space-y-1">
+              <Popup
+                className="citizen-map-popup"
+                autoPan={true}
+                autoPanPaddingTopLeft={[20, 80]}
+                autoPanPaddingBottomRight={[20, 200]}
+              >
+                <div className="text-xs p-2.5 font-sans space-y-1">
                   <div className="flex items-center gap-1.5 font-black text-emerald-600 dark:text-emerald-400">
                     <ShieldCheck size={14} />
                     <span>Point sûr le plus proche</span>
                   </div>
                   <p className="text-[11px] text-slate-600 dark:text-slate-300 font-medium">
-                    Zone hors de danger d’inondation (Refuge)
+                    Zone d’accueil sécurisée hors d’eau (Refuge).
                   </p>
                 </div>
               </Popup>
             </CircleMarker>
 
-            {/* Marqueur animé d'étape en direct quand le guidage est en cours */}
+            {/* 5. INDICATION D'ÉTAPE SUR LE TRACÉ LORS DE LA NAVIGATION (SANS POPUP BLANCHE DOUBLON) */}
             {isNavigating && currentStepCoord && (
               <Marker
                 position={currentStepCoord}
                 icon={createNavigationStepIcon({ stepNumber: currentStepIndex + 1 })}
-                zIndexOffset={2500}
-                ref={navStepMarkerRef}
-              >
-                <Popup className="citizen-map-popup" autoPan={false} closeButton={false}>
-                  <div className="text-xs p-3 font-sans space-y-1.5 min-w-[210px]">
-                    <div className="flex items-center justify-between border-b border-slate-100 dark:border-navy-800 pb-1.5">
-                      <span className="font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider text-[10px]">
-                        Étape {currentStepIndex + 1} / {instructions.length}
-                      </span>
-                      <span className="text-[10px] text-slate-400 font-bold">À suivre</span>
-                    </div>
-                    <p className="font-extrabold text-sm text-navy-950 dark:text-white leading-snug">
-                      {currentStep?.instruction || 'Continuez sur cet axe sécurisé'}
-                    </p>
-                    {currentStep?.ruelle && (
-                      <p className="text-[11px] text-slate-500 font-medium">
-                        {currentStep.ruelle} {currentStep.distance_m ? `· ${currentStep.distance_m} m` : ''}
-                      </p>
-                    )}
-                  </div>
-                </Popup>
-              </Marker>
+                zIndexOffset={2200}
+              />
             )}
 
-            <FitRoute coordinates={route.coordinates} />
+            {/* Suivi automatique et centrage fluide de la caméra sur chaque étape */}
+            <NavigationStepFollower
+              isNavigating={isNavigating}
+              currentStepIndex={currentStepIndex}
+              instructions={instructions}
+              coordinates={route.coordinates}
+            />
+
+            <FitRoute coordinates={route.coordinates} arrivalMarkerRef={arrivalMarkerRef} />
           </>
         )}
       </MapContainer>
