@@ -54,7 +54,7 @@ export default function LoginPage() {
             Connexion Citoyenne
           </h1>
           <p className="text-sm text-[#64748B] mt-1.5 leading-relaxed">
-            Suivez en temps réel les risques d'inondation à Thiaroye-sur-Mer.
+            Suivez en temps réel les risques d’inondation à Thiaroye-sur-Mer.
           </p>
         </div>
 
@@ -78,7 +78,6 @@ export default function LoginPage() {
               id="login-username"
               type="text"
               required
-              autoFocus
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Ex : 77 123 45 67 ou identifiant"

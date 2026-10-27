@@ -7,7 +7,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { useAuth } from '../auth/AuthContext';
 import client from '../api/client';
 import { useToast } from '../shared/toast/ToastContext';
-import { BOUTON_PRINCIPAL, CARTE, classeChamp, classeLienRenvoi, ton } from './styles';
+import { BOUTON_PRINCIPAL, classeChamp, ton } from './styles';
 
 // Le serveur impose 60 s entre deux envois : le compte à rebours démarre
 // dès l'arrivée sur la page, puisque le premier code vient d'être envoyé.
@@ -78,7 +78,7 @@ export default function OTPVerificationPage() {
       <AuthLayout variante="verification">
         <div className="w-full max-w-md bg-white rounded-2xl border border-slate-200/90 shadow-xl p-7 sm:p-9 text-center">
           <p className="text-base font-bold text-slate-800">Données manquantes</p>
-          <p className="text-xs text-slate-500 mt-1">Aucune session de vérification n'est en cours.</p>
+          <p className="text-xs text-slate-500 mt-1">Aucune session de vérification n’est en cours.</p>
           <button
             onClick={() => navigate('/signup')}
             className="mt-5 inline-block text-xs font-bold text-[#CC131A] hover:text-[#A01016] hover:underline cursor-pointer"

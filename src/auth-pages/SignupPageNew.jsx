@@ -6,7 +6,7 @@ import useCanauxOtp from './useCanauxOtp';
 import { useTheme } from '../theme/ThemeContext';
 import client from '../api/client';
 import { useToast } from '../shared/toast/ToastContext';
-import { BOUTON_PRINCIPAL, CARTE, classeChamp, classeEtiquette, classeOption, emailValide, ton } from './styles';
+import { BOUTON_PRINCIPAL, classeChamp, classeEtiquette, classeOption, emailValide, ton } from './styles';
 
 const CANAUX = [
   { value: 'telephone', label: 'SMS', Icon: MessageCircle },
@@ -201,10 +201,6 @@ export default function SignupPage() {
 
   const texteDiscret = ton(darkMode, 'text-navy-500', 'text-navy-400');
   const encadre = `px-4 py-3 rounded-lg border ${ton(darkMode, 'bg-navy-50 border-navy-200', 'bg-navy-800 border-navy-700')}`;
-  const classeIdentifiant = (option) => {
-    if (formData.username !== option) return ton(darkMode, 'text-navy-600', 'text-navy-300');
-    return ton(darkMode, 'text-navy-900', 'text-white');
-  };
 
   return (
     <AuthLayout variante="inscription">
@@ -214,7 +210,7 @@ export default function SignupPage() {
             Créer un compte citoyen
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1.5 leading-relaxed">
-            Recevez les alertes d'inondation et participez à la veille communautaire en temps réel.
+            Recevez les alertes d’inondation et participez à la veille communautaire en temps réel.
           </p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">

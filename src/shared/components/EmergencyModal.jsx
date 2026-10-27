@@ -100,16 +100,18 @@ export default function EmergencyModal({ isOpen, onClose }) {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-5 md:p-6 bg-black/75 backdrop-blur-sm transition-opacity"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="emergency-modal-title"
-    >
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-5 md:p-6 bg-black/75 backdrop-blur-sm transition-opacity">
+      <button
+        type="button"
+        aria-label="Fermer la fenêtre d’urgence"
+        className="fixed inset-0 w-full h-full bg-transparent cursor-default border-none"
+        onClick={onClose}
+      />
       <div
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg md:max-w-2xl bg-white dark:bg-[#071322] rounded-3xl overflow-hidden shadow-2xl border border-navy-100 dark:border-navy-800 text-navy-900 dark:text-white flex flex-col max-h-[85vh] max-h-[85dvh] my-auto animate-in fade-in zoom-in-95 duration-150"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="emergency-modal-title"
+        className="relative z-10 w-full max-w-lg md:max-w-2xl bg-white dark:bg-[#071322] rounded-3xl overflow-hidden shadow-2xl border border-navy-100 dark:border-navy-800 text-navy-900 dark:text-white flex flex-col max-h-[85vh] max-h-[85dvh] my-auto animate-in fade-in zoom-in-95 duration-150"
       >
         {/* Header modale avec touch target confortable et contrasté */}
         <div className="p-4 sm:p-5 border-b border-navy-100 dark:border-navy-800 flex items-center justify-between flex-shrink-0">
@@ -122,7 +124,7 @@ export default function EmergencyModal({ isOpen, onClose }) {
                 Numéros d’Urgence Gratuits
               </h3>
               <p className="text-xs text-navy-500 dark:text-navy-400 truncate">
-                Services d'intervention de Thiaroye & Dakar · 24/7
+                Services d’intervention de Thiaroye & Dakar · 24/7
               </p>
             </div>
           </div>
@@ -131,7 +133,7 @@ export default function EmergencyModal({ isOpen, onClose }) {
             type="button"
             onClick={onClose}
             className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-navy-100 dark:bg-navy-800 text-navy-600 dark:text-navy-200 flex items-center justify-center hover:bg-navy-200 dark:hover:bg-navy-700 active:scale-95 transition cursor-pointer flex-shrink-0"
-            aria-label="Fermer la fenêtre d'urgence"
+            aria-label="Fermer la fenêtre d’urgence"
           >
             <X size={18} />
           </button>

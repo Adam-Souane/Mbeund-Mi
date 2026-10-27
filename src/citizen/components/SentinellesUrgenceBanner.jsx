@@ -182,13 +182,18 @@ export default function SentinellesUrgenceBanner() {
       {/* ── MODALE 2 : 5 RÉFLEXES VITAUX EN CAS D'INONDATION ───────────── */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {showReflexes && (
-        <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-5 md:p-6 bg-black/75 backdrop-blur-sm transition-opacity"
-          onClick={() => setShowReflexes(false)}
-        >
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-5 md:p-6 bg-black/75 backdrop-blur-sm transition-opacity">
+          <button
+            type="button"
+            aria-label="Fermer les réflexes de sécurité"
+            className="fixed inset-0 w-full h-full bg-transparent cursor-default border-none"
+            onClick={() => setShowReflexes(false)}
+          />
           <div
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-xl md:max-w-2xl bg-white dark:bg-[#071322] rounded-3xl overflow-hidden shadow-2xl border border-navy-100 dark:border-navy-800 text-navy-900 dark:text-white flex flex-col max-h-[85vh] max-h-[85dvh] my-auto animate-in fade-in zoom-in-95 duration-150"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="reflexes-modal-title"
+            className="relative z-10 w-full max-w-xl md:max-w-2xl bg-white dark:bg-[#071322] rounded-3xl overflow-hidden shadow-2xl border border-navy-100 dark:border-navy-800 text-navy-900 dark:text-white flex flex-col max-h-[85vh] max-h-[85dvh] my-auto animate-in fade-in zoom-in-95 duration-150"
           >
             {/* Header modale */}
             <div className="p-4 sm:p-5 border-b border-navy-100 dark:border-navy-800 flex items-center justify-between flex-shrink-0">
@@ -197,7 +202,7 @@ export default function SentinellesUrgenceBanner() {
                   <ShieldAlert size={20} />
                 </div>
                 <div>
-                  <h3 className="text-base sm:text-lg font-black">5 Réflexes de Sécurité Inondation</h3>
+                  <h3 id="reflexes-modal-title" className="text-base sm:text-lg font-black">5 Réflexes de Sécurité Inondation</h3>
                   <p className="text-xs text-navy-500 dark:text-navy-400">Consignes prioritaires pour protéger votre famille</p>
                 </div>
               </div>
@@ -206,6 +211,7 @@ export default function SentinellesUrgenceBanner() {
                 type="button"
                 onClick={() => setShowReflexes(false)}
                 className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-navy-100 dark:bg-navy-800 text-navy-600 dark:text-navy-200 flex items-center justify-center hover:bg-navy-200 dark:hover:bg-navy-700 active:scale-95 transition cursor-pointer flex-shrink-0"
+                aria-label="Fermer les réflexes de sécurité"
               >
                 <X size={18} />
               </button>
@@ -249,7 +255,7 @@ export default function SentinellesUrgenceBanner() {
                 onClick={() => setShowReflexes(false)}
                 className="w-full py-2.5 sm:py-3 rounded-xl bg-navy-900 dark:bg-white text-white dark:text-navy-900 text-xs sm:text-sm font-bold hover:opacity-90 active:scale-95 transition cursor-pointer shadow-xs"
               >
-                J'ai compris ces réflexes
+                J’ai compris ces réflexes
               </button>
             </div>
           </div>

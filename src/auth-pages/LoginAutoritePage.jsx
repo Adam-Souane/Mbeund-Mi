@@ -32,7 +32,7 @@ export default function LoginAutoritePage() {
       }
       navigate(from || homeRouteForRole(actualRole), { replace: true });
     } catch (err) {
-      setError('Identifiant ou mot de passe administrateur incorrect.');
+      setError(err?.response?.data?.message || 'Identifiant ou mot de passe administrateur incorrect.');
     } finally {
       setIsSubmitting(false);
     }
@@ -75,7 +75,6 @@ export default function LoginAutoritePage() {
               id="auth-username"
               type="text"
               required
-              autoFocus
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Ex : admin.thiaroye ou nom@thiaroye.sn"
@@ -138,7 +137,7 @@ export default function LoginAutoritePage() {
           {/* Lien secondaire vers création de compte */}
           <div className="pt-4 border-t border-slate-100 text-center text-xs">
             <span className="text-[#0B2545] font-medium">
-              Vous disposez d'un code d'invitation ?{' '}
+              Vous disposez d’un code d’invitation ?{' '}
             </span>
             <Link
               to="/admin-register"

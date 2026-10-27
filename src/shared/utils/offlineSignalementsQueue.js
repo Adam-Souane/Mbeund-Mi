@@ -20,7 +20,7 @@ function fileToBase64(file) {
  */
 function base64ToFile(dataUrl, filename = 'photo.jpg') {
   const arr = dataUrl.split(',');
-  const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+  const mime = arr[0].slice(5).split(';')[0] || 'image/jpeg';
   const bstr = atob(arr[1]);
   let n = bstr.length;
   const u8arr = new Uint8Array(n);
@@ -63,8 +63,11 @@ export async function sauvegarderSignalementHorsLigne({ description, categorie, 
     }
   }
 
+  const randomSuffix = typeof crypto !== 'undefined' && crypto.getRandomValues
+    ? crypto.getRandomValues(new Uint32Array(1))[0].toString(36)
+    : Date.now().toString(36);
   const nouveauSignalement = {
-    id: `offline_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+    id: `offline_${Date.now()}_${randomSuffix}`,
     description,
     categorie,
     longitude,
@@ -152,12 +155,16 @@ export function useOfflineSignalements(createSignalementFn) {
     window.addEventListener(QUEUE_EVENT, rafraichir);
     window.addEventListener('online', synchroniser);
 
+    let syncTimer = null;
     // Tentative de synchronisation initiale si en ligne
     if (navigator.onLine && items.length > 0) {
-      synchroniser();
+      syncTimer = setTimeout(() => {
+        synchroniser();
+      }, 0);
     }
 
     return () => {
+      if (syncTimer) clearTimeout(syncTimer);
       window.removeEventListener(QUEUE_EVENT, rafraichir);
       window.removeEventListener('online', synchroniser);
     };

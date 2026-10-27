@@ -174,20 +174,20 @@ describe('CommunautePageBody', () => {
 
     // Vérification des attributs et compteurs
     expect(boutonsJaime[0]).toHaveAttribute('aria-label', "J'aime le post");
-    expect(boutonsJaime[0]).toHaveTextContent(/[0-9]+/);
+    expect(boutonsJaime[0]).toHaveTextContent(/\d+/);
 
     expect(boutonsVues[0]).toHaveAttribute('aria-label', "Nombre d'explorations du post");
-    expect(boutonsVues[0]).toHaveTextContent(/[0-9]+/);
+    expect(boutonsVues[0]).toHaveTextContent(/\d+/);
 
     expect(boutonsCommentaires[0]).toHaveAttribute('aria-label', "Commentaires et avis riverains");
-    expect(boutonsCommentaires[0]).toHaveTextContent(/[0-9]+/);
+    expect(boutonsCommentaires[0]).toHaveTextContent(/\d+/);
 
     // Bouton carte épuré sans texte
     expect(boutonsCarte[0].textContent).toBe('');
 
     // Bouton partager avec compteur numérique épuré sans texte 'Partager'
     expect(boutonsPartager[0]).toHaveAttribute('aria-label', "Partager ce post");
-    expect(boutonsPartager[0]).toHaveTextContent(/[0-9]+/);
+    expect(boutonsPartager[0]).toHaveTextContent(/\d+/);
     expect(boutonsPartager[0].textContent).not.toMatch(/Partager/i);
   });
 

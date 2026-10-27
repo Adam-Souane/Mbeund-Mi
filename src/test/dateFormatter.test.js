@@ -32,6 +32,6 @@ describe('formatCompactDate', () => {
   });
 
   it('ne produit jamais un âge absurde (25a) pour une date localisée ambiguë', () => {
-    expect(formatCompactDate('16 oct., 12:00')).not.toMatch(/\d+a$/);
+    expect(formatCompactDate('16 oct., 12:00').endsWith('a')).toBe(false);
   });
 });

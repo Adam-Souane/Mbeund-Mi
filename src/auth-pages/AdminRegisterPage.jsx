@@ -111,7 +111,7 @@ export default function AdminRegisterPage() {
             Créer un compte administrateur
           </h1>
           <p className="text-sm text-[#64748B] mt-1.5 leading-relaxed">
-            Accès réservé aux personnes disposant d'un code d'invitation valide.
+            Accès réservé aux personnes disposant d’un code d’invitation valide.
           </p>
         </div>
 

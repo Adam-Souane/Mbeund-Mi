@@ -1,5 +1,4 @@
 import { Check } from 'lucide-react';
-import logoSurFondBleu from '../assets/logo-dark.png';
 import logoLight from '../assets/logo-light.png';
 
 // Mise en page commune des pages d'authentification : bannière de marque bleu

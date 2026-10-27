@@ -10,7 +10,7 @@ export function sanitizePublicText(text) {
   let cleaned = text;
 
   // 1. Retirer les préfixes SMS comme [SMS de 221775555555], [SMS de +221...], [SMS ...]
-  cleaned = cleaned.replace(/\[\s*SMS(?:\s+de)?\s*[^\]]*\]/gi, '').trim();
+  cleaned = cleaned.replace(/\[\s*SMS(?:\s+de\b)?[^\]]*\]/gi, '').trim();
 
   // 2. Retirer les numéros de téléphone sénégalais complets
   const senegalPhoneRegex = /(?:\+?221[\s.-]*)?(?:7[05678]|33)[\s.-]*\d{3}[\s.-]*\d{2}[\s.-]*\d{2}\b/gi;
@@ -20,7 +20,7 @@ export function sanitizePublicText(text) {
   cleaned = cleaned.replace(/\b\d{8,15}\b/g, '');
 
   // 4. Retirer les mentions sensibles d'âge (ex: "âgé de 35 ans", "âge : 40 ans")
-  cleaned = cleaned.replace(/\b(?:âgé[es]?\s+de|âge\s*:\s*)\s*\d{1,2}\s*ans?\b/gi, '');
+  cleaned = cleaned.replace(/\b(?:âgé[es]?\s+de|âge\s*:)\s*\d{1,2}\s*ans?\b/gi, '');
 
   // 5. Nettoyer les ponctuations de début/fin orphelines et espaces multiples
   cleaned = cleaned
@@ -45,6 +45,6 @@ export function sanitizePublicAuthor(name, fallback = 'Sentinelle Citoyenne') {
   }
 
   // Nettoyer d'éventuels préfixes techniques
-  const clean = trimmed.replace(/\[\s*SMS(?:\s+de)?\s*[^\]]*\]/gi, '').trim();
+  const clean = trimmed.replace(/\[\s*SMS(?:\s+de\b)?[^\]]*\]/gi, '').trim();
   return clean || fallback;
 }

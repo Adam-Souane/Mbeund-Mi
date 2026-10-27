@@ -6,7 +6,7 @@ import useCanauxOtp from './useCanauxOtp';
 import { useTheme } from '../theme/ThemeContext';
 import client from '../api/client';
 import { useToast } from '../shared/toast/ToastContext';
-import { BOUTON_PRINCIPAL, CARTE, classeChamp, classeEtiquette, classeLienRenvoi, classeOption, ton } from './styles';
+import { BOUTON_PRINCIPAL, classeChamp, classeEtiquette, classeOption, ton } from './styles';
 
 const DELAI_RENVOI = 60;
 

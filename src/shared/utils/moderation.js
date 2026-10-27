@@ -7,8 +7,10 @@
 
 // Mots et expressions proscrits pour préserver un cadre citoyen respectueux et constructif
 const PROHIBITED_PATTERNS = [
-  // Insultes et grossièretés usuelles en français
-  /\b(?:con|cons|conne|connes|connard|connasse|salaud|salope|saloperie|encul[eé]|b[aâ]tard|ferme ta gueule|ta gueule|merde|fdp|nique|idiot|imb[eé]cile|cr[eé]tin|d[eé]bile|abruti)\b/i,
+  // Insultes et grossièretés usuelles en français (groupe 1)
+  /\b(?:con|cons|conne|connes|connard|connasse|salaud|salope|saloperie|encul[eé]|b[aâ]tard)\b/i,
+  // Grossièretés et insultes (groupe 2)
+  /\b(?:ferme ta gueule|ta gueule|merde|fdp|nique|idiot|imb[eé]cile|cr[eé]tin|d[eé]bile|abruti)\b/i,
   // Propos agressifs et menaces
   /\b(?:je vais te tuer|va te faire foutre|d[eé]gage d['’]ici|fermez vos gueules)\b/i,
   // Insultes en wolof usuelles
@@ -90,8 +92,11 @@ export function reportContent({ targetId, targetType = 'post', authorName = '', 
   try {
     const raw = localStorage.getItem('mbeund_mi_community_reports');
     const existing = raw ? JSON.parse(raw) : [];
+    const randomPart = typeof crypto !== 'undefined' && crypto.getRandomValues
+      ? crypto.getRandomValues(new Uint32Array(1))[0].toString(36)
+      : Date.now().toString(36);
     const reportItem = {
-      id: `rep-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      id: `rep-${Date.now()}-${randomPart}`,
       targetId,
       targetType,
       authorName,

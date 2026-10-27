@@ -7,7 +7,7 @@ import globals from 'globals';
 // Analyse du frontend : règles recommandées de SonarJS (qualité), React,
 // des hooks React et d'accessibilité (jsx-a11y). Lancer : npm run lint
 export default [
-  { ignores: ['dist/**', 'node_modules/**', 'env/**', 'backend/**', 'mbeund_mi_ia/**', 'rapport_pff/**'] },
+  { ignores: ['dist/**', 'node_modules/**', 'env/**', 'backend/**', 'mbeund_mi_ia/**', 'rapport_pff/**', 'mbeund-mi-mobile/**', 'scripts/**', 'seeds/**', 'sql/**'] },
   {
     files: ['src/**/*.{js,jsx}'],
     languageOptions: {

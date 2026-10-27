@@ -89,5 +89,6 @@ describe('useAlertesSocket', () => {
     });
     // Un nouveau socket a été instancié
     expect(FauxWebSocket.derniere).not.toBeNull();
+    expect(FauxWebSocket.derniere).not.toBe(premierSocket);
   });
 });

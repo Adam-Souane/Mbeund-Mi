@@ -20,13 +20,13 @@ vi.mock('react-leaflet', () => ({
     <div data-testid="polyline">{children}</div>
   ),
 
-  CircleMarker: forwardRef(({ children, eventHandlers }, ref) => (
-    <div ref={ref} data-testid="circle-marker" onClick={eventHandlers?.click}>{children}</div>
-  )),
+  CircleMarker: forwardRef(function MockCircleMarker({ children, eventHandlers }, ref) {
+    return <button type="button" ref={ref} data-testid="circle-marker" onClick={eventHandlers?.click}>{children}</button>;
+  }),
 
-  Marker: forwardRef(({ children, zIndexOffset, eventHandlers }, ref) => (
-    <div ref={ref} data-testid="marker" data-zindex={zIndexOffset} onClick={eventHandlers?.click}>{children}</div>
-  )),
+  Marker: forwardRef(function MockMarker({ children, zIndexOffset, eventHandlers }, ref) {
+    return <button type="button" ref={ref} data-testid="marker" data-zindex={zIndexOffset} onClick={eventHandlers?.click}>{children}</button>;
+  }),
 
   Popup: ({ children }) => (
     <div data-testid="popup">{children}</div>

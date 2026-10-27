@@ -23,11 +23,21 @@ export const CHILD_AVATARS = [
   '/images/avatar-enfant.jpg',
 ];
 
-const FEMALE_NAMES_REGEX = /\b(?:fatou(?:mata)?|awa|mariama|aminata|sokhna|khady|coumba|astou|nabou|yacine|ndeye|dior|kin[eé]|mame(?:\s+diarra)?|ramatoulaye|oumou|salimata|binta|korka|adja|fama|seynabou|anta|nogaye|daba|rokhaya|sophie|marie)\b/i;
+const FEMALE_NAMES = new Set([
+  'fatou', 'fatoumata', 'awa', 'mariama', 'aminata', 'sokhna', 'khady', 'coumba',
+  'astou', 'nabou', 'yacine', 'ndeye', 'dior', 'kine', 'kiné', 'mame', 'ramatoulaye',
+  'oumou', 'salimata', 'binta', 'korka', 'adja', 'fama', 'seynabou', 'anta',
+  'nogaye', 'daba', 'rokhaya', 'sophie', 'marie'
+]);
+
+const MALE_NAMES = new Set([
+  'amadou', 'moussa', 'ibrahima', 'cheikh', 'mamadou', 'alioune', 'modou',
+  'babacar', 'oumar', 'abdoulaye', 'lamine', 'samba', 'demba', 'malick',
+  'boubacar', 'pape', 'assane', 'ousseynou', 'gora', 'mor', 'djibril',
+  'tidiane', 'serigne', 'fallou', 'khadim'
+]);
 
 const CHILD_REGEX = /\b(?:enfant|b[eé]b[eé]|p['’]?tit|petit|junior|fr[eè]re|soeur|sœur|[eé]colier|gamin|jeune|famille)\b/i;
-
-const MALE_NAMES_REGEX = /\b(?:amadou|moussa|ibrahima|cheikh|mamadou|alioune|modou|babacar|oumar|abdoulaye|lamine|samba|demba|malick|boubacar|pape|assane|ousseynou|gora|mor|djibril|tidiane|serigne|fallou|khadim)\b/i;
 
 function hashString(str) {
   if (!str) return 0;
@@ -66,13 +76,15 @@ export function getPublicAvatar({ name = '', id = '', context = '', preferredAva
     return CHILD_AVATARS[hash % CHILD_AVATARS.length];
   }
 
+  const words = combined.toLowerCase().split(/[\s,.'’\-]+/);
+
   // 2. Détection profil féminin (femme / fille)
-  if (FEMALE_NAMES_REGEX.test(combined)) {
+  if (words.some((w) => FEMALE_NAMES.has(w))) {
     return FEMALE_AVATARS[hash % FEMALE_AVATARS.length];
   }
 
   // 3. Détection profil masculin (homme / garçon)
-  if (MALE_NAMES_REGEX.test(combined)) {
+  if (words.some((w) => MALE_NAMES.has(w))) {
     return MALE_AVATARS[hash % MALE_AVATARS.length];
   }
 
