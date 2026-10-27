@@ -136,7 +136,7 @@ class ChatView(APIView):
                 logger.warning("[ChatView] Contexte signalements indisponible : %s", e)
                 signalements_context = "Aucun récent"
 
-            # Utiliser le chatbot
+            # Utiliser le chatbot avec triple filet de sécurité
             try:
                 chatbot = _get_chatbot_service()
                 reply = chatbot.poser_question(
@@ -146,20 +146,31 @@ class ChatView(APIView):
                     niveau_risque=niveau_risque,
                 )
                 return Response({"reply": reply})
-            except Exception:
-                # Le détail (qui peut mentionner la clé ou le fournisseur) reste
-                # dans les journaux, pas dans la réponse.
-                logger.exception("[ChatView] Échec du service chatbot")
-                return Response(
-                    {"error": "NDAM est momentanément indisponible. Réessayez dans un instant."},
-                    status=500
-                )
+            except Exception as e:
+                logger.exception("[ChatView] Échec du service chatbot, bascule fallback expert local : %s", e)
+                try:
+                    from ia.service_chatbot import _repondre_expert_local
+                    reply = _repondre_expert_local(
+                        question=question,
+                        meteo_context=meteo_context,
+                        signalements_context=signalements_context,
+                        niveau_risque=niveau_risque,
+                    )
+                    return Response({"reply": reply})
+                except Exception:
+                    return Response({
+                        "reply": f"Bonjour, je suis NDAM. Le niveau de risque actuel à Thiaroye-sur-Mer est classé {niveau_risque}. "
+                                 f"Pour signaler une inondation, utilisez l'onglet « Signaler » de l'application. "
+                                 f"Pour localiser les refuges d'urgence (CEM Thiaroye Gare), consultez la Carte interactive. "
+                                 f"En cas de péril vital, composez sans attendre le 18 (Sapeurs-Pompiers)."
+                    })
         except Exception:
             logger.exception("[ChatView] Erreur lors de la préparation du contexte")
-            return Response(
-                {"error": "NDAM est momentanément indisponible. Réessayez dans un instant."},
-                status=500
-            )
+            return Response({
+                "reply": "Bonjour, je suis NDAM, votre assistant de prévention à Thiaroye-sur-Mer. "
+                         "Vous pouvez consulter l'état des zones sur la Carte interactive, déclarer une zone inondée dans l'onglet « Signaler », "
+                         "ou composer le 18 (Sapeurs-Pompiers) en cas de danger immédiat."
+            })
 
 
 class CapteurViewSet(viewsets.ModelViewSet):

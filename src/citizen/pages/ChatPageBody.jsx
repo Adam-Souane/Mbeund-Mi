@@ -16,6 +16,14 @@ import {
   PhoneCall,
   Check,
   Copy,
+  Volume2,
+  VolumeX,
+  Mic,
+  MicOff,
+  Trash2,
+  MessageSquare,
+  X,
+  Clock,
 } from 'lucide-react';
 import CitizenShell from '../shared/CitizenShell';
 import RiskBadge from '../../shared/components/RiskBadge';
@@ -25,10 +33,11 @@ import { usePrevisions } from '../../shared/hooks/usePrevisions';
 
 const SUGGESTIONS = [
   'Quel est le niveau de risque actuel ?',
-  'Comment signaler une inondation ?',
   'Quels sont les refuges les plus proches ?',
+  'Comment signaler une inondation ?',
   'Que faire avant une inondation ?',
-  'Comment lire la carte des zones ?',
+  'Météo et marée à Thiaroye',
+  'Salam aleykoum, ndox mi ?',
 ];
 
 const GREETING = {
@@ -70,9 +79,33 @@ export default function ChatPageBody() {
     return [GREETING];
   });
 
+  // Liste des conversations sauvegardées dans l'historique
+  const [conversations, setConversations] = useState(() => {
+    try {
+      const saved = localStorage.getItem('mbeund_mi_ndam_history');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+    return [];
+  });
+
+  const [currentChatId, setCurrentChatId] = useState(() => {
+    try {
+      const savedId = localStorage.getItem('mbeund_mi_ndam_current_chat_id');
+      if (savedId) return savedId;
+    } catch {}
+    return 'chat_' + Date.now();
+  });
+
   const [input, setInput] = useState('');
   const [showMobileContext, setShowMobileContext] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState(null);
+  const [speakingIndex, setSpeakingIndex] = useState(null);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef(null);
   const bottomRef = useRef(null);
 
   const { data: zonesData } = useZones();
@@ -84,12 +117,53 @@ export default function ChatPageBody() {
   const currentPrecip = current?.precipitation_mm ?? current?.precipitation;
   const currentWind = current?.vitesse_vent;
 
-  // Sauvegarde automatique du chat dans le localStorage
+  // Arrêt de la voix quand on quitte la page
+  useEffect(() => {
+    return () => {
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
+
+  // Sauvegarde automatique du chat et de l'historique dans le localStorage
   useEffect(() => {
     try {
       localStorage.setItem('mbeund_mi_ndam_current_chat', JSON.stringify(messages));
+      localStorage.setItem('mbeund_mi_ndam_current_chat_id', currentChatId);
     } catch {}
-  }, [messages]);
+
+    if (messages.length > 1) {
+      const firstUserMsg = messages.find((m) => m.role === 'user');
+      const title = firstUserMsg
+        ? (firstUserMsg.text.length > 40 ? firstUserMsg.text.slice(0, 40) + '…' : firstUserMsg.text)
+        : 'Discussion';
+
+      setConversations((prev) => {
+        const existingIdx = prev.findIndex((c) => c.id === currentChatId);
+        const updatedEntry = {
+          id: currentChatId,
+          title,
+          updatedAt: new Date().toISOString(),
+          messages,
+        };
+        let next;
+        if (existingIdx >= 0) {
+          next = [...prev];
+          next[existingIdx] = updatedEntry;
+        } else {
+          next = [updatedEntry, ...prev];
+        }
+        try {
+          localStorage.setItem('mbeund_mi_ndam_history', JSON.stringify(next));
+        } catch {}
+        return next;
+      });
+    }
+  }, [messages, currentChatId]);
 
   const mutation = useMutation({
     mutationFn: askNdam,
@@ -121,10 +195,52 @@ export default function ChatPageBody() {
   };
 
   const handleNewChat = () => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    setSpeakingIndex(null);
+    const newId = 'chat_' + Date.now();
+    setCurrentChatId(newId);
     setMessages([GREETING]);
     try {
       localStorage.removeItem('mbeund_mi_ndam_current_chat');
+      localStorage.setItem('mbeund_mi_ndam_current_chat_id', newId);
     } catch {}
+    setShowHistoryModal(false);
+  };
+
+  const handleSelectConversation = (conv) => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    setSpeakingIndex(null);
+    setCurrentChatId(conv.id);
+    setMessages(conv.messages || [GREETING]);
+    setShowHistoryModal(false);
+  };
+
+  const handleDeleteConversation = (id, e) => {
+    e.stopPropagation();
+    setConversations((prev) => {
+      const next = prev.filter((c) => c.id !== id);
+      try {
+        localStorage.setItem('mbeund_mi_ndam_history', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+    if (currentChatId === id) {
+      handleNewChat();
+    }
+  };
+
+  const handleClearAllHistory = () => {
+    if (window.confirm('Voulez-vous vraiment effacer tout votre historique de discussions ?')) {
+      setConversations([]);
+      try {
+        localStorage.removeItem('mbeund_mi_ndam_history');
+      } catch {}
+      handleNewChat();
+    }
   };
 
   const handleCopyMessage = (text, idx) => {
@@ -132,6 +248,78 @@ export default function ChatPageBody() {
       navigator.clipboard.writeText(text);
       setCopiedIndex(idx);
       setTimeout(() => setCopiedIndex(null), 2000);
+    }
+  };
+
+  const handleToggleSpeech = (text, idx) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    if (speakingIndex === idx) {
+      window.speechSynthesis.cancel();
+      setSpeakingIndex(null);
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const cleanText = text.replace(/[*_#`~]/g, '');
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = 'fr-FR';
+    utterance.rate = 1.05;
+    utterance.pitch = 1.0;
+    utterance.onend = () => setSpeakingIndex(null);
+    utterance.onerror = () => setSpeakingIndex(null);
+    setSpeakingIndex(idx);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const handleToggleVoiceRecording = () => {
+    const SpeechRecognition =
+      typeof window !== 'undefined'
+        ? window.SpeechRecognition || window.webkitSpeechRecognition
+        : null;
+
+    if (!SpeechRecognition) {
+      alert("La reconnaissance vocale n'est pas supportée sur ce navigateur. Veuillez utiliser Google Chrome, Microsoft Edge ou Safari.");
+      return;
+    }
+
+    if (isListening) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      setIsListening(false);
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'fr-FR';
+      recognition.continuous = false;
+      recognition.interimResults = true;
+
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognition.onresult = (event) => {
+        const transcript = Array.from(event.results)
+          .map((result) => result[0].transcript)
+          .join('');
+        setInput(transcript);
+      };
+
+      recognition.onerror = (event) => {
+        console.warn('Speech recognition error:', event.error);
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (err) {
+      console.error('Erreur démarrage microphone:', err);
+      setIsListening(false);
     }
   };
 
@@ -147,9 +335,9 @@ export default function ChatPageBody() {
                   <Waves size={18} className="text-cyan-400" />
                   NDAM · Assistant IA Thiaroye
                 </h1>
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shrink-0">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shrink-0">
                   <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-                  Connecté aux capteurs
+                  IA & Moteur Résilient 24/7
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-slate-300 mt-1 line-clamp-2 sm:line-clamp-1">
@@ -158,14 +346,26 @@ export default function ChatPageBody() {
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
+              {/* Bouton Historique des discussions */}
+              <button
+                type="button"
+                onClick={() => setShowHistoryModal(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-white text-xs font-bold border border-white/20 transition cursor-pointer shadow-xs"
+                title="Consulter l'historique des discussions"
+              >
+                <History size={15} />
+                <span>Historique{conversations.length > 0 ? ` (${conversations.length})` : ''}</span>
+              </button>
+
+              {/* Bouton Nouvelle Discussion */}
               <button
                 type="button"
                 onClick={handleNewChat}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-white text-xs font-bold border border-white/20 transition cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-700 active:scale-95 text-white text-xs font-bold transition cursor-pointer shadow-xs"
                 title="Démarrer une nouvelle conversation"
               >
                 <PlusCircle size={15} />
-                <span>Nouvelle discussion</span>
+                <span>Nouvelle</span>
               </button>
             </div>
           </div>
@@ -224,15 +424,35 @@ export default function ChatPageBody() {
                     {m.text}
 
                     {m.role === 'assistant' && (
-                      <button
-                        type="button"
-                        onClick={() => handleCopyMessage(m.text, i)}
-                        className="absolute -bottom-2 right-2 p-1 rounded-md bg-white dark:bg-navy-800 border border-slate-200 dark:border-navy-700 text-slate-400 hover:text-navy-900 dark:hover:text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow-2xs"
-                        title="Copier la réponse"
-                        aria-label="Copier"
-                      >
-                        {copiedIndex === i ? <Check size={11} className="text-emerald-500" /> : <Copy size={11} />}
-                      </button>
+                      <div className="absolute -bottom-2.5 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {/* Bouton Écouter Audio (Speech) */}
+                        {typeof window !== 'undefined' && 'speechSynthesis' in window && (
+                          <button
+                            type="button"
+                            onClick={() => handleToggleSpeech(m.text, i)}
+                            className={`p-1 rounded-md border text-xs transition cursor-pointer shadow-2xs ${
+                              speakingIndex === i
+                                ? 'bg-cyan-600 text-white border-cyan-700 animate-pulse'
+                                : 'bg-white dark:bg-navy-800 border-slate-200 dark:border-navy-700 text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-300'
+                            }`}
+                            title={speakingIndex === i ? 'Arrêter la lecture' : 'Écouter la réponse vocale (Audio)'}
+                            aria-label="Écouter la réponse"
+                          >
+                            {speakingIndex === i ? <VolumeX size={11} /> : <Volume2 size={11} />}
+                          </button>
+                        )}
+
+                        {/* Bouton Copier */}
+                        <button
+                          type="button"
+                          onClick={() => handleCopyMessage(m.text, i)}
+                          className="p-1 rounded-md bg-white dark:bg-navy-800 border border-slate-200 dark:border-navy-700 text-slate-400 hover:text-navy-900 dark:hover:text-white transition cursor-pointer shadow-2xs"
+                          title="Copier la réponse"
+                          aria-label="Copier"
+                        >
+                          {copiedIndex === i ? <Check size={11} className="text-emerald-500" /> : <Copy size={11} />}
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -276,6 +496,23 @@ export default function ChatPageBody() {
               </div>
             )}
 
+            {/* Bannière active pendant l'enregistrement vocal */}
+            {isListening && (
+              <div className="flex items-center justify-between px-3.5 py-2 rounded-xl bg-red-500/15 border border-red-500/30 text-red-600 dark:text-red-400 text-xs font-bold animate-pulse">
+                <span className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-ping shrink-0" />
+                  <span>🎙️ Écoute en cours… Parlez clairement, votre voix est transcrite en direct.</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={handleToggleVoiceRecording}
+                  className="px-2 py-0.5 rounded-lg bg-red-600 text-white text-[11px] font-black cursor-pointer hover:bg-red-700 shrink-0 ml-2"
+                >
+                  Terminer
+                </button>
+              </div>
+            )}
+
             {/* Formulaire de saisie utilisateur */}
             <form
               onSubmit={(e) => {
@@ -284,11 +521,26 @@ export default function ChatPageBody() {
               }}
               className="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-navy-800 flex-shrink-0"
             >
+              {/* Bouton Micro Enregistrement Vocal */}
+              <button
+                type="button"
+                onClick={handleToggleVoiceRecording}
+                className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition cursor-pointer shadow-xs ${
+                  isListening
+                    ? 'bg-red-600 text-white animate-pulse ring-4 ring-red-400/30'
+                    : 'bg-slate-100 hover:bg-slate-200 dark:bg-navy-800 dark:hover:bg-navy-700 text-slate-600 dark:text-slate-300'
+                }`}
+                title={isListening ? "Arrêter l'enregistrement vocal" : "Dicter votre question au micro (Voix)"}
+                aria-label="Enregistrement vocal"
+              >
+                {isListening ? <MicOff size={18} /> : <Mic size={18} />}
+              </button>
+
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Écrivez votre question à NDAM (risques, refuges, météo)…"
+                placeholder={isListening ? "Écoute en cours… Parlez maintenant" : "Écrivez votre question ou dictez à NDAM (risques, refuges, météo)…"}
                 className="flex-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-navy-700 bg-slate-50/50 dark:bg-navy-900/50 text-xs sm:text-sm text-navy-950 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/40 transition"
               />
               <button
@@ -389,6 +641,131 @@ export default function ChatPageBody() {
             </div>
           </div>
         </div>
+
+        {/* Modale d'historique des discussions */}
+        {showHistoryModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+            <div className="bg-white dark:bg-navy-900 border border-slate-200 dark:border-navy-700 rounded-3xl w-full max-w-lg max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+              {/* Header modale */}
+              <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-navy-800 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center shrink-0">
+                    <History size={18} />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-navy-950 dark:text-white">
+                      Historique des discussions
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {conversations.length} discussion{conversations.length > 1 ? 's' : ''} enregistrée{conversations.length > 1 ? 's' : ''}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowHistoryModal(false)}
+                  className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-navy-800 dark:hover:bg-navy-700 text-slate-500 dark:text-slate-300 flex items-center justify-center transition cursor-pointer"
+                  aria-label="Fermer"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              {/* Corps : liste des discussions */}
+              <div className="p-4 overflow-y-auto flex-1 space-y-2.5">
+                {conversations.length === 0 ? (
+                  <div className="py-12 flex flex-col items-center justify-center text-center text-slate-400 space-y-2">
+                    <MessageSquare size={36} className="opacity-40 stroke-1" />
+                    <p className="text-sm font-bold">Aucune discussion dans l'historique</p>
+                    <p className="text-xs max-w-xs text-slate-500">
+                      Vos échanges avec NDAM s'enregistrent automatiquement ici pour que vous puissiez les relire à tout moment.
+                    </p>
+                  </div>
+                ) : (
+                  conversations.map((conv) => {
+                    const isActive = conv.id === currentChatId;
+                    const dateStr = conv.updatedAt
+                      ? new Date(conv.updatedAt).toLocaleDateString('fr-FR', {
+                          day: 'numeric',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })
+                      : '';
+                    return (
+                      <div
+                        key={conv.id}
+                        onClick={() => handleSelectConversation(conv)}
+                        className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                          isActive
+                            ? 'bg-blue-50/70 dark:bg-blue-950/40 border-blue-500/50 shadow-xs ring-1 ring-blue-500/30'
+                            : 'bg-slate-50/70 hover:bg-slate-100 dark:bg-navy-800/50 dark:hover:bg-navy-800 border-slate-200/80 dark:border-navy-700'
+                        }`}
+                      >
+                        <div className="min-w-0 flex-1 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <MessageSquare
+                              size={14}
+                              className={isActive ? 'text-blue-600 dark:text-cyan-400 shrink-0' : 'text-slate-400 shrink-0'}
+                            />
+                            <h4 className="text-xs font-bold text-navy-950 dark:text-white truncate">
+                              {conv.title || 'Discussion'}
+                            </h4>
+                            {isActive && (
+                              <span className="px-1.5 py-0.2 rounded-md bg-blue-600 text-[9px] font-black text-white shrink-0">
+                                En cours
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                            <span className="flex items-center gap-1">
+                              <Clock size={11} />
+                              {dateStr}
+                            </span>
+                            <span>•</span>
+                            <span>{(conv.messages?.length || 0)} message{(conv.messages?.length || 0) > 1 ? 's' : ''}</span>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteConversation(conv.id, e)}
+                          className="w-8 h-8 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/50 text-slate-400 hover:text-red-600 flex items-center justify-center transition shrink-0 cursor-pointer"
+                          title="Supprimer cette discussion"
+                          aria-label="Supprimer discussion"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Footer modale */}
+              <div className="p-4 border-t border-slate-100 dark:border-navy-800 bg-slate-50/50 dark:bg-navy-950/50 flex items-center justify-between">
+                {conversations.length > 0 ? (
+                  <button
+                    type="button"
+                    onClick={handleClearAllHistory}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-red-600 hover:text-red-700 transition cursor-pointer"
+                  >
+                    <Trash2 size={13} />
+                    <span>Tout effacer</span>
+                  </button>
+                ) : <div />}
+
+                <button
+                  type="button"
+                  onClick={() => setShowHistoryModal(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-navy-800 dark:hover:bg-navy-700 text-xs font-bold text-navy-900 dark:text-white transition cursor-pointer"
+                >
+                  Fermer
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </CitizenShell>
   );

@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Camera, MapPin as MapPinIcon, CloudRain, PhoneCall, MapPin, ShieldCheck, ChevronRight, Users } from 'lucide-react';
+import { Camera, MapPin as MapPinIcon, CloudRain, PhoneCall, MapPin, ShieldCheck, ChevronRight, Users, Play } from 'lucide-react';
 import CitizenShell from '../shared/CitizenShell';
 import GaugeRisk from '../../shared/components/GaugeRisk';
 import WeatherWidget from '../../shared/components/WeatherWidget';
@@ -16,6 +17,7 @@ import SentinellesUrgenceBanner from '../components/SentinellesUrgenceBanner';
 import MareeVentMarinWidget from '../components/MareeVentMarinWidget';
 import CockpitCapteursIoT from '../components/CockpitCapteursIoT';
 import MiniRadarThiaroye from '../components/MiniRadarThiaroye';
+import DemoVideoModal from '../components/DemoVideoModal';
 
 const NIVEAU_RANK = { vert: 0, jaune: 1, orange: 2, rouge: 3 };
 
@@ -61,6 +63,7 @@ function pickMostAtRiskZone(features) {
 export default function AccueilPageBody() {
   const navigate = useNavigate();
   const { username } = useAuth();
+  const [demoModalOpen, setDemoModalOpen] = useState(false);
 
   const { data: zonesData, isLoading: zonesLoading, isError: zonesError } = useZones();
   const { data: predictions } = usePredictions();
@@ -177,6 +180,24 @@ export default function AccueilPageBody() {
                 <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-medium drop-shadow-xs max-w-lg">
                   {theme.summary}
                 </p>
+
+                {/* Bouton Démonstration Vidéo */}
+                <div className="pt-2 flex items-center gap-3 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => setDemoModalOpen(true)}
+                    className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-extrabold text-xs sm:text-sm shadow-lg shadow-red-950/50 hover:scale-105 active:scale-95 transition-all cursor-pointer border border-white/30 backdrop-blur-md"
+                    title="Voir la démonstration vidéo de l'application"
+                  >
+                    <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
+                      <Play size={10} className="fill-white ml-0.5" />
+                    </span>
+                    <span>Démonstration Vidéo</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/25 uppercase tracking-wider font-black">
+                      Guide
+                    </span>
+                  </button>
+                </div>
               </div>
 
               {/* Statut de vigilance organique et flottant bien ancré à droite avec marge garantie */}
@@ -481,6 +502,9 @@ export default function AccueilPageBody() {
 
       {/* 7. Bandeau d'engagement & Réflexes d'urgence 24/7 (Élément de fin de page interactif et animé) */}
       <SentinellesUrgenceBanner />
+
+      {/* Modale de démonstration vidéo & guide interactif */}
+      <DemoVideoModal isOpen={demoModalOpen} onClose={() => setDemoModalOpen(false)} />
     </CitizenShell>
   );
 }
