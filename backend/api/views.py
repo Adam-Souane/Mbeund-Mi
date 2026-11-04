@@ -1,899 +1,919 @@
-import logging
-import os
-import sys
-from django.conf import settings
-from django.contrib.auth.models import User
-from django.db.models import Subquery, OuterRef
-from django.http import FileResponse
-from rest_framework import viewsets
-from rest_framework.decorators import action
-from rest_framework.pagination import PageNumberPagination
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework_simplejwt.views import TokenObtainPairView
-from django.utils import timezone
-from datetime import timedelta
-
-from rest_framework import permissions, serializers
-from capteurs.models import Capteur, Mesure
-from alertes.models import (
-    Alerte, ZoneRisque, PredictionIA, EpisodeInondation, SignalementCitoyen,
-    SegmentRue, PrevisionMeteo, HistoriqueRisque, ContactAlerte,
-    ProfilVulnerabilite, RelaisQuartier, PointRefuge, SMSSignalement,
-    SurvivalKit, EmergencyContact, TriageAppel,
-)
-from api.serializers import (
-    CapteurSerializer,
-    MesureSerializer,
-    AlerteSerializer,
-    ZoneRisqueGeoSerializer,
-    PredictionIASerializer,
-    EpisodeInondationSerializer,
-    SignalementCitoyenSerializer,
-    SegmentRueSerializer,
-    PrevisionMeteoSerializer,
-    HistoriqueRisqueSerializer,
-    ContactAlerteSerializer,
-    CustomTokenObtainPairSerializer,
-    ProfilVulnerabiliteSerializer,
-    RelaisQuartierSerializer,
-    PointRefugeSerializer,
-    SMSSignalementSerializer,
-    TriageAppelSerializer,
-    SurvivalKitSerializer,
-    EmergencyContactSerializer,
-    SignalementHistoriqueSerializer,
-)
-from api.permissions import IsAutoriteOrAdmin, EstAdminOuAutorite
-from api.services.sms_inbound_service import traiter_webhook_sms
-from api.services.export_service import ExportService
-from api.services.pdf_export_service import PDFExportService
-from drf_spectacular.utils import extend_schema
-
-logger = logging.getLogger(__name__)
-
-
-class CustomTokenObtainPairView(TokenObtainPairView):
-    """Identique à TokenObtainPairView, mais émet un JWT portant le claim `role`."""
-    serializer_class = CustomTokenObtainPairSerializer
-
-
-# mbeund_mi_ia est un module frère de backend/ (pas un paquet pip installé) —
-# on l'ajoute au path pour réutiliser le vrai service chatbot de Maïmouna
-# (Groq) au lieu de dupliquer sa logique dans Django. Même pattern que
-# alertes/tasks.py pour le service de prédiction.
-_MBEUND_MI_IA_PATH = os.path.join(os.path.dirname(settings.BASE_DIR), 'mbeund_mi_ia')
-if _MBEUND_MI_IA_PATH not in sys.path:
-    sys.path.insert(0, _MBEUND_MI_IA_PATH)
-
-_chatbot_service = None
-
-
-def _get_chatbot_service():
-    """Charge le service NDAM (client Groq) une seule fois par worker."""
-    global _chatbot_service
-    if _chatbot_service is None:
-        from ia.service_chatbot import MbeundMiChatbot
-        _chatbot_service = MbeundMiChatbot()
-    return _chatbot_service
-
-
-@extend_schema(exclude=True)
-class ChatView(APIView):
-    """
-    POST /api/chat/ — relaie une question à l'assistant NDAM.
-
-    Django rassemble ici le contexte (risque, météo, signalements validés)
-    sous forme de simples chaînes de caractères avant d'appeler le service
-    chatbot : NDAM lui-même ne reçoit jamais un accès direct à la base de
-    données, conformément à la contrainte du projet (éviter fuites de
-    données et hallucinations).
-    """
-    permission_classes = [permissions.IsAuthenticated]
-
-    _RISQUE_LABELS = {
-        'vert': 'FAIBLE',
-        'jaune': 'MODÉRÉ',
-        'orange': 'ÉLEVÉ',
-        'rouge': 'CRITIQUE',
-    }
-
-    def post(self, request):
-        try:
-            question = (request.data.get('question') or '').strip()
-            if not question:
-                return Response({"question": ["Ce champ est obligatoire."]}, status=400)
-
-            # Récupérer le contexte de la base de données
-            try:
-                zone_risque = ZoneRisque.objects.order_by('-score_risque_moyen').first()
-                niveau_risque = self._RISQUE_LABELS.get(
-                    getattr(zone_risque, 'niveau_risque', None) if zone_risque else None, 'FAIBLE'
-                )
-            except Exception as e:
-                logger.warning("[ChatView] Contexte zone_risque indisponible : %s", e)
-                niveau_risque = 'FAIBLE'
-
-            try:
-                prevision = PrevisionMeteo.objects.order_by('-date_prevision').first()
-                if prevision:
-                    meteo_context = (
-                        f"Température {prevision.temperature_c}°C, "
-                        f"précipitations {prevision.precipitation_mm} mm, "
-                        f"vent {prevision.vitesse_vent} km/h"
-                    )
-                else:
-                    meteo_context = "Non disponible"
-            except Exception as e:
-                logger.warning("[ChatView] Contexte météo indisponible : %s", e)
-                meteo_context = "Non disponible"
-
-            try:
-                signalements = SignalementCitoyen.objects.filter(valide=True).order_by('-date_creation')[:3]
-                descriptions = [s.description[:120] for s in signalements if s.description]
-                signalements_context = " ; ".join(descriptions) if descriptions else "Aucun récent"
-            except Exception as e:
-                logger.warning("[ChatView] Contexte signalements indisponible : %s", e)
-                signalements_context = "Aucun récent"
-
-            # Utiliser le chatbot avec triple filet de sécurité
-            try:
-                chatbot = _get_chatbot_service()
-                reply = chatbot.poser_question(
-                    question,
-                    meteo_context=meteo_context,
-                    signalements_context=signalements_context,
-                    niveau_risque=niveau_risque,
-                )
-                return Response({"reply": reply})
-            except Exception as e:
-                logger.exception("[ChatView] Échec du service chatbot, bascule fallback expert local : %s", e)
-                try:
-                    from ia.service_chatbot import _repondre_expert_local
-                    reply = _repondre_expert_local(
-                        question=question,
-                        meteo_context=meteo_context,
-                        signalements_context=signalements_context,
-                        niveau_risque=niveau_risque,
-                    )
-                    return Response({"reply": reply})
-                except Exception:
-                    return Response({
-                        "reply": f"Bonjour, je suis NDAM. Le niveau de risque actuel à Thiaroye-sur-Mer est classé {niveau_risque}. "
-                                 f"Pour signaler une inondation, utilisez l'onglet « Signaler » de l'application. "
-                                 f"Pour localiser les refuges d'urgence (CEM Thiaroye Gare), consultez la Carte interactive. "
-                                 f"En cas de péril vital, composez sans attendre le 18 (Sapeurs-Pompiers)."
-                    })
-        except Exception:
-            logger.exception("[ChatView] Erreur lors de la préparation du contexte")
-            return Response({
-                "reply": "Bonjour, je suis NDAM, votre assistant de prévention à Thiaroye-sur-Mer. "
-                         "Vous pouvez consulter l'état des zones sur la Carte interactive, déclarer une zone inondée dans l'onglet « Signaler », "
-                         "ou composer le 18 (Sapeurs-Pompiers) en cas de danger immédiat."
-            })
-
-
-class CapteurViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet for Capteur. Exposes standard GET/POST/PUT/DELETE.
-    """
-    queryset = Capteur.objects.all()
-    serializer_class = CapteurSerializer
-    permission_classes = [IsAutoriteOrAdmin]
-
-
-class MesureViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet for Mesure. Exposes standard GET/POST/PUT/DELETE,
-    and a custom action `/api/mesures/recentes/`.
-    """
-    queryset = Mesure.objects.all()
-    serializer_class = MesureSerializer
-    permission_classes = [IsAutoriteOrAdmin]
-    pagination_class = PageNumberPagination
-
-    @action(detail=False, methods=['get'], url_path='recentes')
-    def recentes(self, request):
-        """
-        GET /api/mesures/recentes/
-        Returns measurements from the last 24 hours, grouped by capteur.
-        Each capteur is represented as a GeoJSON feature, with its recent measurements list.
-        """
-        # Threshold for the last 24 hours
-        time_threshold = timezone.now() - timedelta(hours=24)
-        
-        # We query measures in the last 24 hours and prefetch capteurs to optimize
-        mesures = Mesure.objects.filter(timestamp__gte=time_threshold).select_related('capteur')
-        
-        # Grouping by sensor
-        grouped = {}
-        for m in mesures:
-            capteur_id = m.capteur_id
-            if capteur_id not in grouped:
-                # Serialize the capteur using CapteurSerializer
-                capteur_data = CapteurSerializer(m.capteur).data
-                grouped[capteur_id] = {
-                    "capteur": capteur_data,
-                    "mesures": []
-                }
-            grouped[capteur_id]["mesures"].append({
-                "id": m.id,
-                "valeur": m.valeur,
-                "unite": m.unite,
-                "timestamp": m.timestamp.isoformat()
-            })
-            
-        return Response(list(grouped.values()))
-
-
-class AlerteViewSet(viewsets.ModelViewSet):
-    queryset = Alerte.objects.all().select_related('zone', 'created_by').order_by('-timestamp')
-    serializer_class = AlerteSerializer
-    pagination_class = PageNumberPagination
-
-    def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
-            return [permissions.AllowAny()]
-        return [IsAutoriteOrAdmin()]
-
-    def get_queryset(self):
-        queryset = self.queryset
-        zone = self.request.query_params.get('zone')
-        niveau = self.request.query_params.get('niveau')
-        if zone:
-            queryset = queryset.filter(zone_id=zone)
-        if niveau:
-            queryset = queryset.filter(niveau=niveau)
-        return queryset
-
-    @action(detail=True, methods=['patch'], url_path='statut')
-    def statut(self, request, pk=None):
-        instance = self.get_object()
-        new_statut = request.data.get('statut')
-
-        if not new_statut:
-            return Response({"statut": ["Ce champ est obligatoire."]}, status=400)
-
-        allowed_statuts = [choice[0] for choice in Alerte.STATUT_CHOICES]
-        if new_statut not in allowed_statuts:
-            return Response(
-                {"statut": [f"'{new_statut}' n'est pas un statut valide. Choix valides : {', '.join(allowed_statuts)}."]},
-                status=400
-            )
-
-        current_statut = instance.statut
-
-        if current_statut != new_statut:
-            if current_statut == 'en_attente' and new_statut != 'envoyee':
-                return Response(
-                    {"detail": f"Transition invalide de '{current_statut}' vers '{new_statut}'. La transition doit être 'en_attente' -> 'envoyee'."},
-                    status=400
-                )
-            elif current_statut == 'envoyee' and new_statut != 'resolue':
-                return Response(
-                    {"detail": f"Transition invalide de '{current_statut}' vers '{new_statut}'. La transition doit être 'envoyee' -> 'resolue'."},
-                    status=400
-                )
-            elif current_statut == 'resolue':
-                return Response(
-                    {"detail": f"Impossible de modifier le statut d'une alerte déjà résolue ('{current_statut}' -> '{new_statut}')."},
-                    status=400
-                )
-
-        instance.statut = new_statut
-        instance.save()
-
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
-
-
-class ZoneRisqueViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = ZoneRisque.objects.all()
-    serializer_class = ZoneRisqueGeoSerializer
-
-
-class PredictionIAViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = PredictionIA.objects.all()
-    serializer_class = PredictionIASerializer
-    permission_classes = [IsAutoriteOrAdmin]
-
-    def get_queryset(self):
-        latest_predictions = PredictionIA.objects.filter(
-            zone=OuterRef('zone_id')
-        ).order_by('-timestamp')
-
-        return PredictionIA.objects.filter(
-            id=Subquery(latest_predictions.values('id')[:1])
-        ).select_related('zone').order_by('-timestamp')
-
-    @action(detail=False, methods=['get'], url_path='fiabilite')
-    def fiabilite(self, request):
-        """
-        GET /api/predictions/fiabilite/
-        Retourne les métriques de fiabilité du modèle Random Forest : Brier Score,
-        Log Loss, Accuracy, matrice de confusion, courbe de calibration.
-        """
-        from api.services.model_reliability_service import ModelReliabilityService
-        try:
-            service = ModelReliabilityService()
-            rapport = service.generer_rapport()
-            return Response(rapport)
-        except Exception:
-            logger.exception("Échec du calcul de fiabilité du modèle")
-            return Response({"erreur": "Le calcul de fiabilité a échoué."}, status=500)
-
-
-class EpisodeInondationViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = EpisodeInondation.objects.all()
-    serializer_class = EpisodeInondationSerializer
-
-    @action(detail=False, methods=['get'], url_path='backtesting')
-    def backtesting(self, request):
-        """
-        GET /api/inondations/backtesting/?include_synthetic=true
-        Exécute le backtesting : pour chaque inondation historique, calcule
-        ce que le modèle aurait prédit (basé sur les pluies 72h avant).
-
-        Query params:
-            include_synthetic (bool, default=true):
-                true = inclut les données synthétiques (pour démo)
-                false = compte SEULEMENT les vraies inondations (production)
-
-        Retourne les résultats avec statistiques de détection.
-        """
-        from api.services.backtesting_service import BacktestingService
-        try:
-            # By default include synthetic (for demo), but allow override
-            include_synthetic = request.query_params.get('include_synthetic', 'true').lower() == 'true'
-
-            service = BacktestingService()
-            resultat = service.executer_backtesting(include_synthetic=include_synthetic)
-            return Response(resultat)
-        except Exception:
-            logger.exception("Échec du backtesting")
-            return Response({"erreur": "Le backtesting a échoué."}, status=500)
-
-
-class SignalementCitoyenViewSet(viewsets.ModelViewSet):
-    queryset = SignalementCitoyen.objects.select_related('signale_par', 'signalement_similaire').prefetch_related('photos_supplementaires').all()
-    serializer_class = SignalementCitoyenSerializer
-    pagination_class = PageNumberPagination
-
-    def get_permissions(self):
-        if self.action == 'create':
-            return [permissions.AllowAny()]
-        return [IsAutoriteOrAdmin()]
-
-    def perform_create(self, serializer):
-        user = self.request.user if self.request.user.is_authenticated else None
-        serializer.save(signale_par=user)
-
-    @action(detail=True, methods=['patch'], url_path='valider')
-    def valider(self, request, pk=None):
-        """
-        PATCH /api/signalements/{id}/valider/  body: {"valide": true|false}
-        `valide` est en lecture seule sur le serializer (pour empêcher un
-        citoyen de l'auto-valider à la création) ; cette action dédiée est
-        le seul moyen pour une autorité/admin de le faire basculer.
-        """
-        instance = self.get_object()
-        valide = request.data.get('valide')
-
-        if valide is None:
-            return Response({"valide": ["Ce champ est obligatoire."]}, status=400)
-        if not isinstance(valide, bool):
-            return Response({"valide": ["Ce champ doit être un booléen (true ou false)."]}, status=400)
-
-        etait_valide = instance.valide
-        instance.valide = valide
-        instance.save()
-
-        # Journal d'activité de l'autorité qui valide (et non du citoyen auteur).
-        if valide and not etait_valide:
-            from users.models import AuthorityActivity
-            AuthorityActivity.objects.create(
-                authority=request.user,
-                action_type='request_handled',
-                description=f'Signalement validé : {instance.get_categorie_display()}',
-                zone='',
-            )
-
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
-
-
-class SegmentRueViewSet(viewsets.ModelViewSet):
-    queryset = SegmentRue.objects.all()
-    serializer_class = SegmentRueSerializer
-    pagination_class = None
-
-    def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
-            return [permissions.AllowAny()]
-        return [IsAutoriteOrAdmin()]
-
-
-class PrevisionMeteoViewSet(viewsets.ModelViewSet):
-    queryset = PrevisionMeteo.objects.select_related('zone').all().order_by('date_prevision')
-    serializer_class = PrevisionMeteoSerializer
-    pagination_class = PageNumberPagination
-
-    def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
-            return [permissions.AllowAny()]
-        return [IsAutoriteOrAdmin()]
-
-
-class HistoriqueRisqueViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = HistoriqueRisque.objects.select_related('zone', 'segment').all()
-    serializer_class = HistoriqueRisqueSerializer
-    pagination_class = PageNumberPagination
-
-
-class ContactAlerteViewSet(viewsets.ModelViewSet):
-    """
-    Registre des citoyens souhaitant recevoir un SMS d'alerte dans leur zone.
-    Inscription libre (comme pour les signalements) ; consultation/gestion
-    réservées aux autorités/admin car ce sont des numéros de téléphone (PII).
-    """
-    queryset = ContactAlerte.objects.select_related('zone').all()
-    serializer_class = ContactAlerteSerializer
-    pagination_class = PageNumberPagination
-
-    def get_permissions(self):
-        if self.action == 'create':
-            return [permissions.AllowAny()]
-        return [EstAdminOuAutorite()]
-
-
-@extend_schema(exclude=True)
-class ItineraireSecuriseView(APIView):
-    """
-    GET /api/itineraire-securise/?lat=..&lon=..
-
-    Calcule, à partir des SegmentRue enregistrés, un itinéraire à pied
-    évitant autant que possible les tronçons à risque élevé jusqu'à la
-    zone à faible risque la plus proche du réseau connu (voir
-    api/services/routing_service.py — Dijkstra pondéré par le risque).
-    """
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request):
-        try:
-            lat = float(request.query_params.get('lat'))
-            lon = float(request.query_params.get('lon'))
-        except (TypeError, ValueError):
-            return Response(
-                {"detail": "Paramètres 'lat' et 'lon' requis (nombres décimaux)."},
-                status=400,
-            )
-
-        from api.services.routing_service import find_safe_route
-        result = find_safe_route(lat, lon)
-        if result is None:
-            return Response(
-                {"detail": "Aucun itinéraire disponible pour l’instant depuis cette position."},
-                status=404,
-            )
-        return Response(result)
-
-
-@extend_schema(exclude=True)
-class MonProfilVulnerabiliteView(APIView):
-    """
-    GET/PUT /api/mon-profil-vulnerabilite/ — un citoyen connecté consulte ou
-    déclare/modifie le profil de vulnérabilité de son propre foyer (créé à la
-    première sauvegarde). Jamais consultable par un autre citoyen : côté
-    autorité, voir ProfilVulnerabiliteViewSet.
-    """
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request):
-        profil = ProfilVulnerabilite.objects.filter(user=request.user).first()
-        if profil is None:
-            return Response(None)
-        return Response(ProfilVulnerabiliteSerializer(profil).data)
-
-    def put(self, request):
-        profil, _ = ProfilVulnerabilite.objects.get_or_create(user=request.user)
-        serializer = ProfilVulnerabiliteSerializer(profil, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data)
-
-
-class ProfilVulnerabiliteViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    Consultation par une autorité/admin des profils de vulnérabilité déclarés
-    par les citoyens, pour prioriser l'assistance à l'évacuation. Un citoyen
-    déclare le sien via MonProfilVulnerabiliteView, jamais via ce ViewSet.
-    """
-    queryset = ProfilVulnerabilite.objects.select_related('user', 'zone').all()
-    serializer_class = ProfilVulnerabiliteSerializer
-    permission_classes = [EstAdminOuAutorite]
-    pagination_class = PageNumberPagination
-
-    def get_queryset(self):
-        queryset = self.queryset
-        zone = self.request.query_params.get('zone')
-        if zone:
-            queryset = queryset.filter(zone_id=zone)
-        return queryset
-
-
-class RelaisQuartierViewSet(viewsets.ModelViewSet):
-    """
-    Citoyens volontaires pour relayer une alerte et aider à l'évacuation dans
-    leur zone. Chaque citoyen ne gère que sa propre inscription (OneToOne) ;
-    la liste complète et la vérification (`verifier`) sont réservées à
-    l'autorité/admin.
-    """
-    queryset = RelaisQuartier.objects.select_related('user', 'zone').all()
-    serializer_class = RelaisQuartierSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    pagination_class = PageNumberPagination
-
-    def get_permissions(self):
-        if self.action in ('list', 'verifier'):
-            return [EstAdminOuAutorite()]
-        return [permissions.IsAuthenticated()]
-
-    def get_queryset(self):
-        if self.action in ('list', 'verifier'):
-            return self.queryset
-        return self.queryset.filter(user=self.request.user)
-
-    def perform_create(self, serializer):
-        if RelaisQuartier.objects.filter(user=self.request.user).exists():
-            raise serializers.ValidationError(
-                {"detail": "Vous êtes déjà inscrit comme relais de quartier."}
-            )
-        serializer.save(user=self.request.user)
-
-    @action(detail=False, methods=['get'], url_path='moi')
-    def moi(self, request):
-        """GET /api/relais-quartier/moi/ — retrouve sa propre inscription (ou null)."""
-        instance = RelaisQuartier.objects.filter(user=request.user).select_related('zone').first()
-        if instance is None:
-            return Response(None)
-        return Response(self.get_serializer(instance).data)
-
-    @action(detail=True, methods=['patch'], url_path='verifier')
-    def verifier(self, request, pk=None):
-        """
-        PATCH /api/relais-quartier/{id}/verifier/  body: {"verifie": true|false}
-        `verifie` est en lecture seule sur le serializer (empêche un citoyen
-        de s'auto-vérifier) ; seule une autorité/admin peut le faire basculer.
-        """
-        instance = self.get_object()
-        verifie = request.data.get('verifie')
-
-        if verifie is None:
-            return Response({"verifie": ["Ce champ est obligatoire."]}, status=400)
-        if not isinstance(verifie, bool):
-            return Response({"verifie": ["Ce champ doit être un booléen (true ou false)."]}, status=400)
-
-        instance.verifie = verifie
-        instance.save()
-
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
-
-
-class PointRefugeViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    Points de refuge/abri en cas d'inondation (écoles, mosquées, centres, etc.)
-    Liste complète visible pour tous (citoyens et autorités).
-    """
-    queryset = PointRefuge.objects.select_related('zone').filter(actif=True)
-    serializer_class = PointRefugeSerializer
-    permission_classes = [permissions.AllowAny]
-    pagination_class = None
-
-    def paginate_queryset(self, queryset):
-        return None
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        zone = self.request.query_params.get('zone')
-        if zone:
-            queryset = queryset.filter(zone_id=zone)
-        quartier = self.request.query_params.get('quartier')
-        if quartier:
-            queryset = queryset.filter(quartier__iexact=quartier)
-        return queryset
-
-
-class SMSSignalementViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    Signalements reçus via SMS entrants. Lisible par autorité/admin seulement.
-    """
-    queryset = SMSSignalement.objects.select_related('signalement_cree').all()
-    serializer_class = SMSSignalementSerializer
-    permission_classes = [EstAdminOuAutorite]
-    pagination_class = PageNumberPagination
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        statut = self.request.query_params.get('statut')
-        if statut:
-            queryset = queryset.filter(statut=statut)
-        return queryset
-
-
-def signature_twilio_valide(request):
-    """
-    Vérifie l'en-tête X-Twilio-Signature (HMAC-SHA1 de l'URL et des paramètres,
-    clé = TWILIO_AUTH_TOKEN) : sans cela, n'importe qui pourrait créer de faux
-    signalements en appelant le webhook.
-
-    Sans jeton Twilio, le webhook n'est accepté qu'en développement (DEBUG).
-    TWILIO_WEBHOOK_URL permet de fixer l'URL exacte déclarée chez Twilio si un
-    proxy la modifie.
-    """
-    from django.conf import settings
-
-    jeton = settings.TWILIO_AUTH_TOKEN
-    if not jeton:
-        return settings.DEBUG
-    from twilio.request_validator import RequestValidator
-    url = os.environ.get('TWILIO_WEBHOOK_URL') or request.build_absolute_uri()
-    return RequestValidator(jeton).validate(
-        url, request.POST.dict(), request.headers.get('X-Twilio-Signature', ''),
-    )
-
-
-@extend_schema(exclude=True)
-class SMSInboundWebhookView(APIView):
-    """
-    POST /api/sms/inbound/ — Webhook pour recevoir les SMS entrants.
-    Appelé par Twilio, sans JWT : l'authenticité est garantie par la
-    signature X-Twilio-Signature (voir signature_twilio_valide).
-
-    Données attendues (form data Twilio):
-    - From: numéro du citoyen (ex: +221770000000)
-    - Body: contenu du SMS
-    """
-    permission_classes = [permissions.AllowAny]
-    authentication_classes = []
-
-    def post(self, request):
-        if not signature_twilio_valide(request):
-            logger.warning("[SMS entrant] Signature Twilio absente ou invalide : requête refusée")
-            return Response({"erreur": "Signature invalide"}, status=403)
-
-        phone_number = request.data.get('From', '')
-        message_text = request.data.get('Body', '').strip()
-        message_sid = request.data.get('MessageSid', '')
-
-        if not phone_number or not message_text:
-            return Response(
-                {"erreur": "From et Body sont obligatoires"},
-                status=400
-            )
-
-        try:
-            sms_sig = traiter_webhook_sms(
-                phone_number=phone_number,
-                message_text=message_text,
-                provider='twilio',
-                provider_id=message_sid
-            )
-        except Exception:
-            logger.exception("[SMS entrant] Échec du traitement")
-            sms_sig = None
-
-        if not sms_sig:
-            return Response({"erreur": "Erreur lors du traitement du SMS"}, status=500)
-        return Response({
-            "statut": "accepté",
-            "sms_id": sms_sig.id,
-            "message": "SMS reçu et traité",
-            "signalement_cree": sms_sig.signalement_cree_id,
-        })
-
-
-@extend_schema(exclude=True)
-class ExportCSVView(APIView):
-    """
-    GET /api/export/csv/{type}/ — Exporte les données au format CSV.
-
-    Types supportés:
-    - alertes: Historique des alertes
-    - signalements: Signalements citoyens
-    - zones: Zones à risque
-    - predictions: Prédictions IA
-    - refuges: Points de refuge
-    - episodes: Épisodes d'inondation
-
-    Paramètres optionnels:
-    - depuis: Date ISO (YYYY-MM-DD) pour filtrer les données récentes
-    """
-    permission_classes = [EstAdminOuAutorite]
-
-    def get(self, request, export_type):
-        try:
-            depuis = request.query_params.get('depuis')
-            if depuis:
-                from datetime import datetime
-                depuis = datetime.fromisoformat(depuis)
-
-            # Sélectionner le type d'export
-            if export_type == 'alertes':
-                bytes_io, filename = ExportService.generer_csv_alertes(depuis=depuis)
-            elif export_type == 'signalements':
-                bytes_io, filename = ExportService.generer_csv_signalements(depuis=depuis)
-            elif export_type == 'zones':
-                bytes_io, filename = ExportService.generer_csv_zones_risque()
-            elif export_type == 'predictions':
-                bytes_io, filename = ExportService.generer_csv_predictions()
-            elif export_type == 'refuges':
-                bytes_io, filename = ExportService.generer_csv_refuges()
-            elif export_type == 'episodes':
-                bytes_io, filename = ExportService.generer_csv_episodes()
-            else:
-                return Response(
-                    {
-                        "erreur": f"Type d'export non supporté: {export_type}",
-                        "types_supportes": ['alertes', 'signalements', 'zones', 'predictions', 'refuges', 'episodes']
-                    },
-                    status=400
-                )
-
-            # FileResponse et non Response : DRF aurait rendu les octets du
-            # fichier en JSON (le téléchargement contenait une erreur).
-            bytes_io.seek(0)
-            return FileResponse(bytes_io, as_attachment=True, filename=filename, content_type='text/csv; charset=utf-8')
-
-        except Exception:
-            logger.exception("Échec de l'export CSV %s", export_type)
-            return Response({"erreur": "L'export a échoué. Réessayez."}, status=500)
-
-
-@extend_schema(exclude=True)
-class ExportPDFView(APIView):
-    """
-    GET /api/export/pdf/{type}/ — Exporte les données au format PDF.
-
-    Types supportés:
-    - alertes: Rapport des alertes avec charte graphique et logo
-    - signalements: Rapport des signalements citoyens
-
-    Les PDF incluent le logo Mbeund-Mi et respectent la charte graphique.
-    """
-    permission_classes = [EstAdminOuAutorite]
-
-    def get(self, request, export_type):
-        types_pdf = ['alertes', 'signalements']
-        types_non_impl = ['zones', 'predictions', 'refuges', 'episodes']
-
-        if export_type in types_non_impl:
-            return Response(
-                {"erreur": f"PDF pour '{export_type}' pas encore implémenté", "types_ok": types_pdf},
-                status=501
-            )
-
-        if export_type not in types_pdf:
-            return Response({"erreur": f"Type non supporté: {export_type}"}, status=400)
-
-        try:
-            if export_type == 'alertes':
-                pdf_bytes, filename = PDFExportService.generer_pdf_alertes()
-            else:  # signalements
-                pdf_bytes, filename = PDFExportService.generer_pdf_signalements()
-
-            pdf_bytes.seek(0)
-            response = FileResponse(pdf_bytes, as_attachment=True, filename=filename, content_type='application/pdf')
-            return response
-
-        except Exception:
-            logger.exception("Échec de l'export PDF %s", export_type)
-            return Response({"erreur": "L'export a échoué. Réessayez."}, status=500)
-
-
-@extend_schema(exclude=True)
-class MonSurvivalKitView(APIView):
-    """
-    GET /api/mon-survival-kit/ - Récupérer le kit de survie personnel
-    PUT /api/mon-survival-kit/ - Mettre à jour le kit de survie
-    """
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request):
-        survival_kit, created = SurvivalKit.objects.get_or_create(user=request.user)
-        serializer = SurvivalKitSerializer(survival_kit)
-        return Response(serializer.data)
-
-    def put(self, request):
-        survival_kit, created = SurvivalKit.objects.get_or_create(user=request.user)
-        serializer = SurvivalKitSerializer(survival_kit, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=400)
-
-
-@extend_schema(exclude=True)
-class MonEmergencyContactView(APIView):
-    """
-    GET /api/mon-emergency-contact/ - Récupérer le contact d'urgence
-    PUT /api/mon-emergency-contact/ - Mettre à jour le contact d'urgence
-    """
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request):
-        emergency_contact, created = EmergencyContact.objects.get_or_create(user=request.user)
-        serializer = EmergencyContactSerializer(emergency_contact)
-        return Response(serializer.data)
-
-    def put(self, request):
-        emergency_contact, created = EmergencyContact.objects.get_or_create(user=request.user)
-        serializer = EmergencyContactSerializer(emergency_contact, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=400)
-
-
-@extend_schema(exclude=True)
-class MesSignalementsView(APIView):
-    """
-    GET /api/mes-signalements/ - Récupérer l'historique des signalements personnels
-    Retourne tous les signalements créés par l'utilisateur authentifié
-    """
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request):
-        # Filtrer les signalements de l'utilisateur actuel
-        signalements = SignalementCitoyen.objects.filter(
-            signale_par=request.user
-        ).prefetch_related('photos_supplementaires').order_by('-date_creation')
-        
-        # Pagination
-        paginator = PageNumberPagination()
-        paginator.page_size = 20
-        paginated = paginator.paginate_queryset(signalements, request)
-        
-        serializer = SignalementHistoriqueSerializer(paginated, many=True, context={'request': request})
-        return paginator.get_paginated_response(serializer.data)
-
-
-@extend_schema(exclude=True)
-class EnregistrerTriageAppelView(APIView):
-    """
-    POST /api/enregistrer-triage-appel/
-    Enregistre un triage d'appel avec les réponses du citoyen.
-    Réservé aux autorités : c'est un outil de la page Gestion de crise.
-    """
-    permission_classes = [IsAutoriteOrAdmin]
-
-    def post(self, request):
-        try:
-            data = request.data
-            
-            # Récupérer ou créer le citoyen
-            citoyen = None
-            if 'citoyen_id' in data and data['citoyen_id']:
-                try:
-                    citoyen = User.objects.get(id=data['citoyen_id'])
-                except User.DoesNotExist:
-                    return Response({"error": "Citoyen non trouvé"}, status=400)
-            
-            # Créer le triage
-            triage = TriageAppel.objects.create(
-                autorite=request.user,
-                citoyen=citoyen,
-                numero_citoyen=data.get('numero_citoyen', ''),
-                categorie=data.get('categorie'),
-                duree_appel_minutes=data.get('duree_appel_minutes', 0),
-                reponses=data.get('reponses', {}),
-                pourcentage_complete=data.get('pourcentage_complete', 0),
-                notes_generales=data.get('notes_generales', '')
-            )
-            
-            serializer = TriageAppelSerializer(triage)
-            return Response(serializer.data, status=201)
-
-        except Exception:
-            logger.exception("Échec de l'enregistrement du triage d'appel")
-            return Response({"error": "Enregistrement impossible : vérifiez les données envoyées."}, status=400)
+import logging
+import os
+import sys
+import base64
+import io
+from django.conf import settings
+from django.contrib.auth.models import User
+from django.db.models import Subquery, OuterRef
+from django.http import FileResponse
+from rest_framework import viewsets
+from rest_framework.decorators import action
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.views import TokenObtainPairView
+from django.utils import timezone
+from datetime import timedelta
+
+from rest_framework import permissions, serializers
+from capteurs.models import Capteur, Mesure
+from alertes.models import (
+    Alerte, ZoneRisque, PredictionIA, EpisodeInondation, SignalementCitoyen,
+    SegmentRue, PrevisionMeteo, HistoriqueRisque, ContactAlerte,
+    ProfilVulnerabilite, RelaisQuartier, PointRefuge, SMSSignalement,
+    SurvivalKit, EmergencyContact, TriageAppel,
+)
+from api.serializers import (
+    CapteurSerializer,
+    MesureSerializer,
+    AlerteSerializer,
+    ZoneRisqueGeoSerializer,
+    PredictionIASerializer,
+    EpisodeInondationSerializer,
+    SignalementCitoyenSerializer,
+    SegmentRueSerializer,
+    PrevisionMeteoSerializer,
+    HistoriqueRisqueSerializer,
+    ContactAlerteSerializer,
+    CustomTokenObtainPairSerializer,
+    ProfilVulnerabiliteSerializer,
+    RelaisQuartierSerializer,
+    PointRefugeSerializer,
+    SMSSignalementSerializer,
+    TriageAppelSerializer,
+    SurvivalKitSerializer,
+    EmergencyContactSerializer,
+    SignalementHistoriqueSerializer,
+)
+from api.permissions import IsAutoriteOrAdmin, EstAdminOuAutorite
+from api.services.sms_inbound_service import traiter_webhook_sms
+from api.services.export_service import ExportService
+from api.services.pdf_export_service import PDFExportService
+from drf_spectacular.utils import extend_schema
+
+logger = logging.getLogger(__name__)
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    """Identique à TokenObtainPairView, mais émet un JWT portant le claim `role`."""
+    serializer_class = CustomTokenObtainPairSerializer
+
+
+# mbeund_mi_ia est un module frère de backend/ (pas un paquet pip installé) —
+# on l'ajoute au path pour réutiliser le vrai service chatbot de Maïmouna
+# (Groq) au lieu de dupliquer sa logique dans Django. Même pattern que
+# alertes/tasks.py pour le service de prédiction.
+_MBEUND_MI_IA_PATH = os.path.join(os.path.dirname(settings.BASE_DIR), 'mbeund_mi_ia')
+if _MBEUND_MI_IA_PATH not in sys.path:
+    sys.path.insert(0, _MBEUND_MI_IA_PATH)
+
+_chatbot_service = None
+
+
+def _get_chatbot_service():
+    """Charge le service NDAM (client Groq) une seule fois par worker."""
+    global _chatbot_service
+    if _chatbot_service is None:
+        from ia.service_chatbot import MbeundMiChatbot
+        _chatbot_service = MbeundMiChatbot()
+    return _chatbot_service
+
+
+@extend_schema(exclude=True)
+class ChatView(APIView):
+    """
+    POST /api/chat/ — relaie une question à l'assistant NDAM.
+
+    Django rassemble ici le contexte (risque, météo, signalements validés)
+    sous forme de simples chaînes de caractères avant d'appeler le service
+    chatbot : NDAM lui-même ne reçoit jamais un accès direct à la base de
+    données, conformément à la contrainte du projet (éviter fuites de
+    données et hallucinations).
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    _RISQUE_LABELS = {
+        'vert': 'FAIBLE',
+        'jaune': 'MODÉRÉ',
+        'orange': 'ÉLEVÉ',
+        'rouge': 'CRITIQUE',
+    }
+
+    def post(self, request):
+        try:
+            question = (request.data.get('question') or '').strip()
+            image_data = request.data.get('image')
+
+            if not question and not image_data:
+                return Response({"question": ["Ce champ est obligatoire."]}, status=400)
+
+            if not question and image_data:
+                question = "Que pensez-vous de la situation visible sur cette photo et que dois-je faire ?"
+
+            vision_analysis = None
+            if image_data and isinstance(image_data, str):
+                try:
+                    from api.services.vision_service import analyser_photo
+                    raw_b64 = image_data.split(',', 1)[1] if ',' in image_data else image_data
+                    img_bytes = base64.b64decode(raw_b64)
+                    vision_analysis = analyser_photo(io.BytesIO(img_bytes))
+                except Exception as e:
+                    logger.warning("[ChatView] Erreur décodage photo pour analyse vision : %s", e)
+
+            # Récupérer le contexte de la base de données
+            try:
+                zone_risque = ZoneRisque.objects.order_by('-score_risque_moyen').first()
+                niveau_risque = self._RISQUE_LABELS.get(
+                    getattr(zone_risque, 'niveau_risque', None) if zone_risque else None, 'FAIBLE'
+                )
+            except Exception as e:
+                logger.warning("[ChatView] Contexte zone_risque indisponible : %s", e)
+                niveau_risque = 'FAIBLE'
+
+            try:
+                prevision = PrevisionMeteo.objects.order_by('-date_prevision').first()
+                if prevision:
+                    meteo_context = (
+                        f"Température {prevision.temperature_c}°C, "
+                        f"précipitations {prevision.precipitation_mm} mm, "
+                        f"vent {prevision.vitesse_vent} km/h"
+                    )
+                else:
+                    meteo_context = "Non disponible"
+            except Exception as e:
+                logger.warning("[ChatView] Contexte météo indisponible : %s", e)
+                meteo_context = "Non disponible"
+
+            try:
+                signalements = SignalementCitoyen.objects.filter(valide=True).order_by('-date_creation')[:3]
+                descriptions = [s.description[:120] for s in signalements if s.description]
+                signalements_context = " ; ".join(descriptions) if descriptions else "Aucun récent"
+            except Exception as e:
+                logger.warning("[ChatView] Contexte signalements indisponible : %s", e)
+                signalements_context = "Aucun récent"
+
+            # Utiliser le chatbot avec triple filet de sécurité
+            try:
+                chatbot = _get_chatbot_service()
+                reply = chatbot.poser_question(
+                    question,
+                    meteo_context=meteo_context,
+                    signalements_context=signalements_context,
+                    niveau_risque=niveau_risque,
+                    image=image_data,
+                    vision_analysis=vision_analysis,
+                )
+                return Response({"reply": reply})
+            except Exception as e:
+                logger.exception("[ChatView] Échec du service chatbot, bascule fallback expert local : %s", e)
+                try:
+                    from ia.service_chatbot import _repondre_expert_local
+                    reply = _repondre_expert_local(
+                        question=question,
+                        meteo_context=meteo_context,
+                        signalements_context=signalements_context,
+                        niveau_risque=niveau_risque,
+                        vision_analysis=vision_analysis,
+                    )
+                    return Response({"reply": reply})
+                except Exception:
+                    return Response({
+                        "reply": f"Bonjour, je suis NDAM. Le niveau de risque actuel à Thiaroye-sur-Mer est classé {niveau_risque}. "
+                                 f"Pour signaler une inondation, utilisez l'onglet « Signaler » de l'application. "
+                                 f"Pour localiser les refuges d'urgence (CEM Thiaroye Gare), consultez la Carte interactive. "
+                                 f"En cas de péril vital, composez sans attendre le 18 (Sapeurs-Pompiers)."
+                    })
+        except Exception:
+            logger.exception("[ChatView] Erreur lors de la préparation du contexte")
+            return Response({
+                "reply": "Bonjour, je suis NDAM, votre assistant de prévention à Thiaroye-sur-Mer. "
+                         "Vous pouvez consulter l'état des zones sur la Carte interactive, déclarer une zone inondée dans l'onglet « Signaler », "
+                         "ou composer le 18 (Sapeurs-Pompiers) en cas de danger immédiat."
+            })
+
+
+class CapteurViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for Capteur. Exposes standard GET/POST/PUT/DELETE.
+    """
+    queryset = Capteur.objects.all()
+    serializer_class = CapteurSerializer
+    permission_classes = [IsAutoriteOrAdmin]
+
+
+class MesureViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for Mesure. Exposes standard GET/POST/PUT/DELETE,
+    and a custom action `/api/mesures/recentes/`.
+    """
+    queryset = Mesure.objects.all()
+    serializer_class = MesureSerializer
+    permission_classes = [IsAutoriteOrAdmin]
+    pagination_class = PageNumberPagination
+
+    @action(detail=False, methods=['get'], url_path='recentes')
+    def recentes(self, request):
+        """
+        GET /api/mesures/recentes/
+        Returns measurements from the last 24 hours, grouped by capteur.
+        Each capteur is represented as a GeoJSON feature, with its recent measurements list.
+        """
+        # Threshold for the last 24 hours
+        time_threshold = timezone.now() - timedelta(hours=24)
+        
+        # We query measures in the last 24 hours and prefetch capteurs to optimize
+        mesures = Mesure.objects.filter(timestamp__gte=time_threshold).select_related('capteur')
+        
+        # Grouping by sensor
+        grouped = {}
+        for m in mesures:
+            capteur_id = m.capteur_id
+            if capteur_id not in grouped:
+                # Serialize the capteur using CapteurSerializer
+                capteur_data = CapteurSerializer(m.capteur).data
+                grouped[capteur_id] = {
+                    "capteur": capteur_data,
+                    "mesures": []
+                }
+            grouped[capteur_id]["mesures"].append({
+                "id": m.id,
+                "valeur": m.valeur,
+                "unite": m.unite,
+                "timestamp": m.timestamp.isoformat()
+            })
+            
+        return Response(list(grouped.values()))
+
+
+class AlerteViewSet(viewsets.ModelViewSet):
+    queryset = Alerte.objects.all().select_related('zone', 'created_by').order_by('-timestamp')
+    serializer_class = AlerteSerializer
+    pagination_class = PageNumberPagination
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [permissions.AllowAny()]
+        return [IsAutoriteOrAdmin()]
+
+    def get_queryset(self):
+        queryset = self.queryset
+        zone = self.request.query_params.get('zone')
+        niveau = self.request.query_params.get('niveau')
+        if zone:
+            queryset = queryset.filter(zone_id=zone)
+        if niveau:
+            queryset = queryset.filter(niveau=niveau)
+        return queryset
+
+    @action(detail=True, methods=['patch'], url_path='statut')
+    def statut(self, request, pk=None):
+        instance = self.get_object()
+        new_statut = request.data.get('statut')
+
+        if not new_statut:
+            return Response({"statut": ["Ce champ est obligatoire."]}, status=400)
+
+        allowed_statuts = [choice[0] for choice in Alerte.STATUT_CHOICES]
+        if new_statut not in allowed_statuts:
+            return Response(
+                {"statut": [f"'{new_statut}' n'est pas un statut valide. Choix valides : {', '.join(allowed_statuts)}."]},
+                status=400
+            )
+
+        current_statut = instance.statut
+
+        if current_statut != new_statut:
+            if current_statut == 'en_attente' and new_statut != 'envoyee':
+                return Response(
+                    {"detail": f"Transition invalide de '{current_statut}' vers '{new_statut}'. La transition doit être 'en_attente' -> 'envoyee'."},
+                    status=400
+                )
+            elif current_statut == 'envoyee' and new_statut != 'resolue':
+                return Response(
+                    {"detail": f"Transition invalide de '{current_statut}' vers '{new_statut}'. La transition doit être 'envoyee' -> 'resolue'."},
+                    status=400
+                )
+            elif current_statut == 'resolue':
+                return Response(
+                    {"detail": f"Impossible de modifier le statut d'une alerte déjà résolue ('{current_statut}' -> '{new_statut}')."},
+                    status=400
+                )
+
+        instance.statut = new_statut
+        instance.save()
+
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
+
+class ZoneRisqueViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = ZoneRisque.objects.all()
+    serializer_class = ZoneRisqueGeoSerializer
+
+
+class PredictionIAViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = PredictionIA.objects.all()
+    serializer_class = PredictionIASerializer
+    permission_classes = [IsAutoriteOrAdmin]
+
+    def get_queryset(self):
+        latest_predictions = PredictionIA.objects.filter(
+            zone=OuterRef('zone_id')
+        ).order_by('-timestamp')
+
+        return PredictionIA.objects.filter(
+            id=Subquery(latest_predictions.values('id')[:1])
+        ).select_related('zone').order_by('-timestamp')
+
+    @action(detail=False, methods=['get'], url_path='fiabilite')
+    def fiabilite(self, request):
+        """
+        GET /api/predictions/fiabilite/
+        Retourne les métriques de fiabilité du modèle Random Forest : Brier Score,
+        Log Loss, Accuracy, matrice de confusion, courbe de calibration.
+        """
+        from api.services.model_reliability_service import ModelReliabilityService
+        try:
+            service = ModelReliabilityService()
+            rapport = service.generer_rapport()
+            return Response(rapport)
+        except Exception:
+            logger.exception("Échec du calcul de fiabilité du modèle")
+            return Response({"erreur": "Le calcul de fiabilité a échoué."}, status=500)
+
+
+class EpisodeInondationViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = EpisodeInondation.objects.all()
+    serializer_class = EpisodeInondationSerializer
+
+    @action(detail=False, methods=['get'], url_path='backtesting')
+    def backtesting(self, request):
+        """
+        GET /api/inondations/backtesting/?include_synthetic=true
+        Exécute le backtesting : pour chaque inondation historique, calcule
+        ce que le modèle aurait prédit (basé sur les pluies 72h avant).
+
+        Query params:
+            include_synthetic (bool, default=true):
+                true = inclut les données synthétiques (pour démo)
+                false = compte SEULEMENT les vraies inondations (production)
+
+        Retourne les résultats avec statistiques de détection.
+        """
+        from api.services.backtesting_service import BacktestingService
+        try:
+            # By default include synthetic (for demo), but allow override
+            include_synthetic = request.query_params.get('include_synthetic', 'true').lower() == 'true'
+
+            service = BacktestingService()
+            resultat = service.executer_backtesting(include_synthetic=include_synthetic)
+            return Response(resultat)
+        except Exception:
+            logger.exception("Échec du backtesting")
+            return Response({"erreur": "Le backtesting a échoué."}, status=500)
+
+
+class SignalementCitoyenViewSet(viewsets.ModelViewSet):
+    queryset = SignalementCitoyen.objects.select_related('signale_par', 'signalement_similaire').prefetch_related('photos_supplementaires').all()
+    serializer_class = SignalementCitoyenSerializer
+    pagination_class = PageNumberPagination
+
+    def get_permissions(self):
+        if self.action == 'create':
+            return [permissions.AllowAny()]
+        return [IsAutoriteOrAdmin()]
+
+    def perform_create(self, serializer):
+        user = self.request.user if self.request.user.is_authenticated else None
+        serializer.save(signale_par=user)
+
+    @action(detail=True, methods=['patch'], url_path='valider')
+    def valider(self, request, pk=None):
+        """
+        PATCH /api/signalements/{id}/valider/  body: {"valide": true|false}
+        `valide` est en lecture seule sur le serializer (pour empêcher un
+        citoyen de l'auto-valider à la création) ; cette action dédiée est
+        le seul moyen pour une autorité/admin de le faire basculer.
+        """
+        instance = self.get_object()
+        valide = request.data.get('valide')
+
+        if valide is None:
+            return Response({"valide": ["Ce champ est obligatoire."]}, status=400)
+        if not isinstance(valide, bool):
+            return Response({"valide": ["Ce champ doit être un booléen (true ou false)."]}, status=400)
+
+        etait_valide = instance.valide
+        instance.valide = valide
+        instance.save()
+
+        # Journal d'activité de l'autorité qui valide (et non du citoyen auteur).
+        if valide and not etait_valide:
+            from users.models import AuthorityActivity
+            AuthorityActivity.objects.create(
+                authority=request.user,
+                action_type='request_handled',
+                description=f'Signalement validé : {instance.get_categorie_display()}',
+                zone='',
+            )
+
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
+
+class SegmentRueViewSet(viewsets.ModelViewSet):
+    queryset = SegmentRue.objects.all()
+    serializer_class = SegmentRueSerializer
+    pagination_class = None
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [permissions.AllowAny()]
+        return [IsAutoriteOrAdmin()]
+
+
+class PrevisionMeteoViewSet(viewsets.ModelViewSet):
+    queryset = PrevisionMeteo.objects.select_related('zone').all().order_by('date_prevision')
+    serializer_class = PrevisionMeteoSerializer
+    pagination_class = PageNumberPagination
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [permissions.AllowAny()]
+        return [IsAutoriteOrAdmin()]
+
+
+class HistoriqueRisqueViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = HistoriqueRisque.objects.select_related('zone', 'segment').all()
+    serializer_class = HistoriqueRisqueSerializer
+    pagination_class = PageNumberPagination
+
+
+class ContactAlerteViewSet(viewsets.ModelViewSet):
+    """
+    Registre des citoyens souhaitant recevoir un SMS d'alerte dans leur zone.
+    Inscription libre (comme pour les signalements) ; consultation/gestion
+    réservées aux autorités/admin car ce sont des numéros de téléphone (PII).
+    """
+    queryset = ContactAlerte.objects.select_related('zone').all()
+    serializer_class = ContactAlerteSerializer
+    pagination_class = PageNumberPagination
+
+    def get_permissions(self):
+        if self.action == 'create':
+            return [permissions.AllowAny()]
+        return [EstAdminOuAutorite()]
+
+
+@extend_schema(exclude=True)
+class ItineraireSecuriseView(APIView):
+    """
+    GET /api/itineraire-securise/?lat=..&lon=..
+
+    Calcule, à partir des SegmentRue enregistrés, un itinéraire à pied
+    évitant autant que possible les tronçons à risque élevé jusqu'à la
+    zone à faible risque la plus proche du réseau connu (voir
+    api/services/routing_service.py — Dijkstra pondéré par le risque).
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        try:
+            lat = float(request.query_params.get('lat'))
+            lon = float(request.query_params.get('lon'))
+        except (TypeError, ValueError):
+            return Response(
+                {"detail": "Paramètres 'lat' et 'lon' requis (nombres décimaux)."},
+                status=400,
+            )
+
+        from api.services.routing_service import find_safe_route
+        result = find_safe_route(lat, lon)
+        if result is None:
+            return Response(
+                {"detail": "Aucun itinéraire disponible pour l’instant depuis cette position."},
+                status=404,
+            )
+        return Response(result)
+
+
+@extend_schema(exclude=True)
+class MonProfilVulnerabiliteView(APIView):
+    """
+    GET/PUT /api/mon-profil-vulnerabilite/ — un citoyen connecté consulte ou
+    déclare/modifie le profil de vulnérabilité de son propre foyer (créé à la
+    première sauvegarde). Jamais consultable par un autre citoyen : côté
+    autorité, voir ProfilVulnerabiliteViewSet.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        profil = ProfilVulnerabilite.objects.filter(user=request.user).first()
+        if profil is None:
+            return Response(None)
+        return Response(ProfilVulnerabiliteSerializer(profil).data)
+
+    def put(self, request):
+        profil, _ = ProfilVulnerabilite.objects.get_or_create(user=request.user)
+        serializer = ProfilVulnerabiliteSerializer(profil, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+
+class ProfilVulnerabiliteViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Consultation par une autorité/admin des profils de vulnérabilité déclarés
+    par les citoyens, pour prioriser l'assistance à l'évacuation. Un citoyen
+    déclare le sien via MonProfilVulnerabiliteView, jamais via ce ViewSet.
+    """
+    queryset = ProfilVulnerabilite.objects.select_related('user', 'zone').all()
+    serializer_class = ProfilVulnerabiliteSerializer
+    permission_classes = [EstAdminOuAutorite]
+    pagination_class = PageNumberPagination
+
+    def get_queryset(self):
+        queryset = self.queryset
+        zone = self.request.query_params.get('zone')
+        if zone:
+            queryset = queryset.filter(zone_id=zone)
+        return queryset
+
+
+class RelaisQuartierViewSet(viewsets.ModelViewSet):
+    """
+    Citoyens volontaires pour relayer une alerte et aider à l'évacuation dans
+    leur zone. Chaque citoyen ne gère que sa propre inscription (OneToOne) ;
+    la liste complète et la vérification (`verifier`) sont réservées à
+    l'autorité/admin.
+    """
+    queryset = RelaisQuartier.objects.select_related('user', 'zone').all()
+    serializer_class = RelaisQuartierSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = PageNumberPagination
+
+    def get_permissions(self):
+        if self.action in ('list', 'verifier'):
+            return [EstAdminOuAutorite()]
+        return [permissions.IsAuthenticated()]
+
+    def get_queryset(self):
+        if self.action in ('list', 'verifier'):
+            return self.queryset
+        return self.queryset.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        if RelaisQuartier.objects.filter(user=self.request.user).exists():
+            raise serializers.ValidationError(
+                {"detail": "Vous êtes déjà inscrit comme relais de quartier."}
+            )
+        serializer.save(user=self.request.user)
+
+    @action(detail=False, methods=['get'], url_path='moi')
+    def moi(self, request):
+        """GET /api/relais-quartier/moi/ — retrouve sa propre inscription (ou null)."""
+        instance = RelaisQuartier.objects.filter(user=request.user).select_related('zone').first()
+        if instance is None:
+            return Response(None)
+        return Response(self.get_serializer(instance).data)
+
+    @action(detail=True, methods=['patch'], url_path='verifier')
+    def verifier(self, request, pk=None):
+        """
+        PATCH /api/relais-quartier/{id}/verifier/  body: {"verifie": true|false}
+        `verifie` est en lecture seule sur le serializer (empêche un citoyen
+        de s'auto-vérifier) ; seule une autorité/admin peut le faire basculer.
+        """
+        instance = self.get_object()
+        verifie = request.data.get('verifie')
+
+        if verifie is None:
+            return Response({"verifie": ["Ce champ est obligatoire."]}, status=400)
+        if not isinstance(verifie, bool):
+            return Response({"verifie": ["Ce champ doit être un booléen (true ou false)."]}, status=400)
+
+        instance.verifie = verifie
+        instance.save()
+
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
+
+class PointRefugeViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Points de refuge/abri en cas d'inondation (écoles, mosquées, centres, etc.)
+    Liste complète visible pour tous (citoyens et autorités).
+    """
+    queryset = PointRefuge.objects.select_related('zone').filter(actif=True)
+    serializer_class = PointRefugeSerializer
+    permission_classes = [permissions.AllowAny]
+    pagination_class = None
+
+    def paginate_queryset(self, queryset):
+        return None
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        zone = self.request.query_params.get('zone')
+        if zone:
+            queryset = queryset.filter(zone_id=zone)
+        quartier = self.request.query_params.get('quartier')
+        if quartier:
+            queryset = queryset.filter(quartier__iexact=quartier)
+        return queryset
+
+
+class SMSSignalementViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Signalements reçus via SMS entrants. Lisible par autorité/admin seulement.
+    """
+    queryset = SMSSignalement.objects.select_related('signalement_cree').all()
+    serializer_class = SMSSignalementSerializer
+    permission_classes = [EstAdminOuAutorite]
+    pagination_class = PageNumberPagination
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        statut = self.request.query_params.get('statut')
+        if statut:
+            queryset = queryset.filter(statut=statut)
+        return queryset
+
+
+def signature_twilio_valide(request):
+    """
+    Vérifie l'en-tête X-Twilio-Signature (HMAC-SHA1 de l'URL et des paramètres,
+    clé = TWILIO_AUTH_TOKEN) : sans cela, n'importe qui pourrait créer de faux
+    signalements en appelant le webhook.
+
+    Sans jeton Twilio, le webhook n'est accepté qu'en développement (DEBUG).
+    TWILIO_WEBHOOK_URL permet de fixer l'URL exacte déclarée chez Twilio si un
+    proxy la modifie.
+    """
+    from django.conf import settings
+
+    jeton = settings.TWILIO_AUTH_TOKEN
+    if not jeton:
+        return settings.DEBUG
+    from twilio.request_validator import RequestValidator
+    url = os.environ.get('TWILIO_WEBHOOK_URL') or request.build_absolute_uri()
+    return RequestValidator(jeton).validate(
+        url, request.POST.dict(), request.headers.get('X-Twilio-Signature', ''),
+    )
+
+
+@extend_schema(exclude=True)
+class SMSInboundWebhookView(APIView):
+    """
+    POST /api/sms/inbound/ — Webhook pour recevoir les SMS entrants.
+    Appelé par Twilio, sans JWT : l'authenticité est garantie par la
+    signature X-Twilio-Signature (voir signature_twilio_valide).
+
+    Données attendues (form data Twilio):
+    - From: numéro du citoyen (ex: +221770000000)
+    - Body: contenu du SMS
+    """
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
+
+    def post(self, request):
+        if not signature_twilio_valide(request):
+            logger.warning("[SMS entrant] Signature Twilio absente ou invalide : requête refusée")
+            return Response({"erreur": "Signature invalide"}, status=403)
+
+        phone_number = request.data.get('From', '')
+        message_text = request.data.get('Body', '').strip()
+        message_sid = request.data.get('MessageSid', '')
+
+        if not phone_number or not message_text:
+            return Response(
+                {"erreur": "From et Body sont obligatoires"},
+                status=400
+            )
+
+        try:
+            sms_sig = traiter_webhook_sms(
+                phone_number=phone_number,
+                message_text=message_text,
+                provider='twilio',
+                provider_id=message_sid
+            )
+        except Exception:
+            logger.exception("[SMS entrant] Échec du traitement")
+            sms_sig = None
+
+        if not sms_sig:
+            return Response({"erreur": "Erreur lors du traitement du SMS"}, status=500)
+        return Response({
+            "statut": "accepté",
+            "sms_id": sms_sig.id,
+            "message": "SMS reçu et traité",
+            "signalement_cree": sms_sig.signalement_cree_id,
+        })
+
+
+@extend_schema(exclude=True)
+class ExportCSVView(APIView):
+    """
+    GET /api/export/csv/{type}/ — Exporte les données au format CSV.
+
+    Types supportés:
+    - alertes: Historique des alertes
+    - signalements: Signalements citoyens
+    - zones: Zones à risque
+    - predictions: Prédictions IA
+    - refuges: Points de refuge
+    - episodes: Épisodes d'inondation
+
+    Paramètres optionnels:
+    - depuis: Date ISO (YYYY-MM-DD) pour filtrer les données récentes
+    """
+    permission_classes = [EstAdminOuAutorite]
+
+    def get(self, request, export_type):
+        try:
+            depuis = request.query_params.get('depuis')
+            if depuis:
+                from datetime import datetime
+                depuis = datetime.fromisoformat(depuis)
+
+            # Sélectionner le type d'export
+            if export_type == 'alertes':
+                bytes_io, filename = ExportService.generer_csv_alertes(depuis=depuis)
+            elif export_type == 'signalements':
+                bytes_io, filename = ExportService.generer_csv_signalements(depuis=depuis)
+            elif export_type == 'zones':
+                bytes_io, filename = ExportService.generer_csv_zones_risque()
+            elif export_type == 'predictions':
+                bytes_io, filename = ExportService.generer_csv_predictions()
+            elif export_type == 'refuges':
+                bytes_io, filename = ExportService.generer_csv_refuges()
+            elif export_type == 'episodes':
+                bytes_io, filename = ExportService.generer_csv_episodes()
+            else:
+                return Response(
+                    {
+                        "erreur": f"Type d'export non supporté: {export_type}",
+                        "types_supportes": ['alertes', 'signalements', 'zones', 'predictions', 'refuges', 'episodes']
+                    },
+                    status=400
+                )
+
+            # FileResponse et non Response : DRF aurait rendu les octets du
+            # fichier en JSON (le téléchargement contenait une erreur).
+            bytes_io.seek(0)
+            return FileResponse(bytes_io, as_attachment=True, filename=filename, content_type='text/csv; charset=utf-8')
+
+        except Exception:
+            logger.exception("Échec de l'export CSV %s", export_type)
+            return Response({"erreur": "L'export a échoué. Réessayez."}, status=500)
+
+
+@extend_schema(exclude=True)
+class ExportPDFView(APIView):
+    """
+    GET /api/export/pdf/{type}/ — Exporte les données au format PDF.
+
+    Types supportés:
+    - alertes: Rapport des alertes avec charte graphique et logo
+    - signalements: Rapport des signalements citoyens
+
+    Les PDF incluent le logo Mbeund-Mi et respectent la charte graphique.
+    """
+    permission_classes = [EstAdminOuAutorite]
+
+    def get(self, request, export_type):
+        types_pdf = ['alertes', 'signalements']
+        types_non_impl = ['zones', 'predictions', 'refuges', 'episodes']
+
+        if export_type in types_non_impl:
+            return Response(
+                {"erreur": f"PDF pour '{export_type}' pas encore implémenté", "types_ok": types_pdf},
+                status=501
+            )
+
+        if export_type not in types_pdf:
+            return Response({"erreur": f"Type non supporté: {export_type}"}, status=400)
+
+        try:
+            if export_type == 'alertes':
+                pdf_bytes, filename = PDFExportService.generer_pdf_alertes()
+            else:  # signalements
+                pdf_bytes, filename = PDFExportService.generer_pdf_signalements()
+
+            pdf_bytes.seek(0)
+            response = FileResponse(pdf_bytes, as_attachment=True, filename=filename, content_type='application/pdf')
+            return response
+
+        except Exception:
+            logger.exception("Échec de l'export PDF %s", export_type)
+            return Response({"erreur": "L'export a échoué. Réessayez."}, status=500)
+
+
+@extend_schema(exclude=True)
+class MonSurvivalKitView(APIView):
+    """
+    GET /api/mon-survival-kit/ - Récupérer le kit de survie personnel
+    PUT /api/mon-survival-kit/ - Mettre à jour le kit de survie
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        survival_kit, created = SurvivalKit.objects.get_or_create(user=request.user)
+        serializer = SurvivalKitSerializer(survival_kit)
+        return Response(serializer.data)
+
+    def put(self, request):
+        survival_kit, created = SurvivalKit.objects.get_or_create(user=request.user)
+        serializer = SurvivalKitSerializer(survival_kit, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+
+
+@extend_schema(exclude=True)
+class MonEmergencyContactView(APIView):
+    """
+    GET /api/mon-emergency-contact/ - Récupérer le contact d'urgence
+    PUT /api/mon-emergency-contact/ - Mettre à jour le contact d'urgence
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        emergency_contact, created = EmergencyContact.objects.get_or_create(user=request.user)
+        serializer = EmergencyContactSerializer(emergency_contact)
+        return Response(serializer.data)
+
+    def put(self, request):
+        emergency_contact, created = EmergencyContact.objects.get_or_create(user=request.user)
+        serializer = EmergencyContactSerializer(emergency_contact, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+
+
+@extend_schema(exclude=True)
+class MesSignalementsView(APIView):
+    """
+    GET /api/mes-signalements/ - Récupérer l'historique des signalements personnels
+    Retourne tous les signalements créés par l'utilisateur authentifié
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        # Filtrer les signalements de l'utilisateur actuel
+        signalements = SignalementCitoyen.objects.filter(
+            signale_par=request.user
+        ).prefetch_related('photos_supplementaires').order_by('-date_creation')
+        
+        # Pagination
+        paginator = PageNumberPagination()
+        paginator.page_size = 20
+        paginated = paginator.paginate_queryset(signalements, request)
+        
+        serializer = SignalementHistoriqueSerializer(paginated, many=True, context={'request': request})
+        return paginator.get_paginated_response(serializer.data)
+
+
+@extend_schema(exclude=True)
+class EnregistrerTriageAppelView(APIView):
+    """
+    POST /api/enregistrer-triage-appel/
+    Enregistre un triage d'appel avec les réponses du citoyen.
+    Réservé aux autorités : c'est un outil de la page Gestion de crise.
+    """
+    permission_classes = [IsAutoriteOrAdmin]
+
+    def post(self, request):
+        try:
+            data = request.data
+            
+            # Récupérer ou créer le citoyen
+            citoyen = None
+            if 'citoyen_id' in data and data['citoyen_id']:
+                try:
+                    citoyen = User.objects.get(id=data['citoyen_id'])
+                except User.DoesNotExist:
+                    return Response({"error": "Citoyen non trouvé"}, status=400)
+            
+            # Créer le triage
+            triage = TriageAppel.objects.create(
+                autorite=request.user,
+                citoyen=citoyen,
+                numero_citoyen=data.get('numero_citoyen', ''),
+                categorie=data.get('categorie'),
+                duree_appel_minutes=data.get('duree_appel_minutes', 0),
+                reponses=data.get('reponses', {}),
+                pourcentage_complete=data.get('pourcentage_complete', 0),
+                notes_generales=data.get('notes_generales', '')
+            )
+            
+            serializer = TriageAppelSerializer(triage)
+            return Response(serializer.data, status=201)
+
+        except Exception:
+            logger.exception("Échec de l'enregistrement du triage d'appel")
+            return Response({"error": "Enregistrement impossible : vérifiez les données envoyées."}, status=400)

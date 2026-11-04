@@ -12,8 +12,10 @@ import {
   ArrowRight,
   ShieldCheck,
   AlertTriangle,
+  FileText,
 } from 'lucide-react';
 import AutoriteShell from '../desktop/AutoriteShell';
+import FicheSituationModal from '../components/FicheSituationModal';
 import GaugeRisk from '../../shared/components/GaugeRisk';
 import RiskBadge from '../../shared/components/RiskBadge';
 import { useZones } from '../../shared/hooks/useZones';
@@ -56,6 +58,7 @@ function KpiCard({ icon: Icon, label, value, caption, tone = 'navy' }) {
 
 export default function TableauDeBordPage() {
   const navigate = useNavigate();
+  const [sitrepOpen, setSitrepOpen] = useState(false);
   const [interventionDepêchee, setInterventionDepêchee] = useState(() => {
     try {
       return localStorage.getItem('mbeund_mi_top_report_status') === 'intervenu';
@@ -103,9 +106,20 @@ export default function TableauDeBordPage() {
 
   return (
     <AutoriteShell>
-      <div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
         <h1 className="text-3xl font-extrabold">Tableau de bord</h1>
         <p className="text-base text-navy-600 dark:text-navy-200 mt-0.5">Thiaroye-sur-Mer · Supervision temps réel</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setSitrepOpen(true)}
+          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs shadow-md transition active:scale-95 cursor-pointer self-start sm:self-auto"
+          title="Consulter et exporter la fiche de situation officielle (SITREP)"
+        >
+          <FileText size={15} />
+          <span>Fiche de Situation (SITREP)</span>
+        </button>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -307,6 +321,7 @@ export default function TableauDeBordPage() {
             </div>
           )}
         </div>
+        <FicheSituationModal isOpen={sitrepOpen} onClose={() => setSitrepOpen(false)} />
     </AutoriteShell>
   );
 }
