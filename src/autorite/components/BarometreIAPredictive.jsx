@@ -68,8 +68,8 @@ export default function BarometreIAPredictive({ previsions }) {
   const precipVal = rawPrecip != null && !isNaN(Number(rawPrecip))
     ? Number(rawPrecip)
     : (previsions?.length > 0
-        ? previsions.reduce((sum, p) => sum + (Number(p.precipitation_mm ?? p.precipitation) || 0), 0) / previsions.length
-        : 10.8);
+      ? previsions.reduce((sum, p) => sum + (Number(p.precipitation_mm ?? p.precipitation) || 0), 0) / previsions.length
+      : 10.8);
   const precipitation = precipVal != null ? precipVal : 10.8;
 
   // Température réelle (°C)
@@ -77,9 +77,9 @@ export default function BarometreIAPredictive({ previsions }) {
   const tempVal = rawTemp != null && !isNaN(Number(rawTemp))
     ? Number(rawTemp)
     : (previsions?.length > 0
-        ? (previsions.reduce((sum, p) => sum + (Number(p.temperature_c ?? p.temperature_max_c ?? p.temperature) || 0), 0) /
-           (previsions.filter((p) => (p.temperature_c ?? p.temperature_max_c ?? p.temperature) != null).length || 1))
-        : 27.0);
+      ? (previsions.reduce((sum, p) => sum + (Number(p.temperature_c ?? p.temperature_max_c ?? p.temperature) || 0), 0) /
+        (previsions.filter((p) => (p.temperature_c ?? p.temperature_max_c ?? p.temperature) != null).length || 1))
+      : 27.0);
   const temperature = tempVal != null && tempVal > 0 ? tempVal : 27.0;
 
   // Vitesse du vent réelle (km/h)
@@ -87,8 +87,8 @@ export default function BarometreIAPredictive({ previsions }) {
   const ventVal = rawVent != null && !isNaN(Number(rawVent))
     ? Number(rawVent)
     : (previsions?.length > 0
-        ? previsions.reduce((sum, p) => sum + (Number(p.vitesse_vent ?? p.vitesse_vent_kmh) || 0), 0) / previsions.length
-        : 17.0);
+      ? previsions.reduce((sum, p) => sum + (Number(p.vitesse_vent ?? p.vitesse_vent_kmh) || 0), 0) / previsions.length
+      : 17.0);
   const vitesseVent = ventVal != null ? ventVal : 17.0;
 
   // Calcul du score prédictif avec les vraies données
