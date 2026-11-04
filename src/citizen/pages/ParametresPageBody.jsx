@@ -123,31 +123,33 @@ export default function ParametresPageBody() {
   return (
     <CitizenShell>
       <div className="w-full flex flex-col gap-6">
-        {/* Bandeau d'en-tête Paramètres */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-[#0B2545] via-[#103565] to-slate-900 text-white shadow-md border border-blue-900/40">
+        {/* En-tête de page moderne, sobre et aéré */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-navy-100 dark:border-navy-800/80">
           <div>
             <div className="flex items-center gap-2">
-              <Settings size={22} className="text-white" />
-              <h1 className="text-xl sm:text-2xl font-black text-white">
+              <div className="w-8 h-8 rounded-xl bg-navy-50 dark:bg-navy-800 text-navy-800 dark:text-navy-100 flex items-center justify-center shrink-0 border border-navy-200 dark:border-navy-700">
+                <Settings size={18} />
+              </div>
+              <h1 className="text-xl sm:text-2xl font-black text-navy-950 dark:text-white tracking-tight">
                 Paramètres & Sécurité du foyer
               </h1>
             </div>
-            <p className="text-xs sm:text-sm text-slate-300 mt-1">
-              Personnes vulnérables, kit d'urgence, relais de quartier et préférences
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+              Personnes vulnérables, kit d’urgence, relais de quartier et préférences d’affichage
             </p>
           </div>
 
-          {/* Bouton Mode Sombre / Mode Clair sur le côté droit de la bande bleue */}
-          <div className="flex items-center gap-3 self-start sm:self-auto bg-white/10 hover:bg-white/15 backdrop-blur-xs px-3.5 py-2 rounded-xl border border-white/20 transition-colors shadow-xs">
-            <span className="flex items-center gap-1.5 text-xs font-bold text-white select-none">
+          {/* Commutateur de mode clair / sombre intégré élégamment */}
+          <div className="flex items-center gap-2.5 self-start sm:self-auto bg-slate-100 dark:bg-navy-800/90 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-navy-700 shadow-xs">
+            <span className="flex items-center gap-1.5 text-xs font-bold text-navy-900 dark:text-white select-none">
               {darkMode ? (
                 <>
-                  <Moon size={15} className="text-amber-300" />
+                  <Moon size={14} className="text-amber-400" />
                   <span>Mode sombre</span>
                 </>
               ) : (
                 <>
-                  <Sun size={15} className="text-amber-300" />
+                  <Sun size={14} className="text-amber-500" />
                   <span>Mode clair</span>
                 </>
               )}

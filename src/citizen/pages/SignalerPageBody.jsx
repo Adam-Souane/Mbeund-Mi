@@ -1659,7 +1659,7 @@ export default function SignalerPageBody() {
                       Photos ({photos.length}/3)
                     </span>
                     {photos.length > 0 ? (
-                      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar scrollbar-none pb-1" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
                         {photos.map((item, idx) => (
                           <div
                             key={item.id}

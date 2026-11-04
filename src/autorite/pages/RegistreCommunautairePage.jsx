@@ -1,7 +1,22 @@
-import { useState } from 'react';
-import { HeartHandshake, Users2, CheckCircle2, ShieldQuestion, AlertCircle, X } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import {
+  HeartHandshake,
+  Users2,
+  CheckCircle2,
+  ShieldQuestion,
+  AlertCircle,
+  X,
+  Baby,
+  Accessibility,
+  Radio,
+  Send,
+  Search,
+  MapPin,
+  ShieldAlert,
+  UserCheck,
+} from 'lucide-react';
+import { Link } from 'react-router-dom';
 import AutoriteShell from '../desktop/AutoriteShell';
-import { useTheme } from '../../theme/ThemeContext';
 import { useZones } from '../../shared/hooks/useZones';
 import { useProfilsVulnerabilite } from '../../shared/hooks/useVulnerabilite';
 import { useRelaisQuartierListe, useVerifierRelais } from '../../shared/hooks/useRelaisQuartier';
@@ -13,163 +28,464 @@ function formatDate(iso) {
 }
 
 export default function RegistreCommunautairePage() {
-  const { darkMode } = useTheme();
   const [confirmUnverify, setConfirmUnverify] = useState(null);
+  const [filterType, setFilterType] = useState('ALL'); // 'ALL' | 'ORSEC' | 'PMR'
+  const [selectedQuartier, setSelectedQuartier] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
+
   const { data: zonesData } = useZones();
   const { data: profilsData, isLoading: profilsLoading } = useProfilsVulnerabilite();
   const { data: relaisData, isLoading: relaisLoading } = useRelaisQuartierListe();
   const verifierRelais = useVerifierRelais();
 
-  const zoneNameById = new Map((zonesData?.features ?? []).map((f) => [f.id, f.properties.quartier]));
+  const zonesList = zonesData?.features ?? [];
+  const zoneNameById = useMemo(() => {
+    return new Map(zonesList.map((f) => [f.id, f.properties.quartier]));
+  }, [zonesList]);
+
   const profils = profilsData?.results ?? [];
   const relais = relaisData?.results ?? [];
 
+  // Statistiques de vulnérabilité
+  const totalPMR = profils.filter((p) => p.personne_mobilite_reduite).length;
+  const totalEnfants = profils.reduce((sum, p) => sum + (p.enfants_bas_age || 0), 0);
+  const totalAines = profils.reduce((sum, p) => sum + (p.personnes_agees || 0), 0);
+  const totalRelaisAccredites = relais.filter((r) => r.verifie).length;
+
+  // Filtrage des profils de vulnérabilité
+  const filteredProfils = useMemo(() => {
+    return profils.filter((p) => {
+      if (filterType === 'ORSEC' && !p.est_prioritaire) return false;
+      if (filterType === 'PMR' && !p.personne_mobilite_reduite) return false;
+
+      if (selectedQuartier !== 'ALL') {
+        const qName = zoneNameById.get(p.zone) || '';
+        if (qName !== selectedQuartier) return false;
+      }
+
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        const username = (p.username || '').toLowerCase();
+        const quartier = (zoneNameById.get(p.zone) || '').toLowerCase();
+        const notes = (p.notes || '').toLowerCase();
+        if (!username.includes(query) && !quartier.includes(query) && !notes.includes(query)) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [profils, filterType, selectedQuartier, searchQuery, zoneNameById]);
+
+  // Filtrage des relais de quartier
+  const filteredRelais = useMemo(() => {
+    return relais.filter((r) => {
+      if (selectedQuartier !== 'ALL') {
+        const qName = zoneNameById.get(r.zone) || '';
+        if (qName !== selectedQuartier) return false;
+      }
+
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        const username = (r.username || '').toLowerCase();
+        const quartier = (zoneNameById.get(r.zone) || '').toLowerCase();
+        if (!username.includes(query) && !quartier.includes(query)) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [relais, selectedQuartier, searchQuery, zoneNameById]);
+
+  const filterTabs = [
+    { id: 'ALL', label: `Tous les foyers (${profils.length})` },
+    { id: 'ORSEC', label: `Prioritaires ORSEC (${profils.filter((p) => p.est_prioritaire).length})` },
+    { id: 'PMR', label: `Mobilité réduite (${totalPMR})` },
+  ];
+
   return (
     <AutoriteShell>
-      <div>
-        <h1 className="text-3xl font-extrabold">Registre communautaire</h1>
-        <p className="text-base text-navy-600 dark:text-navy-200 mt-0.5">
-          Foyers vulnérables déclarés et relais de quartier — pour prioriser l’assistance à l’évacuation.
-        </p>
-      </div>
-
-      <div className="grid lg:grid-cols-2 gap-5 items-start">
-        <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5 flex flex-col gap-2">
-          <h3 className="text-base font-bold mb-1 flex items-center gap-2">
-            <HeartHandshake size={16} className="text-red" />
-            Profils de vulnérabilité · {profilsData?.count ?? 0}
-          </h3>
-          <EtatListe chargement={profilsLoading} vide={profils.length === 0} messageVide="Aucun profil déclaré pour l’instant.">
-            {profils.map((p) => (
-              <div key={p.id} className="flex items-start gap-3 p-3 border border-navy-50 dark:border-navy-800 rounded-md">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-base font-semibold">{p.username}</span>
-                    {p.est_prioritaire && (
-                      <span className="text-[11px] font-bold uppercase text-red">Prioritaire</span>
-                    )}
-                  </div>
-                  <p className="text-sm text-navy-400 mt-0.5">
-                    {zoneNameById.get(p.zone) ?? 'Quartier non précisé'}
-                  </p>
-                  <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5 text-sm text-navy-600 dark:text-navy-200">
-                    {p.personnes_agees > 0 && <span>{p.personnes_agees} personne(s) âgée(s)</span>}
-                    {p.enfants_bas_age > 0 && <span>{p.enfants_bas_age} enfant(s) en bas âge</span>}
-                    {p.personne_mobilite_reduite && <span>Mobilité réduite</span>}
-                    {p.femme_enceinte && <span>Femme enceinte</span>}
-                  </div>
-                  {p.notes && <p className="text-sm text-navy-600 dark:text-navy-200 mt-1.5">{p.notes}</p>}
-                </div>
-              </div>
-            ))}
-          </EtatListe>
-        </div>
-
-        <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-xl p-5 flex flex-col gap-2">
-          <h3 className="text-base font-bold mb-1 flex items-center gap-2">
-            <Users2 size={16} className="text-red" />
-            Relais de quartier · {relaisData?.count ?? 0}
-          </h3>
-          <EtatListe chargement={relaisLoading} vide={relais.length === 0} messageVide="Aucun relais inscrit pour l’instant.">
-            {relais.map((r) => (
-              <div key={r.id} className="flex items-center gap-3 p-3 border border-navy-50 dark:border-navy-800 rounded-md">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-base font-semibold">{r.username}</span>
-                    {r.verifie ? (
-                      <span className="flex items-center gap-1 text-[11px] font-bold uppercase text-risk-vert">
-                        <CheckCircle2 size={12} />
-                        Vérifié
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1 text-[11px] font-bold uppercase text-navy-400">
-                        <ShieldQuestion size={12} />
-                        Non vérifié
-                      </span>
-                    )}
-                    {!r.disponible && (
-                      <span className="text-[11px] font-bold uppercase text-navy-400">Indisponible</span>
-                    )}
-                  </div>
-                  <p className="text-sm text-navy-400 mt-0.5">
-                    {zoneNameById.get(r.zone) ?? 'Zone inconnue'} · inscrit le {formatDate(r.date_inscription)}
-                  </p>
-                </div>
-                <button
-                  onClick={() => {
-                    if (r.verifie) {
-                      // Afficher la modale de confirmation pour retirer
-                      setConfirmUnverify(r);
-                    } else {
-                      // Vérifier directement sans confirmation
-                      verifierRelais.mutate({ id: r.id, verifie: true });
-                    }
-                  }}
-                  disabled={verifierRelais.isPending}
-                  className={`text-sm font-bold rounded-md px-3.5 py-2 disabled:opacity-60 flex-shrink-0 text-white transition-colors ${
-                    r.verifie
-                      ? 'bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600'
-                      : 'bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600'
-                  }`}
-                >
-                  {r.verifie ? 'Retirer la vérification' : 'Vérifier'}
-                </button>
-              </div>
-            ))}
-          </EtatListe>
-        </div>
-      </div>
-
-      {/* Modale de confirmation pour retirer la vérification */}
-      {confirmUnverify && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className={`${darkMode ? 'bg-navy-900' : 'bg-white'} border ${darkMode ? 'border-navy-800' : 'border-navy-50'} rounded-xl max-w-md w-full p-6`}>
-            {/* En-tête */}
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                  <AlertCircle size={24} className="text-orange-600 dark:text-orange-400" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-navy dark:text-white">Retirer la vérification?</h3>
-                  <p className="text-sm text-navy-600 dark:text-navy-400">{confirmUnverify.username}</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setConfirmUnverify(null)}
-                className="p-1 hover:bg-navy-100 dark:hover:bg-navy-800 rounded-lg transition-colors"
-              >
-                <X size={20} className="text-navy-600 dark:text-navy-400" />
-              </button>
+      <div className="space-y-4">
+        {/* ── 1. EN-TÊTE DU POSTE DE COMMANDEMENT C.O.D ── */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/80 dark:border-slate-800">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-[#0B2545] dark:text-slate-300">
+                <Users2 size={13} className="text-[#CC131A]" />
+                Cellule C.O.D · Protection des Populations &amp; Secours
+              </span>
             </div>
-
-            {/* Message */}
-            <p className="text-sm text-navy-600 dark:text-navy-300 mb-6">
-              Êtes-vous sûr de vouloir retirer la vérification de ce relais de quartier? Ce relais ne sera plus marqué comme vérifié.
+            <h1 className="text-2xl sm:text-3xl font-black text-[#0B2545] dark:text-white tracking-tight mt-0.5">
+              Registre communautaire
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+              Recensement des foyers vulnérables et maillage des relais de quartier pour l&apos;évacuation prioritaire
             </p>
+          </div>
 
-            {/* Boutons d'action */}
-            <div className="flex gap-3">
-              <button
-                onClick={() => setConfirmUnverify(null)}
-                className="flex-1 px-4 py-2.5 rounded-lg font-semibold text-navy dark:text-white bg-navy-100 dark:bg-navy-800 hover:bg-navy-200 dark:hover:bg-navy-700 transition-colors"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={() => {
-                  verifierRelais.mutate({ id: confirmUnverify.id, verifie: false });
-                  setConfirmUnverify(null);
-                }}
-                disabled={verifierRelais.isPending}
-                className="flex-1 px-4 py-2.5 rounded-lg font-semibold text-white bg-orange-600 hover:bg-orange-700 disabled:opacity-60 transition-colors"
-              >
-                {verifierRelais.isPending ? 'Suppression...' : 'Retirer'}
-              </button>
+          <div className="flex items-center flex-nowrap gap-2 shrink-0">
+            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white dark:bg-[#071322] border border-slate-200 dark:border-slate-800 text-xs font-bold text-[#0B2545] dark:text-slate-200 shadow-2xs whitespace-nowrap">
+              <Radio size={14} className="text-emerald-600 animate-pulse" />
+              Secours aux Personnes
+            </span>
+            <Link
+              to="/autorite/crise"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#CC131A] hover:bg-red-800 text-white text-xs font-bold transition shadow-xs whitespace-nowrap cursor-pointer active:scale-95"
+            >
+              <Send size={13} />
+              <span>Alerter les Quartiers</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* ── 2. GRILLE DES 4 GRANDS COMPTEURS OPÉRATIONNELS (TOUCHES DE COULEUR ÉLÉGANTES) ── */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+          <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#071322] border border-slate-200/90 dark:border-slate-800/80 shadow-sm flex flex-col justify-between min-h-[142px] border-t-2 border-t-purple-500/80">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+              <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 truncate">Mobilité Réduite</span>
+              <div className="w-7 h-7 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/50 flex items-center justify-center shrink-0">
+                <Accessibility size={15} />
+              </div>
+            </div>
+            <div className="mt-3 space-y-1">
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl sm:text-4xl font-black tracking-tight text-[#0B2545] dark:text-white">
+                  {totalPMR}
+                </span>
+                <span className="text-xs text-slate-500 font-bold truncate">foyers prioritaires</span>
+              </div>
+              <span className="text-[10px] text-purple-700 dark:text-purple-300 font-extrabold uppercase tracking-wide flex items-center gap-1.5 truncate">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0" />
+                Évacuation prioritaire
+              </span>
+            </div>
+          </div>
+
+          <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#071322] border border-slate-200/90 dark:border-slate-800/80 shadow-sm flex flex-col justify-between min-h-[142px] border-t-2 border-t-blue-500/80">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+              <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 truncate">Enfants en bas âge</span>
+              <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/50 flex items-center justify-center shrink-0">
+                <Baby size={15} />
+              </div>
+            </div>
+            <div className="mt-3 space-y-1">
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl sm:text-4xl font-black tracking-tight text-[#0B2545] dark:text-white">
+                  {totalEnfants}
+                </span>
+                <span className="text-xs text-slate-500 font-bold truncate">nourrissons &amp; enfants</span>
+              </div>
+              <span className="text-[10px] text-blue-700 dark:text-blue-300 font-extrabold uppercase tracking-wide flex items-center gap-1.5 truncate">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
+                Pédiatrie d&apos;urgence &amp; Refuges
+              </span>
+            </div>
+          </div>
+
+          <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#071322] border border-slate-200/90 dark:border-slate-800/80 shadow-sm flex flex-col justify-between min-h-[142px] border-t-2 border-t-amber-500/80">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+              <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 truncate">Personnes Âgées</span>
+              <div className="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/50 flex items-center justify-center shrink-0">
+                <HeartHandshake size={15} />
+              </div>
+            </div>
+            <div className="mt-3 space-y-1">
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl sm:text-4xl font-black tracking-tight text-[#0B2545] dark:text-white">
+                  {totalAines}
+                </span>
+                <span className="text-xs text-slate-500 font-bold truncate">seniors recensés</span>
+              </div>
+              <span className="text-[10px] text-amber-700 dark:text-amber-300 font-extrabold uppercase tracking-wide flex items-center gap-1.5 truncate">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                Prise en charge avec les relais
+              </span>
+            </div>
+          </div>
+
+          <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#071322] border border-slate-200/90 dark:border-slate-800/80 shadow-sm flex flex-col justify-between min-h-[142px] border-t-2 border-t-emerald-500/80">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+              <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 truncate">Relais Sentinelles</span>
+              <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/50 flex items-center justify-center shrink-0">
+                <UserCheck size={15} />
+              </div>
+            </div>
+            <div className="mt-3 space-y-1">
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl sm:text-4xl font-black tracking-tight text-[#0B2545] dark:text-white">
+                  {totalRelaisAccredites}
+                </span>
+                <span className="text-xs text-slate-500 font-bold truncate">sur {relais.length} accrédités</span>
+              </div>
+              <span className="text-[10px] text-emerald-700 dark:text-emerald-300 font-extrabold uppercase tracking-wide flex items-center gap-1.5 truncate">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                Chefs de zone opérationnels
+              </span>
             </div>
           </div>
         </div>
-      )}
+
+        {/* ── 3. BARRE DE FILTRAGE & RECHERCHE SUR UNE LIGNE CONTINUE ── */}
+        <div className="bg-white dark:bg-[#071322] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-3 sm:p-3.5 shadow-sm flex items-center justify-between gap-3 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex items-center flex-nowrap gap-2 shrink-0">
+            {filterTabs.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setFilterType(tab.id)}
+                className={`text-xs font-bold px-3 py-1.5 rounded-xl transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                  filterType === tab.id
+                    ? 'bg-[#0B2545] text-white shadow-xs'
+                    : 'bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+
+            <span className="inline-block h-4 w-px bg-slate-200 dark:bg-slate-800 mx-1 shrink-0" />
+
+            {/* Sélecteur de Quartier */}
+            <select
+              value={selectedQuartier}
+              onChange={(e) => setSelectedQuartier(e.target.value)}
+              className="text-xs font-bold px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-200 focus:outline-none shrink-0 cursor-pointer"
+            >
+              <option value="ALL">Tous les secteurs</option>
+              {zonesList.map((z) => (
+                <option key={z.id} value={z.properties.quartier}>
+                  {z.properties.quartier}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Recherche */}
+          <div className="relative w-48 sm:w-60 shrink-0">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Rechercher foyer, relais..."
+              className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs text-[#0B2545] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0B2545]"
+            />
+          </div>
+        </div>
+
+        {/* ── 4. GRILLE MASTER EN 2 COLONNES : PROFILS VULNÉRABLES & RELAIS SENTINELLES ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+          {/* Colonne 1 : Profils de vulnérabilité (6 col.) */}
+          <div className="lg:col-span-6 flex flex-col">
+            <div className="h-full bg-white dark:bg-[#071322] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-5 shadow-sm flex flex-col gap-3">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                <div className="flex items-center gap-2">
+                  <HeartHandshake size={16} className="text-[#CC131A]" />
+                  <h3 className="text-xs font-black uppercase tracking-wider text-[#0B2545] dark:text-white">
+                    Profils de vulnérabilité · {filteredProfils.length}
+                  </h3>
+                </div>
+                <span className="text-[10px] font-bold text-slate-400">
+                  Déclarations Citoyennes
+                </span>
+              </div>
+
+              <EtatListe chargement={profilsLoading} vide={filteredProfils.length === 0} messageVide="Aucun profil correspondant aux critères.">
+                <div className="space-y-3">
+                  {filteredProfils.map((p) => {
+                    const quartierNom = zoneNameById.get(p.zone) ?? 'Quartier non précisé';
+                    return (
+                      <div
+                        key={p.id}
+                        className="p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 space-y-2.5 hover:border-slate-300 dark:hover:border-slate-700 transition"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-sm font-black text-[#0B2545] dark:text-white">{p.username}</span>
+                          {p.est_prioritaire ? (
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-red-100 dark:bg-red-950/80 text-[#CC131A] dark:text-red-300 border border-red-200 dark:border-red-800/80 animate-pulse">
+                              Prioritaire ORSEC
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                              Vigilance Standard
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1">
+                            <MapPin size={12} className="text-[#CC131A]" />
+                            {quartierNom}
+                          </span>
+                          <Link
+                            to="/autorite/carte"
+                            className="text-[11px] font-bold text-[#0B2545] dark:text-slate-300 hover:underline flex items-center gap-1"
+                          >
+                            <span>Localiser SIG</span>
+                          </Link>
+                        </div>
+
+                        <div className="flex flex-wrap gap-1.5 pt-1">
+                          {p.personne_mobilite_reduite && (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg bg-purple-100 dark:bg-purple-950/80 text-purple-800 dark:text-purple-300">
+                              <Accessibility size={12} />
+                              Mobilité réduite
+                            </span>
+                          )}
+                          {p.enfants_bas_age > 0 && (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg bg-blue-100 dark:bg-blue-950/80 text-blue-800 dark:text-blue-300">
+                              <Baby size={12} />
+                              {p.enfants_bas_age} bébé(s)/enfant(s)
+                            </span>
+                          )}
+                          {p.personnes_agees > 0 && (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300">
+                              {p.personnes_agees} senior(s)
+                            </span>
+                          )}
+                          {p.femme_enceinte && (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg bg-pink-100 dark:bg-pink-950/80 text-pink-800 dark:text-pink-300">
+                              Femme enceinte
+                            </span>
+                          )}
+                        </div>
+
+                        {p.notes && (
+                          <p className="text-xs text-slate-600 dark:text-slate-400 pt-1.5 border-t border-slate-200/60 dark:border-slate-800 italic">
+                            &quot;{p.notes}&quot;
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </EtatListe>
+            </div>
+          </div>
+
+          {/* Colonne 2 : Relais de quartier sentinelles (6 col.) */}
+          <div className="lg:col-span-6 flex flex-col">
+            <div className="h-full bg-white dark:bg-[#071322] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-5 shadow-sm flex flex-col gap-3">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                <div className="flex items-center gap-2">
+                  <Users2 size={16} className="text-blue-600 dark:text-blue-400" />
+                  <h3 className="text-xs font-black uppercase tracking-wider text-[#0B2545] dark:text-white">
+                    Relais de quartier · {filteredRelais.length}
+                  </h3>
+                </div>
+                <span className="text-[10px] font-bold text-slate-400">
+                  Sentinelles de Quartier
+                </span>
+              </div>
+
+              <EtatListe chargement={relaisLoading} vide={filteredRelais.length === 0} messageVide="Aucun relais inscrit pour l’instant.">
+                <div className="space-y-3">
+                  {filteredRelais.map((r) => {
+                    const quartierNom = zoneNameById.get(r.zone) ?? 'Zone générale';
+                    return (
+                      <div
+                        key={r.id}
+                        className="p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-slate-300 dark:hover:border-slate-700 transition"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-black text-[#0B2545] dark:text-white">{r.username}</span>
+                            {r.verifie ? (
+                              <span className="flex items-center gap-1 text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
+                                <CheckCircle2 size={11} />
+                                Accrédité
+                              </span>
+                            ) : (
+                              <span className="flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300">
+                                <ShieldQuestion size={11} />
+                                En attente
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            {quartierNom} · Inscrit le {formatDate(r.date_inscription)}
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (r.verifie) {
+                              setConfirmUnverify(r);
+                            } else {
+                              verifierRelais.mutate({ id: r.id, verifie: true });
+                            }
+                          }}
+                          disabled={verifierRelais.isPending}
+                          className={`text-xs font-black rounded-xl px-4 py-2 disabled:opacity-60 flex-shrink-0 transition-all cursor-pointer active:scale-95 shadow-2xs ${
+                            r.verifie
+                              ? 'bg-slate-100 dark:bg-slate-800 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
+                              : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
+                          }`}
+                        >
+                          {r.verifie ? 'Retirer vérification' : 'Accréditer ✓'}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </EtatListe>
+            </div>
+          </div>
+        </div>
+
+        {/* ── 5. MODALE ACCESSIBLE DE CONFIRMATION DU RETRAIT ── */}
+        {confirmUnverify && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-[#071322] border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-amber-100 dark:bg-amber-950/60 rounded-xl text-amber-700 dark:text-amber-300">
+                    <AlertCircle size={22} />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-[#0B2545] dark:text-white">Retirer l&apos;accréditation ?</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{confirmUnverify.username}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setConfirmUnverify(null)}
+                  className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                Êtes-vous sûr de vouloir retirer l’accréditation de ce relais de quartier ? Ce contact ne figurera plus comme référent d’urgence prioritaire pour les secours.
+              </p>
+
+              <div className="flex gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setConfirmUnverify(null)}
+                  className="flex-1 px-4 py-2.5 rounded-xl font-bold text-xs bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-white hover:bg-slate-200 cursor-pointer"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    verifierRelais.mutate({ id: confirmUnverify.id, verifie: false });
+                    setConfirmUnverify(null);
+                  }}
+                  disabled={verifierRelais.isPending}
+                  className="flex-1 px-4 py-2.5 rounded-xl font-black text-xs text-white bg-[#CC131A] hover:bg-red-800 shadow-xs cursor-pointer"
+                >
+                  {verifierRelais.isPending ? 'Mise à jour…' : 'Confirmer le retrait'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </AutoriteShell>
   );
 }

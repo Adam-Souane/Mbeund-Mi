@@ -11,12 +11,12 @@ export default defineConfig(({ mode }) => ({
     open: true,
     proxy: {
       '/api/': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost:8008',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '/api')
       },
       '/ws/': {
-        target: 'ws://localhost:8000',
+        target: 'ws://localhost:8008',
         ws: true,
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/ws/, '/ws')
@@ -50,6 +50,8 @@ export default defineConfig(({ mode }) => ({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.js'],
     css: false,
+    include: ['src/test/**/*.{test,spec}.{js,jsx}'],
+    exclude: ['node_modules/**', 'mbeund-mi-mobile/**', 'backend/**', 'env/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

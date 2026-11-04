@@ -1,6 +1,5 @@
-import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Camera, MapPin as MapPinIcon, CloudRain, PhoneCall, MapPin, ShieldCheck, ChevronRight, Users, Play } from 'lucide-react';
+import { Camera, CloudRain, MapPin, ShieldCheck, ChevronRight, Users } from 'lucide-react';
 import CitizenShell from '../shared/CitizenShell';
 import GaugeRisk from '../../shared/components/GaugeRisk';
 import WeatherWidget from '../../shared/components/WeatherWidget';
@@ -17,7 +16,7 @@ import SentinellesUrgenceBanner from '../components/SentinellesUrgenceBanner';
 import MareeVentMarinWidget from '../components/MareeVentMarinWidget';
 import CockpitCapteursIoT from '../components/CockpitCapteursIoT';
 import MiniRadarThiaroye from '../components/MiniRadarThiaroye';
-import DemoVideoModal from '../components/DemoVideoModal';
+
 
 const NIVEAU_RANK = { vert: 0, jaune: 1, orange: 2, rouge: 3 };
 
@@ -63,7 +62,7 @@ function pickMostAtRiskZone(features) {
 export default function AccueilPageBody() {
   const navigate = useNavigate();
   const { username } = useAuth();
-  const [demoModalOpen, setDemoModalOpen] = useState(false);
+
 
   const { data: zonesData, isLoading: zonesLoading, isError: zonesError } = useZones();
   const { data: predictions } = usePredictions();
@@ -180,24 +179,6 @@ export default function AccueilPageBody() {
                 <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-medium drop-shadow-xs max-w-lg">
                   {theme.summary}
                 </p>
-
-                {/* Bouton Démonstration Vidéo */}
-                <div className="pt-2 flex items-center gap-3 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={() => setDemoModalOpen(true)}
-                    className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-extrabold text-xs sm:text-sm shadow-lg shadow-red-950/50 hover:scale-105 active:scale-95 transition-all cursor-pointer border border-white/30 backdrop-blur-md"
-                    title="Voir la démonstration vidéo de l'application"
-                  >
-                    <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
-                      <Play size={10} className="fill-white ml-0.5" />
-                    </span>
-                    <span>Démonstration Vidéo</span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/25 uppercase tracking-wider font-black">
-                      Guide
-                    </span>
-                  </button>
-                </div>
               </div>
 
               {/* Statut de vigilance organique et flottant bien ancré à droite avec marge garantie */}
@@ -354,55 +335,7 @@ export default function AccueilPageBody() {
         <ConseilsCarousel />
       </div>
 
-      {/* 4. En-tête fluide : Veille Territoriale & Vie de Quartier */}
-      <div className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-6 pb-2.5 px-1">
-        <div className="flex items-center gap-2.5">
-          <div className="w-1.5 h-4 rounded-full bg-[#CC131A]" />
-          <div>
-            <h2 className="text-base sm:text-lg font-black text-navy-900 dark:text-white tracking-tight flex items-center gap-2">
-              <span>Veille Territoriale & Vie du Quartier</span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black tracking-normal">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Direct
-              </span>
-            </h2>
-            <p className="text-xs text-navy-500 dark:text-navy-400 font-medium">
-              Météo côtière en direct et observations partagées par les riverains
-            </p>
-          </div>
-        </div>
-
-        <Link
-          to="/citoyen/communaute"
-          className="inline-flex items-center gap-1 text-xs font-bold text-[#CC131A] dark:text-red-400 hover:underline self-start sm:self-center"
-        >
-          <span>Espace communauté</span>
-          <ChevronRight size={14} />
-        </Link>
-      </div>
-
-      {/* 5. Duo Météo (Gauche, largeur contenue) & Fil d'Actualité (Droite, spacieux) à hauteur rigoureusement identique */}
-      <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] xl:grid-cols-[400px_1fr] gap-4 sm:gap-6 w-full items-stretch auto-rows-fr">
-        <div className="h-full flex flex-col min-h-0">
-          <WeatherWidget previsions={previsionsData?.results ?? []} zone={topZone} className="h-full flex-1" />
-        </div>
-        <div className="h-full flex flex-col min-h-0">
-          <FilActualiteStoriesWidget className="h-full flex-1" />
-        </div>
-      </div>
-
-      {/* Cockpit Cartographique (Radar SIG) & Réseau de Capteurs IoT Thiaroye-sur-Mer */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full pt-4 pb-1">
-        <MiniRadarThiaroye className="h-full min-h-[340px]" />
-        <CockpitCapteursIoT className="h-full min-h-[340px]" />
-      </div>
-
-      {/* 6. Indicateur dynamique Côtier : Marée & Vent Marin de Thiaroye */}
-      <div className="w-full pt-3 pb-1">
-        <MareeVentMarinWidget />
-      </div>
-
-      {/* 6. Diagnostic Territorial, Vos Observations & Alertes officielles */}
+      {/* 4. Diagnostic Territorial, Vos Observations & Alertes officielles */}
       <div className="w-full pt-6 sm:pt-8 pb-2">
         <div className="flex items-center justify-between mb-3 px-1">
           <div className="flex items-center gap-2">
@@ -445,9 +378,6 @@ export default function AccueilPageBody() {
                     </span>
                   </div>
                 </div>
-                <Link to="/citoyen/alertes" className="text-xs font-bold text-[#CC131A] hover:underline flex items-center gap-0.5">
-                  Voir tout <ChevronRight size={14} />
-                </Link>
               </div>
 
               {recentAlertes.length === 0 ? (
@@ -500,11 +430,56 @@ export default function AccueilPageBody() {
         </div>
       </div>
 
-      {/* 7. Bandeau d'engagement & Réflexes d'urgence 24/7 (Élément de fin de page interactif et animé) */}
-      <SentinellesUrgenceBanner />
+      {/* 5. En-tête fluide : Veille Territoriale & Vie de Quartier */}
+      <div className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-6 pb-2.5 px-1">
+        <div className="flex items-center gap-2.5">
+          <div className="w-1.5 h-4 rounded-full bg-[#CC131A]" />
+          <div>
+            <h2 className="text-base sm:text-lg font-black text-navy-900 dark:text-white tracking-tight flex items-center gap-2">
+              <span>Veille Territoriale & Vie du Quartier</span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black tracking-normal">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Direct
+              </span>
+            </h2>
+            <p className="text-xs text-navy-500 dark:text-navy-400 font-medium">
+              Météo côtière en direct et observations partagées par les riverains
+            </p>
+          </div>
+        </div>
 
-      {/* Modale de démonstration vidéo & guide interactif */}
-      <DemoVideoModal isOpen={demoModalOpen} onClose={() => setDemoModalOpen(false)} />
+        <Link
+          to="/citoyen/communaute"
+          className="inline-flex items-center gap-1 text-xs font-bold text-[#CC131A] dark:text-red-400 hover:underline self-start sm:self-center"
+        >
+          <span>Espace communauté</span>
+          <ChevronRight size={14} />
+        </Link>
+      </div>
+
+      {/* 6. Duo Météo (Gauche, largeur contenue) & Fil d'Actualité (Droite, spacieux) à hauteur rigoureusement identique */}
+      <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] xl:grid-cols-[400px_1fr] gap-4 sm:gap-6 w-full items-stretch auto-rows-fr">
+        <div className="h-full flex flex-col min-h-0">
+          <WeatherWidget previsions={previsionsData?.results ?? []} zone={topZone} variant="vertical" className="h-full flex-1" />
+        </div>
+        <div className="h-full flex flex-col min-h-0">
+          <FilActualiteStoriesWidget className="h-full flex-1" />
+        </div>
+      </div>
+
+      {/* 7. Indicateur dynamique Côtier : Marée & Vent Marin de Thiaroye */}
+      <div className="w-full pt-3 pb-1">
+        <MareeVentMarinWidget />
+      </div>
+
+      {/* Cockpit Cartographique (Radar SIG) & Réseau de Capteurs IoT Thiaroye-sur-Mer */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full pt-4 pb-1">
+        <MiniRadarThiaroye className="h-full min-h-[340px]" />
+        <CockpitCapteursIoT className="h-full min-h-[340px]" />
+      </div>
+
+      {/* 8. Bandeau d'engagement & Réflexes d'urgence 24/7 (Élément de fin de page interactif et animé) */}
+      <SentinellesUrgenceBanner />
     </CitizenShell>
   );
 }

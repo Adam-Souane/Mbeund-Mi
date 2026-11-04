@@ -469,62 +469,60 @@ export default function CartePageBody() {
   return (
     <CitizenShell>
       <div className="w-full flex flex-col gap-4 sm:gap-5 pb-8">
-        {/* Bandeau d'en-tête bleu nuit au format Communauté */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0B2545] via-[#103565] to-slate-900 text-white p-4 sm:p-5 md:px-6 md:py-5 shadow-lg border border-blue-900/40 flex-shrink-0">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 sm:gap-4 relative z-10">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-base sm:text-lg md:text-xl font-black text-white tracking-tight">
-                  Carte des risques · Thiaroye
-                </h1>
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shrink-0">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  En direct
-                </span>
-              </div>
-              <p className="text-xs sm:text-sm text-slate-300 mt-1 line-clamp-2 sm:line-clamp-1">
-                Fil d’actualité citoyen, signalements géolocalisés et entraide solidaire entre voisins
-              </p>
+        {/* En-tête de page moderne et aéré (remplace l'ancienne bannière sombre de 120px) */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-navy-100 dark:border-navy-800/80">
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-xl sm:text-2xl font-black text-navy-950 dark:text-white tracking-tight">
+                Carte des risques · Thiaroye
+              </h1>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                En direct
+              </span>
             </div>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+              Fil d’actualité citoyen, signalements géolocalisés et entraide solidaire entre voisins
+            </p>
+          </div>
 
-            <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
-              {itineraire.data ? (
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <button
-                    type="button"
-                    onClick={() => setIsNavigating((prev) => !prev)}
-                    className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-black transition active:scale-95 cursor-pointer flex-1 sm:flex-initial shadow-md ${
-                      isNavigating
-                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                        : 'bg-[#2563EB] hover:bg-blue-700 text-white'
-                    }`}
-                  >
-                    <Navigation size={16} />
-                    <span>{isNavigating ? 'Guidage actif' : 'Démarrer le guidage'}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleCloseItineraire}
-                    className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-black border border-white/20 transition active:scale-95 cursor-pointer"
-                    title="Fermer l’itinéraire"
-                  >
-                    <X size={16} />
-                    <span className="hidden md:inline">Fermer</span>
-                  </button>
-                </div>
-              ) : (
+          <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+            {itineraire.data ? (
+              <div className="flex items-center gap-2 w-full sm:w-auto">
                 <button
                   type="button"
-                  onClick={handleItineraire}
-                  disabled={itineraire.isPending}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white text-xs sm:text-sm font-black shadow-md transition active:scale-95 disabled:opacity-60 cursor-pointer w-full sm:w-auto"
-                  title="Calculer un itinéraire sécurisé contournant les voies inondées"
+                  onClick={() => setIsNavigating((prev) => !prev)}
+                  className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition active:scale-95 cursor-pointer flex-1 sm:flex-initial shadow-xs ${
+                    isNavigating
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                      : 'bg-[#2563EB] hover:bg-blue-700 text-white'
+                  }`}
                 >
-                  {itineraire.isPending ? <Loader2 size={16} className="animate-spin" /> : <Navigation size={16} />}
-                  <span>Mode Déviations & Voies Sûres</span>
+                  <Navigation size={15} />
+                  <span>{isNavigating ? 'Guidage actif' : 'Démarrer le guidage'}</span>
                 </button>
-              )}
-            </div>
+                <button
+                  type="button"
+                  onClick={handleCloseItineraire}
+                  className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-navy-800 dark:hover:bg-navy-700 text-navy-950 dark:text-white text-xs sm:text-sm font-bold border border-slate-200 dark:border-navy-700 transition active:scale-95 cursor-pointer"
+                  title="Fermer l’itinéraire"
+                >
+                  <X size={15} />
+                  <span className="hidden md:inline">Fermer</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={handleItineraire}
+                disabled={itineraire.isPending}
+                className="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white text-xs sm:text-sm font-bold shadow-xs transition active:scale-95 disabled:opacity-60 cursor-pointer w-full sm:w-auto"
+                title="Calculer un itinéraire sécurisé contournant les voies inondées"
+              >
+                {itineraire.isPending ? <Loader2 size={15} className="animate-spin" /> : <Navigation size={15} />}
+                <span>Mode Déviations & Voies Sûres</span>
+              </button>
+            )}
           </div>
         </div>
 

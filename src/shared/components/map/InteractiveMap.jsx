@@ -94,7 +94,7 @@ function checkIsSharedOnCommunity(signalement) {
     if (deleted[sigId] || (props.rawBackendId && deleted[props.rawBackendId]) || deleted[`backend-sig-${sigId}`]) {
       return false;
     }
-  } catch {}
+  } catch { }
   return true;
 }
 
@@ -114,11 +114,11 @@ function createCitizenAvatarIcon({
   }
   const initials = authorName
     ? authorName
-        .split(' ')
-        .map((p) => p[0])
-        .slice(0, 2)
-        .join('')
-        .toUpperCase()
+      .split(' ')
+      .map((p) => p[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase()
     : 'C';
 
   // Icônes vectorielles réelles (SVG) en remplacement intégral des émojis
@@ -243,11 +243,11 @@ function createUserLiveLocationIcon({
   }
   const initials = authorName
     ? authorName
-        .split(' ')
-        .map((p) => p[0])
-        .slice(0, 2)
-        .join('')
-        .toUpperCase()
+      .split(' ')
+      .map((p) => p[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase()
     : 'MOI';
 
   const avatarContent = avatarUrl
@@ -525,39 +525,71 @@ function MapViewportListener({ onViewportChange }) {
   return null;
 }
 
-function FocusSignalement({ signalements, selectedId, selectedQuartier, markerRefs }) {
+function FocusSignalement({ signalements, zones, selectedId, selectedQuartier, markerRefs }) {
   const map = useMap();
-  const lastFocusedIdRef = useRef(null);
+  const lastFocusedRef = useRef(null);
 
   useEffect(() => {
-    if (!signalements?.length || (!selectedId && !selectedQuartier)) return;
+    if (!map) return;
 
-    let target = null;
-    if (selectedId) {
-      target = signalements.find((s) => {
+    if (!selectedId && !selectedQuartier) {
+      if (lastFocusedRef.current !== 'global') {
+        lastFocusedRef.current = 'global';
+        map.flyTo(THIAROYE_CENTER, 14, { duration: 0.6 });
+      }
+      return;
+    }
+
+    let targetPoint = null;
+    let targetKey = null;
+
+    if (selectedId && signalements?.length) {
+      const matchId = String(selectedId).replace('backend-sig-', '').replace('shared-sig-', '');
+      const targetSig = signalements.find((s) => {
         const sid = String(s.id ?? s.properties?.id ?? '');
         const rawSid = s.properties?.rawBackendId ? String(s.properties.rawBackendId) : '';
-        const matchId = String(selectedId).replace('backend-sig-', '').replace('shared-sig-', '');
         return sid === String(selectedId) || sid === matchId || rawSid === matchId;
       });
+
+      if (targetSig) {
+        targetPoint = pointToLatLng(targetSig.geometry || targetSig.localisation);
+        targetKey = targetSig.id ?? targetSig.properties?.id;
+      }
     }
 
-    if (!target && selectedQuartier) {
-      target = signalements.find((s) => {
-        const q = s.properties?.citoyen_quartier || s.properties?.quartier || s.author?.quartier || '';
-        return q.toLowerCase().includes(selectedQuartier.toLowerCase());
+    if (!targetPoint && selectedQuartier) {
+      const zonesList = zones?.features || zones?.results?.features || (Array.isArray(zones) ? zones : []);
+      const qLower = selectedQuartier.toLowerCase();
+
+      const targetZone = zonesList.find((z) => {
+        const q = (z.properties?.quartier || z.quartier || '').toLowerCase();
+        return q.includes(qLower) || qLower.includes(q);
       });
+
+      if (targetZone?.geometry) {
+        targetPoint = getPolygonCenter(targetZone.geometry);
+      }
+
+      if (!targetPoint && signalements?.length) {
+        const sigInZone = signalements.find((s) => {
+          const q = (s.properties?.citoyen_quartier || s.properties?.quartier || s.author?.quartier || '').toLowerCase();
+          return q.includes(qLower) || qLower.includes(q);
+        });
+        if (sigInZone) {
+          targetPoint = pointToLatLng(sigInZone.geometry || sigInZone.localisation);
+        }
+      }
     }
 
-    if (target) {
-      const point = pointToLatLng(target.geometry || target.localisation);
-      if (point) {
-        const key = target.id ?? target.properties?.id;
-        if (lastFocusedIdRef.current !== `${key}-${selectedId}`) {
-          lastFocusedIdRef.current = `${key}-${selectedId}`;
-          map.flyTo(point, 16.5, { duration: 0.6 });
+    if (targetPoint) {
+      const focusKey = `${selectedQuartier || ''}-${selectedId || ''}`;
+      if (lastFocusedRef.current !== focusKey) {
+        lastFocusedRef.current = focusKey;
+        map.flyTo(targetPoint, 16.5, { duration: 0.6 });
+
+        if (targetKey) {
           map.once('moveend', () => {
-            const marker = markerRefs.current?.[key];
+            const marker = markerRefs.current?.[targetKey];
             if (marker && typeof marker.openPopup === 'function') {
               marker.openPopup();
             }
@@ -565,7 +597,7 @@ function FocusSignalement({ signalements, selectedId, selectedQuartier, markerRe
         }
       }
     }
-  }, [signalements, selectedId, selectedQuartier, map, markerRefs]);
+  }, [signalements, zones, selectedId, selectedQuartier, map, markerRefs]);
 
   return null;
 }
@@ -664,7 +696,7 @@ function FitRoute({ coordinates, arrivalMarkerRef }) {
       }, 700);
 
       return () => clearTimeout(timer);
-    } catch {}
+    } catch { }
   }, [coordinates, map, arrivalMarkerRef]);
   return null;
 }
@@ -746,9 +778,8 @@ function RecenterButton({ center = THIAROYE_CENTER, defaultZoom = 14.5 }) {
       >
         <Compass
           size={16}
-          className={`text-[#CC131A] transition-transform duration-700 ${
-            isSpinning ? 'animate-[spin_0.7s_ease-out]' : 'hover:rotate-45'
-          }`}
+          className={`text-[#CC131A] transition-transform duration-700 ${isSpinning ? 'animate-[spin_0.7s_ease-out]' : 'hover:rotate-45'
+            }`}
         />
         <span className="hidden sm:inline font-black">Recentrer Thiaroye</span>
       </button>
@@ -846,7 +877,7 @@ export default function InteractiveMap({
                 map.panTo(target, { animate: true, duration: 0.3 });
               }
             }
-          } catch {}
+          } catch { }
         }, 450);
         return;
       }
@@ -906,9 +937,37 @@ export default function InteractiveMap({
     try {
       const saved = localStorage.getItem('mbeund_mi_preferred_basemap');
       if (saved === 'plan' || saved === 'satellite') return saved;
-    } catch {}
+    } catch { }
     return defaultBaseMap;
   });
+  const [activeBarredRoads, setActiveBarredRoads] = useState(() => {
+    try {
+      const raw = localStorage.getItem('mbeund_barred_roads_v1');
+      if (raw) {
+        const list = JSON.parse(raw);
+        return list.filter((r) => r.inonde);
+      }
+    } catch { }
+    return [];
+  });
+
+  useEffect(() => {
+    const syncBarred = () => {
+      try {
+        const raw = localStorage.getItem('mbeund_barred_roads_v1');
+        if (raw) {
+          const list = JSON.parse(raw);
+          setActiveBarredRoads(list.filter((r) => r.inonde));
+        }
+      } catch { }
+    };
+    window.addEventListener('storage', syncBarred);
+    window.addEventListener('mbeund_barred_roads_changed', syncBarred);
+    return () => {
+      window.removeEventListener('storage', syncBarred);
+      window.removeEventListener('mbeund_barred_roads_changed', syncBarred);
+    };
+  }, []);
   const [zoomLevel, setZoomLevel] = useState(15);
   const [viewportBounds, setViewportBounds] = useState(null);
 
@@ -923,7 +982,7 @@ export default function InteractiveMap({
     setBaseMap(mode);
     try {
       localStorage.setItem('mbeund_mi_preferred_basemap', mode);
-    } catch {}
+    } catch { }
   };
 
   const toggle = (key) => {
@@ -1022,29 +1081,27 @@ export default function InteractiveMap({
             const count = key === 'signalements'
               ? (signalements?.length || 0)
               : key === 'refuges'
-              ? (refuges?.features?.length || refuges?.length || 0)
-              : null;
+                ? (refuges?.features?.length || refuges?.length || 0)
+                : null;
 
             return (
               <button
                 key={`float-pill-${key}`}
                 type="button"
                 onClick={() => toggle(key)}
-                className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-black backdrop-blur-md border shadow-xs transition-all active:scale-95 whitespace-nowrap cursor-pointer ${
-                  isLayerActive
-                    ? 'bg-navy-950/90 dark:bg-white/95 text-white dark:text-navy-950 border-white/20 dark:border-navy-800'
-                    : 'bg-white/80 dark:bg-navy-950/80 text-slate-500 dark:text-slate-400 border-white/40 dark:border-navy-800 line-through opacity-70'
-                }`}
+                className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-black backdrop-blur-md border shadow-xs transition-all active:scale-95 whitespace-nowrap cursor-pointer ${isLayerActive
+                  ? 'bg-navy-950/90 dark:bg-white/95 text-white dark:text-navy-950 border-white/20 dark:border-navy-800'
+                  : 'bg-white/80 dark:bg-navy-950/80 text-slate-500 dark:text-slate-400 border-white/40 dark:border-navy-800 line-through opacity-70'
+                  }`}
                 title={`Afficher ou masquer : ${LAYER_LABELS[key]}`}
               >
                 <Icon size={13} className={isLayerActive ? 'text-[#CC131A]' : 'opacity-40'} />
                 <span>{LAYER_SHORT_LABELS[key] || LAYER_LABELS[key]}</span>
                 {count !== null && (
-                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                    isLayerActive
-                      ? 'bg-red-500/20 text-red-300 dark:text-red-700'
-                      : 'bg-slate-200 dark:bg-navy-800 text-slate-500'
-                  }`}>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${isLayerActive
+                    ? 'bg-red-500/20 text-red-300 dark:text-red-700'
+                    : 'bg-slate-200 dark:bg-navy-800 text-slate-500'
+                    }`}>
                     {count}
                   </span>
                 )}
@@ -1058,11 +1115,10 @@ export default function InteractiveMap({
           <button
             type="button"
             onClick={() => changeBaseMap('plan')}
-            className={`flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
-              baseMap === 'plan'
-                ? 'bg-[#1B2A40] text-white shadow-xs'
-                : 'text-navy-600 dark:text-navy-200 hover:text-navy-900 dark:hover:text-white'
-            }`}
+            className={`flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${baseMap === 'plan'
+              ? 'bg-[#1B2A40] text-white shadow-xs'
+              : 'text-navy-600 dark:text-navy-200 hover:text-navy-900 dark:hover:text-white'
+              }`}
             aria-label="Mode Plan standard"
           >
             <MapIcon size={13} className="flex-shrink-0" />
@@ -1071,11 +1127,10 @@ export default function InteractiveMap({
           <button
             type="button"
             onClick={() => changeBaseMap('satellite')}
-            className={`flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
-              baseMap === 'satellite'
-                ? 'bg-[#CC131A] text-white shadow-xs font-black'
-                : 'text-navy-600 dark:text-navy-200 hover:text-navy-900 dark:hover:text-white'
-            }`}
+            className={`flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${baseMap === 'satellite'
+              ? 'bg-[#CC131A] text-white shadow-xs font-black'
+              : 'text-navy-600 dark:text-navy-200 hover:text-navy-900 dark:hover:text-white'
+              }`}
             aria-label="Mode Satellite HD"
           >
             <Satellite size={13} className="flex-shrink-0" />
@@ -1161,8 +1216,8 @@ export default function InteractiveMap({
         ) : (
           <TileLayer
             key="plan-layer"
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
             subdomains="abcd"
             maxZoom={20}
             maxNativeZoom={19}
@@ -1173,6 +1228,7 @@ export default function InteractiveMap({
           signalements={signalements}
           selectedId={selectedSignalementId}
           selectedQuartier={selectedQuartier}
+          zones={zones}
           markerRefs={markerRefs}
         />
 
@@ -1480,6 +1536,52 @@ export default function InteractiveMap({
             );
           })}
 
+        {/* Voies barrées / Périmètres d'exclusion décrétés par l'Autorité C.O.D */}
+        {activeBarredRoads?.map((road) => {
+          if (!road.coordinates || !road.coordinates.length) return null;
+          const latlngs = road.coordinates.map(([lon, lat]) => [lat, lon]);
+          const midCoord = latlngs[Math.floor(latlngs.length / 2)] || latlngs[0];
+          return (
+            <span key={`cod-barred-${road.id}`}>
+              <Polyline
+                positions={latlngs}
+                pathOptions={{
+                  color: '#DC2626',
+                  weight: 5.5,
+                  dashArray: '6, 8',
+                  opacity: 0.95,
+                  lineCap: 'round',
+                }}
+              />
+              <Marker
+                position={midCoord}
+                icon={createAvoidedFloodedRoadIcon({ nom: road.nom })}
+                zIndexOffset={1700}
+                eventHandlers={{
+                  click: () => {
+                    panMapTo(midCoord, 120, 16.5);
+                  },
+                }}
+              >
+                <Popup className="citizen-map-popup" autoPan={true}>
+                  <div className="text-xs p-2.5 font-sans space-y-1.5 max-w-[240px]">
+                    <div className="flex items-center gap-1.5 font-black text-red-600 dark:text-red-400">
+                      <AlertTriangle size={14} />
+                      <span>Voie Fermée · Protection Civile</span>
+                    </div>
+                    <p className="font-bold text-navy-950 dark:text-white text-xs leading-snug">
+                      {road.nom}
+                    </p>
+                    <p className="text-[10px] text-slate-500 font-medium">
+                      Périmètre de sécurité actif : voie submergée fermée à la circulation sur ordre de la Mairie / C.O.D.
+                    </p>
+                  </div>
+                </Popup>
+              </Marker>
+            </span>
+          );
+        })}
+
         {/* Clusters de signalements quand le zoom est dézoomé (masqués en guidage pour aérer la voirie) */}
         {visible.signalements !== false && !isNavigating &&
           clusteredSignalements.map((c) => (
@@ -1551,11 +1653,11 @@ export default function InteractiveMap({
             const avatarUrl = (isCurrentUser && props.currentUserAvatar)
               ? props.currentUserAvatar
               : props.author?.avatar || getPublicAvatar({
-                  name: author,
-                  id: fid,
-                  preferredAvatar: props.avatar,
-                  context: props.description,
-                });
+                name: author,
+                id: fid,
+                preferredAvatar: props.avatar,
+                context: props.description,
+              });
 
             const sigKey = `sig-${fid}`;
             const isFront = frontElementId === sigKey || String(frontSignalementId) === String(fid);
@@ -1800,9 +1902,8 @@ export default function InteractiveMap({
                     <img
                       src={userLocation.avatar || '/images/avatar-amadou.jpg'}
                       alt={userLocation.name || 'Vous'}
-                      className={`w-10 h-10 rounded-full object-cover ring-2 flex-shrink-0 ${
-                        userLocation.isSafe ? 'ring-emerald-500' : 'ring-blue-500'
-                      }`}
+                      className={`w-10 h-10 rounded-full object-cover ring-2 flex-shrink-0 ${userLocation.isSafe ? 'ring-emerald-500' : 'ring-blue-500'
+                        }`}
                       onError={(e) => {
                         e.currentTarget.src = '/images/avatar-amadou.jpg';
                       }}

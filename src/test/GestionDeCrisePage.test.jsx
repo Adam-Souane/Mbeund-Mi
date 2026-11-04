@@ -90,7 +90,7 @@ describe('GestionDeCrisePage', () => {
 
     expect(screen.getByText(/Gestion de Crise/i)).toBeInTheDocument();
     expect(screen.getByText(/Émettre une nouvelle alerte/i)).toBeInTheDocument();
-    expect(screen.getByText('Thiaroye Gare')).toBeInTheDocument();
+    expect(screen.getAllByText('Thiaroye Gare')[0]).toBeInTheDocument();
   });
 
   it('permet la saisie du formulaire d alerte', () => {

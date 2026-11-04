@@ -18,6 +18,29 @@ vi.mock('../auth/AuthContext', () => ({
   }),
 }));
 
+vi.mock('../shared/hooks/useCurrentUser', () => ({
+  useCurrentUser: () => ({
+    data: {
+      id: 1,
+      username: 'citoyen@mbeundmi.sn',
+      first_name: 'Awa',
+      last_name: 'Diop',
+      email: 'citoyen@mbeundmi.sn',
+      date_joined: '2026-09-01T10:00:00Z',
+      profile: {
+        role: 'citoyen',
+        telephone: '+221 77 000 00 01',
+        is_verified: true,
+      },
+    },
+    isLoading: false,
+  }),
+  useUpdateCurrentUser: () => ({
+    mutateAsync: vi.fn(),
+    isPending: false,
+  }),
+}));
+
 vi.mock('../shared/hooks/useZones', () => ({
   useZones: () => ({
     data: { features: [] },
@@ -27,30 +50,6 @@ vi.mock('../shared/hooks/useZones', () => ({
 vi.mock('../shared/hooks/useVulnerabilite', () => ({
   useMonProfilVulnerabilite: () => ({ data: null }),
   useSaveMonProfilVulnerabilite: () => ({ mutate: vi.fn() }),
-}));
-
-vi.mock('../shared/hooks/useRelaisQuartier', () => ({
-  useMonRelais: () => ({ data: null }),
-  useCreateRelais: () => ({ mutate: vi.fn() }),
-  useDeleteRelais: () => ({ mutate: vi.fn() }),
-}));
-
-vi.mock('../shared/hooks/useSurvivalKit', () => ({
-  useSurvivalKit: () => ({ data: null }),
-  useSaveSurvivalKit: () => ({ mutate: vi.fn() }),
-}));
-
-vi.mock('../shared/hooks/useEmergencyContact', () => ({
-  useEmergencyContact: () => ({ data: null }),
-  useSaveEmergencyContact: () => ({ mutate: vi.fn() }),
-}));
-
-vi.mock('../shared/hooks/useMySignalements', () => ({
-  useMySignalements: () => ({ data: { results: [] } }),
-}));
-
-vi.mock('../shared/hooks/useFormulaireDepuis', () => ({
-  useFormulaireDepuis: () => [{}, vi.fn(), vi.fn()],
 }));
 
 function renderWithProviders(ui) {
@@ -71,39 +70,29 @@ describe('ProfilPageBody', () => {
     vi.clearAllMocks();
   });
 
-  it('affiche le profil citoyen et les options de configuration', () => {
+  it('affiche le profil citoyen complet et les informations de contact', () => {
     renderWithProviders(<ProfilPageBody />);
 
-    expect(screen.getAllByText('citoyen@mbeundmi.sn').length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/citoyen@mbeundmi.sn/i).length).toBeGreaterThan(0);
+    expect(screen.getByText('Awa Diop')).toBeInTheDocument();
+    expect(screen.getByText('+221 77 000 00 01')).toBeInTheDocument();
     expect(screen.getByText(/Identifiant de connexion/i)).toBeInTheDocument();
   });
 
-  it("affiche le bouton crayon, ouvre la modale de bibliothèque et permet de sélectionner un avatar", () => {
+  it("affiche le bouton pour modifier l'avatar et permet de choisir une photo depuis l'appareil", () => {
     localStorage.clear();
     renderWithProviders(<ProfilPageBody />);
 
-    // Unique bouton crayon présent sur le cercle d'avatar
-    const pencilButton = screen.getByRole('button', { name: /Modifier l'avatar/i });
-    expect(pencilButton).toBeInTheDocument();
+    // Unique bouton caméra/crayon présent sur le cercle d'avatar
+    const avatarButton = screen.getByRole('button', { name: /Modifier l'avatar/i });
+    expect(avatarButton).toBeInTheDocument();
 
-    // Clic pour ouvrir la modale
-    fireEvent.click(pencilButton);
+    const fileInput = screen.getByTestId('avatar-file-input');
+    expect(fileInput).toBeInTheDocument();
+    expect(fileInput).toHaveAttribute('type', 'file');
+    expect(fileInput).toHaveAttribute('accept', 'image/*');
 
-    // Modale ouverte avec les deux sections
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByText(/Personnaliser votre avatar/i)).toBeInTheDocument();
-    expect(screen.getByText(/Bibliothèque de portraits citoyens/i)).toBeInTheDocument();
-    expect(screen.getByText(/Bibliothèque d'icônes Sentinelles/i)).toBeInTheDocument();
-    expect(screen.getByText(/Uploader une photo depuis votre appareil/i)).toBeInTheDocument();
-
-    // Sélection d'un avatar photo
-    const fatouBtn = screen.getByRole('button', { name: /Fatou/i });
-    fireEvent.click(fatouBtn);
-
-    // Enregistrement
-    fireEvent.click(screen.getByRole('button', { name: /Enregistrer cet avatar/i }));
-
-    // Persistance dans localStorage
-    expect(localStorage.getItem('mbeund_mi_user_avatar')).toBe('/images/avatar-fatou.jpg');
+    // Vérifie qu'il n'y a plus le bouton doublon textuel
+    expect(screen.queryByText("Changer d'avatar")).not.toBeInTheDocument();
   });
 });

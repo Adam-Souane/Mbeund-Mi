@@ -1605,7 +1605,7 @@ export default function CommunautePageBody() {
 
         {/* Carousel horizontal fluide avec avatars et swipe tactile natif */}
         <div
-          className="flex items-start gap-3 sm:gap-5 md:gap-6 overflow-x-auto pb-2 pt-1 scrollbar-none px-1 touch-pan-x snap-x snap-mandatory"
+          className="flex items-start gap-3 sm:gap-5 md:gap-6 overflow-x-auto pb-2 pt-1 scrollbar-none no-scrollbar px-1 touch-pan-x snap-x snap-mandatory"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {/* Cercle 1 : Ajouter sa propre observation terrain éphémère (Texte ou Photo) */}

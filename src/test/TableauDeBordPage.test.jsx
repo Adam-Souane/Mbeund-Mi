@@ -45,6 +45,10 @@ vi.mock('../shared/hooks/useSignalements', () => ({
       },
     },
   }),
+  useValiderSignalement: () => ({
+    mutate: vi.fn(),
+    isPending: false,
+  }),
 }));
 
 describe('TableauDeBordPage', () => {
@@ -61,7 +65,7 @@ describe('TableauDeBordPage', () => {
     expect(screen.getByText('Tableau de bord')).toBeInTheDocument();
     expect(screen.getByText(/Supervision temps réel/)).toBeInTheDocument();
     expect(screen.getByText('Alerte forte inondation')).toBeInTheDocument();
-    expect(screen.getByText('Eau rue 5')).toBeInTheDocument();
-
+    expect(screen.getAllByText('Eau rue 5')[0]).toBeInTheDocument();
+    expect(screen.getByText(/Corps d'intervention/i)).toBeInTheDocument();
   });
 });

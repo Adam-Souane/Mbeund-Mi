@@ -126,3 +126,10 @@ export function setUserCustomAvatar(username = '', avatar = null) {
     window.dispatchEvent(new CustomEvent('mbeund_mi_avatar_updated', { detail: { avatar } }));
   } catch {}
 }
+
+/**
+ * Supprime l'avatar personnalisé et rétablit les initiales
+ */
+export function removeUserCustomAvatar(username = '') {
+  setUserCustomAvatar(username, null);
+}

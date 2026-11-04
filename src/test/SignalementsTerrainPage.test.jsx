@@ -63,8 +63,8 @@ describe('SignalementsTerrainPage', () => {
     );
 
     expect(screen.getByText('Signalements terrain')).toBeInTheDocument();
-    expect(screen.getByText('Eau stagnante Grand Yoff')).toBeInTheDocument();
-    expect(screen.getByText('Moussa Diop')).toBeInTheDocument();
+    expect(screen.getAllByText('Eau stagnante Grand Yoff').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Moussa Diop').length).toBeGreaterThan(0);
     expect(screen.getByText('Valider')).toBeInTheDocument();
   });
 });

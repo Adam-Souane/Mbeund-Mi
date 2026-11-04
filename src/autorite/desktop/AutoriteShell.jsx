@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
   Map,
@@ -26,22 +26,23 @@ import ThemeToggle from '../../theme/ThemeToggle';
 import NotificationCenter from '../../shared/components/NotificationCenter';
 import EmergencyModal from '../../shared/components/EmergencyModal';
 import { useAuth } from '../../auth/AuthContext';
+import { useSignalementsApercu } from '../../shared/hooks/useSignalements';
 
-const SIDEBAR_ITEMS = [
+const SIDEBAR_OPERATIONS = [
   { to: '/autorite/dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
   { to: '/autorite/carte', label: 'Carte interactive', icon: Map },
-  { to: '/autorite/previsions', label: 'Prévisions & alertes', icon: CloudRain },
   { to: '/autorite/signalements', label: 'Signalements terrain', icon: Camera },
   { to: '/autorite/crise', label: 'Gestion de crise', icon: ShieldAlert },
 ];
 
-const MORE_ITEMS = [
-  { to: '/autorite/registre', label: 'Registre communautaire', icon: Users2 },
-  { to: '/autorite/contact', label: 'Contact & urgence', icon: PhoneCall },
+const SIDEBAR_SECOURS = [
+  { to: '/autorite/registre', label: 'Registre vulnérables', icon: Users2 },
+  { to: '/autorite/contact', label: 'Contact & Urgences', icon: PhoneCall },
 ];
 
 const TOOLS_ITEMS_COMMON = [
-  { to: '/autorite/statistiques', label: 'Statistiques', icon: BarChart3 },
+  { to: '/autorite/previsions', label: 'Prévisions météo', icon: CloudRain },
+  { to: '/autorite/statistiques', label: 'Statistiques & Bilan', icon: BarChart3 },
   { to: '/autorite/export', label: 'Exports & Rapports', icon: Download },
 ];
 
@@ -171,11 +172,61 @@ function ProfileMenu({ isAdmin, logout }) {
   );
 }
 
+function SidebarLink({ item, isCollapsed, mobileMenuOpen, badgeCount = 0, onNavigate }) {
+  const { to, label, icon: Icon } = item;
+  return (
+    <NavLink
+      to={to}
+      onClick={onNavigate}
+      title={isCollapsed && !mobileMenuOpen ? label : undefined}
+      className={({ isActive }) =>
+        `flex items-center rounded-xl font-bold transition-all duration-200 min-h-[44px] ${
+          isCollapsed && !mobileMenuOpen
+            ? 'justify-center p-3'
+            : 'gap-3 px-3 py-2.5 text-[14px]'
+        } ${
+          isActive
+            ? 'bg-white dark:bg-navy-800 text-[#0B2545] dark:text-white font-black shadow-md border-l-4 border-[#CC131A]'
+            : 'text-slate-100 dark:text-slate-200 hover:text-white hover:bg-white/10 active:scale-[0.98]'
+        }`
+      }
+    >
+      {({ isActive }) => (
+        <>
+          <div className="relative flex-shrink-0">
+            <Icon
+              size={19}
+              className={isActive ? 'text-[#0B2545] dark:text-white' : 'text-slate-200 dark:text-slate-300'}
+            />
+            {badgeCount > 0 && isCollapsed && !mobileMenuOpen && (
+              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full ring-2 ring-[#0B2545] animate-pulse" />
+            )}
+          </div>
+          {(!isCollapsed || mobileMenuOpen) && (
+            <div className="flex-1 flex items-center justify-between min-w-0">
+              <span className="truncate">{label}</span>
+              {badgeCount > 0 && (
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-red-500 text-white shadow-xs">
+                  {badgeCount}
+                </span>
+              )}
+            </div>
+          )}
+        </>
+      )}
+    </NavLink>
+  );
+}
+
 export default function AutoriteShell({ children }) {
   const { logout, role } = useAuth();
   const isAdmin = role === 'admin';
-  const location = useLocation();
   const [emergencyOpen, setEmergencyOpen] = useState(false);
+  const { data: signalementsData } = useSignalementsApercu();
+
+  // Nombre de signalements citoyens non validés / en attente
+  const nbSignalementsEnAttente =
+    signalementsData?.results?.features?.filter((f) => !f.properties.valide)?.length ?? 0;
 
   // Mémorisation de l'état replié de la sidebar
   const [isCollapsed, setIsCollapsed] = useState(() => {
@@ -189,11 +240,6 @@ export default function AutoriteShell({ children }) {
   // Tiroir pour les écrans mobiles / tablettes (< 1024px)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Ferme le tiroir mobile lors d'un changement de page
-  useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [location.pathname]);
-
   const toggleSidebar = () => {
     setIsCollapsed((prev) => {
       const next = !prev;
@@ -203,6 +249,8 @@ export default function AutoriteShell({ children }) {
       return next;
     });
   };
+
+  const closeMobileMenu = () => setMobileMenuOpen(false);
 
   const toolsItems = isAdmin ? [...TOOLS_ITEMS_COMMON, ...TOOLS_ITEMS_ADMIN] : TOOLS_ITEMS_COMMON;
 
@@ -320,76 +368,41 @@ export default function AutoriteShell({ children }) {
               </button>
             </div>
 
-            {/* Liste des liens de navigation */}
-            <nav className="flex flex-col gap-1.5 overflow-y-auto pr-0.5 mt-2 flex-1">
-              {/* Liens principaux de la crise et du suivi */}
-              {SIDEBAR_ITEMS.map(({ to, label, icon: Icon }) => (
-                <NavLink
-                  key={to}
-                  to={to}
-                  title={isCollapsed && !mobileMenuOpen ? label : undefined}
-                  className={({ isActive }) =>
-                    `flex items-center rounded-xl font-bold transition-all duration-200 min-h-[46px] ${
-                      isCollapsed && !mobileMenuOpen
-                        ? 'justify-center p-3'
-                        : 'gap-3 px-3.5 py-3 text-[15px]'
-                    } ${
-                      isActive
-                        ? 'bg-white dark:bg-navy-800 text-[#0B2545] dark:text-white font-black shadow-md border-l-4 border-[#CC131A]'
-                        : 'text-slate-100 dark:text-slate-200 hover:text-white hover:bg-white/10 active:scale-[0.98]'
-                    }`
-                  }
-                >
-                  {({ isActive }) => (
-                    <>
-                      <Icon
-                        size={20}
-                        className={`flex-shrink-0 ${
-                          isActive
-                            ? 'text-[#0B2545] dark:text-white'
-                            : 'text-slate-200 dark:text-slate-300'
-                        }`}
-                      />
-                      {(!isCollapsed || mobileMenuOpen) && <span className="truncate">{label}</span>}
-                    </>
-                  )}
-                </NavLink>
+            {/* Liste des liens de navigation groupés en 2 sections opérationnelles */}
+            <nav className="flex flex-col gap-1 overflow-y-auto pr-0.5 mt-2 flex-1">
+              {/* Section 1 : Opérations & Crise */}
+              {(!isCollapsed || mobileMenuOpen) && (
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-300/60 px-2 mt-1 mb-0.5">
+                  Opérations C.O.D
+                </span>
+              )}
+              {SIDEBAR_OPERATIONS.map((item) => (
+                <SidebarLink
+                  key={item.to}
+                  item={item}
+                  isCollapsed={isCollapsed}
+                  mobileMenuOpen={mobileMenuOpen}
+                  badgeCount={item.to === '/autorite/signalements' ? nbSignalementsEnAttente : 0}
+                  onNavigate={closeMobileMenu}
+                />
               ))}
 
-              {/* Séparateur pour les registres et contacts d'urgence */}
+              {/* Section 2 : Secours & Terrain */}
               <div className="my-2 border-t border-white/10" />
+              {(!isCollapsed || mobileMenuOpen) && (
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-300/60 px-2 mb-0.5">
+                  Secours & Terrain
+                </span>
+              )}
 
-              {MORE_ITEMS.map(({ to, label, icon: Icon }) => (
-                <NavLink
-                  key={to}
-                  to={to}
-                  title={isCollapsed && !mobileMenuOpen ? label : undefined}
-                  className={({ isActive }) =>
-                    `flex items-center rounded-xl font-semibold transition-all duration-200 min-h-[42px] ${
-                      isCollapsed && !mobileMenuOpen
-                        ? 'justify-center p-2.5'
-                        : 'gap-3 px-3.5 py-2.5 text-sm'
-                    } ${
-                      isActive
-                        ? 'bg-white dark:bg-navy-800 text-[#0B2545] dark:text-white font-black shadow-md border-l-4 border-[#CC131A]'
-                        : 'text-slate-200 dark:text-slate-300 hover:text-white hover:bg-white/10 active:scale-[0.98]'
-                    }`
-                  }
-                >
-                  {({ isActive }) => (
-                    <>
-                      <Icon
-                        size={18}
-                        className={`flex-shrink-0 ${
-                          isActive
-                            ? 'text-[#0B2545] dark:text-white'
-                            : 'text-slate-300'
-                        }`}
-                      />
-                      {(!isCollapsed || mobileMenuOpen) && <span className="truncate">{label}</span>}
-                    </>
-                  )}
-                </NavLink>
+              {SIDEBAR_SECOURS.map((item) => (
+                <SidebarLink
+                  key={item.to}
+                  item={item}
+                  isCollapsed={isCollapsed}
+                  mobileMenuOpen={mobileMenuOpen}
+                  onNavigate={closeMobileMenu}
+                />
               ))}
             </nav>
           </div>

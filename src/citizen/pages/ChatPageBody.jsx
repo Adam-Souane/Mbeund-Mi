@@ -326,48 +326,48 @@ export default function ChatPageBody() {
   return (
     <CitizenShell>
       <div className="w-full flex flex-col gap-4 sm:gap-5 pb-8">
-        {/* En-tête Héro au format Communauté & Carte */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0B2545] via-[#103565] to-slate-900 text-white p-4 sm:p-5 md:px-6 md:py-5 shadow-lg border border-blue-900/40 flex-shrink-0">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 sm:gap-4 relative z-10">
-            <div className="min-w-0 flex-1">
+        {/* En-tête fin et conversationnel (style messagerie moderne WhatsApp/Telegram) */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-navy-100 dark:border-navy-800/80">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-cyan-500/20">
+              <Waves size={20} className="text-white" />
+            </div>
+            <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-base sm:text-lg md:text-xl font-black text-white tracking-tight flex items-center gap-2">
-                  <Waves size={18} className="text-cyan-400" />
-                  NDAM · Assistant IA Thiaroye
+                <h1 className="text-lg sm:text-xl font-black text-navy-950 dark:text-white tracking-tight">
+                  NDAM · Assistant d’urgence & d’écoute
                 </h1>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shrink-0">
-                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-                  IA & Moteur Résilient 24/7
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  En ligne 24/7
                 </span>
               </div>
-              <p className="text-xs sm:text-sm text-slate-300 mt-1 line-clamp-2 sm:line-clamp-1">
-                Conseils personnalisés de prévention, aide au signalement et navigation vers les refuges sécurisés
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Conseils personnalisés de prévention, aide au signalement et navigation vers les refuges
               </p>
             </div>
+          </div>
 
-            <div className="flex items-center gap-2 shrink-0">
-              {/* Bouton Historique des discussions */}
-              <button
-                type="button"
-                onClick={() => setShowHistoryModal(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-white text-xs font-bold border border-white/20 transition cursor-pointer shadow-xs"
-                title="Consulter l'historique des discussions"
-              >
-                <History size={15} />
-                <span>Historique{conversations.length > 0 ? ` (${conversations.length})` : ''}</span>
-              </button>
+          <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setShowHistoryModal(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-navy-800 dark:hover:bg-navy-700 text-navy-950 dark:text-white text-xs font-bold border border-slate-200 dark:border-navy-700 transition cursor-pointer shadow-xs active:scale-95"
+              title="Consulter l'historique des discussions"
+            >
+              <History size={14} />
+              <span>Historique{conversations.length > 0 ? ` (${conversations.length})` : ''}</span>
+            </button>
 
-              {/* Bouton Nouvelle Discussion */}
-              <button
-                type="button"
-                onClick={handleNewChat}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-700 active:scale-95 text-white text-xs font-bold transition cursor-pointer shadow-xs"
-                title="Démarrer une nouvelle conversation"
-              >
-                <PlusCircle size={15} />
-                <span>Nouvelle</span>
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={handleNewChat}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white text-xs font-bold transition cursor-pointer shadow-xs active:scale-95"
+              title="Démarrer une nouvelle conversation"
+            >
+              <PlusCircle size={14} />
+              <span>Nouvelle discussion</span>
+            </button>
           </div>
         </div>
 

@@ -90,6 +90,36 @@ class UserViewSet(viewsets.GenericViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
+    @action(detail=False, methods=['get', 'patch'], permission_classes=[IsAuthenticated], url_path='me')
+    def me(self, request):
+        """
+        GET /api/users/me/
+        PATCH /api/users/me/
+        Récupère ou met à jour les coordonnées du compte connecté.
+        """
+        user = request.user
+        if request.method == 'PATCH':
+            first_name = request.data.get('first_name')
+            last_name = request.data.get('last_name')
+            email = request.data.get('email')
+            telephone = request.data.get('telephone')
+
+            if first_name is not None:
+                user.first_name = first_name.strip()
+            if last_name is not None:
+                user.last_name = last_name.strip()
+            if email is not None:
+                user.email = email.strip()
+            user.save()
+
+            if telephone is not None:
+                profile, _ = Profile.objects.get_or_create(user=user)
+                profile.telephone = telephone.strip()
+                profile.save()
+
+        serializer = self.get_serializer(user)
+        return Response(serializer.data)
+
     @action(detail=False, methods=['get'], permission_classes=[AllowAny], authentication_classes=[], url_path='check-username')
     def check_username(self, request):
         """

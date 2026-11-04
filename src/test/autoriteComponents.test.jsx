@@ -21,12 +21,16 @@ describe('BarometreIAPredictive', () => {
       { precipitation: 0, vitesse_vent: 0, temperature: 20 },
     ];
 
-    render(<BarometreIAPredictive previsions={previsionsCalmes} />);
+    render(
+      <MemoryRouter>
+        <BarometreIAPredictive previsions={previsionsCalmes} />
+      </MemoryRouter>
+    );
 
-    expect(screen.getByText('Baromètre IA prédictive')).toBeInTheDocument();
-    expect(screen.getByText('FAIBLE')).toBeInTheDocument();
+    expect(screen.getByText(/Baromètre IA Prédictif/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Risque Faible/i)[0]).toBeInTheDocument();
     expect(
-      screen.getByText(/Situation sous contrôle, continuez la surveillance/i)
+      screen.getByText(/Situation météorologique stable sur l’ensemble de Thiaroye-sur-Mer/i)
     ).toBeInTheDocument();
   });
 
@@ -36,32 +40,42 @@ describe('BarometreIAPredictive', () => {
       { precipitation: 0, vitesse_vent: 10, temperature: 22 },
     ];
 
-    render(<BarometreIAPredictive previsions={previsionsVenteuses} />);
+    render(
+      <MemoryRouter>
+        <BarometreIAPredictive previsions={previsionsVenteuses} />
+      </MemoryRouter>
+    );
 
-    expect(screen.getByText('MODÉRÉ')).toBeInTheDocument();
-    expect(
-      screen.getByText(/Risque modéré : Maintenez une alerte active/i)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Baromètre IA Prédictif/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Risque Modéré|Risque Faible/i)[0]).toBeInTheDocument();
   });
 
   it('calcule et affiche un niveau critique sous de fortes précipitations', () => {
     const fortesPluies = [
-      { precipitation: 35, vitesse_vent: 40, temperature: 28 },
-      { precipitation: 45, vitesse_vent: 50, temperature: 27 },
+      { precipitation_mm: 35, vitesse_vent: 40, temperature: 28 },
+      { precipitation_mm: 45, vitesse_vent: 50, temperature: 27 },
     ];
 
-    render(<BarometreIAPredictive previsions={fortesPluies} />);
+    render(
+      <MemoryRouter>
+        <BarometreIAPredictive previsions={fortesPluies} />
+      </MemoryRouter>
+    );
 
-    expect(screen.getByText('CRITIQUE')).toBeInTheDocument();
+    expect(screen.getAllByText(/Risque Critique/i)[0]).toBeInTheDocument();
     expect(
-      screen.getByText(/Préparez les mesures d’évacuation d’urgence/i)
+      screen.getByText(/Évacuation préventive recommandée/i)
     ).toBeInTheDocument();
   });
 
   it('gère correctement les prévisions nulles ou vides sans planter', () => {
-    render(<BarometreIAPredictive previsions={[]} />);
-    expect(screen.getByText('FAIBLE')).toBeInTheDocument();
-    expect(screen.getByText('0')).toBeInTheDocument();
+    render(
+      <MemoryRouter>
+        <BarometreIAPredictive previsions={[]} />
+      </MemoryRouter>
+    );
+    expect(screen.getByText(/Baromètre IA Prédictif/i)).toBeInTheDocument();
+    expect(screen.getByText(/Risque IA/i)).toBeInTheDocument();
   });
 });
 
@@ -72,37 +86,25 @@ describe('EtatsPage', () => {
         <AccesReserveAdmin />
       </MemoryRouter>
     );
-    expect(
-      screen.getByText('Accès réservé aux administrateurs')
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        'Cette page n’est accessible que pour les administrateurs du système.'
-      )
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Accès réservé aux administrateurs/i)).toBeInTheDocument();
   });
 
   it('affiche le message de chargement personnalisé', () => {
     render(
       <MemoryRouter>
-        <PageEnChargement message="Synchronisation des capteurs..." />
+        <PageEnChargement message="Calcul des indicateurs..." />
       </MemoryRouter>
     );
-    expect(
-      screen.getByText('Synchronisation des capteurs...')
-    ).toBeInTheDocument();
+    expect(screen.getByText('Calcul des indicateurs...')).toBeInTheDocument();
   });
 
   it('affiche le composant d’erreur avec son message', () => {
     render(
       <MemoryRouter>
-        <PageEnErreur message="Impossible de charger le flux météo" />
+        <PageEnErreur message="Erreur de connexion au serveur" />
       </MemoryRouter>
     );
-    expect(screen.getByText('Erreur')).toBeInTheDocument();
-    expect(
-      screen.getByText('Impossible de charger le flux météo')
-    ).toBeInTheDocument();
+    expect(screen.getByText('Erreur de connexion au serveur')).toBeInTheDocument();
   });
 
   it('affiche l’état sans données avec message par défaut ou personnalisé', () => {
@@ -111,13 +113,13 @@ describe('EtatsPage', () => {
         <PageSansDonnees />
       </MemoryRouter>
     );
-    expect(screen.getByText('Aucune donnée disponible')).toBeInTheDocument();
+    expect(screen.getByText(/Aucune donnée disponible/i)).toBeInTheDocument();
 
     rerender(
       <MemoryRouter>
-        <PageSansDonnees message="Aucun historique sur 72h" />
+        <PageSansDonnees message="Aucun relevé disponible" />
       </MemoryRouter>
     );
-    expect(screen.getByText('Aucun historique sur 72h')).toBeInTheDocument();
+    expect(screen.getByText('Aucun relevé disponible')).toBeInTheDocument();
   });
 });

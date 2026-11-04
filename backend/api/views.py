@@ -360,7 +360,7 @@ class SignalementCitoyenViewSet(viewsets.ModelViewSet):
     pagination_class = PageNumberPagination
 
     def get_permissions(self):
-        if self.action == 'create':
+        if self.action in ['create', 'list', 'retrieve']:
             return [permissions.AllowAny()]
         return [IsAutoriteOrAdmin()]
 
