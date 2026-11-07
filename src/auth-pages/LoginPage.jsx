@@ -1,9 +1,25 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle, Zap } from 'lucide-react';
 import AuthLayout from './AuthLayout';
 import { useAuth } from '../auth/AuthContext';
 import { homeRouteForRole } from '../auth/RequireAuth';
+import { setTokens } from '../auth/tokenStorage';
+
+/** Génère un faux JWT pour la démo sans backend. */
+function genFakeJwt(payload) {
+  const enc = (obj) =>
+    btoa(JSON.stringify(obj)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+  return `${enc({ alg: 'HS256', typ: 'JWT' })}.${enc({
+    ...payload,
+    exp: Math.floor(Date.now() / 1000) + 86400 * 7,
+  })}.demo`;
+}
+
+const DEMO_COMPTES = [
+  { label: '👤 Citoyen', username: 'citoyen', role: 'citoyen', color: '#0B2545' },
+  { label: '🏛️ Autorité', username: 'autorite', role: 'autorite', color: '#065F46' },
+];
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -45,6 +61,13 @@ export default function LoginPage() {
     }
   }
 
+  /** Connexion démo sans backend : injecte un faux JWT dans localStorage et recharge. */
+  function handleDemo(compte) {
+    const fakeJwt = genFakeJwt({ user_id: compte.role === 'citoyen' ? 1 : 2, username: compte.username, role: compte.role });
+    setTokens({ access: fakeJwt, refresh: fakeJwt, username: compte.username });
+    window.location.replace(homeRouteForRole(compte.role));
+  }
+
   return (
     <AuthLayout variante="connexion">
       <div className="w-full bg-white rounded-2xl border border-slate-200/90 shadow-xl p-7 sm:p-9 transition-all">
@@ -58,6 +81,32 @@ export default function LoginPage() {
           </p>
         </div>
 
+        {/* Boutons de démo rapide */}
+        <div className="mb-5">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1">
+            <Zap size={11} /> Accès démo instantané (sans backend)
+          </p>
+          <div className="flex gap-2">
+            {DEMO_COMPTES.map((c) => (
+              <button
+                key={c.role}
+                type="button"
+                onClick={() => handleDemo(c)}
+                style={{ background: c.color }}
+                className="flex-1 h-9 rounded-lg text-white text-xs font-bold hover:opacity-90 transition-all shadow"
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 mb-5">
+          <div className="flex-1 h-px bg-slate-200" />
+          <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">ou connexion réelle</span>
+          <div className="flex-1 h-px bg-slate-200" />
+        </div>
+
         {/* Message d'erreur visible si problème */}
         {error && (
           <div className="flex items-start gap-3 p-3.5 rounded-xl mb-5 bg-red-50 border border-[#BE123C]/30 text-xs text-[#BE123C]">
@@ -65,7 +114,6 @@ export default function LoginPage() {
             <div className="font-medium">{error}</div>
           </div>
         )}
-
 
         {/* Formulaire de connexion */}
         <form onSubmit={handleSubmit} className="space-y-4 text-left">

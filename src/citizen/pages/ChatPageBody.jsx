@@ -48,6 +48,56 @@ const GREETING = {
 
 const NIVEAU_RANK = { vert: 0, jaune: 1, orange: 2, rouge: 3 };
 
+// ─── Moteur de réponses local (mode hors-ligne / sans backend) ───────────────
+const REPONSES_LOCALES = [
+  {
+    mots: ['bonjour', 'salut', 'salam', 'bonsoir', 'hi', 'hello', 'slt'],
+    reponse: `Bonjour ! 👋 Je suis NDAM, votre assistant de prévention des inondations à Thiaroye-sur-Mer.\n\nJe peux vous aider sur :\n• 🌊 Le niveau de risque d'inondation\n• 🏥 Les refuges les plus proches\n• 📋 Comment signaler un incident\n• 🛡️ Les consignes de sécurité\n• 🌦️ La météo et les marées\n\nQue puis-je faire pour vous ?`,
+  },
+  {
+    mots: ['risque', 'niveau', 'danger', 'alerte', 'vigilance', 'ndox'],
+    reponse: `🔴 Situation actuelle à Thiaroye-sur-Mer :\n\nLes zones les plus exposées sont :\n• **Gouye Gui** – risque élevé (score 78%)\n• **Thiaroye-Gare** – risque modéré (score 54%)\n• **Diamaguène** – risque faible (score 31%)\n\n⚠️ En cas de montée des eaux, restez à l'étage et contactez les secours au 18 (Pompiers) ou 15 (SAMU).\n\nConsultez la carte interactive pour suivre l'évolution en temps réel.`,
+  },
+  {
+    mots: ['refuge', 'abri', 'evacu', 'fuite', 'partir', 'quitter'],
+    reponse: `🏥 Refuges d'évacuation à Thiaroye-sur-Mer :\n\n1. **École Élémentaire Thiaroye-Gare** – Capacité 200 personnes\n   📍 Rue Principale, Thiaroye-Gare\n\n2. **Mosquée Centrale de Gouye Gui** – Capacité 150 personnes\n   📍 Avenue des Peupliers\n\n3. **Centre de Santé Thiaroye** – Avec personnel médical\n   📍 Route de Pikine\n\n4. **École Franco-Arabe Diamaguène** – Capacité 180 personnes\n\n➡️ Pour voir l'itinéraire exact, ouvrez la **Carte** dans le menu et activez "Suivre l'itinéraire".`,
+  },
+  {
+    mots: ['signal', 'reporter', 'déclarer', 'incident', 'inondation', 'eau', 'problème'],
+    reponse: `📋 Pour signaler un incident :\n\n1. Appuyez sur **"Signaler"** dans le menu du bas\n2. **Étape 1** : Localisez l'incident sur la carte (ou utilisez votre GPS)\n3. **Étape 2** : Choisissez la catégorie et décrivez le problème (jusqu'à 3 photos)\n4. **Étape 3** : Validez et choisissez si vous voulez partager avec la communauté\n\n📸 Conseil : une photo vaut mille mots — aidez les autorités à évaluer rapidement !\n\n🕐 Vos signalements sont visibles par les autorités en temps réel.`,
+  },
+  {
+    mots: ['faire', 'avant', 'prépar', 'conseil', 'consigne', 'sécurité', 'prévenir'],
+    reponse: `🛡️ Conseils de prévention avant une inondation :\n\n**Avant :**\n• Surélevez vos meubles et appareils électroménagers\n• Préparez un kit d'urgence (eau, médicaments, documents)\n• Identifiez votre refuge le plus proche\n• Gardez votre téléphone chargé\n\n**Pendant :**\n• Ne marchez jamais dans une eau courante (même 15 cm peuvent faire tomber)\n• Coupez l'électricité si l'eau entre chez vous\n• Rejoignez le refuge le plus proche\n• Signalez votre position via l'application\n\n**Après :**\n• N'entrez pas dans un bâtiment inondé sans vérification\n• Méfiez-vous des eaux contaminées\n• Signalez les dégâts sur l'application`,
+  },
+  {
+    mots: ['météo', 'marée', 'pluie', 'vent', 'température', 'climat', 'maree'],
+    reponse: `🌊 Météo & Marées à Thiaroye-sur-Mer :\n\n🌡️ Température : ~30°C\n🌧️ Précipitations : 0.0 mm (24h)\n💨 Vent : ~18 km/h\n🌊 Marée : Coefficient 75 – Mi-marée montante\n\n⚠️ La marée haute combinée aux pluies augmente significativement le risque d'inondation dans les zones basses.\n\n📡 Ces données sont mises à jour toutes les heures via les capteurs IoT du réseau Mbeund-Mi.`,
+  },
+  {
+    mots: ['pompier', 'secours', 'urgence', 'appel', 'numéro', 'téléphone', 'contact'],
+    reponse: `🚨 Numéros d'urgence :\n\n🔴 **Pompiers** : 18\n🟢 **SAMU** : 15\n🔵 **Police** : 17\n🟡 **Protection Civile Sénégal** : +221 33 823 00 10\n\n📱 En cas d'urgence extrême, partagez votre localisation GPS avec les secours via l'onglet **Carte** de l'application.\n\n💬 Vous pouvez aussi alerter la communauté via l'onglet **Communauté** pour mobiliser l'entraide de quartier.`,
+  },
+  {
+    mots: ['capteur', 'iot', 'sensor', 'mesure', 'station'],
+    reponse: `📡 Réseau de capteurs IoT Mbeund-Mi :\n\nNous disposons de **12 capteurs actifs** répartis sur Thiaroye-sur-Mer :\n• Capteurs de niveau d'eau (rues & canaux)\n• Pluviomètres connectés\n• Anémomètres (vitesse du vent)\n• Capteurs de pression atmosphérique\n\nLes données sont collectées toutes les **5 minutes** et analysées par notre IA prédictive pour anticiper les risques jusqu'à **48h à l'avance**.\n\n🗺️ Visualisez tous les capteurs en temps réel sur la **Carte Interactive**.`,
+  },
+  {
+    mots: ['communauté', 'voisin', 'entraide', 'quartier', 'partager'],
+    reponse: `🤝 Espace Communauté Mbeund-Mi :\n\nLa communauté Thiaroye-sur-Mer partage :\n• 📸 Photos de situations sur le terrain\n• 🆘 Demandes d'entraide et de solidarité\n• ✅ Signalements résolus et zones sécurisées\n• 📢 Annonces et mobilisations citoyennes\n\nVous pouvez :\n• Publier un post avec photo\n• Créer une story éphémère (24h)\n• Réagir et commenter\n• Soutenir et valider les initiatives\n\n➡️ Accédez à l'onglet **Communauté** dans le menu.`,
+  },
+];
+
+function repondreEnLocal(question) {
+  const q = question.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  for (const { mots, reponse } of REPONSES_LOCALES) {
+    if (mots.some((m) => q.includes(m.normalize('NFD').replace(/[\u0300-\u036f]/g, '')))) {
+      return reponse;
+    }
+  }
+  return `Je suis NDAM 🌊 — je fonctionne en mode hors-ligne pour l'instant.\n\nJe peux vous renseigner sur :\n• 🌊 Les risques d'inondation à Thiaroye\n• 🏥 Les refuges d'évacuation\n• 📋 Comment signaler un incident\n• 🛡️ Les consignes de sécurité\n• 🚨 Les numéros d'urgence\n• 🌦️ La météo et les marées\n\nEssayez une de ces questions ou choisissez une suggestion ci-dessous !`;
+}
+
 function pickMostAtRiskZone(features) {
   if (!features?.length) return null;
   return [...features]
@@ -170,13 +220,16 @@ export default function ChatPageBody() {
     onSuccess: (data) => {
       setMessages((m) => [...m, { role: 'assistant', text: data.reply, timestamp: new Date().toISOString() }]);
     },
-    onError: () => {
+    onError: (_err, question) => {
+      // Mode hors-ligne : réponse locale intelligente à la place du message d'erreur
+      const reponseLocale = repondreEnLocal(question);
       setMessages((m) => [
         ...m,
         {
           role: 'assistant',
-          text: "Désolé, je n'arrive pas à vous répondre pour l'instant. Réessayez dans un instant.",
+          text: reponseLocale,
           timestamp: new Date().toISOString(),
+          offline: true,
         },
       ]);
     },
@@ -422,6 +475,12 @@ export default function ChatPageBody() {
                     }`}
                   >
                     {m.text}
+
+                    {m.offline && (
+                      <span className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">
+                        ⚡ Mode hors-ligne
+                      </span>
+                    )}
 
                     {m.role === 'assistant' && (
                       <div className="absolute -bottom-2.5 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
