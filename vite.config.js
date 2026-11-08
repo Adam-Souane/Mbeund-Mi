@@ -7,8 +7,10 @@ export default defineConfig(({ mode }) => ({
   // (remplace drop_console de terser ; les messages restent visibles en développement).
   esbuild: mode === 'production' ? { drop: ['console', 'debugger'] } : {},
   server: {
+    host: true,
     port: 3001,
-    open: true,
+    allowedHosts: true,
+    open: false,
     proxy: {
       '/api/': {
         target: 'http://127.0.0.1:8000',

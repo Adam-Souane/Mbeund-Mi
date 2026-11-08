@@ -692,7 +692,7 @@ export default function SignalerPageBody() {
           )}
           <button
             onClick={() => navigate('/citoyen/accueil')}
-            className="bg-red hover:bg-red-700 text-white font-bold text-sm px-6 py-3 rounded-md transition shadow-sm cursor-pointer"
+            className="bg-[#0B2545] hover:bg-[#154275] text-white font-bold text-sm px-6 py-3 rounded-md transition shadow-sm cursor-pointer"
           >
             Retour à l’accueil
           </button>

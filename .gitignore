@@ -3,6 +3,7 @@
 # =============================================================================
 
 # --- Node / Frontend ---
+cloudflared*
 node_modules
 dist
 dist-ssr
