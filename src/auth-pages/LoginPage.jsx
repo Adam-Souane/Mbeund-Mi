@@ -28,15 +28,20 @@ export default function LoginPage() {
     } catch (err) {
       const refus = err.response?.data;
       if (refus?.code === 'compte_non_verifie') {
-        navigate('/verify-otp', {
+        navigate('/otp-verify', {
           state: {
             username: refus.username,
             password,
             canal: refus.otp?.canal,
             destination: refus.otp?.destination,
             emailDisponible: refus.otp?.email_disponible,
+            codeSimule: refus.otp?.code_simule || '',
           },
         });
+        return;
+      }
+      if (!err.response && (err.message === 'Network Error' || err.code === 'ECONNABORTED')) {
+        setError('Erreur réseau ou de communication avec le serveur. Veuillez réessayer.');
         return;
       }
       setError('Identifiant ou mot de passe incorrect.');

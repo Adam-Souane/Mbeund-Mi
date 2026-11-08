@@ -49,7 +49,23 @@ export function useAlertesSocket() {
   useEffect(() => {
     if (!isAuthenticated) return undefined;
 
-    const wsUrl = import.meta.env.VITE_WS_URL || 'wss://mbeund-mi.onrender.com/ws/alertes/';
+    function resolveWsUrl() {
+      const raw = import.meta.env.VITE_WS_URL || '/ws/alertes/';
+      if (typeof window !== 'undefined' && window.location?.host) {
+        const isHttps = window.location.protocol === 'https:';
+        const proto = isHttps ? 'wss:' : 'ws:';
+        if (raw.startsWith('/')) {
+          return `${proto}//${window.location.host}${raw}`;
+        }
+        const host = window.location.hostname;
+        if (host !== 'localhost' && host !== '127.0.0.1' && (raw.includes('localhost') || raw.includes('127.0.0.1'))) {
+          return `${proto}//${window.location.host}/ws/alertes/`;
+        }
+      }
+      return raw;
+    }
+
+    const wsUrl = resolveWsUrl();
     let actif = true;
     let socket = null;
     let timerReconnexion = null;

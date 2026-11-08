@@ -42,6 +42,7 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [codeSimule, setCodeSimule] = useState('');
   const [resendTimer, setResendTimer] = useState(0);
 
   useEffect(() => {
@@ -66,6 +67,9 @@ export default function ForgotPasswordPage() {
     try {
       const { data } = await client.post('/users/password-reset/', { identifiant: identifiant.trim(), canal });
       setMessage(data.detail);
+      if (data.code_simule) {
+        setCodeSimule(data.code_simule);
+      }
       setStep(2);
       setResendTimer(DELAI_RENVOI);
     } catch (err) {
@@ -187,6 +191,27 @@ export default function ForgotPasswordPage() {
             <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
               <p className={`text-sm ${ton(darkMode, 'text-blue-900', 'text-blue-300')}`}>{message}</p>
             </div>
+            {codeSimule && (
+              <div className="rounded-xl bg-[#0B2545] text-white p-3.5 shadow-md border border-blue-800/60 flex items-center justify-between gap-3">
+                <div className="text-xs">
+                  <span className="block text-[10px] font-bold uppercase tracking-wider text-cyan-300">
+                    {canal === 'email' ? 'Email reçu (Simulation)' : 'SMS reçu · MBEUND MI'}
+                  </span>
+                  <span>Code de sécurité : </span>
+                  <strong className="font-mono text-sm tracking-widest bg-white/15 px-2 py-0.5 rounded">{codeSimule}</strong>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCode(String(codeSimule));
+                    setError('');
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-white text-[#0B2545] text-xs font-extrabold cursor-pointer shrink-0"
+                >
+                  Remplir
+                </button>
+              </div>
+            )}
             <div>
               <label htmlFor="reset-code" className={etiquette}>Code à 6 chiffres</label>
               <input

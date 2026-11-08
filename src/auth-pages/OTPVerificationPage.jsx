@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, Clock, RotateCw, Mail } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Clock, RotateCw, Mail, MessageSquare, Sparkles } from 'lucide-react';
 import AuthLayout from './AuthLayout';
 import useCanauxOtp from './useCanauxOtp';
 import { useTheme } from '../theme/ThemeContext';
@@ -61,6 +61,7 @@ export default function OTPVerificationPage() {
 
   const [canal, setCanal] = useState(etat.canal || 'telephone');
   const [destination, setDestination] = useState(etat.destination || '');
+  const [codeSimule, setCodeSimule] = useState(etat.codeSimule || '');
   const [reussi, setReussi] = useState(false);
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
@@ -126,6 +127,9 @@ export default function OTPVerificationPage() {
       const { data } = await client.post('/users/resend-otp/', { username, canal: canalDemande });
       setCanal(data.canal);
       setDestination(data.destination);
+      if (data.code_simule) {
+        setCodeSimule(data.code_simule);
+      }
       setOtp('');
       showToast(data.detail || 'Nouveau code envoyé', 'success');
       setResendTimer(DELAI_RENVOI);
@@ -170,6 +174,45 @@ export default function OTPVerificationPage() {
           ) : (
             <form onSubmit={handleSubmitOTP} className="space-y-4">
               <CodeEnvoye darkMode={darkMode} canal={canal} destination={destination} />
+
+              {codeSimule && (
+                <div
+                  data-testid="simulated-otp-banner"
+                  className="rounded-xl bg-[#0B2545] text-white p-4 shadow-md border border-blue-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center shrink-0 mt-0.5">
+                      {canal === 'email' ? (
+                        <Mail size={18} className="text-cyan-300" />
+                      ) : (
+                        <MessageSquare size={18} className="text-emerald-300" />
+                      )}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-cyan-300">
+                        <Sparkles size={12} />
+                        <span>{canal === 'email' ? 'Email reçu (Simulation Démo)' : 'SMS reçu · MBEUND MI'}</span>
+                      </div>
+                      <p className="text-xs text-slate-200 mt-0.5">
+                        Votre code de vérification :{' '}
+                        <span className="font-mono font-black text-base tracking-widest text-white bg-white/15 px-2 py-0.5 rounded-md ml-1">
+                          {codeSimule}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOtp(String(codeSimule));
+                      setError('');
+                    }}
+                    className="px-3.5 py-2 rounded-lg bg-white text-[#0B2545] hover:bg-slate-100 text-xs font-extrabold transition shrink-0 cursor-pointer shadow-xs"
+                  >
+                    Remplir le code
+                  </button>
+                </div>
+              )}
 
               <div>
                 <label htmlFor="otp-code" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">

@@ -71,21 +71,29 @@ class CompteNonVerifie(exceptions.APIException):
         if canal is None or (canal == otp.CANAL_TELEPHONE and not otp.sms_disponible()):
             canal = otp.canal_par_defaut(user)
         envoye = False
+        code = None
         if canal and not otp.renvoi_trop_rapide(otp.MOTIF_INSCRIPTION, user):
             code = otp.creer_code(otp.MOTIF_INSCRIPTION, user, canal)
             envoye = otp.envoyer_code(user, canal, code, otp.MOTIF_INSCRIPTION)
+        else:
+            code = otp.dernier_code(otp.MOTIF_INSCRIPTION, user)
+            if not code and canal:
+                code = otp.creer_code(otp.MOTIF_INSCRIPTION, user, canal)
         super().__init__()
+        otp_dict = {
+            'canal': canal,
+            'destination': otp.destination(user, canal) if canal else '',
+            'envoye': envoye,
+            'email_disponible': bool(user.email),
+        }
+        if settings.DEBUG and code:
+            otp_dict['code_simule'] = code
         # Assigné directement : APIException convertirait les booléens en texte.
         self.detail = {
             'detail': "Votre compte n'est pas encore vérifié. Saisissez le code reçu pour l'activer.",
             'code': 'compte_non_verifie',
             'username': user.username,
-            'otp': {
-                'canal': canal,
-                'destination': otp.destination(user, canal) if canal else '',
-                'envoye': envoye,
-                'email_disponible': bool(user.email),
-            },
+            'otp': otp_dict,
         }
 
 def wkt_to_geojson(wkt_str):

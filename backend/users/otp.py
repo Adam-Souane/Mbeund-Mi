@@ -114,6 +114,11 @@ def dernier_canal(motif, user):
     return entree['canal'] if entree else None
 
 
+def dernier_code(motif, user):
+    entree = cache.get(_cle(motif, user))
+    return entree['code'] if entree else None
+
+
 def verifier_code(motif, user, code):
     """
     Renvoie 'ok', 'expire' ou 'invalide'. Le code est détruit après succès,

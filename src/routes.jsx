@@ -71,6 +71,7 @@ export default function AppRoutes() {
 
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/otp-verify" element={<OTPVerificationPage />} />
+        <Route path="/verify-otp" element={<OTPVerificationPage />} />
 
         {/* Citoyen - Accueil public pour consultation directe des alertes et du fil de quartier */}
         <Route path="/citoyen/accueil" element={<AccueilPageBody />} />

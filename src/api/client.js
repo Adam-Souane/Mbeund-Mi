@@ -1,7 +1,22 @@
 import axios from 'axios';
 import { getAccessToken, getRefreshToken, setTokens, clearTokens } from '../auth/tokenStorage';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://mbeund-mi.onrender.com/api';
+function resolveApiBaseUrl() {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (typeof window !== 'undefined') {
+    const host = window.location?.hostname || '';
+    const isRemoteHost = host && host !== 'localhost' && host !== '127.0.0.1';
+    if (isRemoteHost && (!envUrl || envUrl.includes('localhost') || envUrl.includes('127.0.0.1'))) {
+      return '/api';
+    }
+  }
+  if (envUrl && envUrl.includes('localhost:8008')) {
+    return '/api';
+  }
+  return envUrl || '/api';
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 const client = axios.create({
   baseURL: API_BASE_URL,

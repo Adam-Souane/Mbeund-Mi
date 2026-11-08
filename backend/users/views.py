@@ -226,17 +226,22 @@ class UserViewSet(viewsets.GenericViewSet):
         otp.renvoi_trop_rapide(otp.MOTIF_INSCRIPTION, user)   # démarre le délai de renvoi
         envoye = otp.envoyer_code(user, canal, code, otp.MOTIF_INSCRIPTION)
 
+        from django.conf import settings
+        otp_payload = {
+            'canal': canal,
+            'destination': otp.destination(user, canal),
+            'envoye': envoye,
+            'email_disponible': bool(email),
+        }
+        if settings.DEBUG:
+            otp_payload['code_simule'] = code
+
         return Response(
             {
                 'detail': 'Compte créé avec succès',
                 'user': UserSerializer(user).data,
                 'requires_otp': True,
-                'otp': {
-                    'canal': canal,
-                    'destination': otp.destination(user, canal),
-                    'envoye': envoye,
-                    'email_disponible': bool(email),
-                },
+                'otp': otp_payload,
             },
             status=status.HTTP_201_CREATED,
         )
@@ -359,13 +364,20 @@ class UserViewSet(viewsets.GenericViewSet):
             and (canal == otp.CANAL_TELEPHONE or bool(user.email))
             and not otp.renvoi_trop_rapide(otp.MOTIF_REINITIALISATION, user)
         )
+        code_genere = None
         if peut_envoyer:
-            code = otp.creer_code(otp.MOTIF_REINITIALISATION, user, canal)
-            otp.envoyer_code(user, canal, code, otp.MOTIF_REINITIALISATION)
+            code_genere = otp.creer_code(otp.MOTIF_REINITIALISATION, user, canal)
+            otp.envoyer_code(user, canal, code_genere, otp.MOTIF_REINITIALISATION)
+        elif user is not None:
+            code_genere = otp.dernier_code(otp.MOTIF_REINITIALISATION, user)
 
         support = 'par email' if canal == otp.CANAL_EMAIL else 'par SMS'
+        from django.conf import settings
+        resp_data = {'detail': f'Si un compte correspond, un code vient de vous être envoyé {support}.', 'canal': canal}
+        if settings.DEBUG and code_genere:
+            resp_data['code_simule'] = code_genere
         return Response(
-            {'detail': f'Si un compte correspond, un code vient de vous être envoyé {support}.', 'canal': canal},
+            resp_data,
             status=status.HTTP_200_OK,
         )
 
@@ -706,13 +718,17 @@ class UserViewSet(viewsets.GenericViewSet):
         code = otp.creer_code(otp.MOTIF_INSCRIPTION, user, canal)
         envoye = otp.envoyer_code(user, canal, code, otp.MOTIF_INSCRIPTION)
         support = 'par email' if canal == otp.CANAL_EMAIL else 'par SMS'
+        from django.conf import settings
+        resp_payload = {
+            'detail': f'Nouveau code envoyé {support}' if envoye else "L'envoi a échoué, réessayez dans une minute",
+            'canal': canal,
+            'destination': otp.destination(user, canal),
+            'envoye': envoye,
+        }
+        if settings.DEBUG:
+            resp_payload['code_simule'] = code
         return Response(
-            {
-                'detail': f'Nouveau code envoyé {support}' if envoye else "L'envoi a échoué, réessayez dans une minute",
-                'canal': canal,
-                'destination': otp.destination(user, canal),
-                'envoye': envoye,
-            },
+            resp_payload,
             status=status.HTTP_200_OK if envoye else status.HTTP_502_BAD_GATEWAY,
         )
 

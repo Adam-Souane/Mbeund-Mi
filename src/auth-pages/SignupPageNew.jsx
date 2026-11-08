@@ -168,6 +168,7 @@ export default function SignupPage() {
           canal: infosOtp.canal || canalEffectif,
           destination: infosOtp.destination || '',
           emailDisponible: infosOtp.email_disponible ?? emailSaisi,
+          codeSimule: infosOtp.code_simule || '',
         },
       });
     } catch (error) {
