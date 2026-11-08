@@ -1,41 +1,43 @@
 import { useState } from 'react';
-import { ArrowRight, ArrowLeft } from 'lucide-react';
 import logoLight from '../assets/logo-light.png';
 
-// Données des slides d'onboarding mobile (3 étapes immersives et visuelles)
+const ONBOARDING_STORAGE_KEY = 'mbeund_mi_onboarding_seen';
+
+// 3 slides visuelles en format portrait 9:16 pour l'espace Citoyen
 const SLIDES_CITOYEN = [
   {
-    image: '/images/login-citoyen-thiaroye.jpg',
-    titre: 'Alertes par SMS & WhatsApp',
-    phrase: 'Soyez averti dès que l’eau monte dans votre quartier à Thiaroye.',
+    image: '/images/onboarding-slide1-averse.jpg',
+    titre: 'Alertes Pluie & Inondation',
+    phrase: 'Recevez un avertissement immédiat dès qu’une averse menace votre quartier à Thiaroye.',
   },
   {
-    image: '/images/curage-caniveau-sable-thiaroye.jpg',
-    titre: 'Carte des Rues & Risques',
-    phrase: 'Repérez en temps réel les voies praticables et les refuges sécurisés.',
+    image: '/images/onboarding-slide2-littoral.jpg',
+    titre: 'Cartographie de Thiaroye-sur-Mer',
+    phrase: 'Identifiez les ruelles praticables, les zones inondées et les lieux sûrs autour de vous.',
   },
   {
-    image: '/images/sensibilisation-mbeund-mi.jpg',
-    titre: 'Signalement & Solidarité',
-    phrase: 'Alertez la cellule de veille communale et protégez vos riverains.',
+    image: '/images/onboarding-slide3-secours.jpg',
+    titre: 'Signalement & Veille Active',
+    phrase: 'Transmettez vos observations de terrain directement aux équipes communales.',
   },
 ];
 
+// 3 slides visuelles en format portrait 9:16 pour l'espace Autorités & Admin
 const SLIDES_AUTORITE = [
   {
-    image: '/images/login-autorite-thiaroye.jpg',
+    image: '/images/onboarding-slide3-secours.jpg',
     titre: 'Supervision Hydrologique',
-    phrase: 'Surveillez en direct les capteurs connectés et le niveau des bassins.',
+    phrase: 'Pilotez les capteurs, les ouvrages de drainage et les bassins en temps réel.',
   },
   {
-    image: '/images/pompage-thiaroye.jpg',
-    titre: 'Coordination Terrain & ONAS',
-    phrase: 'Mobilisez rapidement les motopompes et les équipes d’intervention.',
+    image: '/images/onboarding-slide2-littoral.jpg',
+    titre: 'Cartographie & Zones Critiques',
+    phrase: 'Visualisez l’évolution des eaux sur l’ensemble des quartiers de Thiaroye-sur-Mer.',
   },
   {
-    image: '/images/pompiers-secours.jpg',
-    titre: 'Alertes Communales 24/7',
-    phrase: 'Diffusez les consignes d’urgence et protégez la population.',
+    image: '/images/onboarding-slide1-averse.jpg',
+    titre: 'Alertes & Coordination 24/7',
+    phrase: 'Déclenchez les consignes d’urgence et mobilisez les secours sur le terrain.',
   },
 ];
 
@@ -72,37 +74,61 @@ const TITRES_DESKTOP = {
   },
 };
 
+function aDejaVuOnboarding() {
+  try {
+    return sessionStorage.getItem(ONBOARDING_STORAGE_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function marquerOnboardingVu() {
+  try {
+    sessionStorage.setItem(ONBOARDING_STORAGE_KEY, '1');
+  } catch {}
+}
+
 export default function AuthLayout({ variante, className = '', children }) {
   const isAuthority = variante === 'administration' || variante === 'autorite';
   const slides = isAuthority ? SLIDES_AUTORITE : SLIDES_CITOYEN;
   const desktopMeta = TITRES_DESKTOP[variante] ?? TITRES_DESKTOP.connexion;
 
-  // Sur mobile, si l'utilisateur est en saisie OTP ou mot de passe, on affiche directement le formulaire
-  const demarrageDirect = variante === 'verification' || variante === 'motdepasse';
-  const [vueMobileFormulaire, setVueMobileFormulaire] = useState(demarrageDirect);
+  // L'onboarding mobile ne s'affiche que lors de la première arrivée sur la connexion.
+  // Dès qu'il a été passé ou si on va sur Créer un compte / OTP / Mot de passe, on affiche directement le formulaire.
+  const afficherFormulaireDirect =
+    variante !== 'connexion' && variante !== 'autorite'
+      ? true
+      : aDejaVuOnboarding();
+
+  const [vueMobileFormulaire, setVueMobileFormulaire] = useState(afficherFormulaireDirect);
   const [slideIndex, setSlideIndex] = useState(0);
 
   const slideCourante = slides[slideIndex] || slides[0];
   const estDerniereSlide = slideIndex === slides.length - 1;
 
+  const ouvrirFormulaireMobile = () => {
+    marquerOnboardingVu();
+    setVueMobileFormulaire(true);
+  };
+
   const handleSuivant = () => {
     if (estDerniereSlide) {
-      setVueMobileFormulaire(true);
+      ouvrirFormulaireMobile();
     } else {
       setSlideIndex((prev) => prev + 1);
     }
   };
 
   return (
-    <div className="min-h-screen lg:h-screen w-full flex flex-col lg:flex-row bg-[#F8FAFC] text-slate-800 lg:overflow-hidden">
+    <div className="min-h-[100dvh] lg:h-screen w-full flex flex-col lg:flex-row bg-[#F8FAFC] text-slate-800 lg:overflow-hidden">
       {/* 
         ========================================================================
-        1. VUE MOBILE ONBOARDING (Plein écran immersif, fluide, sans coupure)
+        1. VUE MOBILE ONBOARDING (Verrouillée plein écran, zéro scroll, sans logo)
         ========================================================================
       */}
       {!vueMobileFormulaire && (
-        <section className="lg:hidden relative w-full h-[100dvh] flex flex-col justify-between overflow-hidden text-white select-none">
-          {/* Photo plein écran de fond sans bande blanche */}
+        <section className="lg:hidden fixed inset-0 z-50 w-full h-full flex flex-col justify-between overflow-hidden touch-none text-white select-none bg-slate-950">
+          {/* Photographie plein écran 9:16 */}
           <img
             key={slideCourante.image}
             src={slideCourante.image}
@@ -110,36 +136,23 @@ export default function AuthLayout({ variante, className = '', children }) {
             className="absolute inset-0 w-full h-full object-cover object-center z-0 transition-opacity duration-500"
           />
 
-          {/* Dégradé sombre pour lisibilité parfaite */}
-          <div className="absolute inset-0 z-10 bg-gradient-to-t from-slate-950/95 via-slate-950/50 to-slate-950/35 pointer-events-none" />
+          {/* Voile dégradé progressif pour une lisibilité parfaite du texte en bas */}
+          <div className="absolute inset-0 z-10 bg-gradient-to-t from-slate-950/95 via-slate-950/35 to-slate-950/20 pointer-events-none" />
 
-          {/* En-tête mobile : Logo officiel propre + bouton Passer */}
-          <header className="relative z-20 flex items-center justify-between p-5 pt-7">
-            <div className="flex flex-col items-start">
-              <div className="bg-white/95 backdrop-blur-md px-3.5 py-1.5 rounded-xl shadow-md inline-flex items-center">
-                <img
-                  src={logoLight}
-                  alt="MBEUND MI"
-                  className="h-7 w-auto object-contain"
-                />
-              </div>
-              <span className="text-[10px] font-black tracking-widest uppercase text-white/95 mt-1.5 drop-shadow">
-                Bul Xaar, Waajal Ko.
-              </span>
-            </div>
-
+          {/* Haut : uniquement le bouton Passer aligné à droite */}
+          <header className="relative z-20 flex items-center justify-end p-5 pt-6">
             <button
               type="button"
-              onClick={() => setVueMobileFormulaire(true)}
-              className="text-xs font-bold text-white/80 hover:text-white px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/20 active:scale-95 transition"
+              onClick={ouvrirFormulaireMobile}
+              className="text-xs font-bold text-white/90 hover:text-white px-3.5 py-1.5 rounded-full bg-black/25 backdrop-blur-md border border-white/20 active:scale-95 transition cursor-pointer"
             >
               Passer
             </button>
           </header>
 
-          {/* Bas d'écran mobile : Titre sobre, phrase d'impact, pagination et bouton Suivant */}
+          {/* Bas : Indicateurs, texte court structuré et bouton sans flèche */}
           <footer className="relative z-20 p-6 pb-8 flex flex-col gap-4">
-            {/* Barre de pagination 3 traits */}
+            {/* Pagination 3 traits */}
             <div className="flex items-center gap-1.5">
               {slides.map((_, idx) => (
                 <button
@@ -154,24 +167,22 @@ export default function AuthLayout({ variante, className = '', children }) {
               ))}
             </div>
 
-            {/* Titre et phrase (court et aéré, pas de surcharge) */}
             <div>
-              <h2 className="text-2xl font-black leading-tight text-white drop-shadow-md mb-1.5">
+              <h2 className="text-2xl font-black leading-tight text-white drop-shadow-sm mb-1.5">
                 {slideCourante.titre}
               </h2>
-              <p className="text-sm text-white/90 leading-relaxed font-medium drop-shadow">
+              <p className="text-sm text-white/90 leading-relaxed font-medium drop-shadow-xs">
                 {slideCourante.phrase}
               </p>
             </div>
 
-            {/* Bouton d'action */}
+            {/* Bouton épuré sans flèche */}
             <button
               type="button"
               onClick={handleSuivant}
-              className="w-full h-12 rounded-xl bg-white text-[#0B2545] font-extrabold text-sm flex items-center justify-center gap-2 shadow-2xl hover:bg-slate-50 transition active:scale-98 cursor-pointer mt-1"
+              className="w-full h-12 rounded-xl bg-white text-[#0B2545] font-extrabold text-sm flex items-center justify-center shadow-2xl hover:bg-slate-50 transition active:scale-98 cursor-pointer mt-1"
             >
-              <span>{estDerniereSlide ? 'Se connecter' : 'Suivant'}</span>
-              <ArrowRight size={16} className="text-[#087E8B]" />
+              {estDerniereSlide ? 'Se connecter' : 'Suivant'}
             </button>
           </footer>
         </section>
@@ -184,12 +195,12 @@ export default function AuthLayout({ variante, className = '', children }) {
       */}
       <aside className="hidden lg:flex relative lg:w-[56%] h-screen sticky top-0 flex-col justify-between p-12 xl:p-14 overflow-hidden text-white flex-shrink-0">
         <img
-          src={isAuthority ? '/images/login-autorite-thiaroye.jpg' : '/images/login-citoyen-thiaroye.jpg'}
+          src={isAuthority ? '/images/onboarding-slide3-secours.jpg' : '/images/onboarding-slide2-littoral.jpg'}
           alt="MBEUND MI - Thiaroye-sur-Mer"
           className="absolute inset-0 w-full h-full object-cover object-center z-0"
         />
 
-        <div className="absolute inset-0 z-10 bg-gradient-to-t from-slate-950/90 via-slate-950/60 to-slate-950/40 pointer-events-none" />
+        <div className="absolute inset-0 z-10 bg-gradient-to-t from-slate-950/90 via-slate-950/55 to-slate-950/35 pointer-events-none" />
 
         {/* Logo officiel Desktop */}
         <div className="relative z-20 flex flex-col items-start">
@@ -233,33 +244,15 @@ export default function AuthLayout({ variante, className = '', children }) {
 
       {/* 
         ========================================================================
-        3. ZONE FORMULAIRE (Sur desktop: 44% à droite / Sur mobile: 100% plein écran)
+        3. ZONE FORMULAIRE (Centrée verticalement sur mobile, sans barre en haut)
         ========================================================================
       */}
       <main
-        className={`lg:w-[44%] w-full lg:h-screen overflow-y-auto flex flex-col justify-start items-center px-4 sm:px-8 lg:px-10 py-6 lg:py-10 bg-[#F8FAFC] ${
+        className={`lg:w-[44%] w-full min-h-[100dvh] lg:h-screen overflow-y-auto flex flex-col justify-center items-center px-4 sm:px-8 lg:px-10 py-6 lg:py-10 bg-[#F8FAFC] ${
           !vueMobileFormulaire ? 'hidden lg:flex' : 'flex'
         }`}
       >
-        {/* En-tête mobile épuré lors de la saisie */}
-        <div className="lg:hidden w-full max-w-[530px] flex items-center justify-between mb-4 pb-2 border-b border-slate-200/80">
-          <button
-            type="button"
-            onClick={() => setVueMobileFormulaire(false)}
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-[#0B2545] transition py-1 px-2 rounded-lg hover:bg-slate-100"
-          >
-            <ArrowLeft size={14} />
-            <span>Présentation</span>
-          </button>
-
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-[11px] font-bold text-[#0B2545]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#087E8B]" />
-            <span>{isAuthority ? 'Portail Autorités' : 'Espace Citoyen'}</span>
-          </div>
-        </div>
-
-        {/* Formulaire centré et propre */}
-        <div className={`w-full max-w-[530px] ${className}`}>
+        <div className={`w-full max-w-[530px] my-auto ${className}`}>
           {children}
         </div>
       </main>

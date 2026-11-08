@@ -14,6 +14,9 @@ export default function SplashScreen() {
   const pret = logoCharge && policeChargee;
 
   useEffect(() => {
+    try {
+      sessionStorage.removeItem('mbeund_mi_onboarding_seen');
+    } catch {}
     let actif = true;
     const polices = document.fonts?.ready ?? Promise.resolve();
     polices.then(() => {
