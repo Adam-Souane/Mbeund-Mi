@@ -17,7 +17,8 @@ export default function GaugeRisk({ zone, prediction, onExploreMap, className = 
   }
 
   const { label, hex } = riskInfo(zone.niveau_risque);
-  const scorePercent = Math.round(Number(zone.score_risque_moyen ?? 0) * 100);
+  const rawScore = Number(zone.score_risque_moyen ?? 0);
+  const scorePercent = Math.min(100, Math.round(rawScore > 1 ? rawScore : rawScore * 100));
   const circumference = 440;
   const strokeDashoffset = circumference - (circumference * scorePercent) / 100;
 

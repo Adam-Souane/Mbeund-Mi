@@ -70,10 +70,10 @@ export default function AccueilPageBody() {
   const { data: previsionsData } = usePrevisions();
 
   const FALLBACK_ZONES = [
-    { id: 1, properties: { quartier: 'Thiaroye Gare', niveau_risque: 'jaune', score_risque_moyen: 42 } },
-    { id: 2, properties: { quartier: 'Cuvette Ouest', niveau_risque: 'orange', score_risque_moyen: 68 } },
-    { id: 3, properties: { quartier: 'Thiaroye Plage', niveau_risque: 'vert', score_risque_moyen: 20 } },
-    { id: 4, properties: { quartier: 'Quartier Médina', niveau_risque: 'vert', score_risque_moyen: 15 } },
+    { id: 1, properties: { quartier: 'Thiaroye Gare', niveau_risque: 'jaune', score_risque_moyen: 0.42 } },
+    { id: 2, properties: { quartier: 'Cuvette Ouest', niveau_risque: 'orange', score_risque_moyen: 0.68 } },
+    { id: 3, properties: { quartier: 'Thiaroye Plage', niveau_risque: 'vert', score_risque_moyen: 0.20 } },
+    { id: 4, properties: { quartier: 'Quartier Médina', niveau_risque: 'vert', score_risque_moyen: 0.15 } },
   ];
 
   const effectiveFeatures = zonesData?.features?.length ? zonesData.features : FALLBACK_ZONES;

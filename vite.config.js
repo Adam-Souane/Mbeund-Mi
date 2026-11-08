@@ -11,12 +11,12 @@ export default defineConfig(({ mode }) => ({
     open: true,
     proxy: {
       '/api/': {
-        target: 'http://localhost:8008',
+        target: 'http://127.0.0.1:8000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '/api')
       },
       '/ws/': {
-        target: 'ws://localhost:8008',
+        target: 'ws://127.0.0.1:8000',
         ws: true,
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/ws/, '/ws')
