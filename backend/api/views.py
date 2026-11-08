@@ -136,16 +136,53 @@ class ChatView(APIView):
                 logger.warning("[ChatView] Contexte signalements indisponible : %s", e)
                 signalements_context = "Aucun récent"
 
+            # Paramètres optionnels de langue, historique, localisation et mode vocal
+            has_extended_params = any(k in request.data for k in ('langue', 'history', 'is_voice', 'localisation', 'image'))
+            langue_req = (request.data.get('langue') or 'fr').strip().lower()
+            history_req = request.data.get('history')
+            is_voice_req = bool(request.data.get('is_voice'))
+            localisation_req = request.data.get('localisation')
+
+            if localisation_req and isinstance(localisation_req, dict):
+                lat = localisation_req.get('lat')
+                lng = localisation_req.get('lng')
+                if lat is not None and lng is not None:
+                    meteo_context = f"{meteo_context} | Position GPS citoyen: {lat}, {lng}"
+
+            detected_lang = langue_req if langue_req in ('fr', 'wo') else 'fr'
+            try:
+                from ia.service_chatbot import detecter_langue_texte
+                detected_lang = detecter_langue_texte(question, default_lang=detected_lang)
+            except Exception:
+                pass
+
             # Utiliser le chatbot avec triple filet de sécurité
             try:
                 chatbot = _get_chatbot_service()
-                reply = chatbot.poser_question(
-                    question,
-                    meteo_context=meteo_context,
-                    signalements_context=signalements_context,
-                    niveau_risque=niveau_risque,
-                )
-                return Response({"reply": reply})
+                if has_extended_params:
+                    reply = chatbot.poser_question(
+                        question,
+                        meteo_context=meteo_context,
+                        signalements_context=signalements_context,
+                        niveau_risque=niveau_risque,
+                        history=history_req,
+                        langue=detected_lang,
+                    )
+                    resp_payload = {"reply": reply, "langue": detected_lang}
+                    if is_voice_req:
+                        from ia.service_chatbot import synthetiser_voix_femme_base64
+                        audio_url = synthetiser_voix_femme_base64(reply, langue=detected_lang)
+                        if audio_url:
+                            resp_payload["audio_url"] = audio_url
+                    return Response(resp_payload)
+                else:
+                    reply = chatbot.poser_question(
+                        question,
+                        meteo_context=meteo_context,
+                        signalements_context=signalements_context,
+                        niveau_risque=niveau_risque,
+                    )
+                    return Response({"reply": reply})
             except Exception as e:
                 logger.exception("[ChatView] Échec du service chatbot, bascule fallback expert local : %s", e)
                 try:
@@ -171,6 +208,55 @@ class ChatView(APIView):
                          "Vous pouvez consulter l'état des zones sur la Carte interactive, déclarer une zone inondée dans l'onglet « Signaler », "
                          "ou composer le 18 (Sapeurs-Pompiers) en cas de danger immédiat."
             })
+
+
+@extend_schema(exclude=True)
+class ChatTranscribeView(APIView):
+    """
+    POST /api/chat/transcribe/ — Transcrit un fichier audio vocal (Français ou Wolof)
+    et détecte automatiquement la langue parlée.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        audio_file = request.FILES.get('audio')
+        lang_hint = (request.data.get('lang') or 'fr').strip().lower()
+        if not audio_file:
+            return Response({"text": "", "detected_lang": lang_hint}, status=400)
+        try:
+            chatbot = _get_chatbot_service()
+            result = chatbot.transcrire_audio(
+                audio_file,
+                filename=getattr(audio_file, 'name', 'audio.webm'),
+                hint_lang=lang_hint,
+            )
+            return Response(result)
+        except Exception as e:
+            logger.warning("[ChatTranscribeView] Erreur transcription : %s", e)
+            return Response({"text": "", "detected_lang": lang_hint})
+
+
+@extend_schema(exclude=True)
+class ChatTTSView(APIView):
+    """
+    POST /api/chat/tts/ — Génère un audio MP3 (Data URL) avec la voix féminine
+    naturelle de NDAM en Français ou en Wolof.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        text = (request.data.get('text') or '').strip()
+        langue = (request.data.get('langue') or 'fr').strip().lower()
+        if not text:
+            return Response({"audio_url": None}, status=400)
+        try:
+            from ia.service_chatbot import detecter_langue_texte, synthetiser_voix_femme_base64
+            detected_lang = detecter_langue_texte(text, default_lang=langue)
+            audio_url = synthetiser_voix_femme_base64(text, langue=detected_lang)
+            return Response({"audio_url": audio_url, "langue": detected_lang})
+        except Exception as e:
+            logger.warning("[ChatTTSView] Erreur TTS : %s", e)
+            return Response({"audio_url": None, "langue": langue})
 
 
 class CapteurViewSet(viewsets.ModelViewSet):

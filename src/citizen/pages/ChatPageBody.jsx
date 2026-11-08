@@ -33,11 +33,52 @@ import {
 } from 'lucide-react';
 import CitizenShell from '../shared/CitizenShell';
 import RiskBadge from '../../shared/components/RiskBadge';
-import { askNdam, transcribeAudio } from '../../api/endpoints/chat';
+import * as chatApi from '../../api/endpoints/chat';
 import { createSignalement } from '../../api/endpoints/signalements';
 import AudioMessagePlayer from '../components/AudioMessagePlayer';
 import { useZones } from '../../shared/hooks/useZones';
 import { usePrevisions } from '../../shared/hooks/usePrevisions';
+
+const { askNdam, transcribeAudio } = chatApi;
+
+const WOLOF_MARKERS = new Set([
+  'nanga', 'nañu', 'nanu', 'def', 'mangi', 'maangi', 'fi', 'rek', 'rekk',
+  'ndox', 'mi', 'bi', 'yi', 'ci', 'sama', 'barab', 'léegi', 'leegi',
+  'ban', 'moo', 'gën', 'gen', 'am', 'naka', 'laay', 'defé', 'defe',
+  'taw', 'démé', 'deme', 'mbeund', 'mbënn', 'xoolal', 'waxal', 'wax',
+  'jërëjëf', 'jerejef', 'waaw', 'déedéet', 'deedeet', 'fan', 'la', 'ko',
+  'ñu', 'nu', 'dina', 'amul', 'baax', 'bëgg', 'begg', 'tontu', 'ndax',
+  'dëkk', 'dekk', 'këri', 'ker', 'yoon', 'kawe', 'wotleel', 'jàppale',
+  'jappale', 'yëgle', 'yegle', 'ngir', 'balaa', 'ginnaaw', 'saa', 'si',
+]);
+
+const FRENCH_MARKERS = new Set([
+  'bonjour', 'bonsoir', 'salut', 'quel', 'quelle', 'quels', 'quelles',
+  'comment', 'est', 'sont', 'dans', 'pour', 'avec', 'sans', 'mon', 'ma',
+  'mes', 'votre', 'notre', 'risque', 'actuel', 'actuelle', 'signaler',
+  'inondation', 'refuge', 'refuges', 'proche', 'proches', 'faire',
+  'avant', 'pendant', 'après', 'apres', 'pluie', 'eau', 'niveau', 'aide',
+  'secours', 'pompiers', 'numéro', 'numero', 'alerte', 'météo', 'meteo',
+  'quartier', 'position', 'où', 'ou', 'quand', 'pourquoi', 'merci',
+]);
+
+function detecterLangueClient(texte, defaultLang = 'fr') {
+  if (!texte || !texte.trim()) return defaultLang === 'wo' ? 'wo' : 'fr';
+  const words = texte.toLowerCase().match(/[a-zàâäéèêëîïôöùûüçñëŋ]+/g) || [];
+  if (!words.length) return defaultLang === 'wo' ? 'wo' : 'fr';
+  let woScore = 0;
+  let frScore = 0;
+  for (const w of words) {
+    if (WOLOF_MARKERS.has(w)) woScore += 2;
+    if (FRENCH_MARKERS.has(w)) frScore += 1;
+  }
+  if (/[ñŋ]|ë/.test(texte.toLowerCase()) && woScore >= 1) {
+    woScore += 2;
+  }
+  if (woScore > frScore && woScore >= 2) return 'wo';
+  if (frScore > woScore && frScore >= 1) return 'fr';
+  return defaultLang === 'wo' ? 'wo' : 'fr';
+}
 
 const SUGGESTIONS = [
   '📍 Quel est le risque à ma position actuelle ?',
@@ -211,6 +252,7 @@ export default function ChatPageBody() {
   const manualLocationInputRef = useRef(null);
   const webcamStreamRef = useRef(null);
   const webcamVideoRef = useRef(null);
+  const ttsAudioRef = useRef(null);
 
   const { data: zonesData } = useZones();
   const { data: previsionsData } = usePrevisions();
@@ -345,6 +387,13 @@ export default function ChatPageBody() {
   }, [isWebcamOpen]);
 
   const stopAllAudioPlayback = () => {
+    if (ttsAudioRef.current) {
+      try {
+        ttsAudioRef.current.pause();
+        ttsAudioRef.current.currentTime = 0;
+      } catch {}
+      ttsAudioRef.current = null;
+    }
     if (typeof window !== 'undefined') {
       if (window.speechSynthesis) {
         window.speechSynthesis.cancel();
@@ -397,31 +446,47 @@ export default function ChatPageBody() {
 
   const mutation = useMutation({
     mutationFn: (variables) => {
-      const { question, localisation } =
-        typeof variables === 'string' ? { question: variables, localisation: null } : variables;
+      const { question, localisation, isVoice, effectiveLang } =
+        typeof variables === 'string'
+          ? { question: variables, localisation: null, isVoice: false, effectiveLang: langue }
+          : variables;
+      const targetLang = effectiveLang || detecterLangueClient(question, langue);
       return askNdam(question, {
         history: messages.slice(-6).map((m) => ({ role: m.role, content: m.text })),
-        langue,
+        langue: targetLang,
         localisation,
+        isVoice: Boolean(isVoice),
       });
     },
     onSuccess: (data, variables) => {
       const isVoiceQuery = typeof variables === 'object' && Boolean(variables?.isVoice);
+      const replyLang =
+        data?.langue ||
+        (typeof variables === 'object' && variables?.effectiveLang) ||
+        langue;
+
+      if (data?.langue && (data.langue === 'fr' || data.langue === 'wo') && data.langue !== langue) {
+        setLangue(data.langue);
+      }
+
+      const hasServerAudio = Boolean(data?.audio_url);
       const canSpeakFr =
         isVoiceQuery &&
-        langue === 'fr' &&
+        replyLang === 'fr' &&
         typeof window !== 'undefined' &&
         'speechSynthesis' in window;
 
       let voiceUnavailableNote = null;
-      if (isVoiceQuery && langue === 'wo') {
-        voiceUnavailableNote =
-          langue === 'wo'
-            ? '⚠️ Wax ci baat amul ci làkku wolof ci appareil bi — tontu bi ci mbind rekk la ngir bañ a yàq baat yi.' /* [À faire relire par un locuteur natif wolof] */
-            : '⚠️ Synthèse vocale wolof non disponible — réponse fournie par écrit en wolof pour préserver la prononciation authentique.';
-      } else if (isVoiceQuery && langue === 'fr' && !canSpeakFr) {
-        voiceUnavailableNote =
-          '⚠️ Synthèse vocale indisponible sur cet appareil — réponse affichée par écrit.';
+      if (!hasServerAudio) {
+        if (isVoiceQuery && replyLang === 'wo') {
+          voiceUnavailableNote =
+            replyLang === 'wo'
+              ? '⚠️ Wax ci baat amul ci làkku wolof ci appareil bi — tontu bi ci mbind rekk la ngir bañ a yàq baat yi.' /* [À faire relire par un locuteur natif wolof] */
+              : '⚠️ Synthèse vocale wolof non disponible — réponse fournie par écrit en wolof pour préserver la prononciation authentique.';
+        } else if (isVoiceQuery && replyLang === 'fr' && !canSpeakFr) {
+          voiceUnavailableNote =
+            '⚠️ Synthèse vocale indisponible sur cet appareil — réponse affichée par écrit.';
+        }
       }
 
       setMessages((m) => [
@@ -429,7 +494,9 @@ export default function ChatPageBody() {
         {
           role: 'assistant',
           text: data.reply,
-          isVoice: canSpeakFr,
+          isVoice: hasServerAudio ? true : canSpeakFr,
+          audioUrl: data?.audio_url || null,
+          langue: replyLang,
           voiceUnavailableNote,
           timestamp: new Date().toISOString(),
           isNew: true,
@@ -482,12 +549,16 @@ export default function ChatPageBody() {
       (langue === 'wo'
         ? 'Nataal (photo jointe)' /* [À faire relire par un locuteur natif wolof] */
         : 'Photo jointe');
+    const detectedLang = detecterLangueClient(textToSend, langue);
+    if (detectedLang !== langue) {
+      setLangue(detectedLang);
+    }
     setMessages((m) => [...m, { role: 'user', text: textToSend, timestamp: new Date().toISOString() }]);
     setInput('');
     if (attachedPhoto) {
       removeAttachedPhoto();
     }
-    mutation.mutate({ question: textToSend, localisation, isVoice: false });
+    mutation.mutate({ question: textToSend, localisation, isVoice: false, effectiveLang: detectedLang });
   };
 
   const triggerLocationLookup = () => {
@@ -640,22 +711,48 @@ export default function ChatPageBody() {
     }
   };
 
-  const toggleSpeech = (text, idx) => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) return;
-    if (langue !== 'fr') return; // Ne jamais lire du wolof avec une voix française
+  const toggleSpeech = async (text, idx) => {
     if (speakingIndex === idx) {
-      window.speechSynthesis.cancel();
+      stopAllAudioPlayback();
+      return;
+    }
+    stopAllAudioPlayback();
+    const cleanText = stripBullets(text).replace(/[*#_~]/g, '');
+    if (!cleanText.trim()) return;
+    const targetLang = detecterLangueClient(cleanText, langue);
+    setSpeakingIndex(idx);
+
+    if (typeof chatApi.synthesizeSpeech === 'function') {
+      try {
+        const res = await chatApi.synthesizeSpeech(cleanText, targetLang);
+        if (res?.audio_url) {
+          const audio = new Audio(res.audio_url);
+          ttsAudioRef.current = audio;
+          audio.onended = () => {
+            ttsAudioRef.current = null;
+            setSpeakingIndex(null);
+          };
+          audio.onerror = () => {
+            ttsAudioRef.current = null;
+            setSpeakingIndex(null);
+          };
+          await audio.play();
+          return;
+        }
+      } catch {
+        // Repli ci-dessous si l'API TTS est indisponible
+      }
+    }
+
+    if (typeof window === 'undefined' || !window.speechSynthesis || targetLang !== 'fr') {
       setSpeakingIndex(null);
       return;
     }
-    window.speechSynthesis.cancel();
-    const cleanText = stripBullets(text).replace(/[*#_~]/g, '');
     const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.lang = 'fr-FR';
     utterance.rate = 1.0;
     utterance.onend = () => setSpeakingIndex(null);
     utterance.onerror = () => setSpeakingIndex(null);
-    setSpeakingIndex(idx);
     window.speechSynthesis.speak(utterance);
   };
 
@@ -717,9 +814,13 @@ export default function ChatPageBody() {
         if (langue === 'wo') {
           setIsTranscribing(true);
           let rawTranscript = '';
+          let detectedLang = 'wo';
           try {
             const data = await transcribeAudio(audioBlob, 'wo');
             rawTranscript = data.text || '';
+            if (data?.detected_lang === 'fr' || data?.detected_lang === 'wo') {
+              detectedLang = data.detected_lang;
+            }
           } catch {
             rawTranscript = '';
           } finally {
@@ -731,23 +832,30 @@ export default function ChatPageBody() {
             audioUrl,
             duration: finalDuration || 4,
             transcript: rawTranscript,
+            detectedLang,
             isUncertain: true,
           });
         } else {
           // Si la langue est le français :
-          // Transcription via Whisper Groq puis envoi
+          // Transcription via Whisper Groq puis envoi avec détection automatique (FR ou WO)
           setIsTranscribing(true);
           let rawTranscript = '';
+          let detectedLang = 'fr';
           try {
             const data = await transcribeAudio(audioBlob, 'fr');
             rawTranscript = data.text || '';
+            if (data?.detected_lang === 'fr' || data?.detected_lang === 'wo') {
+              detectedLang = data.detected_lang;
+            } else if (rawTranscript) {
+              detectedLang = detecterLangueClient(rawTranscript, 'fr');
+            }
           } catch {
             rawTranscript = '';
           } finally {
             setIsTranscribing(false);
           }
 
-          sendVoiceMessage(rawTranscript || "Message vocal", audioUrl, finalDuration || 4, false);
+          sendVoiceMessage(rawTranscript || "Message vocal", audioUrl, finalDuration || 4, false, detectedLang);
         }
       };
 
@@ -795,8 +903,13 @@ export default function ChatPageBody() {
   };
 
   // Envoi effectif d'un message vocal
-  const sendVoiceMessage = (transcriptText, audioUrl, duration, isUncertain = false) => {
-    const textToSend = transcriptText?.trim() || (langue === 'wo' ? "Bataaxal bu ñu wax (vocal)" : "Message vocal");
+  const sendVoiceMessage = (transcriptText, audioUrl, duration, isUncertain = false, forcedLang = null) => {
+    const cleanTranscript = transcriptText?.trim();
+    const detectedLang = forcedLang || detecterLangueClient(cleanTranscript, langue);
+    if (detectedLang && detectedLang !== langue) {
+      setLangue(detectedLang);
+    }
+    const textToSend = cleanTranscript || (detectedLang === 'wo' ? "Bataaxal bu ñu wax (vocal)" : "Message vocal");
     setMessages((m) => [
       ...m,
       {
@@ -816,6 +929,7 @@ export default function ChatPageBody() {
       question: textToSend,
       isVoice: true,
       localisation: null,
+      effectiveLang: detectedLang,
     });
   };
 
@@ -941,9 +1055,10 @@ export default function ChatPageBody() {
                         <div>
                           {m.isVoice ? (
                             <AudioMessagePlayer
+                              audioUrl={m.audioUrl}
                               senderRole="assistant"
                               transcription={m.text}
-                              langue={langue}
+                              langue={m.langue || langue}
                               onSynthesisError={() => handleSynthesisError(i)}
                               voiceUnavailableNote={m.voiceUnavailableNote}
                             />
@@ -1012,22 +1127,20 @@ export default function ChatPageBody() {
 
                       {m.role === 'assistant' && (
                         <div className="absolute -bottom-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          {/* Bouton lecture vocale (Text-to-speech) - uniquement en français pour ne jamais lire le wolof avec une voix française */}
-                          {langue === 'fr' && (
-                            <button
-                              type="button"
-                              onClick={() => toggleSpeech(stripBullets(m.text), i)}
-                              className={`p-1 rounded-md border text-xs cursor-pointer shadow-2xs transition ${
-                                speakingIndex === i
-                                  ? 'bg-rose-500 text-white border-rose-600 animate-pulse'
-                                  : 'bg-white dark:bg-navy-800 border-slate-200 dark:border-navy-700 text-slate-400 hover:text-navy-900 dark:hover:text-white'
-                              }`}
-                              title={speakingIndex === i ? 'Arrêter la lecture' : 'Écouter la réponse'}
-                              aria-label={speakingIndex === i ? 'Arrêter la lecture' : 'Écouter'}
-                            >
-                              {speakingIndex === i ? <VolumeX size={11} /> : <Volume2 size={11} />}
-                            </button>
-                          )}
+                          {/* Bouton lecture vocale (Text-to-speech) avec voix féminine naturelle (FR & Wolof) */}
+                          <button
+                            type="button"
+                            onClick={() => toggleSpeech(stripBullets(m.text), i)}
+                            className={`p-1 rounded-md border text-xs cursor-pointer shadow-2xs transition ${
+                              speakingIndex === i
+                                ? 'bg-rose-500 text-white border-rose-600 animate-pulse'
+                                : 'bg-white dark:bg-navy-800 border-slate-200 dark:border-navy-700 text-slate-400 hover:text-navy-900 dark:hover:text-white'
+                            }`}
+                            title={speakingIndex === i ? 'Arrêter la lecture' : 'Écouter la réponse'}
+                            aria-label={speakingIndex === i ? 'Arrêter la lecture' : 'Écouter'}
+                          >
+                            {speakingIndex === i ? <VolumeX size={11} /> : <Volume2 size={11} />}
+                          </button>
 
                           {/* Bouton Partager sur WhatsApp */}
                           <a
