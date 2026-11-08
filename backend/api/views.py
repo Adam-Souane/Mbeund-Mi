@@ -62,7 +62,10 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 # on l'ajoute au path pour réutiliser le vrai service chatbot de Maïmouna
 # (Groq) au lieu de dupliquer sa logique dans Django. Même pattern que
 # alertes/tasks.py pour le service de prédiction.
-_MBEUND_MI_IA_PATH = os.path.join(os.path.dirname(settings.BASE_DIR), 'mbeund_mi_ia')
+_MBEUND_MI_PARENT_PATH = os.path.dirname(settings.BASE_DIR)
+_MBEUND_MI_IA_PATH = os.path.join(_MBEUND_MI_PARENT_PATH, 'mbeund_mi_ia')
+if _MBEUND_MI_PARENT_PATH not in sys.path:
+    sys.path.insert(0, _MBEUND_MI_PARENT_PATH)
 if _MBEUND_MI_IA_PATH not in sys.path:
     sys.path.insert(0, _MBEUND_MI_IA_PATH)
 
@@ -170,6 +173,63 @@ class ChatView(APIView):
                 "reply": "Bonjour, je suis NDAM, votre assistant de prévention à Thiaroye-sur-Mer. "
                          "Vous pouvez consulter l'état des zones sur la Carte interactive, déclarer une zone inondée dans l'onglet « Signaler », "
                          "ou composer le 18 (Sapeurs-Pompiers) en cas de danger immédiat."
+            })
+
+
+@extend_schema(exclude=True)
+class ChatTranscribeView(APIView):
+    """
+    POST /api/chat/transcribe/ — transcrit un mémo vocal via Groq Whisper.
+    Supporte le français et gère le wolof avec un indicateur d'incertitude.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        audio_file = request.FILES.get('audio')
+        if not audio_file:
+            return Response({"error": "Fichier audio manquant."}, status=400)
+
+        langue = request.data.get('langue', 'fr')
+        is_uncertain = (langue == 'wo')
+
+        api_key = os.environ.get('GROQ_API_KEY') or getattr(settings, 'GROQ_API_KEY', '')
+        if not api_key:
+            try:
+                from ia.config import GROQ_API_KEY
+                api_key = GROQ_API_KEY
+            except Exception:
+                pass
+
+        if not api_key:
+            return Response({
+                "text": "Message vocal reçu (transcription indisponible sans clé API).",
+                "is_uncertain": is_uncertain,
+            })
+
+        try:
+            from groq import Groq
+            client = Groq(api_key=api_key)
+            audio_bytes = audio_file.read()
+            filename = getattr(audio_file, 'name', None) or 'voice.webm'
+            file_tuple = (filename, audio_bytes)
+
+            transcription_kwargs = {
+                "file": file_tuple,
+                "model": "whisper-large-v3-turbo",
+            }
+            if langue == 'fr':
+                transcription_kwargs["language"] = "fr"
+
+            transcription = client.audio.transcriptions.create(**transcription_kwargs)
+            return Response({
+                "text": transcription.text.strip(),
+                "is_uncertain": is_uncertain,
+            })
+        except Exception as e:
+            logger.warning("[ChatTranscribeView] Échec transcription Whisper Groq: %s", e)
+            return Response({
+                "text": "Message vocal reçu.",
+                "is_uncertain": is_uncertain,
             })
 
 

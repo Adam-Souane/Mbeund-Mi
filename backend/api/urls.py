@@ -16,6 +16,7 @@ from api.views import (
     ContactAlerteViewSet,
     CustomTokenObtainPairView,
     ChatView,
+    ChatTranscribeView,
     ItineraireSecuriseView,
     MonProfilVulnerabiliteView,
     ProfilVulnerabiliteViewSet,
