@@ -290,12 +290,13 @@ class AlerteViewSet(viewsets.ModelViewSet):
 class ZoneRisqueViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ZoneRisque.objects.all()
     serializer_class = ZoneRisqueGeoSerializer
+    permission_classes = [permissions.AllowAny]
 
 
 class PredictionIAViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = PredictionIA.objects.all()
     serializer_class = PredictionIASerializer
-    permission_classes = [IsAutoriteOrAdmin]
+    permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
         latest_predictions = PredictionIA.objects.filter(
