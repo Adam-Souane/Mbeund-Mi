@@ -128,21 +128,36 @@ function DropdownMenu({ label, icon: Icon, items }) {
   );
 }
 
-function ProfileMenu({ isAdmin, logout }) {
+function ProfileMenu({ isAdmin, username, serviceMeta, logout }) {
   const { open, setOpen, ref } = useMenuDeroulant();
+  const ServiceIcon = serviceMeta?.icon || Settings;
 
   return (
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
         title="Paramètres & Profil"
-        className="p-2 rounded-lg text-navy-700 dark:text-navy-200 hover:bg-navy-100 dark:hover:bg-navy-800 transition-colors"
+        className="p-2 rounded-lg text-navy-700 dark:text-navy-200 hover:bg-navy-100 dark:hover:bg-navy-800 transition-colors cursor-pointer"
       >
         <Settings size={18} />
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-1.5 w-56 bg-white dark:bg-navy-900 border border-navy-100 dark:border-navy-800 rounded-xl shadow-xl z-50 py-1 overflow-hidden">
+        <div className="absolute right-0 mt-1.5 w-64 bg-white dark:bg-navy-900 border border-navy-100 dark:border-navy-800 rounded-xl shadow-xl z-50 py-1 overflow-hidden">
+          <div className="px-4 py-3 border-b border-navy-100 dark:border-navy-800 bg-navy-50/60 dark:bg-navy-950/60">
+            <div className="flex items-center gap-2">
+              <ServiceIcon
+                size={15}
+                className={isAdmin ? 'text-[#0B2545] dark:text-blue-400' : 'text-[#CC131A]'}
+              />
+              <span className="text-xs font-black text-navy-900 dark:text-white truncate">
+                {username || (isAdmin ? 'admin' : 'autorite')}
+              </span>
+            </div>
+            <p className="text-[11px] font-bold text-navy-500 dark:text-navy-400 mt-0.5 truncate">
+              {serviceMeta?.label || (isAdmin ? 'Administrateur Général' : 'Autorité Terrain')}
+            </p>
+          </div>
           {isAdmin && (
             <>
               <NavLink
@@ -237,8 +252,25 @@ function SidebarLink({ item, isCollapsed, mobileMenuOpen, badgeCount = 0, onNavi
   );
 }
 
+function classifierServiceSignalement(props = {}) {
+  const txt = `${props.categorie || ''} ${props.description || ''}`.toLowerCase();
+  if (
+    txt.includes('caniveau') ||
+    txt.includes('egout') ||
+    txt.includes('égout') ||
+    txt.includes('pomp') ||
+    txt.includes('drain')
+  ) {
+    return 'onas';
+  }
+  if (txt.includes('pieton') || txt.includes('piéton') || txt.includes('sac') || txt.includes('relais')) {
+    return 'mairie';
+  }
+  return 'bnsp';
+}
+
 export default function AutoriteShell({ children }) {
-  const { logout, role, service } = useAuth();
+  const { logout, role, service, username } = useAuth();
   const isAdmin = role === 'admin';
   const activeServiceKey = isAdmin ? 'cod' : (service || 'bnsp');
   const serviceMeta = SERVICE_META[activeServiceKey] || SERVICE_META.bnsp;
@@ -246,9 +278,13 @@ export default function AutoriteShell({ children }) {
   const [emergencyOpen, setEmergencyOpen] = useState(false);
   const { data: signalementsData } = useSignalementsApercu();
 
-  // Nombre de signalements citoyens non validés / en attente
+  // Nombre de signalements citoyens non validés adaptés à l'unité connectée
   const nbSignalementsEnAttente =
-    signalementsData?.results?.features?.filter((f) => !f.properties.valide)?.length ?? 0;
+    signalementsData?.results?.features?.filter((f) => {
+      if (f.properties.valide) return false;
+      if (isAdmin || activeServiceKey === 'cod') return true;
+      return classifierServiceSignalement(f.properties) === activeServiceKey;
+    })?.length ?? 0;
 
   // Mémorisation de l'état replié de la sidebar
   const [isCollapsed, setIsCollapsed] = useState(() => {
@@ -308,10 +344,15 @@ export default function AutoriteShell({ children }) {
 
           {/* Outils & Actions du Header */}
           <div className="flex-1 flex items-center justify-end gap-2.5 px-4 lg:px-8 py-3">
-            {/* Badge d'identification du corps d'intervention ou de l'Admin C.O.D */}
-            <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-navy-50 dark:bg-navy-900 border border-navy-200 dark:border-navy-800 text-xs font-extrabold text-[#0B2545] dark:text-white">
+            {/* Badge d'identification du corps d'intervention + identifiant de la personne connectée */}
+            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-navy-50 dark:bg-navy-900 border border-navy-200 dark:border-navy-800 text-xs font-extrabold text-[#0B2545] dark:text-white">
               <ServiceIcon size={14} className={isAdmin ? 'text-[#0B2545] dark:text-blue-400' : 'text-[#CC131A]'} />
               <span>{serviceMeta.label}</span>
+              {username && (
+                <span className="px-1.5 py-0.5 rounded-md bg-white dark:bg-navy-800 border border-navy-200/80 dark:border-navy-700 text-[11px] font-bold text-navy-600 dark:text-navy-300">
+                  {username}
+                </span>
+              )}
             </div>
 
             <DropdownMenu label="Outils" icon={BarChart3} items={toolsItems} />
@@ -334,7 +375,12 @@ export default function AutoriteShell({ children }) {
             <ThemeToggle />
 
             {/* Menu profil / déconnexion */}
-            <ProfileMenu isAdmin={isAdmin} logout={logout} />
+            <ProfileMenu
+              isAdmin={isAdmin}
+              username={username}
+              serviceMeta={serviceMeta}
+              logout={logout}
+            />
           </div>
         </div>
       </header>

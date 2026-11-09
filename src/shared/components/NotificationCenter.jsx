@@ -1,8 +1,125 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { X, Bell, AlertTriangle, MessageSquare, Smartphone, CheckCircle, AlertCircle, ChevronRight, Users } from 'lucide-react';
 import { useConnexionTempsReel } from '../../realtime/etatConnexion';
 import { useNotifications } from '../contexts/NotificationContext';
+import { useAuth } from '../../auth/AuthContext';
+
+function useSafeAuth() {
+  try {
+    return useAuth();
+  } catch {
+    return { role: null, service: null, username: null };
+  }
+}
+
+const ROLE_SERVICE_NOTIFICATIONS = {
+  cod: [
+    {
+      id: 'cod-1',
+      type: 'alerte',
+      url: '/autorite/previsions',
+      data: {
+        titre: 'Alerte IA C.O.D · Seuil 25 cm (Thiaroye Gare)',
+        message: 'Hausse rapide prévue par le modèle IA (fiabilité 90%). Supervision globale des 3 corps requise.',
+      },
+      timestamp: new Date(Date.now() - 8 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'cod-2',
+      type: 'signalement',
+      url: '/autorite/signalements',
+      data: {
+        titre: 'Nouveaux signalements citoyens à certifier',
+        message: 'Observations géolocalisées en attente de validation et d’affectation (BNSP / ONAS / Mairie).',
+      },
+      timestamp: new Date(Date.now() - 22 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'cod-3',
+      type: 'toast',
+      url: '/autorite/authorities',
+      data: {
+        titre: 'Suivi Équipes · 3 unités opérationnelles prêtes',
+        message: 'BNSP Pompiers, ONAS Hydraulique et Cellule Municipale sont connectés au poste de commandement.',
+      },
+      timestamp: new Date(Date.now() - 50 * 60 * 1000).toISOString(),
+    },
+  ],
+  bnsp: [
+    {
+      id: 'bnsp-1',
+      type: 'alerte',
+      url: '/autorite/signalements',
+      data: {
+        titre: 'Urgence BNSP · Sauvetage & Évacuation (Thiaroye Gare)',
+        message: 'Niveau d’eau critique (> 50 cm) signalé par les riverains. Intervention VSR prioritaire.',
+      },
+      timestamp: new Date(Date.now() - 6 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'bnsp-2',
+      type: 'signalement',
+      url: '/autorite/registre',
+      data: {
+        titre: 'Foyers vulnérables prioritaires · Zone Rouge',
+        message: 'Personnes à mobilité réduite recensées dans le secteur Cuvette Basse à sécuriser.',
+      },
+      timestamp: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
+    },
+  ],
+  onas: [
+    {
+      id: 'onas-1',
+      type: 'alerte',
+      url: '/autorite/signalements',
+      data: {
+        titre: 'Urgence ONAS · Collecteur pluvial obstrué (Ndakhane)',
+        message: 'Refoulement signalé sur le canal principal. Déploiement camion hydrocureur requis.',
+      },
+      timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'onas-2',
+      type: 'prediction',
+      url: '/autorite/carte',
+      data: {
+        titre: 'Sonde Piézométrique TH-01 · Pompage P1 requis',
+        message: 'Saturation du bassin tampon détectée. Activation de la motopompe grand débit recommandée.',
+      },
+      timestamp: new Date(Date.now() - 35 * 60 * 1000).toISOString(),
+    },
+  ],
+  mairie: [
+    {
+      id: 'mairie-1',
+      type: 'alerte',
+      url: '/autorite/crise',
+      data: {
+        titre: 'Cellule Municipale · Ouverture École Refuge',
+        message: 'Préparation logistique des abris temporaires et diffusion des consignes aux délégués de quartier.',
+      },
+      timestamp: new Date(Date.now() - 12 * 60 * 1000).toISOString(),
+    },
+    {
+      id: 'mairie-2',
+      type: 'communaute',
+      url: '/autorite/registre',
+      data: {
+        titre: 'Relais de Quartier · Appui logistique demandé',
+        message: 'Demande de sacs de sable et passerelles piétonnes provisoires à Thiaroye Plage.',
+      },
+      timestamp: new Date(Date.now() - 40 * 60 * 1000).toISOString(),
+    },
+  ],
+};
+
+const FEED_LABELS = {
+  cod: 'Flux C.O.D Global · Admin Général',
+  bnsp: 'Flux Opérationnel · BNSP Pompiers',
+  onas: 'Flux Opérationnel · ONAS Hydraulique',
+  mairie: 'Flux Opérationnel · Cellule Municipale',
+};
 
 const NOTIFICATION_COLORS = {
   alerte: { bg: 'bg-red-50 dark:bg-red/15', border: 'border-red-200 dark:border-red-800', icon: AlertTriangle, color: 'text-red-600 dark:text-red-400' },
@@ -21,13 +138,47 @@ const NOTIFICATION_COLORS = {
 export default function NotificationCenter() {
   const navigate = useNavigate();
   const location = useLocation();
-  const isAutorite = location.pathname.startsWith('/autorite');
+  const { role, service, username } = useSafeAuth();
+  const isAutorite =
+    location.pathname.startsWith('/autorite') || role === 'admin' || role === 'autorite';
+
+  const activeFeedKey = useMemo(() => {
+    if (!isAutorite) return null;
+    if (role === 'admin') return 'cod';
+    if (service && ROLE_SERVICE_NOTIFICATIONS[service]) return service;
+    return 'bnsp';
+  }, [isAutorite, role, service]);
+
+  const userScopePrefix = isAutorite ? `${username || activeFeedKey || 'autorite'}:` : '';
 
   const isConnected = useConnexionTempsReel();
-  const { notifications, unreadCount, markAsRead, markAllAsRead, isRead, clearNotifications } = useNotifications();
+  const {
+    notifications,
+    unreadCount: contextUnreadCount,
+    markAsRead,
+    isRead,
+    clearNotifications,
+  } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
 
-  const allNotifications = notifications;
+  const allNotifications = useMemo(() => {
+    if (!isAutorite || !activeFeedKey) return notifications;
+    const roleSpecific = ROLE_SERVICE_NOTIFICATIONS[activeFeedKey] || [];
+    // Ajouter aussi les notifications dynamiques temps réel (hors les 3 notifications citoyennes par défaut)
+    const liveExtras = notifications.filter((n) => ![1, 2, 3].includes(n.id));
+    return [...roleSpecific, ...liveExtras];
+  }, [isAutorite, activeFeedKey, notifications]);
+
+  const isNotifRead = (id) => {
+    if (typeof isRead !== 'function') return false;
+    if (!isAutorite) return isRead(id);
+    return isRead(`${userScopePrefix}${id}`) || isRead(id);
+  };
+
+  const unreadCount = useMemo(() => {
+    if (!isAutorite) return contextUnreadCount;
+    return allNotifications.filter((n) => !isNotifRead(n.id)).length;
+  }, [isAutorite, contextUnreadCount, allNotifications, isRead, userScopePrefix]);
 
   // Déterminer la page de destination selon le sujet de la notification
   const getNotificationTargetUrl = (notif) => {
@@ -47,7 +198,7 @@ export default function NotificationCenter() {
 
     // 2. Alertes & Risques
     if (type === 'alerte' || type === 'prediction' || titre.includes('alerte') || message.includes('évacuation') || message.includes('risque')) {
-      return isAutorite ? '/autorite/alertes' : '/citoyen/alertes';
+      return isAutorite ? '/autorite/crise' : '/citoyen/alertes';
     }
 
     // 3. Signalements & Confirmations de voisins
@@ -73,13 +224,13 @@ export default function NotificationCenter() {
       return isAutorite ? '/autorite/capteurs' : '/citoyen/carte';
     }
 
-    return isAutorite ? '/autorite/tableau-de-bord' : '/citoyen';
+    return isAutorite ? '/autorite/dashboard' : '/citoyen/accueil';
   };
 
   const handleNotificationClick = (notif) => {
     // 1. Marquer cette notification spécifique comme lue -> le compteur diminue immédiatement de 1 (-1)
     if (typeof markAsRead === 'function') {
-      markAsRead(notif.id);
+      markAsRead(isAutorite ? `${userScopePrefix}${notif.id}` : notif.id);
     }
 
     // 2. Fermer le panneau déroulant
@@ -98,9 +249,11 @@ export default function NotificationCenter() {
   };
 
   const handleMarkAllRead = () => {
-    // Marquer l'ensemble des notifications comme lues -> le compteur devient 0 et disparaît
-    if (typeof markAllAsRead === 'function') {
-      markAllAsRead();
+    // Marquer l'ensemble des notifications visibles comme lues -> le compteur devient 0 et disparaît
+    if (typeof markAsRead === 'function') {
+      allNotifications.forEach((n) => {
+        markAsRead(isAutorite ? `${userScopePrefix}${n.id}` : n.id);
+      });
     }
   };
 
@@ -156,14 +309,21 @@ export default function NotificationCenter() {
 
             <div className="fixed left-1/2 -translate-x-1/2 top-16 sm:top-full sm:absolute sm:right-0 sm:left-auto sm:translate-x-0 sm:mt-2 w-[calc(100vw-24px)] max-w-sm sm:max-w-none sm:w-96 max-h-[calc(100vh-80px)] sm:max-h-none bg-white dark:bg-[#071322] border border-navy-100 dark:border-navy-800 rounded-2xl shadow-2xl z-[2001] overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between p-3.5 border-b border-navy-100 dark:border-navy-800 bg-navy-50/50 dark:bg-[#050D18]">
-              <div className="flex items-center gap-2">
-                <h3 className="font-extrabold text-sm text-navy-900 dark:text-white">
-                  Notifications & Alertes
-                </h3>
-                {unreadCount > 0 && (
-                  <span className="text-[10px] font-black uppercase tracking-wider bg-red-100 dark:bg-red-950 text-red-600 px-2 py-0.5 rounded-full">
-                    {unreadCount} nouvelle{unreadCount > 1 ? 's' : ''}
-                  </span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-extrabold text-sm text-navy-900 dark:text-white">
+                    Notifications & Alertes
+                  </h3>
+                  {unreadCount > 0 && (
+                    <span className="text-[10px] font-black uppercase tracking-wider bg-red-100 dark:bg-red-950 text-red-600 px-2 py-0.5 rounded-full">
+                      {unreadCount} nouvelle{unreadCount > 1 ? 's' : ''}
+                    </span>
+                  )}
+                </div>
+                {activeFeedKey && FEED_LABELS[activeFeedKey] && (
+                  <p className="text-[10px] font-bold text-navy-500 dark:text-navy-400 mt-0.5">
+                    {FEED_LABELS[activeFeedKey]}
+                  </p>
                 )}
               </div>
               <div className="flex items-center gap-2">
@@ -196,7 +356,7 @@ export default function NotificationCenter() {
                 allNotifications.slice(0, 15).map((notif) => {
                   const titre = notif.data?.titre || notif.data?.title || notif.title || notif.type;
                   const message = notif.data?.message || notif.data?.description || notif.message;
-                  const notifIsUnread = typeof isRead === 'function' ? !isRead(notif.id) : false;
+                  const notifIsUnread = !isNotifRead(notif.id);
 
                   return (
                     <div
