@@ -61,7 +61,7 @@ describe('AuthLayout - Onboarding Mobile & Accès Anonyme', () => {
     expect(seConnecterBtn).toBeInTheDocument();
   });
 
-  it('déclenche le splash de mode anonyme et redirige vers /citoyen/accueil lors du clic sur Passer', () => {
+  it('redirige immédiatement vers /citoyen/accueil lors du clic sur Passer', () => {
     render(
       <MemoryRouter>
         <AuthLayout variante="connexion">
@@ -71,20 +71,10 @@ describe('AuthLayout - Onboarding Mobile & Accès Anonyme', () => {
     );
 
     fireEvent.click(screen.getByText('Passer'));
-
-    // Splash d'urgence visible
-    expect(screen.getByText(/Connexion anonyme à Mbeund Mi…/i)).toBeInTheDocument();
-    expect(screen.getByText(/Mode Urgence Activé/i)).toBeInTheDocument();
-
-    // Avancement du timer de 1200ms
-    act(() => {
-      vi.advanceTimersByTime(1200);
-    });
-
     expect(mockNavigate).toHaveBeenCalledWith('/citoyen/accueil');
   });
 
-  it('déclenche le splash d’urgence et redirige vers /citoyen/accueil lors du clic sur "Sans compte" sur la slide 3', () => {
+  it('redirige immédiatement vers /citoyen/accueil lors du clic sur "Sans compte" sur la slide 3', () => {
     render(
       <MemoryRouter>
         <AuthLayout variante="connexion">
@@ -98,13 +88,6 @@ describe('AuthLayout - Onboarding Mobile & Accès Anonyme', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Suivant' }));
 
     fireEvent.click(screen.getByRole('button', { name: /Sans compte/i }));
-
-    expect(screen.getByText(/Connexion anonyme à Mbeund Mi…/i)).toBeInTheDocument();
-
-    act(() => {
-      vi.advanceTimersByTime(1200);
-    });
-
     expect(mockNavigate).toHaveBeenCalledWith('/citoyen/accueil');
   });
 

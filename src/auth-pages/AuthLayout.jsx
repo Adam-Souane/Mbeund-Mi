@@ -102,7 +102,6 @@ export default function AuthLayout({ variante, className = '', children }) {
 
   const [vueMobileFormulaire, setVueMobileFormulaire] = useState(afficherFormulaireDirect);
   const [slideIndex, setSlideIndex] = useState(0);
-  const [modeAnonymeSplash, setModeAnonymeSplash] = useState(false);
 
   const slideCourante = slides[slideIndex] || slides[0];
   const estDerniereSlide = slideIndex === slides.length - 1;
@@ -114,11 +113,7 @@ export default function AuthLayout({ variante, className = '', children }) {
 
   const passerVersModeAnonyme = () => {
     marquerOnboardingVu();
-    setModeAnonymeSplash(true);
-    // Court écran de bienvenue en mode anonyme (1,2s) avant l'accueil citoyen
-    setTimeout(() => {
-      navigate('/citoyen/accueil');
-    }, 1200);
+    navigate('/citoyen/accueil');
   };
 
   const handleSuivant = () => {
@@ -193,10 +188,10 @@ export default function AuthLayout({ variante, className = '', children }) {
                 <button
                   type="button"
                   onClick={passerVersModeAnonyme}
-                  className="flex-1 h-12 rounded-xl bg-black/45 hover:bg-black/60 active:scale-98 border border-white/30 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-lg backdrop-blur-md transition cursor-pointer"
+                  className="flex-1 h-12 rounded-xl bg-[#CC131A] hover:bg-red-700 active:scale-95 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-lg transition cursor-pointer"
                   title="Naviguer en Mode Anonyme sans créer de compte"
                 >
-                  <ShieldAlert size={15} className="text-[#CC131A] shrink-0" />
+                  <ShieldAlert size={16} className="text-white shrink-0" />
                   <span>Sans compte</span>
                 </button>
 
@@ -204,7 +199,7 @@ export default function AuthLayout({ variante, className = '', children }) {
                 <button
                   type="button"
                   onClick={ouvrirFormulaireMobile}
-                  className="flex-1 h-12 rounded-xl bg-white text-[#0B2545] font-black text-xs sm:text-sm flex items-center justify-center shadow-2xl hover:bg-slate-100 transition active:scale-98 cursor-pointer"
+                  className="flex-1 h-12 rounded-xl bg-[#0B2545] hover:bg-[#154275] border-2 border-white/90 active:scale-95 text-white font-black text-xs sm:text-sm flex items-center justify-center shadow-lg transition cursor-pointer"
                 >
                   Se connecter
                 </button>
@@ -214,43 +209,13 @@ export default function AuthLayout({ variante, className = '', children }) {
               <button
                 type="button"
                 onClick={handleSuivant}
-                className="w-full h-12 rounded-xl bg-white text-[#0B2545] font-extrabold text-sm flex items-center justify-center shadow-2xl hover:bg-slate-50 transition active:scale-98 cursor-pointer mt-1"
+                className="w-full h-12 rounded-xl bg-[#0B2545] hover:bg-[#154275] border-2 border-white/90 active:scale-95 text-white font-black text-sm flex items-center justify-center shadow-2xl transition cursor-pointer mt-1"
               >
                 {estDerniereSlide ? 'Se connecter' : 'Suivant'}
               </button>
             )}
           </footer>
         </section>
-      )}
-
-      {/* 
-        ========================================================================
-        Court écran de bienvenue / Splash lors de l'accès en Mode Anonyme (1,2s)
-        ========================================================================
-      */}
-      {modeAnonymeSplash && (
-        <div
-          role="status"
-          aria-live="polite"
-          className="fixed inset-0 z-[100] bg-[#0B2545] flex flex-col items-center justify-center text-white px-6 text-center animate-in fade-in duration-300"
-        >
-          <div className="w-16 h-16 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center mb-4 shadow-xl">
-            <ShieldAlert size={34} className="text-[#CC131A] animate-pulse" />
-          </div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-bold mb-3">
-            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-            Mode Urgence Activé
-          </div>
-          <h2 className="text-xl sm:text-2xl font-black text-white mb-2">
-            Connexion anonyme à Mbeund Mi…
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-300 max-w-xs mb-6">
-            Accès direct aux alertes météo, à la carte des inondations et au signalement terrain.
-          </p>
-          <div className="w-44 bg-white/15 h-1.5 rounded-full overflow-hidden">
-            <div className="bg-gradient-to-r from-cyan-400 to-[#CC131A] h-full w-full animate-pulse" />
-          </div>
-        </div>
       )}
 
       {/* 
@@ -267,21 +232,17 @@ export default function AuthLayout({ variante, className = '', children }) {
 
         <div className="absolute inset-0 z-10 bg-gradient-to-t from-slate-950/90 via-slate-950/55 to-slate-950/35 pointer-events-none" />
 
-        {/* Logo officiel Desktop */}
+        {/* Logo officiel Desktop avec slogan unifié et centré à l'intérieur */}
         <div className="relative z-20 flex flex-col items-start">
-          <div className="bg-white/95 backdrop-blur-md px-5 py-2.5 rounded-2xl shadow-lg border border-white/50 inline-flex items-center">
+          <div className="bg-white/95 backdrop-blur-md px-6 py-3.5 rounded-2xl shadow-xl border border-white/60 flex flex-col items-center justify-center text-center">
             <img
               src={logoLight}
               alt="MBEUND MI"
-              className="h-10 w-auto object-contain"
+              className="h-11 w-auto object-contain"
             />
-          </div>
-          <div className="flex items-center gap-2 mt-2">
-            <span className="w-3.5 h-px bg-white/70" />
-            <span className="text-[11px] font-bold tracking-widest uppercase text-white/95 drop-shadow">
+            <span className="text-[11px] font-black tracking-wider uppercase text-[#0B2545] mt-1.5">
               Bul Xaar, Waajal Ko.
             </span>
-            <span className="w-3.5 h-px bg-white/70" />
           </div>
         </div>
 
