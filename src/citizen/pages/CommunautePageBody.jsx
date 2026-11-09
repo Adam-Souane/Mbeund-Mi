@@ -1535,26 +1535,26 @@ export default function CommunautePageBody() {
   return (
     <CitizenShell>
       {/* ═══════════════════════════════════════════════════════════════════ */}
-      {/* 1. HEADER COMMUNAUTÉ CONSERVÉ STRICTEMENT INTÉGRALEMENT            */}
+      {/* 1. HEADER COMMUNAUTÉ CONSERVÉ STRICTEMENT INTÉGRALEMENT (COMPACTÉ MOBILE) */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
-      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-[#0B2545] via-[#103565] to-slate-900 text-white p-4 sm:p-6 md:p-7 shadow-xl border border-blue-900/40 flex-shrink-0">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 sm:gap-4 relative z-10">
+      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-[#0B2545] via-[#103565] to-slate-900 text-white p-3.5 sm:p-5 md:p-6 shadow-xl border border-blue-900/40 flex-shrink-0">
+        <div className="flex items-center justify-between gap-3 relative z-10">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-lg sm:text-xl md:text-2xl font-black text-white tracking-tight">
+              <h1 className="text-base sm:text-xl md:text-2xl font-black text-white tracking-tight">
                 Espace Communauté · Thiaroye
               </h1>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shrink-0">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shrink-0">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                 En direct
               </span>
             </div>
-            <p className="text-xs sm:text-sm text-slate-300 mt-1 line-clamp-2 sm:line-clamp-1">
+            <p className="text-[11px] sm:text-sm text-slate-300 mt-0.5 line-clamp-1">
               Fil d’actualité citoyen, signalements géolocalisés et entraide solidaire entre voisins
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             {/* Bouton avec l'avatar du citoyen connecté (Mon espace personnel) */}
             <button
               type="button"
@@ -1652,16 +1652,16 @@ export default function CommunautePageBody() {
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {/* 2. STORIES INSTAGRAM · ÉPHÉMÈRES (24 HEURES)                       */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
-      <section className="bg-white dark:bg-[#071322] border border-navy-100 dark:border-navy-800 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 shadow-xs overflow-hidden">
-        <div className="flex flex-wrap items-center justify-between gap-2 mb-3 px-1">
-          <div className="flex items-center gap-2 min-w-0">
-            <Sparkles size={16} className="text-amber-500 shrink-0" />
+      <section className="bg-white dark:bg-[#071322] border border-navy-100 dark:border-navy-800 rounded-2xl sm:rounded-3xl p-3 sm:p-4 md:p-5 shadow-xs overflow-hidden">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5 px-1">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <Sparkles size={15} className="text-amber-500 shrink-0" />
             <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-navy-900 dark:text-white truncate">
               Stories du terrain · En direct
             </h2>
           </div>
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-[10px] sm:text-[11px] font-extrabold text-[#CC131A] dark:text-rose-400 shrink-0">
-            <Timer size={13} className="shrink-0" />
+          <div className="flex items-center gap-1.5 px-2.5 py-0.5 sm:py-1 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-[10px] sm:text-[11px] font-extrabold text-[#CC131A] dark:text-rose-400 shrink-0">
+            <Timer size={12} className="shrink-0" />
             <span>Éphémère · Expire dans 24h</span>
           </div>
         </div>
@@ -1761,16 +1761,16 @@ export default function CommunautePageBody() {
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {/* 3. BARRE D'ACTIONS : FILTRES ADAPTÉS À GAUCHE + BOUTON « NOUVEAU POST » À DROITE */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-[#071322] border border-navy-100 dark:border-navy-800 rounded-2xl p-3 sm:p-4 shadow-xs">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3 bg-white dark:bg-[#071322] border border-navy-100 dark:border-navy-800 rounded-2xl p-2.5 sm:p-4 shadow-xs">
         {/* Filtres de navigation avec masquage strict et défilement tactile fluide */}
         <div
-          className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-none no-scrollbar flex-1 touch-pan-x"
+          className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-0.5 sm:pb-0 scrollbar-none no-scrollbar flex-1 touch-pan-x"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {/* Tous les posts */}
           <button
             onClick={() => setFilter('tous')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-black transition shadow-xs flex items-center gap-1.5 whitespace-nowrap cursor-pointer shrink-0 ${
+            className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-black transition shadow-xs flex items-center gap-1.5 whitespace-nowrap cursor-pointer shrink-0 ${
               filter === 'tous'
                 ? 'bg-[#0B2545] text-white shadow-xs'
                 : 'bg-slate-50 dark:bg-navy-900 text-navy-600 dark:text-navy-200 border border-slate-200 dark:border-navy-800 hover:border-navy-300'
@@ -1783,7 +1783,7 @@ export default function CommunautePageBody() {
           {/* Signalements terrain */}
           <button
             onClick={() => setFilter('signalements')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-black transition shadow-xs flex items-center gap-1.5 whitespace-nowrap cursor-pointer shrink-0 ${
+            className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-black transition shadow-xs flex items-center gap-1.5 whitespace-nowrap cursor-pointer shrink-0 ${
               filter === 'signalements'
                 ? 'bg-[#CC131A] text-white shadow-xs'
                 : 'bg-slate-50 dark:bg-navy-900 text-navy-600 dark:text-navy-200 border border-slate-200 dark:border-navy-800 hover:border-red-300'
@@ -1796,7 +1796,7 @@ export default function CommunautePageBody() {
           {/* Entraide et mobilisation */}
           <button
             onClick={() => setFilter('entraide')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-black transition shadow-xs flex items-center gap-1.5 whitespace-nowrap cursor-pointer shrink-0 ${
+            className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-black transition shadow-xs flex items-center gap-1.5 whitespace-nowrap cursor-pointer shrink-0 ${
               filter === 'entraide'
                 ? 'bg-amber-600 text-white shadow-xs'
                 : 'bg-slate-50 dark:bg-navy-900 text-navy-600 dark:text-navy-200 border border-slate-200 dark:border-navy-800 hover:border-amber-300'
@@ -1809,7 +1809,7 @@ export default function CommunautePageBody() {
           {/* Résolus et sécurisés */}
           <button
             onClick={() => setFilter('resolus')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-black transition shadow-xs flex items-center gap-1.5 whitespace-nowrap cursor-pointer shrink-0 ${
+            className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-black transition shadow-xs flex items-center gap-1.5 whitespace-nowrap cursor-pointer shrink-0 ${
               filter === 'resolus'
                 ? 'bg-emerald-600 text-white shadow-xs'
                 : 'bg-slate-50 dark:bg-navy-900 text-navy-600 dark:text-navy-200 border border-slate-200 dark:border-navy-800 hover:border-emerald-300'
@@ -1820,7 +1820,7 @@ export default function CommunautePageBody() {
           </button>
         </div>
 
-        {/* Bouton Nouveau Post positionné à droite (pleine largeur sur mobile pour zone tactile optimale, compact sur tablette/desktop) */}
+        {/* Bouton Nouveau Post positionné à droite */}
         <button
           type="button"
           onClick={() => {
@@ -1836,13 +1836,13 @@ export default function CommunautePageBody() {
             setIsPostModalOpen(true);
           }}
           disabled={userIsBanned}
-          className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-black shadow-md transition-all shrink-0 w-full sm:w-auto ${
+          className={`inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-black shadow-md transition-all shrink-0 w-full sm:w-auto ${
             userIsBanned
               ? 'bg-slate-300 dark:bg-navy-800 text-slate-500 cursor-not-allowed'
               : 'bg-gradient-to-r from-[#0B2545] to-[#154275] hover:from-[#154275] hover:to-[#1e5899] text-white hover:shadow-lg active:scale-95 cursor-pointer'
           }`}
         >
-          <MessageSquarePlus size={16} className={userIsBanned ? 'text-slate-400' : 'text-amber-400'} />
+          <MessageSquarePlus size={15} className={userIsBanned ? 'text-slate-400' : 'text-amber-400'} />
           <span>Nouveau post</span>
         </button>
       </div>
