@@ -6,6 +6,15 @@ import MesSignalementsPageBody from '../citizen/pages/MesSignalementsPageBody';
 
 const navigateMock = vi.fn();
 
+let mockUsername = 'citoyen@mbeundmi.sn';
+
+vi.mock('../auth/AuthContext', () => ({
+  useAuth: () => ({
+    username: mockUsername,
+    isAuthenticated: !!mockUsername,
+  }),
+}));
+
 vi.mock('../citizen/shared/CitizenShell', () => ({
   default: ({ children }) => <div data-testid="citizen-shell">{children}</div>,
 }));
@@ -126,5 +135,16 @@ describe('MesSignalementsPageBody', () => {
     expect(btnCarteList.length).toBeGreaterThan(0);
     fireEvent.click(btnCarteList[0]);
     expect(navigateMock).toHaveBeenCalledWith(expect.stringContaining('/citoyen/carte?signalementId='));
+  });
+
+  it('affiche le mur CitizenAccountGate si l utilisateur est en mode anonyme sans compte', () => {
+    mockUsername = null;
+    renderWithProviders(<MesSignalementsPageBody />);
+
+    expect(screen.getByText('Compte Citoyen Requis')).toBeInTheDocument();
+    expect(screen.getByText('Suivi de Vos Signalements Personnels')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Se connecter/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Créer un compte/i })).toBeInTheDocument();
+    mockUsername = 'citoyen@mbeundmi.sn';
   });
 });

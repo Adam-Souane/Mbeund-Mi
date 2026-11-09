@@ -18,6 +18,7 @@ import {
   Droplets,
 } from 'lucide-react';
 import CitizenShell from '../shared/CitizenShell';
+import CitizenAccountGate from '../components/CitizenAccountGate';
 import { useMySignalements } from '../../shared/hooks/useMySignalements';
 import { useDebounce } from '../../shared/hooks/useDebounce';
 import { formatCompactDate } from '../../shared/utils/dateFormatter';
@@ -251,6 +252,15 @@ export default function MesSignalementsPageBody() {
       };
     }
   }, [targetId, signalementsList]);
+
+  if (!username) {
+    return (
+      <CitizenAccountGate
+        titre="Suivi de Vos Signalements Personnels"
+        description="Cette page nécessite un compte citoyen pour suivre en temps réel la prise en charge de vos alertes par les services de secours et la mairie."
+      />
+    );
+  }
 
   return (
     <CitizenShell>

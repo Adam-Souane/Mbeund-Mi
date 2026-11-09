@@ -19,6 +19,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import CitizenShell from '../shared/CitizenShell';
+import CitizenAccountGate from '../components/CitizenAccountGate';
 import { RenderAvatar } from '../components/AvatarSelectorModal';
 import { getUserCustomAvatar, setUserCustomAvatar, removeUserCustomAvatar } from '../../shared/utils/avatarResolver';
 import { useAuth } from '../../auth/AuthContext';
@@ -66,6 +67,15 @@ export default function ProfilPageBody() {
         year: 'numeric',
       })
     : null;
+
+  if (!username) {
+    return (
+      <CitizenAccountGate
+        titre="Profil Citoyen Sécurisé"
+        description="Votre profil vous permet d'enregistrer vos coordonnées officielles, de recevoir des alertes personnalisées pour votre concession et de certifier votre identité."
+      />
+    );
+  }
 
   // Sélection d'une photo depuis l'appareil
   const handlePhotoSelect = (e) => {

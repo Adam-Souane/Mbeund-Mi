@@ -9,11 +9,13 @@ vi.mock('../citizen/shared/CitizenShell', () => ({
   default: ({ children }) => <div data-testid="citizen-shell">{children}</div>,
 }));
 
+let mockUsername = 'citoyen@mbeundmi.sn';
+
 vi.mock('../auth/AuthContext', () => ({
   useAuth: () => ({
-    username: 'citoyen@mbeundmi.sn',
+    username: mockUsername,
     role: 'citoyen',
-    isAuthenticated: true,
+    isAuthenticated: !!mockUsername,
     logout: vi.fn(),
   }),
 }));
@@ -94,5 +96,16 @@ describe('ProfilPageBody', () => {
 
     // Vérifie qu'il n'y a plus le bouton doublon textuel
     expect(screen.queryByText("Changer d'avatar")).not.toBeInTheDocument();
+  });
+
+  it('affiche le mur CitizenAccountGate si le citoyen est en mode anonyme sans compte', () => {
+    mockUsername = null;
+    renderWithProviders(<ProfilPageBody />);
+
+    expect(screen.getByText('Compte Citoyen Requis')).toBeInTheDocument();
+    expect(screen.getByText('Profil Citoyen Sécurisé')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Se connecter/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Créer un compte/i })).toBeInTheDocument();
+    mockUsername = 'citoyen@mbeundmi.sn';
   });
 });

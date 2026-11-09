@@ -11,6 +11,7 @@ import {
   Droplets,
   Calendar,
   Eye,
+  ShieldCheck,
 } from 'lucide-react';
 import { useMySignalements } from '../../shared/hooks/useMySignalements';
 import { useAuth } from '../../auth/AuthContext';
@@ -68,7 +69,8 @@ const FALLBACK_PHOTOS = [
 ];
 
 export default function MesSignalementsWidget({ className = '' }) {
-  const { user } = useAuth();
+  const { user, username } = useAuth();
+  const isAnonymous = !user && !username;
   const { data, isLoading } = useMySignalements();
   const [showHistoriqueModal, setShowHistoriqueModal] = useState(false);
   const [selectedDetail, setSelectedDetail] = useState(null);
@@ -117,8 +119,28 @@ export default function MesSignalementsWidget({ className = '' }) {
           </div>
         </div>
 
-        {/* ── LISTE DES 3 SIGNALEMENTS AVEC PHOTOS RÉALISTES DE THIAROYE ── */}
-        {isLoading && apiSignalements.length === 0 ? (
+        {/* ── ÉTAT ANONYME SANS COMPTE ── */}
+        {isAnonymous ? (
+          <div className="py-5 px-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-navy-800 text-center flex flex-col items-center gap-2.5">
+            <div className="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-950/40 text-[#CC131A] flex items-center justify-center">
+              <ShieldCheck size={20} />
+            </div>
+            <div className="space-y-1">
+              <h4 className="text-xs font-black text-navy-950 dark:text-white">
+                Mode Consultation Anonyme
+              </h4>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 max-w-xs leading-relaxed">
+                Connectez-vous pour retrouver l'historique et le statut de traitement de vos signalements par les secours.
+              </p>
+            </div>
+            <Link
+              to="/login"
+              className="mt-1 px-4 py-2 rounded-xl bg-[#0B2545] hover:bg-[#154275] text-white text-xs font-black shadow-xs transition cursor-pointer"
+            >
+              Se connecter
+            </Link>
+          </div>
+        ) : isLoading && apiSignalements.length === 0 ? (
           <div className="py-8 text-center text-xs text-navy-400 animate-pulse">
             Chargement de vos signalements…
           </div>
