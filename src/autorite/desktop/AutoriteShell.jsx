@@ -214,10 +214,10 @@ function SidebarLink({ item, isCollapsed, mobileMenuOpen, badgeCount = 0, onNavi
       onClick={onNavigate}
       title={isCollapsed && !mobileMenuOpen ? label : undefined}
       className={({ isActive }) =>
-        `flex items-center rounded-xl font-bold transition-all duration-200 min-h-[44px] ${
+        `flex items-center rounded-xl font-bold transition-all duration-200 min-h-[38px] ${
           isCollapsed && !mobileMenuOpen
-            ? 'justify-center p-3'
-            : 'gap-3 px-3 py-2.5 text-[14px]'
+            ? 'justify-center p-2.5'
+            : 'gap-3 px-3 py-2 text-[13.5px]'
         } ${
           isActive
             ? 'bg-white dark:bg-navy-800 text-[#0B2545] dark:text-white font-black shadow-md border-l-4 border-[#CC131A]'
@@ -442,8 +442,8 @@ export default function AutoriteShell({ children }) {
               </button>
             </div>
 
-            {/* Liste des liens de navigation groupés en 2 sections opérationnelles */}
-            <nav className="flex flex-col gap-1 overflow-y-auto pr-0.5 mt-2 flex-1">
+            {/* Liste des liens de navigation sans aucune barre de défilement visible */}
+            <nav className="flex flex-col gap-0.5 overflow-y-auto scrollbar-none no-scrollbar mt-1.5 flex-1">
               {/* Section 1 : Opérations & Crise */}
               {(!isCollapsed || mobileMenuOpen) && (
                 <span className="text-[10px] font-black uppercase tracking-wider text-slate-300/60 px-2 mt-1 mb-0.5">

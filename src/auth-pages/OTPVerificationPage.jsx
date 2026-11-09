@@ -189,9 +189,9 @@ export default function OTPVerificationPage() {
                       )}
                     </div>
                     <div>
-                      <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-cyan-300">
+                      <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-200">
                         <Sparkles size={12} />
-                        <span>{canal === 'email' ? 'Email reçu (Simulation Démo)' : 'SMS reçu · MBEUND MI'}</span>
+                        <span>{canal === 'email' ? 'Email reçu · MBEUND MI' : 'SMS reçu · MBEUND MI'}</span>
                       </div>
                       <p className="text-xs text-slate-200 mt-0.5">
                         Votre code de vérification :{' '}

@@ -3,26 +3,89 @@
 @tailwind utilities;
 
 @layer base {
+  html,
   body {
     @apply bg-navy-50 dark:bg-navy-950 text-navy dark:text-navy-50 antialiased;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  ::selection {
+    background-color: #0B2545;
+    color: #ffffff;
+  }
+
+  html.dark ::selection {
+    background-color: #CC131A;
+    color: #ffffff;
   }
 }
 
-/* Masquage de la barre de défilement native pour les carrousels et filtres horizontaux */
+/* Suppression globale de toutes les barres de défilement système (Windows / macOS / Mobile) sur toutes les pages et conteneurs */
+*,
+*::before,
+*::after,
+html,
+body,
+.scrollbar-none,
+.no-scrollbar,
+.scrollbar-thin,
+[class*="overflow-"] {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+*::-webkit-scrollbar,
+*::before::-webkit-scrollbar,
+*::after::-webkit-scrollbar,
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
 .scrollbar-none::-webkit-scrollbar,
 .no-scrollbar::-webkit-scrollbar,
-[class*="overflow-x-auto"]::-webkit-scrollbar,
-[class*="overflow-x-scroll"]::-webkit-scrollbar {
+.scrollbar-thin::-webkit-scrollbar,
+[class*="overflow-"]::-webkit-scrollbar {
   display: none !important;
   width: 0 !important;
   height: 0 !important;
+  background: transparent !important;
 }
-.scrollbar-none,
-.no-scrollbar,
-[class*="overflow-x-auto"],
-[class*="overflow-x-scroll"] {
-  -ms-overflow-style: none !important;
-  scrollbar-width: none !important;
+
+/* Suppression des résidus système d'auto-remplissage navigateur (fond bleu/jaune Chrome/Edge) */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  -webkit-text-fill-color: #0B2545 !important;
+  caret-color: #0B2545 !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+html.dark input:-webkit-autofill,
+html.dark input:-webkit-autofill:hover,
+html.dark input:-webkit-autofill:focus,
+html.dark textarea:-webkit-autofill,
+html.dark select:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px #071322 inset !important;
+  -webkit-text-fill-color: #f8fafc !important;
+  caret-color: #f8fafc !important;
+}
+
+/* Harmonisation des listes déroulantes natives et masquage des crédits système bruts sur les cartes */
+select option {
+  background-color: #ffffff;
+  color: #0B2545;
+}
+
+html.dark select option {
+  background-color: #071322;
+  color: #f8fafc;
+}
+
+.leaflet-control-attribution {
+  display: none !important;
 }
 
 /* ═════════════════════════════════════════════════════════════════ */

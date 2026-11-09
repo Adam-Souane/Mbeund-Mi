@@ -73,10 +73,10 @@ const EXPORT_TYPES = [
   {
     id: 'episodes',
     label: 'Épisodes d\'Inondation',
-    description: 'Historique des inondations (test + réelles) et crues',
+    description: 'Historique certifié des inondations et crues observées',
     icon: Cloud,
-    iconColor: 'text-indigo-600',
-    badgeBg: 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-900',
+    iconColor: 'text-[#0B2545] dark:text-blue-400',
+    badgeBg: 'bg-slate-100 dark:bg-slate-800 text-[#0B2545] dark:text-slate-200 border-slate-200 dark:border-slate-700',
     details: 'Dates de survenue, durée des épisodes, sévérité maximale constatée',
     csvSupported: true,
     pdfSupported: false,

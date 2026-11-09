@@ -194,8 +194,8 @@ export default function ForgotPasswordPage() {
             {codeSimule && (
               <div className="rounded-xl bg-[#0B2545] text-white p-3.5 shadow-md border border-blue-800/60 flex items-center justify-between gap-3">
                 <div className="text-xs">
-                  <span className="block text-[10px] font-bold uppercase tracking-wider text-cyan-300">
-                    {canal === 'email' ? 'Email reçu (Simulation)' : 'SMS reçu · MBEUND MI'}
+                  <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-200">
+                    {canal === 'email' ? 'Email reçu · MBEUND MI' : 'SMS reçu · MBEUND MI'}
                   </span>
                   <span>Code de sécurité : </span>
                   <strong className="font-mono text-sm tracking-widest bg-white/15 px-2 py-0.5 rounded">{codeSimule}</strong>

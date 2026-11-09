@@ -312,7 +312,7 @@ export default function TableauDeBordPage() {
         description: f.properties.description || 'Observation transmise en direct par un riverain.',
         photo: f.properties.photo || SIGNALEMENT_PHOTOS[idx % SIGNALEMENT_PHOTOS.length],
         totalVotes: f.properties.confirmations ?? 12,
-        sourceLabel: 'Flux API Direct',
+        sourceLabel: 'Signalement Citoyen Direct',
       };
       return { ...item, assignedCorps: classifyReportService(item) };
     });

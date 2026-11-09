@@ -139,12 +139,12 @@ export default function RegistreCommunautairePage() {
           </div>
         </div>
 
-        {/* ── 2. GRILLE DES 4 GRANDS COMPTEURS OPÉRATIONNELS (TOUCHES DE COULEUR ÉLÉGANTES) ── */}
+        {/* ── 2. GRILLE DES 4 GRANDS COMPTEURS OPÉRATIONNELS (CHARTE MBEUND-MI) ── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
-          <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#071322] border border-slate-200/90 dark:border-slate-800/80 shadow-sm flex flex-col justify-between min-h-[142px] border-t-2 border-t-purple-500/80">
+          <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#071322] border border-slate-200/90 dark:border-slate-800/80 shadow-sm flex flex-col justify-between min-h-[142px] border-t-2 border-t-[#CC131A]">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
               <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 truncate">Mobilité Réduite</span>
-              <div className="w-7 h-7 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/50 flex items-center justify-center shrink-0">
+              <div className="w-7 h-7 rounded-lg bg-red-50 dark:bg-red-950/60 text-[#CC131A] dark:text-red-300 border border-red-200/60 dark:border-red-800/50 flex items-center justify-center shrink-0">
                 <Accessibility size={15} />
               </div>
             </div>
@@ -155,8 +155,8 @@ export default function RegistreCommunautairePage() {
                 </span>
                 <span className="text-xs text-slate-500 font-bold truncate">foyers prioritaires</span>
               </div>
-              <span className="text-[10px] text-purple-700 dark:text-purple-300 font-extrabold uppercase tracking-wide flex items-center gap-1.5 truncate">
-                <span className="w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0" />
+              <span className="text-[10px] text-[#CC131A] dark:text-red-300 font-extrabold uppercase tracking-wide flex items-center gap-1.5 truncate">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#CC131A] shrink-0" />
                 Évacuation prioritaire
               </span>
             </div>
@@ -328,13 +328,13 @@ export default function RegistreCommunautairePage() {
 
                         <div className="flex flex-wrap gap-1.5 pt-1">
                           {p.personne_mobilite_reduite && (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg bg-purple-100 dark:bg-purple-950/80 text-purple-800 dark:text-purple-300">
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg bg-red-50 dark:bg-red-950/80 text-[#CC131A] dark:text-red-300 border border-red-200/60 dark:border-red-800">
                               <Accessibility size={12} />
                               Mobilité réduite
                             </span>
                           )}
                           {p.enfants_bas_age > 0 && (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg bg-blue-100 dark:bg-blue-950/80 text-blue-800 dark:text-blue-300">
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-[#0B2545] dark:text-slate-200">
                               <Baby size={12} />
                               {p.enfants_bas_age} bébé(s)/enfant(s)
                             </span>
@@ -345,7 +345,7 @@ export default function RegistreCommunautairePage() {
                             </span>
                           )}
                           {p.femme_enceinte && (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg bg-pink-100 dark:bg-pink-950/80 text-pink-800 dark:text-pink-300">
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-[#0B2545] dark:text-slate-200">
                               Femme enceinte
                             </span>
                           )}

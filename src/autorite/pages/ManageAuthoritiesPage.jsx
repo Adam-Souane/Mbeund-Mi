@@ -1108,21 +1108,21 @@ function AuthorityDetailModal({ authority, onClose, darkMode }) {
                 />
               </div>
 
-              <div className={`p-4 rounded-lg ${darkMode ? 'bg-navy-800' : 'bg-navy-50'}`}>
-                <p className="text-sm font-semibold text-navy-700 dark:text-navy-200 mb-3">
-                  Informations de contact
+              <div className={`p-4 rounded-xl border ${darkMode ? 'bg-navy-800 border-navy-700' : 'bg-navy-50 border-navy-100'}`}>
+                <p className="text-xs font-black uppercase tracking-wider text-navy-700 dark:text-navy-200 mb-3">
+                  Informations de contact &amp; accès
                 </p>
-                <div className="space-y-2 text-sm text-navy-600 dark:text-navy-300">
-                  <p>📧 {authority.email}</p>
-                  <p>📱 {authority.telephone}</p>
-                  <p>📅 Créé le {new Date(authority.date_joined).toLocaleDateString('fr-FR')}</p>
+                <div className="space-y-2 text-sm text-navy-600 dark:text-navy-300 font-medium">
+                  <p><span className="font-bold text-navy-900 dark:text-white">Email :</span> {authority.email}</p>
+                  <p><span className="font-bold text-navy-900 dark:text-white">Téléphone :</span> {authority.telephone}</p>
+                  <p><span className="font-bold text-navy-900 dark:text-white">Créé le :</span> {new Date(authority.date_joined).toLocaleDateString('fr-FR')}</p>
                   {authority.derniere_connexion ? (
                     <p>
-                      🔑 Dernière connexion:{' '}
+                      <span className="font-bold text-navy-900 dark:text-white">Dernière connexion :</span>{' '}
                       {new Date(authority.derniere_connexion).toLocaleDateString('fr-FR')}
                     </p>
                   ) : (
-                    <p>🔑 Pas encore connecté</p>
+                    <p><span className="font-bold text-navy-900 dark:text-white">Statut :</span> Compte actif · Prêt à intervenir</p>
                   )}
                 </div>
               </div>

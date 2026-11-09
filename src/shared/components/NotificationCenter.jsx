@@ -122,13 +122,13 @@ const FEED_LABELS = {
 };
 
 const NOTIFICATION_COLORS = {
-  alerte: { bg: 'bg-red-50 dark:bg-red/15', border: 'border-red-200 dark:border-red-800', icon: AlertTriangle, color: 'text-red-600 dark:text-red-400' },
-  signalement: { bg: 'bg-blue-50 dark:bg-blue/15', border: 'border-blue-200 dark:border-blue-800', icon: MessageSquare, color: 'text-blue-600 dark:text-blue-400' },
-  communaute: { bg: 'bg-indigo-50 dark:bg-indigo/15', border: 'border-indigo-200 dark:border-indigo-800', icon: Users, color: 'text-indigo-600 dark:text-indigo-400' },
-  sms: { bg: 'bg-purple-50 dark:bg-purple/15', border: 'border-purple-200 dark:border-purple-800', icon: Smartphone, color: 'text-purple-600 dark:text-purple-400' },
-  prediction: { bg: 'bg-orange-50 dark:bg-orange/15', border: 'border-orange-200 dark:border-orange-800', icon: AlertTriangle, color: 'text-orange-600 dark:text-orange-400' },
-  toast: { bg: 'bg-green-50 dark:bg-green/15', border: 'border-green-200 dark:border-green-800', icon: CheckCircle, color: 'text-green-600 dark:text-green-400' },
-  error: { bg: 'bg-red-50 dark:bg-red/15', border: 'border-red-200 dark:border-red-800', icon: AlertCircle, color: 'text-red-600 dark:text-red-400' },
+  alerte: { bg: 'bg-red-50 dark:bg-red/15', border: 'border-red-200 dark:border-red-800', icon: AlertTriangle, color: 'text-[#CC131A] dark:text-red-400' },
+  signalement: { bg: 'bg-navy-50 dark:bg-navy-900', border: 'border-navy-200 dark:border-navy-800', icon: MessageSquare, color: 'text-[#0B2545] dark:text-blue-400' },
+  communaute: { bg: 'bg-navy-50 dark:bg-navy-900', border: 'border-navy-200 dark:border-navy-800', icon: Users, color: 'text-[#0B2545] dark:text-blue-300' },
+  sms: { bg: 'bg-navy-50 dark:bg-navy-900', border: 'border-navy-200 dark:border-navy-800', icon: Smartphone, color: 'text-[#0B2545] dark:text-blue-300' },
+  prediction: { bg: 'bg-amber-50 dark:bg-amber-950/40', border: 'border-amber-200 dark:border-amber-800', icon: AlertTriangle, color: 'text-amber-600 dark:text-amber-400' },
+  toast: { bg: 'bg-emerald-50 dark:bg-emerald-950/40', border: 'border-emerald-200 dark:border-emerald-800', icon: CheckCircle, color: 'text-emerald-600 dark:text-emerald-400' },
+  error: { bg: 'bg-red-50 dark:bg-red/15', border: 'border-red-200 dark:border-red-800', icon: AlertCircle, color: 'text-[#CC131A] dark:text-red-400' },
 };
 
 /**
