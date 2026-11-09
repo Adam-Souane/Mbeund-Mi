@@ -61,7 +61,7 @@ earthengine-api==1.7.29
 # Chatbot NDAM (mbeund_mi_ia/ia/service_chatbot.py), importé directement par
 # api/views.py:ChatView. Nécessite GROQ_API_KEY dans .env.
 groq==1.4.0
-edge-tts==7.2.7
+edge-tts==7.3.1
 python-dotenv==1.0.1
 
 

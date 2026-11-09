@@ -63,72 +63,135 @@ def detecter_langue_texte(texte: str, default_lang: str = "fr") -> str:
 
 def adapter_phonetique_wolof_tts(texte: str) -> str:
     """
-    Adapte la graphie wolof afin qu'une voix neuronale féminine francophone/multilingue
-    restitue une prononciation sénégalaise fluide et naturelle (sans altérer le texte écrit).
+    Adapte la graphie wolof et le français sénégalais afin qu'une voix neuronale
+    féminine francophone/multilingue restitue une diction fluide, naturelle et fidèle
+    aux sonorités locales (sans altérer le texte d'origine affiché à l'écran).
     """
     if not texte:
         return ""
-    s = re.sub(r"[*_#~`⚠️📍📸]", "", str(texte))
-    # Remplacements lexicaux fréquents pour une diction naturelle
-    remplacements = [
-        (r"\bci\b", "thi"),
-        (r"\bCi\b", "Thi"),
+    s = str(texte)
+    # Nettoyage des emojis, caractères spéciaux et balises
+    s = re.sub(r"[\U00010000-\U0010ffff]|[\u2600-\u27bf]|[*_#~`⚠️📍📸🚨✅⏱️🏢🌧️🌊]", " ", s)
+
+    # Toponymes et acronymes universels
+    s = re.sub(r"\bNDAM\b", "Ndam", s)
+    s = re.sub(r"\bMbeund\s*Mi\b", "Mbeunde Mi", s, flags=re.I)
+    s = re.sub(r"\bThiaroye[- ]sur[- ]Mer\b", "Tiaroye-sur-Mer", s, flags=re.I)
+    s = re.sub(r"\bThiaroye\b", "Tiaroye", s, flags=re.I)
+    s = re.sub(r"\bCEM\b", "C E M", s)
+    s = re.sub(r"\b(\d+)\s*°C\b", r"\1 degrés", s)
+    s = re.sub(r"\b(\d+)\s*km/h\b", r"\1 kilomètres par heure", s)
+    s = re.sub(r"\b(\d+)\s*mm\b", r"\1 millimètres", s)
+    s = re.sub(r"\b(\d+)\s*min\b", r"\1 minutes", s)
+    s = re.sub(r"\bN°\s*(\d+)\b", r"numéro \1", s)
+    s = re.sub(r"\b18\b", "dix-huit", s)
+
+    # Lexique wolof fréquent en orthographe phonétique pour voix francophone
+    mots_wolof = [
+        (r"\bwaaw\b", "waw"),
+        (r"\bdéedéet\b", "dédét"),
+        (r"\bdeedéet\b", "dédét"),
+        (r"\bjërëjëf\b", "djeureudjeuf"),
+        (r"\bjerejef\b", "djeureudjeuf"),
+        (r"\bjaamm\b", "djam"),
+        (r"\bjamm\b", "djam"),
         (r"\bndox\b", "ndokh"),
         (r"\bNdox\b", "Ndokh"),
-        (r"\bmbeund\b", "mbeund"),
-        (r"\bwax\b", "wakh"),
-        (r"\bxoolal\b", "khoolal"),
-        (r"\bjërëjëf\b", "djeureudjeuf"),
-        (r"\bJërëjëf\b", "Djeureudjeuf"),
-        (r"\byéeg\b", "yéég"),
-        (r"\bñu\b", "gnou"),
-        (r"\bÑu\b", "Gnou"),
-        (r"\bdinañu\b", "dinagnou"),
-        (r"\bsuuf\b", "souf"),
-        (r"\bduggal\b", "dougal"),
-        (r"\bmënul\b", "meunoul"),
-        (r"\bmën\b", "meune"),
-        (r"\bMën\b", "Meune"),
-        (r"\bkër\b", "keur"),
+        (r"\btaw\b", "tawe"),
+        (r"\bTaw\b", "Tawe"),
+        (r"\bkaaraange\b", "karangué"),
         (r"\bléegi\b", "léégui"),
+        (r"\bleegi\b", "léégui"),
+        (r"\byéeg\b", "yéég"),
+        (r"\bduggal\b", "dougal"),
+        (r"\bsuuf\b", "souf"),
+        (r"\bkër\b", "keur"),
+        (r"\bmën\b", "meune"),
+        (r"\bmënul\b", "meunoul"),
+        (r"\bbëgg\b", "beugue"),
+        (r"\bbegg\b", "beugue"),
+        (r"\bdëkk\b", "deuk"),
         (r"\bngir\b", "nguir"),
-        (r"\byi\b", "yi"),
-        (r"\bmi\b", "mi"),
-        (r"\bbi\b", "bi"),
+        (r"\bndax\b", "ndakh"),
+        (r"\bwax\b", "wakh"),
+        (r"\bxam\b", "kham"),
+        (r"\bxool\b", "khool"),
+        (r"\bxale\b", "khale"),
     ]
-    for pattern, repl in remplacements:
-        s = re.sub(pattern, repl, s)
+    for p, r in mots_wolof:
+        s = re.sub(p, r, s, flags=re.I)
+
+    # Protection toponyme
+    s = s.replace("Tiaroye-sur-Mer", "___TSM___")
+
+    # Wolof 'u' -> Français 'ou' (ex: amul -> amoul, sunu -> sounou, lu -> lou, mu -> mou, ñu -> gnou)
+    s = re.sub(r"([bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ])u([bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ]|\b)", r"\1ou\2", s)
+    s = re.sub(r"\bu([bcdfghjklmnpqrstvwxyz]|\b)", r"ou\1", s)
+
+    # Consonnes wolof spécifiques
+    s = re.sub(r"x", "kh", s)
+    s = re.sub(r"X", "Kh", s)
+    s = re.sub(r"j", "dj", s)
+    s = re.sub(r"J", "Dj", s)
+    s = re.sub(r"\bci\b", "tchi", s, flags=re.I)
+    s = re.sub(r"\bca\b", "tcha", s, flags=re.I)
+    s = re.sub(r"c([aeéëou])", r"tch\1", s)
+    s = re.sub(r"C([aeéëou])", r"Tch\1", s)
+    s = re.sub(r"cc", "tch", s)
+
+    # G dur devant e et i (pour éviter le j français : mangi -> mangui)
+    s = re.sub(r"([nN])gi", r"\1gui", s)
+    s = re.sub(r"([^a-z]|^)gi", r"\1gui", s)
+    s = re.sub(r"([nN])ge", r"\1gué", s)
+    s = re.sub(r"([^a-z]|^)ge", r"\1gué", s)
+
+    # Caractères nationaux sénégalais
     s = s.replace("ñ", "gn").replace("Ñ", "Gn").replace("ë", "eu").replace("Ë", "Eu")
-    return s.strip()
+    s = s.replace("___TSM___", "Tiaroye-sur-Mer")
+
+    return re.sub(r"\s+", " ", s).strip()
 
 
 def synthetiser_voix_femme_base64(texte: str, langue: str = "fr") -> str | None:
     """
     Génère un audio MP3 encodé en Data URL (data:audio/mp3;base64,...) avec une
-    voix féminine naturelle :
-    1. Si ELEVENLABS_API_KEY est configurée : utilise l'API ElevenLabs (voix féminine multilingue).
-    2. Sinon : utilise edge-tts avec la voix neuronale féminine 'fr-FR-DeniseNeural'.
+    voix féminine naturelle, chaleureuse et fluide :
+    1. Si ELEVENLABS_API_KEY est configurée : API ElevenLabs HD multilingue.
+    2. Voix neuronale Microsoft Azure (edge-tts) 'fr-FR-DeniseNeural' ou 'fr-FR-VivienneMultilingualNeural'.
+    3. Fallback de secours résilient découpé sur ponctuation pour respecter la prosodie et les liaisons.
     """
     if not texte or not str(texte).strip():
         return None
 
-    clean_text = re.sub(r"[*_#~`⚠️📍📸]", "", str(texte)).strip()
-    if langue == "wo":
-        clean_text = adapter_phonetique_wolof_tts(clean_text)
+    # Normalisation du texte
+    clean_text = str(texte)
+    clean_text = re.sub(r"[\U00010000-\U0010ffff]|[\u2600-\u27bf]|[*_#~`⚠️📍📸🚨✅⏱️🏢🌧️🌊]", " ", clean_text)
+    clean_text = re.sub(r"\bNDAM\b", "Ndam", clean_text)
+    clean_text = re.sub(r"\bMbeund\s*Mi\b", "Mbeunde Mi", clean_text, flags=re.I)
+    clean_text = re.sub(r"\bThiaroye[- ]sur[- ]Mer\b", "Tiaroye-sur-Mer", clean_text, flags=re.I)
+    clean_text = re.sub(r"\bThiaroye\b", "Tiaroye", clean_text, flags=re.I)
+    clean_text = re.sub(r"\b(\d+)\s*°C\b", r"\1 degrés", clean_text)
+    clean_text = re.sub(r"\b(\d+)\s*km/h\b", r"\1 kilomètres par heure", clean_text)
+    clean_text = re.sub(r"\b(\d+)\s*min\b", r"\1 minutes", clean_text)
+    clean_text = re.sub(r"\b18\b", "dix-huit", clean_text)
+    clean_text = re.sub(r"\s+", " ", clean_text).strip()
 
-    # 1. Option ElevenLabs si une clé API est fournie
+    speech_text = clean_text
+    if langue == "wo":
+        speech_text = adapter_phonetique_wolof_tts(clean_text)
+
+    # 1. Option ElevenLabs si configurée
     eleven_key = os.environ.get("ELEVENLABS_API_KEY", "").strip()
     if eleven_key:
         try:
             import urllib.request
             import json
-            # Voix féminine multilingue ElevenLabs (Charlotte / Rachel)
             voice_id = os.environ.get("ELEVENLABS_VOICE_ID", "XB0fDUnXU5powFXDhCwa")
             url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
             payload = json.dumps({
-                "text": clean_text[:900],
+                "text": speech_text[:900],
                 "model_id": "eleven_multilingual_v2",
-                "voice_settings": {"stability": 0.55, "similarity_boost": 0.78},
+                "voice_settings": {"stability": 0.55, "similarity_boost": 0.80},
             }).encode("utf-8")
             req = urllib.request.Request(
                 url,
@@ -145,49 +208,52 @@ def synthetiser_voix_femme_base64(texte: str, langue: str = "fr") -> str | None:
                     b64 = base64.b64encode(audio_bytes).decode("ascii")
                     return f"data:audio/mp3;base64,{b64}"
         except Exception as e:
-            logger.warning("ElevenLabs TTS indisponible, bascule sur voix neuronale féminine edge-tts: %s", e)
+            logger.info("ElevenLabs non configuré ou indisponible: %s", e)
 
-    # 2. Voix neuronale féminine edge-tts (uniquement hors datacenters cloud pour éviter le 403 Bing)
-    if not os.environ.get("RENDER"):
-        try:
-            import edge_tts
+    # 2. Voix neuronale Microsoft Azure (edge-tts >= 7.3.1)
+    try:
+        import edge_tts
 
-            async def _generate():
-                communicate = edge_tts.Communicate(
-                    clean_text[:900],
-                    voice="fr-FR-DeniseNeural",
-                    rate="-4%" if langue == "wo" else "+0%",
-                )
-                chunks = []
-                async for chunk in communicate.stream():
-                    if chunk.get("type") == "audio" and chunk.get("data"):
-                        chunks.append(chunk["data"])
-                return b"".join(chunks)
+        chosen_voice = "fr-FR-DeniseNeural"
+        async def _generate():
+            communicate = edge_tts.Communicate(
+                speech_text[:900],
+                voice=chosen_voice,
+                rate="-2%" if langue == "wo" else "+0%",
+            )
+            chunks = []
+            async for chunk in communicate.stream():
+                if chunk.get("type") == "audio" and chunk.get("data"):
+                    chunks.append(chunk["data"])
+            return b"".join(chunks)
 
-            audio_bytes = asyncio.run(_generate())
-            if audio_bytes:
-                b64 = base64.b64encode(audio_bytes).decode("ascii")
-                return f"data:audio/mp3;base64,{b64}"
-        except Exception as e:
-            logger.info("edge-tts indisponible (%s), bascule sur la synthèse vocale résiliente", e)
+        audio_bytes = asyncio.run(_generate())
+        if audio_bytes:
+            b64 = base64.b64encode(audio_bytes).decode("ascii")
+            return f"data:audio/mp3;base64,{b64}"
+    except Exception as e:
+        logger.info("edge-tts non joignable (%s), passage au fallback résilient", e)
 
-    # 3. Fallback résistant pour datacenters / cloud (Render, etc.) sans blocage d'IP
+    # 3. Fallback résilient avec découpage par phrases (respect de la prosodie et des liaisons)
     try:
         import urllib.request
         import urllib.parse
 
-        # Découpage du texte en segments <= 140 caractères
-        words = clean_text[:600].split()
+        # Découpage strict par phrases complètes pour préserver intonations et liaisons
+        parts = re.split(r"([.?!;:\n]+)", speech_text[:700])
         chunks = []
-        current = []
-        for w in words:
-            if sum(len(x) + 1 for x in current) + len(w) > 140:
-                chunks.append(" ".join(current))
-                current = [w]
+        current = ""
+        for p in parts:
+            if not p:
+                continue
+            if len(current) + len(p) <= 150:
+                current += p
             else:
-                current.append(w)
-        if current:
-            chunks.append(" ".join(current))
+                if current.strip():
+                    chunks.append(current.strip())
+                current = p
+        if current.strip():
+            chunks.append(current.strip())
 
         audio_parts = []
         for chunk in chunks:
@@ -199,7 +265,7 @@ def synthetiser_voix_femme_base64(texte: str, langue: str = "fr") -> str | None:
                 tts_url,
                 headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"},
             )
-            with urllib.request.urlopen(req, timeout=5) as resp:
+            with urllib.request.urlopen(req, timeout=6) as resp:
                 data = resp.read()
                 if data:
                     audio_parts.append(data)
@@ -209,7 +275,7 @@ def synthetiser_voix_femme_base64(texte: str, langue: str = "fr") -> str | None:
             b64 = base64.b64encode(full_mp3).decode("ascii")
             return f"data:audio/mp3;base64,{b64}"
     except Exception as e:
-        logger.warning("Erreur fallback synthèse vocale cloud: %s", e)
+        logger.warning("Erreur fallback synthèse vocale: %s", e)
 
     return None
 
