@@ -1115,26 +1115,28 @@ export default function InteractiveMap({
           <button
             type="button"
             onClick={() => changeBaseMap('plan')}
-            className={`flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${baseMap === 'plan'
+            className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${baseMap === 'plan'
               ? 'bg-[#1B2A40] text-white shadow-xs'
               : 'text-navy-600 dark:text-navy-200 hover:text-navy-900 dark:hover:text-white'
               }`}
             aria-label="Mode Plan standard"
+            title="Mode Plan standard"
           >
             <MapIcon size={13} className="flex-shrink-0" />
-            <span>Plan</span>
+            <span className="hidden sm:inline">Plan</span>
           </button>
           <button
             type="button"
             onClick={() => changeBaseMap('satellite')}
-            className={`flex items-center gap-1 px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${baseMap === 'satellite'
+            className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${baseMap === 'satellite'
               ? 'bg-[#CC131A] text-white shadow-xs font-black'
               : 'text-navy-600 dark:text-navy-200 hover:text-navy-900 dark:hover:text-white'
               }`}
             aria-label="Mode Satellite HD"
+            title="Mode Satellite HD (Photo sol réel)"
           >
             <Satellite size={13} className="flex-shrink-0" />
-            <span>Satellite</span>
+            <span className="hidden sm:inline">Satellite</span>
           </button>
 
           {onToggleFullscreen && (

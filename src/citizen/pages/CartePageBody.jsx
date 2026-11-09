@@ -135,19 +135,6 @@ export default function CartePageBody() {
   }, [isMapFullscreen]);
 
   const mapSectionRef = useRef(null);
-  const bottomSectionRef = useRef(null);
-
-  const scrollToBottom = () => {
-    if (bottomSectionRef.current) {
-      bottomSectionRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
-  const scrollToMapIfMobile = () => {
-    if (typeof window !== 'undefined' && window.innerWidth < 1024 && mapSectionRef.current) {
-      mapSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  };
 
   // État des couches actives affichées sur la carte
   const [layersVisibility, setLayersVisibility] = useState({
@@ -158,7 +145,6 @@ export default function CartePageBody() {
 
   const handleToggleLayer = (key) => {
     setLayersVisibility((prev) => ({ ...prev, [key]: !prev[key] }));
-    scrollToMapIfMobile();
   };
 
   const { data: zonesData, isLoading } = useZones();
@@ -469,11 +455,11 @@ export default function CartePageBody() {
   return (
     <CitizenShell>
       <div className="w-full flex flex-col gap-4 sm:gap-5 pb-8">
-        {/* En-tête de page moderne et aéré (remplace l'ancienne bannière sombre de 120px) */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-navy-100 dark:border-navy-800/80">
+        {/* En-tête de page moderne et aéré */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 pb-2 border-b border-navy-100 dark:border-navy-800/80">
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-xl sm:text-2xl font-black text-navy-950 dark:text-white tracking-tight">
+              <h1 className="text-lg sm:text-2xl font-black text-navy-950 dark:text-white tracking-tight">
                 Carte des risques · Thiaroye
               </h1>
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
@@ -481,8 +467,9 @@ export default function CartePageBody() {
                 En direct
               </span>
             </div>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-              Fil d’actualité citoyen, signalements géolocalisés et entraide solidaire entre voisins
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-1">
+              <span className="hidden sm:inline">Fil d’actualité citoyen, signalements géolocalisés et entraide solidaire entre voisins</span>
+              <span className="sm:hidden">Signalements et refuges en direct</span>
             </p>
           </div>
 
@@ -520,7 +507,8 @@ export default function CartePageBody() {
                 title="Calculer un itinéraire sécurisé contournant les voies inondées"
               >
                 {itineraire.isPending ? <Loader2 size={15} className="animate-spin" /> : <Navigation size={15} />}
-                <span>Mode Déviations & Voies Sûres</span>
+                <span className="hidden sm:inline">Mode Déviations & Voies Sûres</span>
+                <span className="sm:hidden">Itinéraire sécurisé</span>
               </button>
             )}
           </div>
@@ -528,11 +516,13 @@ export default function CartePageBody() {
 
         {/* Bandeau indicateur lorsque le mode déviations/navigation est actif */}
         {itineraire.data && (
-          <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-blue-950 dark:text-blue-100 text-xs animate-in fade-in slide-in-from-top-1 duration-200">
+          <div className="flex items-center justify-between gap-3 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-blue-950 dark:text-blue-100 text-xs animate-in fade-in slide-in-from-top-1 duration-200">
             <div className="flex items-center gap-2 min-w-0">
               <span className="w-2.5 h-2.5 rounded-full bg-blue-600 dark:bg-blue-400 animate-pulse shrink-0" />
               <p className="font-bold truncate">
-                <span className="font-extrabold text-[#2563EB] dark:text-blue-300">Mode Déviations actif :</span> Les voies inondées sont automatiquement contournées et la carte est aérée pour une lisibilité maximale.
+                <span className="font-extrabold text-[#2563EB] dark:text-blue-300">Mode Déviations :</span>{' '}
+                <span className="hidden sm:inline">Les voies inondées sont automatiquement contournées pour un trajet sécurisé.</span>
+                <span className="sm:hidden">Voies inondées contournées</span>
               </p>
             </div>
             <button
@@ -558,15 +548,61 @@ export default function CartePageBody() {
           </p>
         )}
 
-        <div className="w-full flex flex-col gap-3">
+        <div className="w-full flex flex-col gap-2.5">
           {/* ========================================================= */}
-          {/* CARTE + BANDEAU LATÉRAL ÉTROIT DE FILTRES TEMPORELS À DROITE */}
+          {/* CARTE + FILTRES TEMPORELS RÉORGANISÉS RESPONSIVEMENT */}
+          {/* Mobile : filtres au-dessus (order-1) pour voir l'effet immédiatement */}
+          {/* Desktop : filtres à droite (lg:order-2) en colonne latérale */}
           {/* ========================================================= */}
           <div className="w-full flex flex-col lg:flex-row gap-2.5 items-stretch lg:items-start">
-            {/* CARTE INTERACTIVE (Prend l'écrasante majorité de la largeur) */}
+            {/* FILTRES TEMPORELS (order-1 sur mobile, lg:order-2 sur desktop) */}
+            <aside
+              aria-label="Filtres temporels"
+              className="order-1 lg:order-2 w-full lg:w-28 xl:w-32 flex lg:flex-col items-center lg:items-stretch justify-start gap-1.5 p-1.5 sm:p-2 bg-white dark:bg-navy-900 rounded-2xl border border-navy-100 dark:border-navy-800 shadow-2xs shrink-0 h-fit overflow-x-auto lg:overflow-x-visible no-scrollbar"
+            >
+              <div className="flex items-center gap-1.5 px-2 py-1 text-[11px] font-bold text-navy-400 dark:text-navy-300 select-none shrink-0">
+                <Clock size={12} className="text-[#CC131A] shrink-0" />
+                <span className="hidden sm:inline">Période</span>
+              </div>
+
+              <div className="flex lg:flex-col gap-1 sm:gap-1.5 flex-1 w-full min-w-0">
+                {[
+                  { id: 'aujourdhui', label: "Aujourd'hui" },
+                  { id: 'semaine', label: '7 jours' },
+                  { id: 'mois', label: '30 jours' },
+                  { id: 'anciens', label: 'Anciens' },
+                  { id: 'tous', label: 'Tous' },
+                ].map((tab) => {
+                  const isActive = timeFilter === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setTimeFilter(tab.id)}
+                      className={`text-center px-2.5 py-1.5 lg:py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap active:scale-95 ${
+                        isActive
+                          ? 'bg-navy-950 dark:bg-white text-white dark:text-navy-950 shadow-xs'
+                          : 'bg-slate-50 dark:bg-navy-950/70 text-slate-600 dark:text-slate-400 hover:text-navy-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-navy-800'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Compteur d'observations discret */}
+              <div className="flex items-center justify-center px-2 py-1 lg:p-1.5 lg:mt-auto bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-200/60 dark:border-emerald-800/40 shrink-0 ml-auto lg:ml-0">
+                <span className="text-[10px] sm:text-[11px] font-bold text-emerald-700 dark:text-emerald-400 text-center leading-tight whitespace-nowrap">
+                  {filteredSignalements.length} obs.
+                </span>
+              </div>
+            </aside>
+
+            {/* CARTE INTERACTIVE (order-2 sur mobile, lg:order-1 sur desktop) */}
             <div
               ref={mapSectionRef}
-              className="w-full flex-1 min-w-0 h-[400px] sm:h-[480px] lg:h-[720px] min-h-[380px] sm:min-h-[480px] lg:min-h-[720px] relative rounded-2xl overflow-hidden shadow-sm border border-navy-100 dark:border-navy-800 isolate z-10 scroll-mt-4"
+              className="order-2 lg:order-1 w-full flex-1 min-w-0 h-[62vh] min-h-[400px] sm:h-[500px] lg:h-[720px] relative rounded-2xl overflow-hidden shadow-sm border border-navy-100 dark:border-navy-800 isolate z-10 scroll-mt-4"
             >
               {isLoading ? (
                 <div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-navy-900">
@@ -627,76 +663,6 @@ export default function CartePageBody() {
                 </>
               )}
             </div>
-
-            {/* BANDE ÉTROITE À DROITE : Filtres temporels épurés sans texte lourd */}
-            <aside
-              aria-label="Filtres temporels"
-              className="w-full lg:w-28 xl:w-32 flex lg:flex-col justify-between sm:justify-start gap-1.5 p-2 bg-white dark:bg-navy-900 rounded-2xl border border-navy-100 dark:border-navy-800 shadow-2xs shrink-0 self-start h-fit overflow-x-auto lg:overflow-x-visible no-scrollbar"
-            >
-              <div className="hidden lg:flex items-center gap-1.5 px-1 py-1 text-[11px] font-bold text-navy-400 dark:text-navy-300 select-none">
-                <Clock size={12} className="text-[#CC131A] shrink-0" />
-                <span>Période</span>
-              </div>
-
-              <div className="flex lg:flex-col gap-1.5 flex-1 w-full">
-                {[
-                  { id: 'aujourdhui', label: "Aujourd'hui" },
-                  { id: 'semaine', label: '7 jours' },
-                  { id: 'mois', label: '30 jours' },
-                  { id: 'anciens', label: 'Anciens' },
-                  { id: 'tous', label: 'Tous' },
-                ].map((tab) => {
-                  const isActive = timeFilter === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => setTimeFilter(tab.id)}
-                      className={`w-full text-center px-2 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap active:scale-95 ${
-                        isActive
-                          ? 'bg-navy-950 dark:bg-white text-white dark:text-navy-950 shadow-xs'
-                          : 'bg-slate-50 dark:bg-navy-950/70 text-slate-600 dark:text-slate-400 hover:text-navy-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-navy-800'
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Compteur d'observations discret */}
-              <div className="hidden lg:flex items-center justify-center p-1.5 mt-auto bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-200/60 dark:border-emerald-800/40">
-                <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 text-center leading-tight">
-                  {filteredSignalements.length} obs.
-                </span>
-              </div>
-
-              {/* Bouton de scroll rapide pour franchir la carte sans la toucher */}
-              <button
-                type="button"
-                onClick={scrollToBottom}
-                className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-xl text-[11px] font-bold bg-slate-100 hover:bg-slate-200 dark:bg-navy-800 dark:hover:bg-navy-700 text-navy-800 dark:text-navy-200 transition-all border border-navy-100 dark:border-navy-700 shadow-2xs cursor-pointer active:scale-95 group shrink-0"
-                title="Défiler vers le bas de la page sans toucher la carte"
-                aria-label="Défiler vers le bas de la page"
-              >
-                <ChevronDown size={13} className="text-[#CC131A] transition-transform group-hover:translate-y-0.5" />
-                <span className="whitespace-nowrap">Bas de page</span>
-              </button>
-            </aside>
-          </div>
-
-          {/* Ancre de bas de page et bouton de remontée fluide vers la carte */}
-          <div ref={bottomSectionRef} className="w-full flex items-center justify-between pt-2 pb-1 text-xs text-slate-500 dark:text-slate-400">
-            <span>Territoire sous surveillance · Thiaroye-sur-Mer</span>
-            <button
-              type="button"
-              onClick={() => mapSectionRef.current?.scrollIntoView({ behavior: 'smooth' })}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white dark:bg-navy-900 border border-navy-100 dark:border-navy-800 text-navy-700 dark:text-navy-300 hover:text-[#CC131A] dark:hover:text-[#CC131A] shadow-2xs transition-all cursor-pointer active:scale-95"
-              title="Remonter vers la carte"
-            >
-              <ChevronUp size={13} className="text-[#CC131A]" />
-              <span>Remonter à la carte</span>
-            </button>
           </div>
         </div>
 
