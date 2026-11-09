@@ -1,11 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '../../auth/AuthContext';
 import { getMonSurvivalKit, saveMonSurvivalKit } from '../../api/endpoints/survivalKit';
 
 export function useSurvivalKit() {
+  const { isAuthenticated } = useAuth();
   return useQuery({
     queryKey: ['mon-survival-kit'],
     queryFn: getMonSurvivalKit,
-    retry: 1,
+    enabled: !!isAuthenticated,
+    retry: false,
   });
 }
 

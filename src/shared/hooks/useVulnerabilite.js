@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '../../auth/AuthContext';
 import {
   getMonProfilVulnerabilite,
   saveMonProfilVulnerabilite,
@@ -6,9 +7,12 @@ import {
 } from '../../api/endpoints/vulnerabilite';
 
 export function useMonProfilVulnerabilite() {
+  const { isAuthenticated } = useAuth();
   return useQuery({
     queryKey: ['mon-profil-vulnerabilite'],
     queryFn: getMonProfilVulnerabilite,
+    enabled: !!isAuthenticated,
+    retry: false,
     staleTime: 30_000,
   });
 }

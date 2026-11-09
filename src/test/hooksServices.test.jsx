@@ -3,6 +3,10 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 
+vi.mock('../auth/AuthContext', () => ({
+  useAuth: () => ({ isAuthenticated: true, username: 'test-user' }),
+}));
+
 import { useAlertesRecentes, useAlertesListe } from '../shared/hooks/useAlertes';
 import { usePrevisions } from '../shared/hooks/usePrevisions';
 import { useCapteurs } from '../shared/hooks/useCapteurs';

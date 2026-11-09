@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '../../auth/AuthContext';
 import {
   getMonRelais,
   createRelais,
@@ -8,9 +9,12 @@ import {
 } from '../../api/endpoints/relais';
 
 export function useMonRelais() {
+  const { isAuthenticated } = useAuth();
   return useQuery({
     queryKey: ['mon-relais'],
     queryFn: getMonRelais,
+    enabled: !!isAuthenticated,
+    retry: false,
     staleTime: 30_000,
   });
 }
