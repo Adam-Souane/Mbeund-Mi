@@ -1065,100 +1065,97 @@ export default function InteractiveMap({
       className="relative rounded-xl overflow-hidden border border-navy-50 dark:border-navy-800 isolate z-10 w-full h-full min-h-[360px]"
       style={{ height: typeof height === 'number' ? `${height}px` : height }}
     >
-      {/* Barre de contrôle supérieure unifiée : Couches à gauche (défilable) et Switcher Plan/Satellite à droite. Zéro chevauchement garanti sur tout écran */}
-      <div className="absolute top-2.5 left-2.5 right-2.5 z-[1000] flex items-center justify-between gap-2 pointer-events-none select-none">
-        {/* Capsules de couches filtrables (Signalements, Refuges, Segments, Zones) */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 pointer-events-auto min-w-0 flex-1">
-          {['signalements', 'refuges', 'segments', 'zones'].map((key) => {
-            if (!availableLayers.includes(key) && key !== 'signalements') return null;
-            const isLayerActive = visible[key] !== false;
-            const Icon = LAYER_ICONS[key] || MapPin;
-            const count = key === 'signalements'
-              ? (signalements?.length || 0)
-              : key === 'refuges'
-                ? (refuges?.features?.length || refuges?.length || 0)
-                : null;
+      {/* Capsules de couches filtrables (Signalements, Refuges, Segments, Zones) : Toute la largeur disponible sans écrasement */}
+      <div className="absolute top-2 left-2 right-2 sm:right-auto z-[1000] flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 pointer-events-auto select-none sm:max-w-[calc(100%-150px)]">
+        {['signalements', 'refuges', 'segments', 'zones'].map((key) => {
+          if (!availableLayers.includes(key) && key !== 'signalements') return null;
+          const isLayerActive = visible[key] !== false;
+          const Icon = LAYER_ICONS[key] || MapPin;
+          const count = key === 'signalements'
+            ? (signalements?.length || 0)
+            : key === 'refuges'
+              ? (refuges?.features?.length || refuges?.length || 0)
+              : null;
 
-            return (
-              <button
-                key={`float-pill-${key}`}
-                type="button"
-                onClick={() => toggle(key)}
-                className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-black backdrop-blur-md border shadow-xs transition-all active:scale-95 whitespace-nowrap cursor-pointer ${isLayerActive
-                  ? 'bg-navy-950/90 dark:bg-white/95 text-white dark:text-navy-950 border-white/20 dark:border-navy-800'
-                  : 'bg-white/80 dark:bg-navy-950/80 text-slate-500 dark:text-slate-400 border-white/40 dark:border-navy-800 line-through opacity-70'
-                  }`}
-                title={`Afficher ou masquer : ${LAYER_LABELS[key]}`}
-              >
-                <Icon size={13} className={isLayerActive ? 'text-[#CC131A]' : 'opacity-40'} />
-                <span>{LAYER_SHORT_LABELS[key] || LAYER_LABELS[key]}</span>
-                {count !== null && (
-                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${isLayerActive
-                    ? 'bg-red-500/20 text-red-300 dark:text-red-700'
-                    : 'bg-slate-200 dark:bg-navy-800 text-slate-500'
-                    }`}>
-                    {count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+          return (
+            <button
+              key={`float-pill-${key}`}
+              type="button"
+              onClick={() => toggle(key)}
+              className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-black backdrop-blur-md border shadow-xs transition-all active:scale-95 whitespace-nowrap cursor-pointer shrink-0 ${isLayerActive
+                ? 'bg-navy-950/90 dark:bg-white/95 text-white dark:text-navy-950 border-white/20 dark:border-navy-800'
+                : 'bg-white/80 dark:bg-navy-950/80 text-slate-500 dark:text-slate-400 border-white/40 dark:border-navy-800 line-through opacity-70'
+                }`}
+              title={`Afficher ou masquer : ${LAYER_LABELS[key]}`}
+            >
+              <Icon size={13} className={isLayerActive ? 'text-[#CC131A]' : 'opacity-40'} />
+              <span>{LAYER_SHORT_LABELS[key] || LAYER_LABELS[key]}</span>
+              {count !== null && (
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${isLayerActive
+                  ? 'bg-red-500/20 text-red-300 dark:text-red-700'
+                  : 'bg-slate-200 dark:bg-navy-800 text-slate-500'
+                  }`}>
+                  {count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
 
-        {/* Sélecteur de fond de carte à l'intérieur de la carte : Plan vs Sol Réel (Satellite HD) */}
-        <div className="flex items-center gap-1 bg-white/95 dark:bg-navy/95 backdrop-blur-md p-1 rounded-xl border border-navy-50 dark:border-navy-800 shadow-md shrink-0 pointer-events-auto">
-          <button
-            type="button"
-            onClick={() => changeBaseMap('plan')}
-            className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${baseMap === 'plan'
-              ? 'bg-[#1B2A40] text-white shadow-xs'
-              : 'text-navy-600 dark:text-navy-200 hover:text-navy-900 dark:hover:text-white'
-              }`}
-            aria-label="Mode Plan standard"
-            title="Mode Plan standard"
-          >
-            <MapIcon size={13} className="flex-shrink-0" />
-            <span className="hidden sm:inline">Plan</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => changeBaseMap('satellite')}
-            className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${baseMap === 'satellite'
-              ? 'bg-[#CC131A] text-white shadow-xs font-black'
-              : 'text-navy-600 dark:text-navy-200 hover:text-navy-900 dark:hover:text-white'
-              }`}
-            aria-label="Mode Satellite HD"
-            title="Mode Satellite HD (Photo sol réel)"
-          >
-            <Satellite size={13} className="flex-shrink-0" />
-            <span className="hidden sm:inline">Satellite</span>
-          </button>
+      {/* Sélecteur de fond de carte (Plan / Satellite HD / Plein écran) : Décalé sur mobile pour ne jamais télescoper les calques */}
+      <div className="absolute top-11 right-2 sm:top-2 sm:right-2 z-[1000] flex items-center gap-1 bg-white/95 dark:bg-navy/95 backdrop-blur-md p-1 rounded-xl border border-navy-50 dark:border-navy-800 shadow-md shrink-0 pointer-events-auto select-none">
+        <button
+          type="button"
+          onClick={() => changeBaseMap('plan')}
+          className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${baseMap === 'plan'
+            ? 'bg-[#1B2A40] text-white shadow-xs'
+            : 'text-navy-600 dark:text-navy-200 hover:text-navy-900 dark:hover:text-white'
+            }`}
+          aria-label="Mode Plan standard"
+          title="Mode Plan standard"
+        >
+          <MapIcon size={13} className="flex-shrink-0" />
+          <span className="hidden sm:inline">Plan</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => changeBaseMap('satellite')}
+          className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${baseMap === 'satellite'
+            ? 'bg-[#CC131A] text-white shadow-xs font-black'
+            : 'text-navy-600 dark:text-navy-200 hover:text-navy-900 dark:hover:text-white'
+            }`}
+          aria-label="Mode Satellite HD"
+          title="Mode Satellite HD (Photo sol réel)"
+        >
+          <Satellite size={13} className="flex-shrink-0" />
+          <span className="hidden sm:inline">Satellite</span>
+        </button>
 
-          {onToggleFullscreen && (
-            <>
-              <div className="w-[1px] h-3.5 bg-navy-100 dark:bg-navy-800 mx-0.5" />
-              <button
-                type="button"
-                onClick={onToggleFullscreen}
-                className="flex items-center gap-1 px-2 py-1 text-xs font-bold rounded-lg transition text-[#CC131A] hover:bg-[#CC131A]/10 active:scale-95 cursor-pointer"
-                aria-label={isFullscreen ? 'Quitter le plein écran' : 'Plein écran'}
-                title={isFullscreen ? 'Quitter le plein écran (Échap)' : 'Agrandir la carte en plein écran'}
-              >
-                {isFullscreen ? (
-                  <>
-                    <Minimize2 size={13} className="flex-shrink-0" />
-                    <span className="hidden sm:inline">Réduire</span>
-                  </>
-                ) : (
-                  <>
-                    <Maximize2 size={13} className="flex-shrink-0" />
-                    <span className="hidden sm:inline">Plein écran</span>
-                  </>
-                )}
-              </button>
-            </>
-          )}
-        </div>
+        {onToggleFullscreen && (
+          <>
+            <div className="w-[1px] h-3.5 bg-navy-100 dark:bg-navy-800 mx-0.5" />
+            <button
+              type="button"
+              onClick={onToggleFullscreen}
+              className="flex items-center gap-1 px-2 py-1 text-xs font-bold rounded-lg transition text-[#CC131A] hover:bg-[#CC131A]/10 active:scale-95 cursor-pointer"
+              aria-label={isFullscreen ? 'Quitter le plein écran' : 'Plein écran'}
+              title={isFullscreen ? 'Quitter le plein écran (Échap)' : 'Agrandir la carte en plein écran'}
+            >
+              {isFullscreen ? (
+                <>
+                  <Minimize2 size={13} className="flex-shrink-0" />
+                  <span className="hidden sm:inline">Réduire</span>
+                </>
+              ) : (
+                <>
+                  <Maximize2 size={13} className="flex-shrink-0" />
+                  <span className="hidden sm:inline">Plein écran</span>
+                </>
+              )}
+            </button>
+          </>
+        )}
       </div>
 
       <MapContainer
