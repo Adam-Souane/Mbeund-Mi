@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Users,
+  User,
   MapPin,
   Camera,
   Heart,
@@ -95,6 +96,7 @@ export default function CommunautePageBody() {
   }, [username, nomCitoyen]);
 
   // État de la popup "Nouveau post"
+  const [showAuthRequiredModal, setShowAuthRequiredModal] = useState(false);
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
   const [modalPostText, setModalPostText] = useState('');
   const [modalType, setModalType] = useState('signalement'); // 'signalement' | 'entraide' | 'resolu'
@@ -1171,6 +1173,10 @@ export default function CommunautePageBody() {
   // Action like / cœurs : bascule UNIQUEMENT le post ciblé par son identifiant unique avec feedback éphémère
   const handleToggleLike = (postId) => {
     if (!postId) return;
+    if (!username) {
+      setShowAuthRequiredModal(true);
+      return;
+    }
     setLikesState((prev) => {
       const isCurrentlyLiked = !prev[postId];
       if (isCurrentlyLiked) {
@@ -1217,6 +1223,10 @@ export default function CommunautePageBody() {
 
   const handleToggleConfirmation = (postId) => {
     if (!postId) return;
+    if (!username) {
+      setShowAuthRequiredModal(true);
+      return;
+    }
     const isAlreadyConfirmed = !!confirmationsState[postId];
     setConfirmationsState((prev) => ({
       ...prev,
@@ -1270,6 +1280,10 @@ export default function CommunautePageBody() {
   // Action ajout commentaire : vérifie la modération, enregistre dans commentsByPost et incrémente aussitôt le compteur du bouton Avis
   const handleAddComment = (postId, e) => {
     e.preventDefault();
+    if (!username) {
+      setShowAuthRequiredModal(true);
+      return;
+    }
     if (userIsBanned) {
       setReportSuccessToast("Votre participation à l'espace communauté est suspendue suite à des signalements.");
       setTimeout(() => setReportSuccessToast(null), 4000);
@@ -1308,6 +1322,11 @@ export default function CommunautePageBody() {
   // Action publication via la modale avec contrôle de modération strict
   const handleSubmitModalPost = (e) => {
     e.preventDefault();
+    if (!username) {
+      setIsPostModalOpen(false);
+      setShowAuthRequiredModal(true);
+      return;
+    }
     setModalError(null);
 
     if (userIsBanned) {
@@ -1412,6 +1431,11 @@ export default function CommunautePageBody() {
   // Action création d'une Story éphémère 24h (Photo / Vidéo ou Texte seul avec dégradé stylé)
   const handleCreateStory = (e) => {
     e.preventDefault();
+    if (!username) {
+      setIsStoryModalOpen(false);
+      setShowAuthRequiredModal(true);
+      return;
+    }
     setStoryError(null);
 
     if (userIsBanned) {
@@ -1534,7 +1558,13 @@ export default function CommunautePageBody() {
             {/* Bouton avec l'avatar du citoyen connecté (Mon espace personnel) */}
             <button
               type="button"
-              onClick={() => setIsMySpaceOpen(true)}
+              onClick={() => {
+                if (!username) {
+                  setShowAuthRequiredModal(true);
+                  return;
+                }
+                setIsMySpaceOpen(true);
+              }}
               className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/25 text-white transition active:scale-95 cursor-pointer shrink-0 shadow-xs group"
               title="Mon espace personnel dans la communauté"
               aria-label="Ouvrir mon espace personnel"
@@ -1586,6 +1616,39 @@ export default function CommunautePageBody() {
         </div>
       )}
 
+      {/* Bannière d'information si le citoyen navigue en Mode Urgence Anonyme sans compte */}
+      {!username && (
+        <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50/80 via-indigo-50/50 to-slate-50 dark:from-navy-900/60 dark:via-navy-800/40 dark:to-navy-900/40 border border-blue-200/80 dark:border-navy-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#0B2545] text-white flex items-center justify-center shrink-0 shadow-xs">
+              <ShieldAlert size={18} className="text-[#CC131A]" />
+            </div>
+            <div>
+              <span className="inline-block text-[10px] font-black uppercase tracking-wider text-[#0B2545] dark:text-blue-300">
+                Mode Consultation Anonyme
+              </span>
+              <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">
+                Vous consultez le fil public. Connectez-vous pour publier un post, partager une story ou commenter.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Link
+              to="/login"
+              className="px-3 py-1.5 rounded-xl bg-[#0B2545] hover:bg-[#154275] text-white text-xs font-black shadow-xs transition cursor-pointer"
+            >
+              Se connecter
+            </Link>
+            <Link
+              to="/signup"
+              className="px-3 py-1.5 rounded-xl bg-[#CC131A] hover:bg-red-700 text-white text-xs font-black shadow-xs transition cursor-pointer"
+            >
+              Créer un compte
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {/* 2. STORIES INSTAGRAM · ÉPHÉMÈRES (24 HEURES)                       */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
@@ -1612,6 +1675,10 @@ export default function CommunautePageBody() {
           <button
             type="button"
             onClick={() => {
+              if (!username) {
+                setShowAuthRequiredModal(true);
+                return;
+              }
               if (userIsBanned) {
                 setReportSuccessToast("Votre participation à l'espace communauté est suspendue suite à des signalements.");
                 setTimeout(() => setReportSuccessToast(null), 4000);
@@ -1757,6 +1824,10 @@ export default function CommunautePageBody() {
         <button
           type="button"
           onClick={() => {
+            if (!username) {
+              setShowAuthRequiredModal(true);
+              return;
+            }
             if (userIsBanned) {
               setReportSuccessToast("Votre participation à l'espace communauté est suspendue suite à des signalements.");
               setTimeout(() => setReportSuccessToast(null), 4000);
@@ -3762,6 +3833,62 @@ export default function CommunautePageBody() {
                 <span>Supprimer</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modale d'invitation à la connexion si action requiert un compte citoyen */}
+      {showAuthRequiredModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="auth-required-title"
+          className="fixed inset-0 z-[100] bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setShowAuthRequiredModal(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white dark:bg-navy-900 border border-slate-200 dark:border-navy-800 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl text-center space-y-4 animate-in zoom-in-95 duration-200"
+          >
+            <div className="w-16 h-16 rounded-2xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-900/60 text-[#CC131A] flex items-center justify-center mx-auto shadow-sm">
+              <ShieldAlert size={32} />
+            </div>
+            <div>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black uppercase bg-red-50 dark:bg-red-950/50 text-[#CC131A] dark:text-red-300 border border-red-200 dark:border-red-900/60">
+                Compte Citoyen Requis
+              </span>
+              <h3 id="auth-required-title" className="text-xl font-black text-navy-950 dark:text-white mt-2">
+                Connexion requise pour participer
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+                Vous naviguez actuellement en <strong>Mode Anonyme</strong>. La consultation du fil et des alertes est libre, mais la publication de messages, stories et commentaires requiert un compte citoyen vérifié afin de garantir la fiabilité des informations.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+              <Link
+                to="/login"
+                className="w-full py-3 px-4 rounded-xl bg-[#0B2545] hover:bg-[#154275] text-white text-xs sm:text-sm font-black shadow-md transition flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <User size={16} />
+                <span>Se connecter</span>
+              </Link>
+              <Link
+                to="/signup"
+                className="w-full py-3 px-4 rounded-xl bg-[#CC131A] hover:bg-red-700 text-white text-xs sm:text-sm font-black shadow-md transition flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <CheckCircle2 size={16} />
+                <span>Créer un compte</span>
+              </Link>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowAuthRequiredModal(false)}
+              className="text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition pt-1 cursor-pointer"
+            >
+              Continuer en consultation anonyme
+            </button>
           </div>
         </div>
       )}

@@ -7,11 +7,13 @@ vi.mock('../citizen/shared/CitizenShell', () => ({
   default: ({ children }) => <div data-testid="citizen-shell">{children}</div>,
 }));
 
+let mockAuthUser = {
+  username: 'Amadou Test',
+  user: { prenom: 'Amadou', nom: 'Diallo' },
+};
+
 vi.mock('../auth/AuthContext', () => ({
-  useAuth: () => ({
-    username: 'Amadou Test',
-    user: { prenom: 'Amadou', nom: 'Diallo' },
-  }),
+  useAuth: () => mockAuthUser,
 }));
 
 vi.mock('../shared/hooks/useSignalements', () => ({
@@ -740,6 +742,40 @@ describe('CommunautePageBody', () => {
     const boutonsVues = screen.getAllByRole('button', { name: /Nombre d'explorations du post/i });
     expect(boutonsVues[0]).toBeDisabled();
     expect(boutonsVues[0]).toHaveClass('cursor-default');
+  });
+
+  it('affiche la modale Compte Citoyen Requis quand un citoyen anonyme essaie de publier ou créer une story', () => {
+    mockAuthUser = { username: null, user: null };
+    render(
+      <MemoryRouter>
+        <CommunautePageBody />
+      </MemoryRouter>
+    );
+
+    // Vérifie le bandeau mode consultation anonyme
+    expect(screen.getByText(/Mode Consultation Anonyme/i)).toBeInTheDocument();
+
+    // Clic sur Nouveau post en mode anonyme
+    const btnNouveauPost = screen.getByRole('button', { name: /Nouveau post/i });
+    fireEvent.click(btnNouveauPost);
+
+    // Modale de contrainte affichée
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toBeInTheDocument();
+    expect(within(dialog).getByText(/Connexion requise pour participer/i)).toBeInTheDocument();
+    expect(within(dialog).getByRole('link', { name: /Se connecter/i })).toBeInTheDocument();
+    expect(within(dialog).getByRole('link', { name: /Créer un compte/i })).toBeInTheDocument();
+
+    // Fermeture de la modale pour continuer la consultation
+    const btnContinuer = screen.getByRole('button', { name: /Continuer en consultation anonyme/i });
+    fireEvent.click(btnContinuer);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    // Rétablissement de l'utilisateur mocké
+    mockAuthUser = {
+      username: 'Amadou Test',
+      user: { prenom: 'Amadou', nom: 'Diallo' },
+    };
   });
 });
 

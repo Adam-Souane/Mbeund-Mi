@@ -232,17 +232,21 @@ export default function AuthLayout({ variante, className = '', children }) {
 
         <div className="absolute inset-0 z-10 bg-gradient-to-t from-slate-950/90 via-slate-950/55 to-slate-950/35 pointer-events-none" />
 
-        {/* Logo officiel Desktop avec slogan unifié et centré à l'intérieur */}
+        {/* Logo officiel Desktop avec slogan officiel au milieu et traits latéraux */}
         <div className="relative z-20 flex flex-col items-start">
-          <div className="bg-white/95 backdrop-blur-md px-6 py-3.5 rounded-2xl shadow-xl border border-white/60 flex flex-col items-center justify-center text-center">
+          <div className="bg-white/95 backdrop-blur-md px-6 py-4 rounded-2xl shadow-xl border border-white/60 flex flex-col items-center justify-center text-center">
             <img
               src={logoLight}
               alt="MBEUND MI"
               className="h-11 w-auto object-contain"
             />
-            <span className="text-[11px] font-black tracking-wider uppercase text-[#0B2545] mt-1.5">
-              Bul Xaar, Waajal Ko.
-            </span>
+            <div className="flex items-center justify-center gap-2 mt-2.5">
+              <span className="w-4 h-px bg-slate-300" />
+              <span className="text-[10px] sm:text-[11px] font-black tracking-widest uppercase text-[#0B2545]">
+                Bul Xaar, Waajal Ko.
+              </span>
+              <span className="w-4 h-px bg-slate-300" />
+            </div>
           </div>
         </div>
 
