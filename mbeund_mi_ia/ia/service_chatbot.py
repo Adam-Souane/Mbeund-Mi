@@ -147,28 +147,29 @@ def synthetiser_voix_femme_base64(texte: str, langue: str = "fr") -> str | None:
         except Exception as e:
             logger.warning("ElevenLabs TTS indisponible, bascule sur voix neuronale féminine edge-tts: %s", e)
 
-    # 2. Voix neuronale féminine naturelle via edge-tts (fr-FR-DeniseNeural)
-    try:
-        import edge_tts
+    # 2. Voix neuronale féminine edge-tts (uniquement hors datacenters cloud pour éviter le 403 Bing)
+    if not os.environ.get("RENDER"):
+        try:
+            import edge_tts
 
-        async def _generate():
-            communicate = edge_tts.Communicate(
-                clean_text[:900],
-                voice="fr-FR-DeniseNeural",
-                rate="-4%" if langue == "wo" else "+0%",
-            )
-            chunks = []
-            async for chunk in communicate.stream():
-                if chunk.get("type") == "audio" and chunk.get("data"):
-                    chunks.append(chunk["data"])
-            return b"".join(chunks)
+            async def _generate():
+                communicate = edge_tts.Communicate(
+                    clean_text[:900],
+                    voice="fr-FR-DeniseNeural",
+                    rate="-4%" if langue == "wo" else "+0%",
+                )
+                chunks = []
+                async for chunk in communicate.stream():
+                    if chunk.get("type") == "audio" and chunk.get("data"):
+                        chunks.append(chunk["data"])
+                return b"".join(chunks)
 
-        audio_bytes = asyncio.run(_generate())
-        if audio_bytes:
-            b64 = base64.b64encode(audio_bytes).decode("ascii")
-            return f"data:audio/mp3;base64,{b64}"
-    except Exception as e:
-        logger.warning("Erreur synthèse vocale féminine edge-tts: %s", e)
+            audio_bytes = asyncio.run(_generate())
+            if audio_bytes:
+                b64 = base64.b64encode(audio_bytes).decode("ascii")
+                return f"data:audio/mp3;base64,{b64}"
+        except Exception as e:
+            logger.info("edge-tts indisponible (%s), bascule sur la synthèse vocale résiliente", e)
 
     # 3. Fallback résistant pour datacenters / cloud (Render, etc.) sans blocage d'IP
     try:
