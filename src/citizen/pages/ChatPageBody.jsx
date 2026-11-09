@@ -1139,23 +1139,23 @@ export default function ChatPageBody() {
   return (
     <CitizenShell>
       <div className="w-full flex flex-col gap-4 sm:gap-5 pb-8">
-        {/* En-tête Héro au format Communauté & Carte */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0B2545] via-[#103565] to-slate-900 text-white p-4 sm:p-5 md:px-6 md:py-5 shadow-lg border border-blue-900/40 flex-shrink-0">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 sm:gap-4 relative z-10">
+        {/* En-tête Héro au format Communauté & Carte (compacté mobile) */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0B2545] via-[#103565] to-slate-900 text-white p-3 sm:p-5 md:px-6 md:py-5 shadow-lg border border-blue-900/40 flex-shrink-0">
+          <div className="flex items-center justify-between gap-3 relative z-10">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-base sm:text-lg md:text-xl font-black text-white tracking-tight flex items-center gap-2">
-                  <Waves size={18} className="text-cyan-400" />
-                  NDAM · Assistant IA Thiaroye
+                <h1 className="text-sm sm:text-lg md:text-xl font-black text-white tracking-tight flex items-center gap-1.5 sm:gap-2">
+                  <Waves size={17} className="text-cyan-400 shrink-0" />
+                  <span>NDAM · Assistant IA</span>
                 </h1>
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-black bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shrink-0">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] sm:text-[11px] font-black bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shrink-0">
                   <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-                  Connecté aux capteurs
+                  Connecté
                 </span>
 
                 {/* Badge météo en direct compact */}
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-white/10 text-cyan-200 border border-white/15 shrink-0 shadow-2xs">
-                  <CloudRain size={12} className="text-cyan-300" />
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] sm:text-[11px] font-bold bg-white/10 text-cyan-200 border border-white/15 shrink-0 shadow-2xs">
+                  <CloudRain size={11} className="text-cyan-300" />
                   <span>
                     {currentTemp != null ? `${Math.round(Number(currentTemp))}°C` : '30°C'} · {currentPrecip != null ? `${Number(currentPrecip).toFixed(1)} mm` : '0 mm'}
                   </span>
@@ -1168,13 +1168,13 @@ export default function ChatPageBody() {
                   </span>
                 )}
               </div>
-              <p className="text-xs sm:text-sm text-slate-300 mt-1 line-clamp-2 sm:line-clamp-1">
-                Conseils personnalisés de prévention, aide au signalement et navigation vers les refuges sécurisés
+              <p className="text-[11px] sm:text-sm text-slate-300 mt-0.5 line-clamp-1">
+                Conseils personnalisés de prévention, aide au signalement et navigation vers les refuges
               </p>
             </div>
 
             {/* Boutons d'en-tête : Badge Bilingue invisible (sr-only pour accessibilité/tests) & Nouvelle discussion */}
-            <div className="flex items-center gap-2 shrink-0 flex-wrap">
+            <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
                 onClick={toggleLangue}
@@ -1188,11 +1188,12 @@ export default function ChatPageBody() {
               <button
                 type="button"
                 onClick={handleNewChat}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#CC131A] hover:bg-[#b01016] active:scale-95 text-white text-xs font-bold transition cursor-pointer shadow-xs"
+                className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#CC131A] hover:bg-[#b01016] active:scale-95 text-white text-xs font-bold transition cursor-pointer shadow-xs whitespace-nowrap"
                 title="Démarrer une nouvelle conversation"
               >
-                <PlusCircle size={15} />
-                <span>Nouvelle discussion</span>
+                <PlusCircle size={14} />
+                <span className="hidden sm:inline">Nouvelle discussion</span>
+                <span className="sm:hidden">Nouveau</span>
               </button>
             </div>
           </div>
@@ -1405,23 +1406,25 @@ export default function ChatPageBody() {
               <div ref={bottomRef} />
             </div>
 
-            {/* Suggestions interactives */}
+            {/* Suggestions interactives en ruban fluide horizontal */}
             {messages.length <= 1 && (
-              <div className="flex flex-wrap gap-1.5 pt-2 border-t border-slate-100 dark:border-navy-800">
-                <span className="w-full text-[11px] font-bold text-slate-400 flex items-center gap-1 mb-0.5">
+              <div className="pt-2 border-t border-slate-100 dark:border-navy-800 space-y-1">
+                <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1">
                   <Sparkles size={12} className="text-[#CC131A]" />
                   {langue === 'wo' ? 'Laaj yi gën a bari ci dëkkandoo yi :' : 'Questions fréquentes des habitants :'}
                 </span>
-                {currentSuggestions.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => handleSuggestionClick(s)}
-                    className="text-xs font-bold px-3 py-1.5 rounded-xl border border-navy-200 dark:border-navy-700 bg-white dark:bg-navy-900/50 text-navy-800 dark:text-navy-200 hover:border-[#CC131A] hover:text-[#CC131A] dark:hover:border-[#CC131A] dark:hover:text-red-400 hover:bg-red-50/30 dark:hover:bg-red-950/20 transition active:scale-95 cursor-pointer shadow-2xs"
-                  >
-                    {s}
-                  </button>
-                ))}
+                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+                  {currentSuggestions.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => handleSuggestionClick(s)}
+                      className="text-xs font-bold px-3 py-1.5 rounded-xl border border-navy-200 dark:border-navy-700 bg-white dark:bg-navy-900/50 text-navy-800 dark:text-navy-200 hover:border-[#CC131A] hover:text-[#CC131A] dark:hover:border-[#CC131A] dark:hover:text-red-400 hover:bg-red-50/30 dark:hover:bg-red-950/20 transition active:scale-95 cursor-pointer shadow-2xs whitespace-nowrap shrink-0"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
