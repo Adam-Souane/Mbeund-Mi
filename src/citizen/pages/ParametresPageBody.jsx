@@ -17,6 +17,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import CitizenShell from '../shared/CitizenShell';
+import CitizenAccountGate from '../components/CitizenAccountGate';
 import ErrorMessage from '../../shared/components/ErrorMessage';
 import { useTheme } from '../../theme/ThemeContext';
 import { useAuth } from '../../auth/AuthContext';
@@ -63,7 +64,7 @@ const CONTACT_VIDE = {
 
 export default function ParametresPageBody() {
   const { darkMode, toggleTheme } = useTheme();
-  const { username } = useAuth();
+  const { username, isAuthenticated } = useAuth();
   const { data: zonesData } = useZones();
 
   // Profil Vulnérabilité
@@ -123,6 +124,15 @@ export default function ParametresPageBody() {
       },
     });
   };
+
+  if (!isAuthenticated) {
+    return (
+      <CitizenAccountGate
+        titre="Paramètres & Sécurité du Foyer"
+        description="Pour configurer la vulnérabilité de votre foyer, votre kit de survie et vos contacts prioritaires, veuillez vous connecter ou créer un compte citoyen."
+      />
+    );
+  }
 
   return (
     <CitizenShell>

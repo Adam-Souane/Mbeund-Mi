@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ShieldAlert } from 'lucide-react';
 import logoLight from '../assets/logo-light.png';
 
 const ONBOARDING_STORAGE_KEY = 'mbeund_mi_onboarding_seen';
@@ -89,6 +91,7 @@ function marquerOnboardingVu() {
 }
 
 export default function AuthLayout({ variante, className = '', children }) {
+  const navigate = useNavigate();
   const isAuthority = variante === 'administration' || variante === 'autorite';
   const slides = isAuthority ? SLIDES_AUTORITE : SLIDES_CITOYEN;
   const desktopMeta = TITRES_DESKTOP[variante] ?? TITRES_DESKTOP.connexion;
@@ -102,6 +105,7 @@ export default function AuthLayout({ variante, className = '', children }) {
 
   const [vueMobileFormulaire, setVueMobileFormulaire] = useState(afficherFormulaireDirect);
   const [slideIndex, setSlideIndex] = useState(0);
+  const [modeAnonymeSplash, setModeAnonymeSplash] = useState(false);
 
   const slideCourante = slides[slideIndex] || slides[0];
   const estDerniereSlide = slideIndex === slides.length - 1;
@@ -109,6 +113,15 @@ export default function AuthLayout({ variante, className = '', children }) {
   const ouvrirFormulaireMobile = () => {
     marquerOnboardingVu();
     setVueMobileFormulaire(true);
+  };
+
+  const passerVersModeAnonyme = () => {
+    marquerOnboardingVu();
+    setModeAnonymeSplash(true);
+    // Court écran de bienvenue en mode anonyme (1,2s) avant l'accueil citoyen
+    setTimeout(() => {
+      navigate('/citoyen/accueil');
+    }, 1200);
   };
 
   const handleSuivant = () => {
@@ -139,18 +152,18 @@ export default function AuthLayout({ variante, className = '', children }) {
           {/* Voile dégradé progressif pour une lisibilité parfaite du texte en bas */}
           <div className="absolute inset-0 z-10 bg-gradient-to-t from-slate-950/95 via-slate-950/35 to-slate-950/20 pointer-events-none" />
 
-          {/* Haut : uniquement le bouton Passer aligné à droite */}
+          {/* Haut : bouton Passer vers l'accès anonyme ou formulaire */}
           <header className="relative z-20 flex items-center justify-end p-5 pt-6">
             <button
               type="button"
-              onClick={ouvrirFormulaireMobile}
-              className="text-xs font-bold text-white/90 hover:text-white px-3.5 py-1.5 rounded-full bg-black/25 backdrop-blur-md border border-white/20 active:scale-95 transition cursor-pointer"
+              onClick={isAuthority ? ouvrirFormulaireMobile : passerVersModeAnonyme}
+              className="text-xs font-bold text-white/90 hover:text-white px-3.5 py-1.5 rounded-full bg-black/35 backdrop-blur-md border border-white/20 active:scale-95 transition cursor-pointer"
             >
               Passer
             </button>
           </header>
 
-          {/* Bas : Indicateurs, texte court structuré et bouton sans flèche */}
+          {/* Bas : Indicateurs, texte court structuré et boutons d'action */}
           <footer className="relative z-20 p-6 pb-8 flex flex-col gap-4">
             {/* Pagination 3 traits */}
             <div className="flex items-center gap-1.5">
@@ -176,16 +189,71 @@ export default function AuthLayout({ variante, className = '', children }) {
               </p>
             </div>
 
-            {/* Bouton épuré sans flèche */}
-            <button
-              type="button"
-              onClick={handleSuivant}
-              className="w-full h-12 rounded-xl bg-white text-[#0B2545] font-extrabold text-sm flex items-center justify-center shadow-2xl hover:bg-slate-50 transition active:scale-98 cursor-pointer mt-1"
-            >
-              {estDerniereSlide ? 'Se connecter' : 'Suivant'}
-            </button>
+            {/* Actions : Si dernière slide Citoyen -> Deux choix (Sans compte & Se connecter) */}
+            {estDerniereSlide && !isAuthority ? (
+              <div className="flex items-center gap-2.5 w-full mt-1">
+                {/* Bouton secondaire à gauche : Accès d'urgence sans compte */}
+                <button
+                  type="button"
+                  onClick={passerVersModeAnonyme}
+                  className="flex-1 h-12 rounded-xl bg-black/45 hover:bg-black/60 active:scale-98 border border-white/30 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-lg backdrop-blur-md transition cursor-pointer"
+                  title="Naviguer en Mode Anonyme sans créer de compte"
+                >
+                  <ShieldAlert size={15} className="text-[#CC131A] shrink-0" />
+                  <span>Sans compte</span>
+                </button>
+
+                {/* Bouton primaire à droite : Se connecter avec un compte */}
+                <button
+                  type="button"
+                  onClick={ouvrirFormulaireMobile}
+                  className="flex-1 h-12 rounded-xl bg-white text-[#0B2545] font-black text-xs sm:text-sm flex items-center justify-center shadow-2xl hover:bg-slate-100 transition active:scale-98 cursor-pointer"
+                >
+                  Se connecter
+                </button>
+              </div>
+            ) : (
+              /* Bouton standard pour les slides 1 & 2 ou l'espace Autorité */
+              <button
+                type="button"
+                onClick={handleSuivant}
+                className="w-full h-12 rounded-xl bg-white text-[#0B2545] font-extrabold text-sm flex items-center justify-center shadow-2xl hover:bg-slate-50 transition active:scale-98 cursor-pointer mt-1"
+              >
+                {estDerniereSlide ? 'Se connecter' : 'Suivant'}
+              </button>
+            )}
           </footer>
         </section>
+      )}
+
+      {/* 
+        ========================================================================
+        Court écran de bienvenue / Splash lors de l'accès en Mode Anonyme (1,2s)
+        ========================================================================
+      */}
+      {modeAnonymeSplash && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed inset-0 z-[100] bg-[#0B2545] flex flex-col items-center justify-center text-white px-6 text-center animate-in fade-in duration-300"
+        >
+          <div className="w-16 h-16 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center mb-4 shadow-xl">
+            <ShieldAlert size={34} className="text-[#CC131A] animate-pulse" />
+          </div>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-bold mb-3">
+            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+            Mode Urgence Activé
+          </div>
+          <h2 className="text-xl sm:text-2xl font-black text-white mb-2">
+            Connexion anonyme à Mbeund Mi…
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-300 max-w-xs mb-6">
+            Accès direct aux alertes météo, à la carte des inondations et au signalement terrain.
+          </p>
+          <div className="w-44 bg-white/15 h-1.5 rounded-full overflow-hidden">
+            <div className="bg-gradient-to-r from-cyan-400 to-[#CC131A] h-full w-full animate-pulse" />
+          </div>
+        </div>
       )}
 
       {/* 

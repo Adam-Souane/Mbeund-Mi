@@ -9,6 +9,14 @@ vi.mock('../citizen/shared/CitizenShell', () => ({
   default: ({ children }) => <div data-testid="citizen-shell">{children}</div>,
 }));
 
+let mockIsAuthenticated = true;
+vi.mock('../auth/AuthContext', () => ({
+  useAuth: () => ({
+    username: 'citoyen@mbeundmi.sn',
+    isAuthenticated: mockIsAuthenticated,
+  }),
+}));
+
 vi.mock('../shared/hooks/useZones', () => ({
   useZones: () => ({
     data: {
@@ -77,6 +85,7 @@ function renderWithProviders(ui) {
 
 describe('ParametresPageBody', () => {
   beforeEach(() => {
+    mockIsAuthenticated = true;
     vi.clearAllMocks();
   });
 
@@ -106,5 +115,14 @@ describe('ParametresPageBody', () => {
     const themeToggleBtn = screen.getByRole('switch');
     expect(themeToggleBtn).toBeInTheDocument();
     fireEvent.click(themeToggleBtn);
+  });
+
+  it('affiche le mur CitizenAccountGate si le citoyen est en mode anonyme sans compte', () => {
+    mockIsAuthenticated = false;
+    renderWithProviders(<ParametresPageBody />);
+
+    expect(screen.getByText(/Compte Citoyen Requis/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Se connecter/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Créer un compte/i })).toBeInTheDocument();
   });
 });
