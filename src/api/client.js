@@ -1,10 +1,16 @@
 import axios from 'axios';
 import { getAccessToken, getRefreshToken, setTokens, clearTokens } from '../auth/tokenStorage';
 
+const RENDER_BACKEND_API = 'https://mbeund-mi.onrender.com/api';
+
 function resolveApiBaseUrl() {
   const envUrl = import.meta.env.VITE_API_URL;
   if (typeof window !== 'undefined') {
     const host = window.location?.hostname || '';
+    // Sur Render (Static Site) ou Vercel, pas de proxy Vite : pointer vers le backend Render si VITE_API_URL est relatif (/api)
+    if ((host.endsWith('.onrender.com') || host.endsWith('.vercel.app')) && (!envUrl || envUrl === '/api')) {
+      return RENDER_BACKEND_API;
+    }
     const isRemoteHost = host && host !== 'localhost' && host !== '127.0.0.1';
     if (isRemoteHost && (!envUrl || envUrl.includes('localhost') || envUrl.includes('127.0.0.1'))) {
       return '/api';
