@@ -62,7 +62,10 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 # on l'ajoute au path pour réutiliser le vrai service chatbot de Maïmouna
 # (Groq) au lieu de dupliquer sa logique dans Django. Même pattern que
 # alertes/tasks.py pour le service de prédiction.
-_MBEUND_MI_IA_PATH = os.path.join(os.path.dirname(settings.BASE_DIR), 'mbeund_mi_ia')
+_MBEUND_MI_PARENT_PATH = os.path.dirname(settings.BASE_DIR)
+_MBEUND_MI_IA_PATH = os.path.join(_MBEUND_MI_PARENT_PATH, 'mbeund_mi_ia')
+if _MBEUND_MI_PARENT_PATH not in sys.path:
+    sys.path.insert(0, _MBEUND_MI_PARENT_PATH)
 if _MBEUND_MI_IA_PATH not in sys.path:
     sys.path.insert(0, _MBEUND_MI_IA_PATH)
 
