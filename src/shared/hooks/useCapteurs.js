@@ -2,14 +2,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../auth/AuthContext';
 import { getCapteurs, updateCapteur } from '../../api/endpoints/capteurs';
 
-// capteurs/ n'est pas paginé (IsAutoriteOrAdmin — lecture ouverte à tout
-// utilisateur authentifié, citoyen inclus, mais utile surtout côté autorité).
+// capteurs/ en lecture publique pour permettre la consultation citoyenne et cartographique
 export function useCapteurs() {
-  const { isAuthenticated } = useAuth();
   return useQuery({
     queryKey: ['capteurs'],
     queryFn: getCapteurs,
-    enabled: !!isAuthenticated,
     retry: false,
     staleTime: 60_000,
   });

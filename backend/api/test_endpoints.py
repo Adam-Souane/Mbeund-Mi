@@ -128,6 +128,17 @@ def test_inondations_geojson_endpoint(auth_client):
     "/api/zones/",
     "/api/predictions/",
     "/api/inondations/",
+    "/api/capteurs/",
+])
+def test_public_endpoints_accessible_without_auth(api_client, url):
+    response = api_client.get(url)
+    assert response.status_code == 200
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("url", [
+    "/api/mon-profil-vulnerabilite/",
+    "/api/mon-survival-kit/",
+    "/api/mon-emergency-contact/",
 ])
 def test_endpoints_unauthorized(api_client, url):
     response = api_client.get(url)

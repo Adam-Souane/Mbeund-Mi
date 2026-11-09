@@ -1,14 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '../../auth/AuthContext';
 import { getInondations } from '../../api/endpoints/inondations';
 
-// inondations/ n'est pas paginé — historique borné des épisodes constatés.
+// inondations/ en lecture publique pour la cartographie des zones inondées
 export function useInondations() {
-  const { isAuthenticated } = useAuth();
   return useQuery({
     queryKey: ['inondations'],
     queryFn: getInondations,
-    enabled: !!isAuthenticated,
     retry: false,
     staleTime: 5 * 60_000,
   });

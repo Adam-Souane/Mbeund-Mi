@@ -268,7 +268,11 @@ class CapteurViewSet(viewsets.ModelViewSet):
     """
     queryset = Capteur.objects.all()
     serializer_class = CapteurSerializer
-    permission_classes = [IsAutoriteOrAdmin]
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [permissions.AllowAny()]
+        return [IsAutoriteOrAdmin()]
 
 
 class MesureViewSet(viewsets.ModelViewSet):
@@ -278,8 +282,12 @@ class MesureViewSet(viewsets.ModelViewSet):
     """
     queryset = Mesure.objects.all()
     serializer_class = MesureSerializer
-    permission_classes = [IsAutoriteOrAdmin]
     pagination_class = PageNumberPagination
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve', 'recentes']:
+            return [permissions.AllowAny()]
+        return [IsAutoriteOrAdmin()]
 
     @action(detail=False, methods=['get'], url_path='recentes')
     def recentes(self, request):
@@ -416,8 +424,9 @@ class PredictionIAViewSet(viewsets.ReadOnlyModelViewSet):
 class EpisodeInondationViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = EpisodeInondation.objects.all()
     serializer_class = EpisodeInondationSerializer
+    permission_classes = [permissions.AllowAny]
 
-    @action(detail=False, methods=['get'], url_path='backtesting')
+    @action(detail=False, methods=['get'], url_path='backtesting', permission_classes=[IsAutoriteOrAdmin])
     def backtesting(self, request):
         """
         GET /api/inondations/backtesting/?include_synthetic=true

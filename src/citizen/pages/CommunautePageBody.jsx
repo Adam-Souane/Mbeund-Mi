@@ -2087,6 +2087,10 @@ export default function CommunautePageBody() {
                     <img
                       src={post.image}
                       alt={post.texte}
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = '/images/caniveau-thiaroye.jpg';
+                      }}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                     <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-black gap-1.5 backdrop-blur-2xs">
@@ -3615,6 +3619,10 @@ export default function CommunautePageBody() {
                           <img
                             src={post.image || post.photo || post.photoUrl}
                             alt={post.texte || 'Aperçu du signalement'}
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = '/images/caniveau-thiaroye.jpg';
+                            }}
                             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                           />
                           <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-1.5 backdrop-blur-2xs">
