@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { Eye, EyeOff, AlertCircle, ShieldAlert } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle, ShieldAlert, ArrowRight } from 'lucide-react';
 import AuthLayout from './AuthLayout';
 import { useAuth } from '../auth/AuthContext';
 import { homeRouteForRole } from '../auth/RequireAuth';
@@ -54,13 +54,47 @@ export default function LoginPage() {
     <AuthLayout variante="connexion">
       <div className="w-full bg-white rounded-2xl border border-slate-200/90 shadow-xl p-7 sm:p-9 transition-all">
         {/* En-tête de la carte */}
-        <div className="mb-6 text-left">
+        <div className="mb-5 text-left">
           <h1 className="text-2xl sm:text-3xl font-black text-[#0B2545] tracking-tight">
             Connexion Citoyenne
           </h1>
-          <p className="text-sm text-[#64748B] mt-1.5 leading-relaxed">
+          <p className="text-sm text-[#64748B] mt-1 leading-relaxed">
             Suivez en temps réel les risques d’inondation à Thiaroye-sur-Mer.
           </p>
+        </div>
+
+        {/* Bloc d'urgence prioritaire sans compte - Visible immédiatement sur desktop et mobile */}
+        <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-red-50 to-orange-50/60 border-2 border-red-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-left">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#CC131A] text-white flex items-center justify-center shrink-0 shadow-md">
+              <ShieldAlert size={20} />
+            </div>
+            <div>
+              <span className="inline-flex items-center text-[10px] font-black uppercase tracking-wider text-[#CC131A] bg-red-100/90 px-2 py-0.5 rounded-full mb-0.5">
+                Urgence Immédiate
+              </span>
+              <h2 className="text-xs sm:text-sm font-bold text-[#0B2545] leading-tight">
+                Consulter les alertes et la carte sans créer de compte
+              </h2>
+            </div>
+          </div>
+          <Link
+            to="/citoyen/accueil"
+            className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#CC131A] hover:bg-red-700 active:scale-95 text-white text-xs font-black shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap"
+          >
+            <span>Accès sans compte</span>
+            <ArrowRight size={14} />
+          </Link>
+        </div>
+
+        {/* Séparateur clair avec texte */}
+        <div className="relative my-5 text-center">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-slate-200" />
+          </div>
+          <span className="relative bg-white px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+            ou connectez-vous avec vos identifiants
+          </span>
         </div>
 
         {/* Message d'erreur visible si problème */}
@@ -151,17 +185,6 @@ export default function LoginPage() {
               className="font-bold text-[#CC131A] hover:text-[#A01016] hover:underline transition"
             >
               Créer un compte
-            </Link>
-          </div>
-
-          {/* Accès direct d'urgence en Mode Anonyme (sans blocage de connexion) */}
-          <div className="pt-2">
-            <Link
-              to="/citoyen/accueil"
-              className="w-full py-2.5 px-4 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200/90 text-[#0B2545] text-xs font-extrabold flex items-center justify-center gap-2 transition cursor-pointer"
-            >
-              <ShieldAlert size={14} className="text-[#CC131A] shrink-0" />
-              <span>Accès d’urgence sans compte (Mode Anonyme)</span>
             </Link>
           </div>
         </form>

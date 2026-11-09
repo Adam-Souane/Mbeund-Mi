@@ -117,12 +117,9 @@ describe('AuthLayout - Onboarding Mobile & Accès Anonyme', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByText('Passer')).toBeInTheDocument();
-
-    // Passer pour autorité ouvre le formulaire sans splash
-    fireEvent.click(screen.getByText('Passer'));
-    expect(mockNavigate).not.toHaveBeenCalled();
-    expect(screen.queryByText(/Connexion anonyme à Mbeund Mi…/i)).not.toBeInTheDocument();
     expect(screen.getByTestId('form-content')).toBeInTheDocument();
+    expect(screen.queryByText(/Connexion anonyme à Mbeund Mi…/i)).not.toBeInTheDocument();
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 });
+

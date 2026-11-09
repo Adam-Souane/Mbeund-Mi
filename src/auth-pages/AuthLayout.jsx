@@ -96,12 +96,9 @@ export default function AuthLayout({ variante, className = '', children }) {
   const slides = isAuthority ? SLIDES_AUTORITE : SLIDES_CITOYEN;
   const desktopMeta = TITRES_DESKTOP[variante] ?? TITRES_DESKTOP.connexion;
 
-  // L'onboarding mobile ne s'affiche que lors de la première arrivée sur la connexion.
-  // Dès qu'il a été passé ou si on va sur Créer un compte / OTP / Mot de passe, on affiche directement le formulaire.
-  const afficherFormulaireDirect =
-    variante !== 'connexion' && variante !== 'autorite'
-      ? true
-      : aDejaVuOnboarding();
+  // L'onboarding mobile s'affiche par défaut sur la page de connexion citoyenne (/login).
+  // Si on est sur une autre variante (inscription, mot de passe, autorité), on affiche directement le formulaire.
+  const afficherFormulaireDirect = variante !== 'connexion';
 
   const [vueMobileFormulaire, setVueMobileFormulaire] = useState(afficherFormulaireDirect);
   const [slideIndex, setSlideIndex] = useState(0);
@@ -321,6 +318,18 @@ export default function AuthLayout({ variante, className = '', children }) {
         }`}
       >
         <div className={`w-full max-w-[530px] my-auto ${className}`}>
+          {/* Sur mobile : bouton permettant de revenir à tout moment au carrousel des 3 slides */}
+          {!isAuthority && (
+            <div className="lg:hidden mb-3 text-left">
+              <button
+                type="button"
+                onClick={() => setVueMobileFormulaire(false)}
+                className="text-xs font-bold text-slate-600 hover:text-[#0B2545] inline-flex items-center gap-1.5 cursor-pointer py-1.5 px-3 rounded-xl bg-slate-200/70 active:scale-95 transition"
+              >
+                <span>← Revoir la présentation (onboarding)</span>
+              </button>
+            </div>
+          )}
           {children}
         </div>
       </main>

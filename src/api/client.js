@@ -94,6 +94,14 @@ client.interceptors.response.use(
     const isAuthEndpoint = config?.url?.includes('/token/');
 
     if (response?.status === 401 && !config._retry && !isAuthEndpoint) {
+      const refresh = getRefreshToken();
+      if (!refresh) {
+        // En mode citoyen anonyme sans compte : ne pas rafraîchir et ne jamais forcer de redirection vers /login
+        const errorMsg = getErrorMessage(error);
+        error.userMessage = errorMsg;
+        return Promise.reject(error);
+      }
+
       config._retry = true;
       refreshPromise ??= refreshAccessToken().finally(() => {
         refreshPromise = null;
@@ -105,11 +113,13 @@ client.interceptors.response.use(
         return client(config);
       } catch {
         clearTokens();
-        // Rechargement complet plutôt qu'un appel à AuthContext : cet
-        // intercepteur vit en dehors de l'arbre React et n'a pas accès à
-        // son state.
-        if (window.location.pathname !== '/login') {
-          window.location.assign('/login');
+        // Redirection vers /login uniquement pour les espaces nécessitant impérativement une session (ex: /autorite/*)
+        // Les routes citoyennes (/citoyen/*) sont conçues pour être accessibles en mode urgence anonyme.
+        if (typeof window !== 'undefined') {
+          const path = window.location.pathname;
+          if (path !== '/login' && !path.startsWith('/citoyen/')) {
+            window.location.assign('/login');
+          }
         }
       }
     }
