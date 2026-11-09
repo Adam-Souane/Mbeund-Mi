@@ -209,7 +209,7 @@ export default function AuthLayout({ variante, className = '', children }) {
               <button
                 type="button"
                 onClick={handleSuivant}
-                className="w-full h-12 rounded-xl bg-[#0B2545] hover:bg-[#154275] border-2 border-white/90 active:scale-95 text-white font-black text-sm flex items-center justify-center shadow-2xl transition cursor-pointer mt-1"
+                className="w-full h-12 rounded-xl bg-white text-[#0B2545] hover:bg-slate-100 active:scale-95 font-black text-sm flex items-center justify-center shadow-2xl transition cursor-pointer mt-1"
               >
                 {estDerniereSlide ? 'Se connecter' : 'Suivant'}
               </button>
