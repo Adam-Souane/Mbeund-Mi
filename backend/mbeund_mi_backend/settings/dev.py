@@ -3,7 +3,9 @@ from .base import *
 # Development settings
 DEBUG = True
 ALLOWED_HOSTS = ['*']
-CORS_ALLOW_ALL_ORIGINS = True
+# En développement local, désactiver le throttling pour permettre le rechargement fluide et les tests
+REST_FRAMEWORK['DEFAULT_THROTTLE_CLASSES'] = []
+REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = {}
 
 # Database configuration (PostGIS if USE_GIS=True, otherwise SQLite)
 if USE_GIS:

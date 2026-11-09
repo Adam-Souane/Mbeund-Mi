@@ -168,8 +168,8 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.UserRateThrottle',
     ),
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '20/hour',
-        'user': '1000/hour',
+        'anon': '1000/hour',
+        'user': '2000/hour',
     },
     # Pas de pagination par défaut : appliquée au cas par cas (voir api/views.py)
     # uniquement sur les modèles qui grossissent en continu (mesures, alertes,

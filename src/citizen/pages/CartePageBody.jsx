@@ -528,9 +528,20 @@ export default function CartePageBody() {
         )}
 
         {itineraire.isError && (
-          <div className="flex items-start gap-2 px-3 py-1.5 rounded-lg bg-red-50 dark:bg-red/15 text-red-900 dark:text-red-200 text-xs flex-shrink-0">
-            <AlertTriangle size={13} className="flex-shrink-0 mt-0.5" />
-            <span>{flattenApiErrors(itineraire.error)[0]}</span>
+          <div className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg bg-red-50 dark:bg-red/15 text-red-900 dark:text-red-200 text-xs flex-shrink-0 animate-in fade-in duration-200">
+            <div className="flex items-center gap-2 min-w-0">
+              <AlertTriangle size={13} className="flex-shrink-0 text-red-600 dark:text-red-400" />
+              <span className="truncate">{flattenApiErrors(itineraire.error)[0]}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => itineraire.reset()}
+              className="p-1 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 text-red-700 dark:text-red-300 transition cursor-pointer shrink-0"
+              title="Fermer le message d'erreur"
+              aria-label="Fermer"
+            >
+              <X size={13} />
+            </button>
           </div>
         )}
 
