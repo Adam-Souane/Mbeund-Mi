@@ -32,6 +32,15 @@ import { usePredictions } from '../../shared/hooks/usePredictions';
 import { useAlertesRecentes } from '../../shared/hooks/useAlertes';
 import { useSignalementsApercu, useValiderSignalement } from '../../shared/hooks/useSignalements';
 import { getPostsWithLiveVotes } from '../../shared/data/riverainsData';
+import { useAuth } from '../../auth/AuthContext';
+
+function useSafeAuth() {
+  try {
+    return useAuth();
+  } catch {
+    return { role: 'admin', service: 'cod' };
+  }
+}
 
 const SERVICES_INTERVENTION = [
   { id: 'bnsp', label: 'Sapeurs-Pompiers (BNSP)', short: 'BNSP (18)', icon: Flame },
@@ -199,6 +208,8 @@ function KpiTelemetryCard({ icon: Icon, label, value, trend, caption, progressPc
 export default function TableauDeBordPage() {
   const navigate = useNavigate();
   const validerMutation = useValiderSignalement();
+  const { role, service: authService } = useSafeAuth();
+  const isIntermediateAuthority = role === 'autorite' && ['bnsp', 'onas', 'mairie'].includes(authService);
 
   // Horloge temps réel du Poste de Commandement C.O.D
   const [nowTime, setNowTime] = useState(() =>
@@ -212,10 +223,13 @@ export default function TableauDeBordPage() {
     return () => clearInterval(timer);
   }, []);
 
-  // Vue opérationnelle (C.O.D Unifié, BNSP, ONAS, Mairie) sans avoir à se déconnecter
-  const [commandView, setCommandView] = useState('all');
+  // Vue opérationnelle : s'ouvre directement sur le corps assigné si c'est une autorité intermédiaire, ou C.O.D Unifié pour l'Admin Général
+  const [commandView, setCommandView] = useState(() =>
+    isIntermediateAuthority ? authService : 'all'
+  );
 
   const [selectedService, setSelectedService] = useState(() => {
+    if (isIntermediateAuthority) return authService;
     try {
       return localStorage.getItem('mbeund_mi_assigned_service') || 'bnsp';
     } catch {

@@ -29,6 +29,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token = super().get_token(user)
         profile = getattr(user, 'profile', None)
         token['role'] = profile.role if profile else 'citoyen'
+        token['service'] = (profile.service or 'bnsp') if profile else 'bnsp'
         return token
 
     def validate(self, attrs):

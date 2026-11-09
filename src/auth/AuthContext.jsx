@@ -5,14 +5,29 @@ import { getAccessToken, getRefreshToken, getUsername, setTokens, clearTokens } 
 
 const AuthContext = createContext(null);
 
+function deduireServiceDepuisIdentifiant(username, role, tokenService) {
+  if (role === 'admin') return 'cod';
+  if (tokenService && ['bnsp', 'onas', 'mairie', 'cod'].includes(tokenService)) {
+    return tokenService;
+  }
+  const u = (username || '').toLowerCase();
+  if (u.includes('onas') || u.includes('hydro') || u.includes('pomp')) return 'onas';
+  if (u.includes('mairie') || u.includes('muni') || u.includes('relais')) return 'mairie';
+  return 'bnsp';
+}
+
 // Reprend la session depuis localStorage si un token y est encore présent
 // (évite de renvoyer vers /login à chaque rechargement). Lu dès
 // l'initialisation de l'état, et non dans un effet : le premier rendu connaît
 // déjà la session, sans second rendu « déconnecté puis connecté ».
 function sessionEnregistree() {
   const token = getAccessToken();
-  if (!token) return { accessToken: null, role: null, username: null };
-  return { accessToken: token, role: decodeJwt(token)?.role ?? null, username: getUsername() };
+  if (!token) return { accessToken: null, role: null, username: null, service: null };
+  const payload = decodeJwt(token);
+  const role = payload?.role ?? null;
+  const username = getUsername();
+  const service = role ? deduireServiceDepuisIdentifiant(username, role, payload?.service) : null;
+  return { accessToken: token, role, username, service };
 }
 
 export function AuthProvider({ children }) {
@@ -20,6 +35,7 @@ export function AuthProvider({ children }) {
   const [accessToken, setAccessToken] = useState(session.accessToken);
   const [role, setRole] = useState(session.role);
   const [username, setUsername] = useState(session.username);
+  const [service, setService] = useState(session.service);
   // La session est lue de façon synchrone : elle est prête dès le premier rendu.
   const isReady = true;
 
@@ -27,10 +43,13 @@ export function AuthProvider({ children }) {
     const data = await obtainToken({ username, password });
     setTokens({ access: data.access, refresh: data.refresh, username });
     const payload = decodeJwt(data.access);
+    const resolvedRole = payload?.role ?? 'citoyen';
+    const resolvedService = deduireServiceDepuisIdentifiant(username, resolvedRole, payload?.service);
     setAccessToken(data.access);
-    setRole(payload?.role ?? 'citoyen');
+    setRole(resolvedRole);
     setUsername(username);
-    return payload?.role ?? 'citoyen';
+    setService(resolvedService);
+    return resolvedRole;
   }, []);
 
   const logout = useCallback(() => {
@@ -38,11 +57,13 @@ export function AuthProvider({ children }) {
     setAccessToken(null);
     setRole(null);
     setUsername(null);
+    setService(null);
   }, []);
 
   const value = {
     accessToken,
     role,
+    service,
     username,
     isAuthenticated: !!accessToken,
     isReady,

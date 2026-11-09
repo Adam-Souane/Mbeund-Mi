@@ -35,8 +35,21 @@ class Profile(models.Model):
         ('agent', 'Agent terrain'),
         ('citoyen', 'Citoyen'),
     ]
+    SERVICE_CHOICES = [
+        ('cod', 'Poste de Commandement (C.O.D)'),
+        ('bnsp', 'Sapeurs-Pompiers (BNSP)'),
+        ('onas', 'ONAS (Hydraulique & Pompage)'),
+        ('mairie', 'Cellule Municipale (Mairie & Relais)'),
+    ]
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='citoyen')
+    service = models.CharField(
+        max_length=30,
+        choices=SERVICE_CHOICES,
+        default='bnsp',
+        blank=True,
+        help_text="Corps d'intervention rattaché pour une autorité intermédiaire (bnsp, onas, mairie)",
+    )
     telephone = models.CharField(max_length=20, blank=True)
     is_verified = models.BooleanField(default=False, help_text="L'utilisateur a vérifié son identité via OTP")
     # Vrai seulement pour les comptes créés par l'inscription publique depuis

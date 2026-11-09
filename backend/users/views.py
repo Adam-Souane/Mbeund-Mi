@@ -442,6 +442,9 @@ class UserViewSet(viewsets.GenericViewSet):
         email = request.data.get('email')
         telephone = request.data.get('telephone', '')
         username = request.data.get('username', '')
+        service = (request.data.get('service') or 'bnsp').strip().lower()
+        if service not in ('bnsp', 'onas', 'mairie', 'cod'):
+            service = 'bnsp'
 
         # Validation
         if not first_name.strip():
@@ -481,6 +484,7 @@ class UserViewSet(viewsets.GenericViewSet):
                 # Mettre à jour le profil
                 profile = user.profile
                 profile.role = 'autorite'
+                profile.service = service
                 profile.telephone = telephone
                 profile.is_verified = True  # Vérifié automatiquement (créé par admin)
                 profile.save()
@@ -500,6 +504,7 @@ class UserViewSet(viewsets.GenericViewSet):
                     'last_name': last_name,
                     'email': email,
                     'telephone': telephone,
+                    'service': service,
                 },
                 status=status.HTTP_201_CREATED,
             )
@@ -523,12 +528,25 @@ class UserViewSet(viewsets.GenericViewSet):
             )
 
         # Récupérer TOUTES les autorités
-        authorities = User.objects.filter(
+        authorities_qs = User.objects.filter(
             profile__role='autorite'
-        ).values('username', 'first_name', 'last_name', 'email', 'date_joined').order_by('-date_joined')
+        ).select_related('profile').order_by('-date_joined')
+
+        authorities = [
+            {
+                'username': u.username,
+                'first_name': u.first_name,
+                'last_name': u.last_name,
+                'email': u.email,
+                'telephone': u.profile.telephone if hasattr(u, 'profile') else '',
+                'service': (u.profile.service or 'bnsp') if hasattr(u, 'profile') else 'bnsp',
+                'date_joined': u.date_joined,
+            }
+            for u in authorities_qs
+        ]
 
         return Response(
-            {'authorities': list(authorities), 'count': len(authorities)},
+            {'authorities': authorities, 'count': len(authorities)},
             status=status.HTTP_200_OK
         )
 
@@ -761,6 +779,7 @@ class UserViewSet(viewsets.GenericViewSet):
                 'last_name': user.last_name,
                 'email': user.email,
                 'telephone': user.profile.telephone,
+                'service': user.profile.service or 'bnsp',
                 'date_joined': user.date_joined.isoformat(),
                 'derniere_connexion': tracking.derniere_connexion.isoformat() if tracking and tracking.derniere_connexion else None,
                 'crises_gerees': tracking.crises_gerees if tracking else 0,

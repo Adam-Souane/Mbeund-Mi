@@ -20,6 +20,10 @@ import {
   LogOut,
   Menu,
   X,
+  ShieldCheck,
+  Flame,
+  Wrench,
+  Building2,
 } from 'lucide-react';
 import Logo from '../../shared/components/Logo';
 import ThemeToggle from '../../theme/ThemeToggle';
@@ -40,6 +44,20 @@ const SIDEBAR_SECOURS = [
   { to: '/autorite/contact', label: 'Contact & Urgences', icon: PhoneCall },
 ];
 
+const SIDEBAR_ADMIN_SYSTEM = [
+  { to: '/autorite/authorities', label: 'Équipes & Autorités', icon: UserPlus },
+  { to: '/autorite/capteurs', label: 'Admin & capteurs', icon: Settings },
+  { to: '/autorite/fiabilite', label: 'Fiabilité du modèle', icon: TrendingUp },
+  { to: '/autorite/backtesting', label: 'Backtesting IA', icon: Activity },
+];
+
+const SERVICE_META = {
+  cod: { label: 'Poste C.O.D · Admin Général', short: 'Admin C.O.D', icon: ShieldCheck },
+  bnsp: { label: 'Unité BNSP Pompiers', short: 'BNSP Secours', icon: Flame },
+  onas: { label: 'Unité ONAS Hydraulique', short: 'ONAS Pompage', icon: Wrench },
+  mairie: { label: 'Cellule Municipale Thiaroye', short: 'Mairie Relais', icon: Building2 },
+};
+
 const TOOLS_ITEMS_COMMON = [
   { to: '/autorite/previsions', label: 'Prévisions météo', icon: CloudRain },
   { to: '/autorite/statistiques', label: 'Statistiques & Bilan', icon: BarChart3 },
@@ -47,6 +65,7 @@ const TOOLS_ITEMS_COMMON = [
 ];
 
 const TOOLS_ITEMS_ADMIN = [
+  { to: '/autorite/authorities', label: 'Équipes & Autorités', icon: UserPlus },
   { to: '/autorite/fiabilite', label: 'Fiabilité du modèle', icon: TrendingUp },
   { to: '/autorite/backtesting', label: 'Backtesting', icon: Activity },
   { to: '/autorite/capteurs', label: 'Admin & capteurs', icon: Settings },
@@ -219,8 +238,11 @@ function SidebarLink({ item, isCollapsed, mobileMenuOpen, badgeCount = 0, onNavi
 }
 
 export default function AutoriteShell({ children }) {
-  const { logout, role } = useAuth();
+  const { logout, role, service } = useAuth();
   const isAdmin = role === 'admin';
+  const activeServiceKey = isAdmin ? 'cod' : (service || 'bnsp');
+  const serviceMeta = SERVICE_META[activeServiceKey] || SERVICE_META.bnsp;
+  const ServiceIcon = serviceMeta.icon;
   const [emergencyOpen, setEmergencyOpen] = useState(false);
   const { data: signalementsData } = useSignalementsApercu();
 
@@ -286,6 +308,12 @@ export default function AutoriteShell({ children }) {
 
           {/* Outils & Actions du Header */}
           <div className="flex-1 flex items-center justify-end gap-2.5 px-4 lg:px-8 py-3">
+            {/* Badge d'identification du corps d'intervention ou de l'Admin C.O.D */}
+            <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-navy-50 dark:bg-navy-900 border border-navy-200 dark:border-navy-800 text-xs font-extrabold text-[#0B2545] dark:text-white">
+              <ServiceIcon size={14} className={isAdmin ? 'text-[#0B2545] dark:text-blue-400' : 'text-[#CC131A]'} />
+              <span>{serviceMeta.label}</span>
+            </div>
+
             <DropdownMenu label="Outils" icon={BarChart3} items={toolsItems} />
 
             {/* Bouton Rouge Urgence */}
@@ -404,6 +432,27 @@ export default function AutoriteShell({ children }) {
                   onNavigate={closeMobileMenu}
                 />
               ))}
+
+              {/* Section 3 : Supervision & Système (visible uniquement pour l'Administrateur Général) */}
+              {isAdmin && (
+                <>
+                  <div className="my-2 border-t border-white/10" />
+                  {(!isCollapsed || mobileMenuOpen) && (
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-300/60 px-2 mb-0.5">
+                      Supervision &amp; Système
+                    </span>
+                  )}
+                  {SIDEBAR_ADMIN_SYSTEM.map((item) => (
+                    <SidebarLink
+                      key={item.to}
+                      item={item}
+                      isCollapsed={isCollapsed}
+                      mobileMenuOpen={mobileMenuOpen}
+                      onNavigate={closeMobileMenu}
+                    />
+                  ))}
+                </>
+              )}
             </nav>
           </div>
 
