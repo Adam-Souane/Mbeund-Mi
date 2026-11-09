@@ -746,18 +746,18 @@ export default function SignalerPageBody() {
 
   return (
     <CitizenShell>
-      {/* 1. Bannière de sensibilisation et engagement communautaire Mbeund-Mi (100% conforme à la base) */}
+      {/* 1. Bannière de sensibilisation et engagement communautaire Mbeund-Mi (compactée sur mobile) */}
       <div className="w-full relative overflow-hidden rounded-2xl sm:rounded-3xl border border-navy-100 dark:border-navy-800 shadow-md group">
-        <div className="relative h-56 sm:h-72 md:h-80 lg:h-96 w-full overflow-hidden bg-navy-950">
+        <div className="relative h-36 sm:h-64 md:h-72 lg:h-80 w-full overflow-hidden bg-navy-950">
           <img
             src="/images/sensibilisation-mbeund-mi.jpg"
             alt="Ambassadrices Mbeund-Mi - Sensibilisation et prévention des inondations dans une ruelle de Thiaroye-sur-Mer"
             className="w-full h-full object-cover object-[center_18%] transition-transform duration-700 ease-out group-hover:scale-105"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-navy-950/90 via-navy-950/25 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-navy-950/90 via-navy-950/30 to-transparent pointer-events-none" />
 
           {/* Boutons d'action rapides positionnés en haut à droite de la bannière */}
-          <div className="absolute top-3 right-3 sm:top-5 sm:right-5 z-20 flex flex-wrap items-center justify-end gap-2 sm:gap-2.5 max-w-[85%] sm:max-w-none">
+          <div className="absolute top-2.5 right-2.5 sm:top-5 sm:right-5 z-20 flex flex-wrap items-center justify-end gap-1.5 sm:gap-2.5 max-w-[85%] sm:max-w-none">
             <button
               type="button"
               onClick={() => {
@@ -766,32 +766,33 @@ export default function SignalerPageBody() {
                   formEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
               }}
-              className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-[#CC131A] hover:bg-red-700 text-white font-extrabold text-xs sm:text-sm flex items-center gap-1.5 shadow-lg hover:shadow-xl transition-all active:scale-95 cursor-pointer backdrop-blur-xs"
+              className="px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-xl bg-[#CC131A] hover:bg-red-700 text-white font-extrabold text-xs sm:text-sm flex items-center gap-1 sm:gap-1.5 shadow-lg hover:shadow-xl transition-all active:scale-95 cursor-pointer backdrop-blur-xs"
             >
-              <span>Commencer le signalement</span>
-              <ArrowDown size={14} />
+              <span>Commencer</span>
+              <ArrowDown size={13} />
             </button>
 
             <button
               type="button"
               onClick={() => navigate('/citoyen/carte')}
-              className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-black/40 hover:bg-black/60 text-white backdrop-blur-md border border-white/30 font-bold text-xs sm:text-sm flex items-center gap-1.5 shadow-lg transition-all active:scale-95 cursor-pointer"
+              className="px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-xl bg-black/40 hover:bg-black/60 text-white backdrop-blur-md border border-white/30 font-bold text-xs sm:text-sm flex items-center gap-1 sm:gap-1.5 shadow-lg transition-all active:scale-95 cursor-pointer"
             >
-              <MapPin size={14} className="text-yellow-300" />
-              <span>Voir la carte</span>
+              <MapPin size={13} className="text-yellow-300" />
+              <span>Carte</span>
             </button>
           </div>
 
-          <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 text-white flex flex-col justify-end pointer-events-none">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/25 text-[11px] sm:text-xs font-bold mb-2 self-start shadow-xs pointer-events-auto">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-              <span>Sentinelles Mbeund-Mi · Thiaroye-sur-Mer</span>
+          <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-6 text-white flex flex-col justify-end pointer-events-none">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-md border border-white/25 text-[10px] sm:text-xs font-bold mb-1 sm:mb-2 self-start shadow-xs pointer-events-auto">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+              <span>Sentinelles Mbeund-Mi</span>
             </div>
-            <h2 className="text-base sm:text-xl md:text-2xl font-black tracking-tight text-white drop-shadow-sm">
+            <h2 className="text-sm sm:text-xl md:text-2xl font-black tracking-tight text-white drop-shadow-sm">
               Ensemble, prévenons les inondations
             </h2>
-            <p className="text-xs sm:text-sm text-slate-200 mt-1 max-w-2xl leading-relaxed opacity-95">
-              Rejoignez l’action communautaire Mbeund-Mi : signalez chaque point d’eau critique pour alerter vos voisins et guider les secours en temps réel.
+            <p className="text-[11px] sm:text-sm text-slate-200 mt-0.5 sm:mt-1 max-w-2xl leading-snug sm:leading-relaxed opacity-95">
+              <span className="hidden sm:inline">Rejoignez l’action communautaire Mbeund-Mi : signalez chaque point d’eau critique pour alerter vos voisins et guider les secours en temps réel.</span>
+              <span className="sm:hidden">Alertez vos voisins et guidez les secours en signalant chaque point d’eau critique.</span>
             </p>
           </div>
         </div>
@@ -985,7 +986,7 @@ export default function SignalerPageBody() {
             {/* CONTENEUR CARTE (À GAUCHE, PREND L'ESPACE MAJEUR) */}
             <div
               ref={mapContainerRef}
-              className="flex-1 min-w-0 relative z-0 isolate rounded-2xl overflow-hidden border-[1.5px] border-navy-200 dark:border-navy-800 shadow-md h-[320px] sm:h-[440px] lg:h-[540px] min-h-[300px] sm:min-h-[420px] lg:min-h-[540px] bg-slate-900"
+              className="flex-1 min-w-0 relative z-0 isolate rounded-2xl overflow-hidden border-[1.5px] border-navy-200 dark:border-navy-800 shadow-md h-[270px] sm:h-[400px] lg:h-[540px] min-h-[250px] sm:min-h-[380px] lg:min-h-[540px] bg-slate-900"
             >
               <MapContainer
                 center={[activeCoords.lat, activeCoords.lon]}
@@ -1246,14 +1247,14 @@ export default function SignalerPageBody() {
                   </span>
                 </div>
 
-                {/* Raccourcis de sélection rapide par quartier */}
+                {/* Raccourcis de sélection rapide par quartier : ruban fluide scrollable sur mobile, grille sur desktop */}
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-navy-400 flex items-center gap-1 mb-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-navy-400 flex items-center gap-1 mb-1.5">
                     <Compass size={12} className="text-[#CC131A]" />
                     <span>Accès rapide par quartier :</span>
                   </span>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-1.5">
+                  <div className="flex lg:grid lg:grid-cols-2 gap-1.5 overflow-x-auto no-scrollbar py-0.5">
                     {QUARTIERS_THIAROYE.map((q) => {
                       const isActive = activeSecteur?.nom === q.nom;
                       return (
@@ -1266,7 +1267,7 @@ export default function SignalerPageBody() {
                             setIsGpsLocked(false);
                             ensureMapVisible();
                           }}
-                          className={`p-2 rounded-xl text-left font-bold text-xs transition-all duration-150 cursor-pointer border active:scale-95 ${
+                          className={`p-2 rounded-xl text-left font-bold text-xs transition-all duration-150 cursor-pointer border active:scale-95 shrink-0 min-w-[125px] lg:min-w-0 ${
                             isActive
                               ? 'bg-[#CC131A] text-white border-[#CC131A] shadow-xs'
                               : 'bg-white dark:bg-navy-900/60 border-navy-200/80 dark:border-navy-800 text-navy-800 dark:text-navy-200 hover:border-[#CC131A] hover:text-[#CC131A] dark:hover:text-red-400'
@@ -1782,7 +1783,7 @@ export default function SignalerPageBody() {
                   </span>
                 </div>
 
-                <div className="relative flex-1 w-full min-h-[320px]">
+                <div className="relative flex-1 w-full min-h-[190px] sm:min-h-[280px] lg:min-h-[340px] h-[190px] sm:h-[280px] lg:h-full">
                   <MapContainer
                     center={[activeCoords.lat, activeCoords.lon]}
                     zoom={16}
@@ -1794,7 +1795,7 @@ export default function SignalerPageBody() {
                     scrollWheelZoom={false}
                     touchZoom={true}
                     zoomControl={false}
-                    style={{ width: '100%', height: '100%', minHeight: '320px', backgroundColor: '#0e1c2e' }}
+                    style={{ width: '100%', height: '100%', minHeight: '190px', backgroundColor: '#0e1c2e' }}
                   >
                     {baseMap === 'satellite' ? (
                       <>
@@ -1890,28 +1891,28 @@ export default function SignalerPageBody() {
       </div>
 
       {/* 3. Section Infographie de Transparence : Cycle de vie d'un signalement */}
-      <div className="w-full pt-6 pb-2">
-        <div className="p-5 sm:p-6 rounded-3xl bg-white dark:bg-[#071322] border border-navy-100 dark:border-navy-800 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2.5">
+      <div className="w-full pt-4 sm:pt-6 pb-2">
+        <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white dark:bg-[#071322] border border-navy-100 dark:border-navy-800 shadow-sm">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <div className="flex items-center gap-2 sm:gap-2.5">
               <div className="w-1.5 h-4 rounded-full bg-[#CC131A]" />
               <div>
-                <h3 className="text-sm sm:text-base font-black text-navy-900 dark:text-white tracking-tight flex items-center gap-2">
-                  <span>Le cycle de vie de votre signalement</span>
-                  <span className="px-2 py-0.5 rounded-full bg-navy-100 dark:bg-navy-800 text-navy-700 dark:text-navy-200 text-[10px] font-black">
+                <h3 className="text-xs sm:text-base font-black text-navy-900 dark:text-white tracking-tight flex items-center gap-2">
+                  <span>Cycle de vie de votre signalement</span>
+                  <span className="px-2 py-0.5 rounded-full bg-navy-100 dark:bg-navy-800 text-navy-700 dark:text-navy-200 text-[9px] sm:text-[10px] font-black">
                     Transparence
                   </span>
                 </h3>
-                <p className="text-xs text-navy-500 dark:text-navy-400 font-medium">
+                <p className="text-[11px] sm:text-xs text-navy-500 dark:text-navy-400 font-medium hidden sm:block">
                   Comment les autorités et les services techniques traitent votre observation
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 overflow-x-auto no-scrollbar py-0.5">
             {/* Étape 1 */}
-            <div className="group p-3.5 rounded-2xl bg-navy-50/50 dark:bg-navy-900/40 border border-navy-100 dark:border-navy-800 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 hover:shadow-md hover:border-blue-200 dark:hover:border-navy-700">
+            <div className="group p-3.5 rounded-2xl bg-navy-50/50 dark:bg-navy-900/40 border border-navy-100 dark:border-navy-800 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 hover:shadow-md hover:border-blue-200 dark:hover:border-navy-700 min-w-[200px] sm:min-w-0 shrink-0 sm:shrink">
               <div>
                 <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-black text-xs mb-2.5 transition-transform duration-200 group-hover:scale-110">
                   1
@@ -1927,7 +1928,7 @@ export default function SignalerPageBody() {
             </div>
 
             {/* Étape 2 */}
-            <div className="group p-3.5 rounded-2xl bg-navy-50/50 dark:bg-navy-900/40 border border-navy-100 dark:border-navy-800 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 hover:shadow-md hover:border-amber-200 dark:border-navy-700">
+            <div className="group p-3.5 rounded-2xl bg-navy-50/50 dark:bg-navy-900/40 border border-navy-100 dark:border-navy-800 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 hover:shadow-md hover:border-amber-200 dark:hover:border-navy-700 min-w-[200px] sm:min-w-0 shrink-0 sm:shrink">
               <div>
                 <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center font-black text-xs mb-2.5 transition-transform duration-200 group-hover:scale-110">
                   2
@@ -1943,7 +1944,7 @@ export default function SignalerPageBody() {
             </div>
 
             {/* Étape 3 */}
-            <div className="group p-3.5 rounded-2xl bg-navy-50/50 dark:bg-navy-900/40 border border-navy-100 dark:border-navy-800 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 hover:shadow-md hover:border-red-200 dark:hover:border-navy-700">
+            <div className="group p-3.5 rounded-2xl bg-navy-50/50 dark:bg-navy-900/40 border border-navy-100 dark:border-navy-800 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 hover:shadow-md hover:border-red-200 dark:hover:border-navy-700 min-w-[200px] sm:min-w-0 shrink-0 sm:shrink">
               <div>
                 <div className="w-8 h-8 rounded-xl bg-red-500/10 text-red-600 dark:text-red-400 flex items-center justify-center font-black text-xs mb-2.5 transition-transform duration-200 group-hover:scale-110">
                   3
@@ -1959,7 +1960,7 @@ export default function SignalerPageBody() {
             </div>
 
             {/* Étape 4 */}
-            <div className="group p-3.5 rounded-2xl bg-navy-50/50 dark:bg-navy-900/40 border border-navy-100 dark:border-navy-800 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 hover:shadow-md hover:border-emerald-200 dark:hover:border-navy-700">
+            <div className="group p-3.5 rounded-2xl bg-navy-50/50 dark:bg-navy-900/40 border border-navy-100 dark:border-navy-800 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 hover:shadow-md hover:border-emerald-200 dark:hover:border-navy-700 min-w-[200px] sm:min-w-0 shrink-0 sm:shrink">
               <div>
                 <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-black text-xs mb-2.5 transition-transform duration-200 group-hover:scale-110">
                   4
