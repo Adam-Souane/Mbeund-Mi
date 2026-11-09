@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { LogOut, PhoneCall } from 'lucide-react';
+import { LogOut, LogIn, PhoneCall } from 'lucide-react';
 import Logo from '../../shared/components/Logo';
 import ThemeToggle from '../../theme/ThemeToggle';
 import NotificationCenter from '../../shared/components/NotificationCenter';
@@ -21,7 +21,7 @@ import CitizenProfileHeaderButton from '../components/CitizenProfileHeaderButton
  */
 export default function CitizenShell({ children, fullHeight = false }) {
   const isDesktop = useMediaQuery('(min-width: 1024px)');
-  const { logout } = useAuth();
+  const { logout, username } = useAuth();
   const [emergencyOpen, setEmergencyOpen] = useState(false);
 
   if (isDesktop) {
@@ -57,15 +57,27 @@ export default function CitizenShell({ children, fullHeight = false }) {
           <ThemeToggle />
           <CitizenProfileHeaderButton />
 
-          {/* Déconnexion : visible à partir de la tablette (sur mobile, disponible dans l'onglet Profil) */}
-          <button
-            onClick={logout}
-            aria-label="Se déconnecter"
-            className="hidden sm:flex w-9 h-9 rounded-full border border-navy-200 dark:border-navy-800 items-center justify-center text-red hover:bg-red-50 dark:hover:bg-red-950/30 active:scale-95 transition cursor-pointer"
-            title="Se déconnecter"
-          >
-            <LogOut size={15} />
-          </button>
+          {/* Connexion / Déconnexion : visible à partir de la tablette */}
+          {username ? (
+            <button
+              onClick={logout}
+              aria-label="Se déconnecter"
+              className="hidden sm:flex w-9 h-9 rounded-full border border-navy-200 dark:border-navy-800 items-center justify-center text-red hover:bg-red-50 dark:hover:bg-red-950/30 active:scale-95 transition cursor-pointer"
+              title="Se déconnecter"
+            >
+              <LogOut size={15} />
+            </button>
+          ) : (
+            <Link
+              to="/login"
+              aria-label="Se connecter"
+              className="hidden sm:flex px-3 h-9 rounded-xl bg-[#0B2545] hover:bg-[#154275] text-white text-xs font-extrabold items-center justify-center gap-1.5 shadow-2xs transition cursor-pointer"
+              title="Se connecter pour certifier votre compte"
+            >
+              <LogIn size={14} />
+              <span>Connexion</span>
+            </Link>
+          )}
         </div>
       </header>
 

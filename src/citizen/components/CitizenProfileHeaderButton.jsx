@@ -36,11 +36,11 @@ export default function CitizenProfileHeaderButton() {
 
       {/* Nom d'utilisateur (visible sur écran moyen / large) */}
       <div className="hidden md:flex flex-col text-left leading-tight pr-1">
-        <span className="text-xs font-black text-navy-950 dark:text-white truncate max-w-[110px]">
-          {username ?? 'Citoyen'}
+        <span className="text-xs font-black text-navy-950 dark:text-white truncate max-w-[125px]">
+          {username ?? 'Mode Anonyme'}
         </span>
         <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">
-          Mon profil
+          {username ? 'Mon profil' : 'Se connecter'}
         </span>
       </div>
     </Link>

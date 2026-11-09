@@ -1,9 +1,29 @@
 import { createContext, useContext, useState, useCallback } from 'react';
 import { obtainToken } from '../api/endpoints/auth';
+import { rattacherSignalementsAnonymes } from '../api/endpoints/signalements';
 import { decodeJwt } from './jwt';
 import { getAccessToken, getRefreshToken, getUsername, setTokens, clearTokens } from './tokenStorage';
 
 const AuthContext = createContext(null);
+export const ANONYMOUS_REPORTS_STORAGE_KEY = 'mbeund_mi_anonymous_report_ids';
+
+export async function synchroniserSignalementsAnonymes() {
+  try {
+    const raw = localStorage.getItem(ANONYMOUS_REPORTS_STORAGE_KEY);
+    if (!raw) return 0;
+    const parsed = JSON.parse(raw);
+    const entries = Array.isArray(parsed) ? parsed : [];
+    const ids = entries
+      .map((item) => (typeof item === 'object' && item !== null ? item.id : item))
+      .filter((id) => id != null && !String(id).startsWith('demo-'));
+    if (!ids.length) return 0;
+    const res = await rattacherSignalementsAnonymes(ids);
+    localStorage.removeItem(ANONYMOUS_REPORTS_STORAGE_KEY);
+    return res?.rattaches ?? ids.length;
+  } catch {
+    return 0;
+  }
+}
 
 function deduireServiceDepuisIdentifiant(username, role, tokenService) {
   if (role === 'admin') return 'cod';
@@ -49,6 +69,7 @@ export function AuthProvider({ children }) {
     setRole(resolvedRole);
     setUsername(username);
     setService(resolvedService);
+    synchroniserSignalementsAnonymes();
     return resolvedRole;
   }, []);
 

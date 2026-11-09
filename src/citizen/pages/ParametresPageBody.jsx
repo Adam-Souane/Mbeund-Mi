@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Settings,
   HeartHandshake,
@@ -13,10 +14,12 @@ import {
   CheckCircle2,
   Moon,
   Sun,
+  ShieldCheck,
 } from 'lucide-react';
 import CitizenShell from '../shared/CitizenShell';
 import ErrorMessage from '../../shared/components/ErrorMessage';
 import { useTheme } from '../../theme/ThemeContext';
+import { useAuth } from '../../auth/AuthContext';
 import { useZones } from '../../shared/hooks/useZones';
 import { useMonProfilVulnerabilite, useSaveMonProfilVulnerabilite } from '../../shared/hooks/useVulnerabilite';
 import { useMonRelais, useCreateRelais, useDeleteRelais } from '../../shared/hooks/useRelaisQuartier';
@@ -60,6 +63,7 @@ const CONTACT_VIDE = {
 
 export default function ParametresPageBody() {
   const { darkMode, toggleTheme } = useTheme();
+  const { username } = useAuth();
   const { data: zonesData } = useZones();
 
   // Profil Vulnérabilité
@@ -172,6 +176,39 @@ export default function ParametresPageBody() {
             </button>
           </div>
         </div>
+
+        {/* Bannière d'information si Mode Urgence Anonyme */}
+        {!username && (
+          <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#071322] border border-[#CC131A]/30 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-950/40 text-[#CC131A] flex items-center justify-center shrink-0 mt-0.5">
+                <ShieldCheck size={20} />
+              </div>
+              <div>
+                <h2 className="text-sm font-black text-navy-950 dark:text-white">
+                  Registre ORSEC &amp; Kit du foyer réservés aux comptes vérifiés
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 max-w-2xl">
+                  Connectez-vous ou créez un compte gratuit (vérifié par SMS OTP) pour sauvegarder les personnes vulnérables de votre foyer, votre contact d’urgence et devenir Relais de quartier.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Link
+                to="/login"
+                className="px-4 py-2 rounded-xl bg-[#0B2545] hover:bg-[#154275] text-white text-xs font-extrabold transition"
+              >
+                Se connecter
+              </Link>
+              <Link
+                to="/signup"
+                className="px-4 py-2 rounded-xl bg-[#CC131A] hover:bg-red-700 text-white text-xs font-extrabold transition"
+              >
+                S’inscrire
+              </Link>
+            </div>
+          </div>
+        )}
 
         {/* Grille principale des paramètres */}
         <div className="w-full flex flex-col gap-5 lg:grid lg:grid-cols-2 lg:gap-5 lg:items-start">

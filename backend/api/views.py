@@ -488,6 +488,32 @@ class SignalementCitoyenViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
+    @action(detail=False, methods=['post'], permission_classes=[permissions.IsAuthenticated], url_path='rattacher-anonymes')
+    def rattacher_anonymes(self, request):
+        """
+        POST /api/signalements/rattacher-anonymes/ body: {"ids": [12, 15]}
+        Rattache au compte citoyen nouvellement connecté les signalements
+        qu'il a émis en Mode Urgence Anonyme sur le même appareil (signale_par IS NULL).
+        """
+        raw_ids = request.data.get('ids', [])
+        if not isinstance(raw_ids, list):
+            return Response({"ids": ["Une liste d'identifiants est attendue."]}, status=400)
+
+        clean_ids = []
+        for val in raw_ids[:20]:
+            try:
+                clean_ids.append(int(val))
+            except (TypeError, ValueError):
+                continue
+
+        if not clean_ids:
+            return Response({"rattaches": 0, "ids": []})
+
+        qs = SignalementCitoyen.objects.filter(id__in=clean_ids, signale_par__isnull=True)
+        matched_ids = list(qs.values_list('id', flat=True))
+        updated = qs.update(signale_par=request.user)
+        return Response({"rattaches": updated, "ids": matched_ids})
+
 
 class SegmentRueViewSet(viewsets.ModelViewSet):
     queryset = SegmentRue.objects.all()

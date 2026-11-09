@@ -132,6 +132,48 @@ export default function ProfilPageBody() {
 
   const initial = (firstName?.[0] || username?.[0] || '?').toUpperCase();
 
+  if (!username) {
+    return (
+      <CitizenShell>
+        <div className="w-full max-w-2xl mx-auto py-8 flex flex-col gap-6">
+          <div className="bg-white dark:bg-[#071322] border border-navy-100 dark:border-navy-800 rounded-2xl p-6 sm:p-8 shadow-sm text-center space-y-4">
+            <div className="w-16 h-16 rounded-2xl bg-navy-50 dark:bg-navy-900 border border-navy-200 dark:border-navy-700 text-[#0B2545] dark:text-white flex items-center justify-center mx-auto">
+              <ShieldCheck size={30} className="text-[#CC131A]" />
+            </div>
+            <div>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black uppercase bg-red-50 dark:bg-red-950/50 text-[#CC131A] dark:text-red-300 border border-red-200 dark:border-red-900/60">
+                Mode Urgence Anonyme Actif
+              </span>
+              <h1 className="text-xl sm:text-2xl font-black text-navy-950 dark:text-white mt-2">
+                Créez votre profil Citoyen Vérifié
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1.5 max-w-lg mx-auto leading-relaxed">
+                Vous naviguez actuellement en <strong>Mode Urgence sans compte</strong>. Vous pouvez consulter la carte, les alertes et envoyer un signalement géolocalisé. Pour recevoir les <strong>alertes SMS officielles</strong>, inscrire votre foyer au <strong>Registre ORSEC</strong> et rattacher automatiquement vos signalements anonymes, connectez-vous.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 max-w-md mx-auto">
+              <Link
+                to="/login"
+                className="w-full py-3 px-4 rounded-xl bg-[#0B2545] hover:bg-[#154275] text-white text-xs sm:text-sm font-black shadow-sm transition flex items-center justify-center gap-2"
+              >
+                <User size={16} />
+                <span>Se connecter</span>
+              </Link>
+              <Link
+                to="/signup"
+                className="w-full py-3 px-4 rounded-xl bg-[#CC131A] hover:bg-red-700 text-white text-xs sm:text-sm font-black shadow-sm transition flex items-center justify-center gap-2"
+              >
+                <CheckCircle2 size={16} />
+                <span>Créer un compte (OTP)</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </CitizenShell>
+    );
+  }
+
   return (
     <CitizenShell>
       <div className="w-full flex flex-col gap-6 pb-8">

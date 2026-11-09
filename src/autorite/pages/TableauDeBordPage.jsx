@@ -1104,6 +1104,9 @@ export default function TableauDeBordPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
                 {filteredSignalementsEnAttente.slice(0, 3).map((f, idx) => {
                   const photoUrl = f.properties.photo || SIGNALEMENT_PHOTOS[idx % SIGNALEMENT_PHOTOS.length];
+                  const isVerifiedCitizen = Boolean(
+                    f.properties.citoyen_prenom || f.properties.citoyen_nom || f.properties.citoyen_telephone
+                  );
                   return (
                     <div
                       key={f.id}
@@ -1129,12 +1132,18 @@ export default function TableauDeBordPage() {
                           />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center justify-between gap-1.5">
+                          <div className="flex items-center justify-between gap-1.5 flex-wrap">
                             <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-navy-100 dark:bg-navy-800 text-navy-700 dark:text-navy-200 truncate">
                               {f.properties.categorie}
                             </span>
-                            <span className="text-[10px] text-navy-400 font-semibold flex-shrink-0">
-                              #{f.id}
+                            <span
+                              className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${
+                                isVerifiedCitizen
+                                  ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
+                                  : 'bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300'
+                              }`}
+                            >
+                              {isVerifiedCitizen ? 'Vérifié OTP ✓' : 'Anonyme · IA'}
                             </span>
                           </div>
                           <p className="text-xs font-bold text-navy-900 dark:text-white line-clamp-2 mt-1 leading-snug">

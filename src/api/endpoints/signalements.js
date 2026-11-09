@@ -36,3 +36,9 @@ export function createSignalement({ description, categorie, longitude, latitude,
 export function validerSignalement(id, valide) {
   return client.patch(`/signalements/${id}/valider/`, { valide }).then((r) => r.data);
 }
+
+// POST /api/signalements/rattacher-anonymes/ — IsAuthenticated.
+// Rattache les signalements émis en Mode Urgence Anonyme au compte citoyen dès connexion.
+export function rattacherSignalementsAnonymes(ids = []) {
+  return client.post('/signalements/rattacher-anonymes/', { ids }).then((r) => r.data);
+}

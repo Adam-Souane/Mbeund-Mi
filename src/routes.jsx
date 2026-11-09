@@ -73,16 +73,16 @@ export default function AppRoutes() {
         <Route path="/otp-verify" element={<OTPVerificationPage />} />
         <Route path="/verify-otp" element={<OTPVerificationPage />} />
 
-        {/* Citoyen - Accueil public pour consultation directe des alertes et du fil de quartier */}
+        {/* Citoyen - Accès direct Mode Urgence Anonyme (les vues personnelles affichent un encart d'invitation à se connecter) */}
         <Route path="/citoyen/accueil" element={<AccueilPageBody />} />
         <Route path="/citoyen/communaute" element={<CommunautePageBody />} />
-        <Route path="/citoyen/carte" element={<Citoyen><CartePageBody /></Citoyen>} />
-        <Route path="/citoyen/alertes" element={<Citoyen><AlertesPrevisionsPageBody /></Citoyen>} />
-        <Route path="/citoyen/signaler" element={<Citoyen><SignalerPageBody /></Citoyen>} />
-        <Route path="/citoyen/mes-signalements" element={<Citoyen><MesSignalementsPageBody /></Citoyen>} />
-        <Route path="/citoyen/profil" element={<Citoyen><ProfilPageBody /></Citoyen>} />
-        <Route path="/citoyen/parametres" element={<Citoyen><ParametresPageBody /></Citoyen>} />
-        <Route path="/citoyen/chat" element={<Citoyen><ChatPageBody /></Citoyen>} />
+        <Route path="/citoyen/carte" element={<CartePageBody />} />
+        <Route path="/citoyen/alertes" element={<AlertesPrevisionsPageBody />} />
+        <Route path="/citoyen/signaler" element={<SignalerPageBody />} />
+        <Route path="/citoyen/mes-signalements" element={<MesSignalementsPageBody />} />
+        <Route path="/citoyen/profil" element={<ProfilPageBody />} />
+        <Route path="/citoyen/parametres" element={<ParametresPageBody />} />
+        <Route path="/citoyen/chat" element={<ChatPageBody />} />
 
         {/* Autorité */}
         <Route path="/autorite/dashboard" element={<Autorite><TableauDeBordPage /></Autorite>} />

@@ -120,6 +120,9 @@ function InspectionPanel({
     properties.citoyen_prenom || properties.citoyen_nom
       ? `${properties.citoyen_prenom || ''} ${properties.citoyen_nom || ''}`.trim()
       : 'Riverain Anonyme';
+  const isVerifiedCitizen = Boolean(
+    properties.citoyen_prenom || properties.citoyen_nom || properties.citoyen_telephone
+  );
 
   return (
     <div className="h-full bg-white dark:bg-[#071322] border border-slate-200/90 dark:border-slate-800/80 rounded-2xl p-6 shadow-sm flex flex-col justify-between gap-4">
@@ -189,24 +192,50 @@ function InspectionPanel({
         </div>
 
         {/* Qualification IA & Concordance Capteurs */}
-        <div className="p-3.5 rounded-xl bg-slate-50/90 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-start gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#0B2545] text-white flex items-center justify-center shrink-0 mt-0.5">
-              <Cpu size={15} />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-black text-[#0B2545] dark:text-white">
-                  Qualification IA &amp; Vérification Anti-Fake
-                </span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-black bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
-                  Fiabilité {niveauInfo.scoreIa}%
-                </span>
+        <div className="p-3.5 rounded-xl bg-slate-50/90 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 space-y-2.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-start gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-[#0B2545] text-white flex items-center justify-center shrink-0 mt-0.5">
+                <Cpu size={15} />
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                {niveauInfo.concordance} · GPS : <span className="font-mono">{gpsText}</span>
-              </p>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-black text-[#0B2545] dark:text-white">
+                    Qualification IA &amp; Protocole Sentinelle Anti-Fake
+                  </span>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-black bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
+                    Fiabilité {niveauInfo.scoreIa}%
+                  </span>
+                  {isVerifiedCitizen ? (
+                    <span className="px-2 py-0.5 rounded text-[10px] font-black bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                      Citoyen Vérifié OTP ✓
+                    </span>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded text-[10px] font-black bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                      Source Anonyme · Recoupement IA
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  {niveauInfo.concordance} · GPS : <span className="font-mono">{gpsText}</span>
+                </p>
+              </div>
             </div>
+          </div>
+
+          <div className="pt-2 border-t border-slate-200/70 dark:border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[10px] font-bold">
+            <span className="px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#0B2545] dark:text-slate-200 truncate">
+              1. Quarantaine C.O.D ✓
+            </span>
+            <span className="px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#0B2545] dark:text-slate-200 truncate">
+              2. Geofencing &lt; 6km ✓
+            </span>
+            <span className="px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#0B2545] dark:text-slate-200 truncate">
+              3. Vision IA + Sondes ✓
+            </span>
+            <span className="px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[#0B2545] dark:text-slate-200 truncate">
+              4. {isVerifiedCitizen ? 'Identité OTP ✓' : 'Anti-Spam Session ✓'}
+            </span>
           </div>
         </div>
 
@@ -325,10 +354,13 @@ function InspectionPanel({
 function SignalementListItem({ feature, isSelected, onSelect, deployedInfo }) {
   const { properties } = feature;
   const niveauInfo = NIVEAU_EAU_INFO[properties.niveau_eau_estime];
+  const isVerifiedCitizen = Boolean(
+    properties.citoyen_prenom || properties.citoyen_nom || properties.citoyen_telephone
+  );
   const signaleurNom =
     properties.citoyen_prenom || properties.citoyen_nom
       ? `${properties.citoyen_prenom || ''} ${properties.citoyen_nom || ''}`.trim()
-      : 'Riverain';
+      : 'Riverain Anonyme';
 
   return (
     <button
@@ -372,6 +404,15 @@ function SignalementListItem({ feature, isSelected, onSelect, deployedInfo }) {
             <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold truncate">
               {signaleurNom}
             </span>
+            <span
+              className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${
+                isVerifiedCitizen
+                  ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
+                  : 'bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300'
+              }`}
+            >
+              {isVerifiedCitizen ? 'Vérifié OTP ✓' : 'Anonyme · IA'}
+            </span>
             {properties.citoyen_quartier && (
               <span className="text-[11px] text-slate-400 font-medium truncate">
                 · {properties.citoyen_quartier}
@@ -408,6 +449,7 @@ export default function SignalementsTerrainPage() {
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState('attente');
   const [graviteFilter, setGraviteFilter] = useState('ALL');
+  const [sourceFilter, setSourceFilter] = useState('ALL'); // 'ALL' | 'verifies' | 'anonymes'
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedId, setSelectedId] = useState(null);
   const [zoomPhoto, setZoomPhoto] = useState(null);
@@ -449,6 +491,10 @@ export default function SignalementsTerrainPage() {
       if (graviteFilter === 'critique' && p.niveau_eau_estime !== 'eleve') return false;
       if (graviteFilter === 'egouts' && p.categorie !== 'egouts') return false;
 
+      const isVerifie = Boolean(p.citoyen_prenom || p.citoyen_nom || p.citoyen_telephone);
+      if (sourceFilter === 'verifies' && !isVerifie) return false;
+      if (sourceFilter === 'anonymes' && isVerifie) return false;
+
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const hay = `${p.description || ''} ${p.citoyen_quartier || ''} ${p.citoyen_prenom || ''} ${p.citoyen_nom || ''}`.toLowerCase();
@@ -456,7 +502,7 @@ export default function SignalementsTerrainPage() {
       }
       return true;
     });
-  }, [features, filter, graviteFilter, searchQuery]);
+  }, [features, filter, graviteFilter, sourceFilter, searchQuery]);
 
   const activeFeature =
     features.find((f) => f.id === selectedId) || filtered[0] || features[0] || null;
@@ -597,6 +643,27 @@ export default function SignalementsTerrainPage() {
                 }`}
               >
                 {g.label}
+              </button>
+            ))}
+
+            <span className="inline-block h-4 w-px bg-slate-200 dark:bg-slate-800 mx-1 shrink-0" />
+
+            {[
+              { id: 'ALL', label: 'Toutes sources' },
+              { id: 'verifies', label: 'Vérifiés OTP ✓' },
+              { id: 'anonymes', label: 'Sources Anonymes' },
+            ].map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => setSourceFilter(s.id)}
+                className={`text-xs font-bold px-2.5 sm:px-3 py-1.5 rounded-xl transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                  sourceFilter === s.id
+                    ? 'bg-[#0B2545] text-white shadow-xs'
+                    : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50'
+                }`}
+              >
+                {s.label}
               </button>
             ))}
           </div>

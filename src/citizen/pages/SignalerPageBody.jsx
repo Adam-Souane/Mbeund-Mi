@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { MapContainer, TileLayer, CircleMarker, Circle, Marker, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
@@ -40,7 +40,7 @@ import { createSignalement } from '../../api/endpoints/signalements';
 import { flattenApiErrors } from '../../shared/utils/apiErrors';
 import { useGeolocation } from '../../shared/hooks/useGeolocation';
 import { useNotifications } from '../../shared/contexts/NotificationContext';
-import { useAuth } from '../../auth/AuthContext';
+import { useAuth, ANONYMOUS_REPORTS_STORAGE_KEY } from '../../auth/AuthContext';
 import { getPublicAvatar } from '../../shared/utils/avatarResolver';
 import { sanitizePublicAuthor } from '../../shared/utils/sanitizer';
 import { compressImageClient } from '../../shared/utils/imageCompressor';
@@ -285,7 +285,8 @@ export default function SignalerPageBody() {
   }
   const user = authData?.user;
   const username = authData?.username;
-  const nomCitoyen = user?.prenom ? `${user.prenom} ${user.nom || ''}`.trim() : (username || 'Citoyen');
+  const isAnonymous = !username;
+  const nomCitoyen = user?.prenom ? `${user.prenom} ${user.nom || ''}`.trim() : (username || 'Riverain Anonyme');
   const { addNotification } = useNotifications();
   const { position, status: geoStatus, error: geoError, locate } = useGeolocation();
 
@@ -497,6 +498,24 @@ export default function SignalerPageBody() {
           myPostIds[`my-sig-${data.id}`] = true;
         }
         localStorage.setItem('mbeund_mi_my_post_ids', JSON.stringify(myPostIds));
+
+        if (isAnonymous && data?.id) {
+          const rawAnon = localStorage.getItem(ANONYMOUS_REPORTS_STORAGE_KEY);
+          const anonList = rawAnon ? JSON.parse(rawAnon) : [];
+          const nextAnon = [
+            {
+              id: data.id,
+              categorie,
+              quartier: activeSecteur ? activeSecteur.nom : 'Thiaroye-sur-Mer',
+              description,
+              photo: photos[0]?.previewUrl || '/images/ruelle-thiaroye.jpg',
+              date_creation: new Date().toISOString(),
+              valide: false,
+            },
+            ...(Array.isArray(anonList) ? anonList : []),
+          ].slice(0, 10);
+          localStorage.setItem(ANONYMOUS_REPORTS_STORAGE_KEY, JSON.stringify(nextAnon));
+        }
       } catch {}
 
       if (partagerCommunaute) {
@@ -616,7 +635,31 @@ export default function SignalerPageBody() {
       setDescriptionError('Veuillez fournir une brève description de l’incident pour guider l’intervention.');
       return;
     }
+    if (isAnonymous && photos.length === 0) {
+      setPhotoError(
+        'Protocole Sentinelle (Mode Anonyme) : une photo terrain est obligatoire sans compte citoyen pour prévenir les fausses alertes.'
+      );
+      return;
+    }
+    if (isAnonymous) {
+      try {
+        const rawAnon = localStorage.getItem(ANONYMOUS_REPORTS_STORAGE_KEY);
+        const anonList = rawAnon ? JSON.parse(rawAnon) : [];
+        const oneHourAgo = Date.now() - 3600 * 1000;
+        const recentCount = (Array.isArray(anonList) ? anonList : []).filter((item) => {
+          const ts = item?.date_creation ? new Date(item.date_creation).getTime() : 0;
+          return ts > oneHourAgo;
+        }).length;
+        if (recentCount >= 2) {
+          setDescriptionError(
+            'Limite anti-spam atteinte en Mode Anonyme (2 signalements/heure). Connectez-vous pour lever cette restriction.'
+          );
+          return;
+        }
+      } catch {}
+    }
     setDescriptionError(null);
+    setPhotoError(null);
     goToStep(3);
   };
 
@@ -781,6 +824,35 @@ export default function SignalerPageBody() {
             </button>
           </div>
         </div>
+
+        {isAnonymous && (
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-[#071322] border border-[#0B2545]/20 dark:border-navy-700 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-xl bg-navy-50 dark:bg-navy-900 text-[#0B2545] dark:text-sky-300 border border-navy-200 dark:border-navy-700 flex items-center justify-center shrink-0 mt-0.5">
+                <ShieldCheck size={18} className="text-[#CC131A]" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-black text-navy-950 dark:text-white">
+                    Mode Urgence Anonyme Actif · Protocole Sentinelle
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-red-50 dark:bg-red-950/50 text-[#CC131A] dark:text-red-300">
+                    Photo + GPS requis
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-0.5 leading-relaxed">
+                  Votre signalement sera transmis en quarantaine au C.O.D pour recoupement IA &amp; capteurs (max 2/heure). Connectez-vous pour certifier votre alerte et recevoir le suivi SMS.
+                </p>
+              </div>
+            </div>
+            <Link
+              to="/login"
+              className="self-start sm:self-center shrink-0 px-3.5 py-2 rounded-xl bg-[#0B2545] hover:bg-[#154275] text-white text-xs font-extrabold transition"
+            >
+              Se connecter
+            </Link>
+          </div>
+        )}
 
         {pendingCount > 0 && (
           <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-xl text-amber-800 dark:text-amber-200 text-xs font-semibold">
@@ -1404,7 +1476,7 @@ export default function SignalerPageBody() {
             <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#071322] border border-navy-100 dark:border-navy-800 shadow-xs space-y-3">
               <div className="flex items-center justify-between">
                 <span className="block text-xs font-bold uppercase tracking-wider text-navy-800 dark:text-navy-200">
-                  Photo (optionnelle)
+                  {isAnonymous ? 'Photo terrain (obligatoire en Mode Anonyme)' : 'Photo (optionnelle)'}
                 </span>
                 <span className="text-[10px] text-navy-400 font-bold">
                   {photos.length}/3 photos

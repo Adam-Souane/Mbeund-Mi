@@ -21,6 +21,7 @@ import CitizenShell from '../shared/CitizenShell';
 import { useMySignalements } from '../../shared/hooks/useMySignalements';
 import { useDebounce } from '../../shared/hooks/useDebounce';
 import { formatCompactDate } from '../../shared/utils/dateFormatter';
+import { useAuth, ANONYMOUS_REPORTS_STORAGE_KEY } from '../../auth/AuthContext';
 
 // Photos de remplacement authentiques de Thiaroye en cas de défaut de chargement
 const FALLBACK_PHOTOS = [
@@ -135,6 +136,7 @@ function getCategorieBadge(cat) {
 
 export default function MesSignalementsPageBody() {
   const navigate = useNavigate();
+  const { username } = useAuth();
   const { data, isLoading } = useMySignalements();
 
   const [searchParams] = useSearchParams();
@@ -146,7 +148,7 @@ export default function MesSignalementsPageBody() {
   const [filterStatut, setFilterStatut] = useState('tous'); // 'tous' | 'en_attente' | 'en_cours' | 'resolus'
   const [activePhotoModal, setActivePhotoModal] = useState(null);
 
-  // Normalisation des signalements depuis l'API ou fallback réaliste
+  // Normalisation des signalements depuis l'API, le cache local anonyme ou fallback réaliste
   const signalementsList = useMemo(() => {
     const apiResults = data?.results ?? (Array.isArray(data) ? data : []);
     if (apiResults.length > 0) {
@@ -171,8 +173,26 @@ export default function MesSignalementsPageBody() {
         };
       });
     }
+    try {
+      const rawAnon = localStorage.getItem(ANONYMOUS_REPORTS_STORAGE_KEY);
+      const anonList = rawAnon ? JSON.parse(rawAnon) : [];
+      if (Array.isArray(anonList) && anonList.length > 0) {
+        return anonList.map((s, idx) => ({
+          id: s.id,
+          categorie: s.categorie || 'inondation',
+          quartier: s.quartier || 'Thiaroye-sur-Mer',
+          rue: 'Signalement Anonyme (cet appareil)',
+          description: s.description || 'Observation transmise en Mode Urgence Anonyme.',
+          photo: s.photo || FALLBACK_PHOTOS[idx % FALLBACK_PHOTOS.length],
+          date_creation: s.date_creation || new Date().toISOString(),
+          valide: s.valide ?? false,
+          statutCode: 'en_attente',
+          statutLabel: 'Quarantaine C.O.D · Recoupement IA en cours',
+        }));
+      }
+    } catch {}
     return DEFAULT_SIGNALEMENTS;
-  }, [data]);
+  }, [data, username]);
 
   // Filtrage combiné par statut et par recherche (quartier ou mot-clé)
   const filteredSignalements = useMemo(() => {

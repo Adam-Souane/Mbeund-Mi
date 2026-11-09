@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, Link } from 'react-router-dom';
 import {
   Home,
   Users,
@@ -9,6 +9,7 @@ import {
   MessageCircle,
   User,
   LogOut,
+  LogIn,
   ChevronLeft,
   ChevronRight,
   PhoneCall,
@@ -39,7 +40,7 @@ const NAV_ITEMS = [
  * - Sticky au défilement
  */
 export default function CitizenDesktopShell({ children, fullHeight = false }) {
-  const { logout } = useAuth();
+  const { logout, username } = useAuth();
   const [emergencyOpen, setEmergencyOpen] = useState(false);
 
   // Mémorisation de l'état replié/déplié dans le localStorage
@@ -167,18 +168,31 @@ export default function CitizenDesktopShell({ children, fullHeight = false }) {
             </nav>
           </div>
 
-          {/* Bas de la sidebar : Bouton Se déconnecter (texte ou icône seule) */}
+          {/* Bas de la sidebar : Bouton Se déconnecter ou Se connecter (si Mode Anonyme) */}
           <div className="pt-3 border-t border-white/15 mt-auto">
-            <button
-              onClick={logout}
-              title={isCollapsed ? 'Se déconnecter' : undefined}
-              className={`w-full flex items-center justify-center rounded-xl text-sm font-bold text-white bg-red-600/20 hover:bg-red-600 border border-red-500/40 hover:border-red-600 transition-all duration-200 shadow-xs cursor-pointer active:scale-95 ${
-                isCollapsed ? 'p-3' : 'gap-2.5 px-4 py-3'
-              }`}
-            >
-              <LogOut size={18} className="flex-shrink-0" />
-              {!isCollapsed && <span>Se déconnecter</span>}
-            </button>
+            {username ? (
+              <button
+                onClick={logout}
+                title={isCollapsed ? 'Se déconnecter' : undefined}
+                className={`w-full flex items-center justify-center rounded-xl text-sm font-bold text-white bg-red-600/20 hover:bg-red-600 border border-red-500/40 hover:border-red-600 transition-all duration-200 shadow-xs cursor-pointer active:scale-95 ${
+                  isCollapsed ? 'p-3' : 'gap-2.5 px-4 py-3'
+                }`}
+              >
+                <LogOut size={18} className="flex-shrink-0" />
+                {!isCollapsed && <span>Se déconnecter</span>}
+              </button>
+            ) : (
+              <Link
+                to="/login"
+                title={isCollapsed ? 'Se connecter' : undefined}
+                className={`w-full flex items-center justify-center rounded-xl text-sm font-bold text-[#0B2545] bg-white hover:bg-slate-100 transition-all duration-200 shadow-xs cursor-pointer active:scale-95 ${
+                  isCollapsed ? 'p-3' : 'gap-2.5 px-4 py-3'
+                }`}
+              >
+                <LogIn size={18} className="flex-shrink-0 text-[#CC131A]" />
+                {!isCollapsed && <span>Se connecter</span>}
+              </Link>
+            )}
           </div>
         </aside>
 

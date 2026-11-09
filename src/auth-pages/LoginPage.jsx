@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle, ShieldAlert } from 'lucide-react';
 import AuthLayout from './AuthLayout';
 import { useAuth } from '../auth/AuthContext';
 import { homeRouteForRole } from '../auth/RequireAuth';
@@ -151,6 +151,17 @@ export default function LoginPage() {
               className="font-bold text-[#CC131A] hover:text-[#A01016] hover:underline transition"
             >
               Créer un compte
+            </Link>
+          </div>
+
+          {/* Accès direct d'urgence en Mode Anonyme (sans blocage de connexion) */}
+          <div className="pt-2">
+            <Link
+              to="/citoyen/accueil"
+              className="w-full py-2.5 px-4 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200/90 text-[#0B2545] text-xs font-extrabold flex items-center justify-center gap-2 transition cursor-pointer"
+            >
+              <ShieldAlert size={14} className="text-[#CC131A] shrink-0" />
+              <span>Accès d’urgence sans compte (Mode Anonyme)</span>
             </Link>
           </div>
         </form>
