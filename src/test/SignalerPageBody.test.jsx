@@ -568,10 +568,11 @@ describe('SignalerPageBody', () => {
 
     expect(screen.getByText(/En présence d’eaux usées ou refoulement d’égout/i)).toBeInTheDocument();
 
-    // Survol souris pour mettre en pause
+    // Survol souris pour mettre en pause : le texte '(en pause)' a été retiré à la demande de l'utilisateur pour ne pas polluer l'affichage
     const banner = screen.getByText(/Hygiène & Sécurité sanitaire/i).closest('div.relative');
     fireEvent.mouseEnter(banner);
-    expect(screen.getByText(/\(en pause\)/i)).toBeInTheDocument();
+    expect(screen.queryByText(/\(en pause\)/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/En présence d’eaux usées ou refoulement d’égout/i)).toBeInTheDocument();
 
     // Sortie souris pour relancer le défilement
     fireEvent.mouseLeave(banner);

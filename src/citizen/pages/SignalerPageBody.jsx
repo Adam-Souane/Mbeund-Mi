@@ -798,18 +798,18 @@ export default function SignalerPageBody() {
         </div>
       </div>
 
-      {/* 2. Barre d'en-tête du formulaire et accès Historique */}
+      {/* 2. Barre d'en-tête du formulaire et accès Historique (aligné à droite) */}
       <div id="section-nouveau-signalement" className="w-full flex flex-col gap-4 scroll-mt-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-navy-100 dark:border-navy-800">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-extrabold text-navy-900 dark:text-white flex items-center gap-2">
+        <div className="flex items-center justify-between gap-3 pb-2 border-b border-navy-100 dark:border-navy-800">
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-2xl font-extrabold text-navy-900 dark:text-white flex items-center gap-2 flex-wrap">
               <span>Nouveau signalement</span>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-red-100 dark:bg-red-950/50 text-[#CC131A] dark:text-red-400 text-[11px] font-black tracking-normal">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-red-100 dark:bg-red-950/50 text-[#CC131A] dark:text-red-400 text-[10px] sm:text-[11px] font-black tracking-normal">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#CC131A] animate-pulse" />
                 Cellule d'alerte
               </span>
             </h1>
-            <p className="text-xs sm:text-sm text-navy-600 dark:text-navy-300 mt-0.5">
+            <p className="text-xs sm:text-sm text-navy-600 dark:text-navy-300 mt-0.5 hidden sm:block">
               Décrivez ce que vous observez — une autorité le validera avant publication.
             </p>
           </div>
@@ -818,9 +818,9 @@ export default function SignalerPageBody() {
             <button
               type="button"
               onClick={() => navigate('/citoyen/mes-signalements')}
-              className="group px-4 py-2 rounded-xl bg-white dark:bg-navy-800 border border-navy-200 dark:border-navy-700 hover:border-[#CC131A] hover:bg-[#CC131A] text-navy-800 dark:text-white hover:text-white text-xs font-black flex items-center gap-2 transition-all duration-200 shadow-xs hover:shadow-md cursor-pointer active:scale-95"
+              className="group px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-white dark:bg-navy-800 border border-navy-200 dark:border-navy-700 hover:border-[#CC131A] hover:bg-[#CC131A] text-navy-800 dark:text-white hover:text-white text-xs font-black flex items-center gap-1.5 transition-all duration-200 shadow-xs hover:shadow-md cursor-pointer active:scale-95"
             >
-              <Clock size={15} className="text-[#CC131A] group-hover:text-white transition-colors" />
+              <Clock size={14} className="text-[#CC131A] group-hover:text-white transition-colors" />
               <span>Historique</span>
             </button>
           </div>
@@ -1993,11 +1993,6 @@ export default function SignalerPageBody() {
                 <ActiveConsigneIcon size={11} />
                 <span>{activeConsigne.badge}</span>
               </span>
-              {isConsignePaused && (
-                <span className="text-[10px] text-slate-400 font-medium italic animate-pulse">
-                  (en pause)
-                </span>
-              )}
             </div>
 
             <h4 className="text-sm font-extrabold text-white transition-opacity duration-300">
