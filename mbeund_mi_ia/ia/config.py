@@ -1,12 +1,15 @@
 import os
-from dotenv import load_dotenv
 
-# Charger le fichier .env
-env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'backend', '.env')
-if os.path.exists(env_path):
-    load_dotenv(env_path)
-else:
-    load_dotenv() # Fallback local à la racine du script
+# Charger le fichier .env si dotenv est disponible (développement local)
+try:
+    from dotenv import load_dotenv
+    env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'backend', '.env')
+    if os.path.exists(env_path):
+        load_dotenv(env_path)
+    else:
+        load_dotenv()
+except ImportError:
+    pass
 
 DJANGO_API_URL = os.getenv('DJANGO_API_URL', 'http://localhost:8000/api')
 DJANGO_API_TOKEN = os.getenv('DJANGO_API_TOKEN', '')
