@@ -170,6 +170,46 @@ def synthetiser_voix_femme_base64(texte: str, langue: str = "fr") -> str | None:
     except Exception as e:
         logger.warning("Erreur synthèse vocale féminine edge-tts: %s", e)
 
+    # 3. Fallback résistant pour datacenters / cloud (Render, etc.) sans blocage d'IP
+    try:
+        import urllib.request
+        import urllib.parse
+
+        # Découpage du texte en segments <= 140 caractères
+        words = clean_text[:600].split()
+        chunks = []
+        current = []
+        for w in words:
+            if sum(len(x) + 1 for x in current) + len(w) > 140:
+                chunks.append(" ".join(current))
+                current = [w]
+            else:
+                current.append(w)
+        if current:
+            chunks.append(" ".join(current))
+
+        audio_parts = []
+        for chunk in chunks:
+            if not chunk.strip():
+                continue
+            enc_q = urllib.parse.quote(chunk.strip())
+            tts_url = f"https://translate.google.com/translate_tts?ie=UTF-8&q={enc_q}&tl=fr&client=tw-ob"
+            req = urllib.request.Request(
+                tts_url,
+                headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"},
+            )
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                data = resp.read()
+                if data:
+                    audio_parts.append(data)
+
+        if audio_parts:
+            full_mp3 = b"".join(audio_parts)
+            b64 = base64.b64encode(full_mp3).decode("ascii")
+            return f"data:audio/mp3;base64,{b64}"
+    except Exception as e:
+        logger.warning("Erreur fallback synthèse vocale cloud: %s", e)
+
     return None
 
 
