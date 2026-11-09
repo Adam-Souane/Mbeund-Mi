@@ -30,6 +30,9 @@ import {
   Image,
   CheckCircle2,
   RotateCcw,
+  Square,
+  Play,
+  Pause,
 } from 'lucide-react';
 import CitizenShell from '../shared/CitizenShell';
 import RiskBadge from '../../shared/components/RiskBadge';
@@ -250,6 +253,9 @@ export default function ChatPageBody() {
   const [micPermissionError, setMicPermissionError] = useState(null);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [pendingVoiceReview, setPendingVoiceReview] = useState(null);
+  const [voiceDraft, setVoiceDraft] = useState(null);
+  const [isVoiceDraftPlaying, setIsVoiceDraftPlaying] = useState(false);
+  const [voiceDraftProgress, setVoiceDraftProgress] = useState(0);
   const [showPhotoMenu, setShowPhotoMenu] = useState(false);
   const [attachedPhoto, setAttachedPhoto] = useState(null);
   const [attachedLocation, setAttachedLocation] = useState(null);
@@ -266,6 +272,8 @@ export default function ChatPageBody() {
   const audioStreamRef = useRef(null);
   const audioChunksRef = useRef([]);
   const recordingTimerRef = useRef(null);
+  const voiceDraftAudioRef = useRef(null);
+  const directSendVoiceRef = useRef(false);
   const bottomRef = useRef(null);
   const cameraInputRef = useRef(null);
   const galleryInputRef = useRef(null);
@@ -718,9 +726,33 @@ export default function ChatPageBody() {
     }
   };
 
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = async (e) => {
     e?.preventDefault?.();
     if (isSignalementSubmitting || mutation.isPending) return;
+
+    // Si une note vocale pré-enregistrée est en attente
+    if (voiceDraft) {
+      setIsTranscribing(true);
+      const audioBlob = voiceDraft.blob;
+      const audioUrl = voiceDraft.url;
+      const duration = voiceDraft.duration;
+      let rawTranscript = input.trim();
+      let detectedLang = langue;
+      try {
+        const data = await transcribeAudio(audioBlob, langue);
+        if (data?.text) {
+          rawTranscript = rawTranscript ? `${rawTranscript} (${data.text})` : data.text;
+        }
+        if (data?.detected_lang) {
+          detectedLang = data.detected_lang;
+        }
+      } catch {} finally {
+        setIsTranscribing(false);
+      }
+      clearVoiceDraft();
+      sendVoiceMessage(rawTranscript || (detectedLang === 'wo' ? 'Bataaxal bu ñu wax' : 'Message vocal'), audioUrl, duration, false, detectedLang);
+      return;
+    }
 
     if (attachedPhoto) {
       // Cas a : avec photo -> createSignalement
@@ -892,54 +924,60 @@ export default function ChatPageBody() {
           audioStreamRef.current = null;
         }
 
-        // Si la langue est le wolof :
-        // Le modèle Whisper standard et Web Speech n'ont pas de support officiel du wolof standard.
-        // On affiche donc la transcription dans un volet de validation où le citoyen peut la réviser et la corriger.
-        if (langue === 'wo') {
-          setIsTranscribing(true);
-          let rawTranscript = '';
-          let detectedLang = 'wo';
-          try {
-            const data = await transcribeAudio(audioBlob, 'wo');
-            rawTranscript = data.text || '';
-            if (data?.detected_lang === 'fr' || data?.detected_lang === 'wo') {
-              detectedLang = data.detected_lang;
+        // Si envoi direct (clic sur Envoyer pendant l'enregistrement)
+        if (directSendVoiceRef.current) {
+          directSendVoiceRef.current = false;
+          if (langue === 'wo') {
+            setIsTranscribing(true);
+            let rawTranscript = '';
+            let detectedLang = 'wo';
+            try {
+              const data = await transcribeAudio(audioBlob, 'wo');
+              rawTranscript = data.text || '';
+              if (data?.detected_lang === 'fr' || data?.detected_lang === 'wo') {
+                detectedLang = data.detected_lang;
+              }
+            } catch {
+              rawTranscript = '';
+            } finally {
+              setIsTranscribing(false);
             }
-          } catch {
-            rawTranscript = '';
-          } finally {
-            setIsTranscribing(false);
-          }
 
-          setPendingVoiceReview({
-            audioBlob,
-            audioUrl,
-            duration: finalDuration || 4,
-            transcript: rawTranscript,
-            detectedLang,
-            isUncertain: true,
-          });
+            setPendingVoiceReview({
+              audioBlob,
+              audioUrl,
+              duration: finalDuration || 4,
+              transcript: rawTranscript,
+              detectedLang,
+              isUncertain: true,
+            });
+          } else {
+            setIsTranscribing(true);
+            let rawTranscript = '';
+            let detectedLang = 'fr';
+            try {
+              const data = await transcribeAudio(audioBlob, 'fr');
+              rawTranscript = data.text || '';
+              if (data?.detected_lang === 'fr' || data?.detected_lang === 'wo') {
+                detectedLang = data.detected_lang;
+              } else if (rawTranscript) {
+                detectedLang = detecterLangueClient(rawTranscript, 'fr');
+              }
+            } catch {
+              rawTranscript = '';
+            } finally {
+              setIsTranscribing(false);
+            }
+
+            sendVoiceMessage(rawTranscript || "Message vocal", audioUrl, finalDuration || 4, false, detectedLang);
+          }
         } else {
-          // Si la langue est le français :
-          // Transcription via Whisper Groq puis envoi avec détection automatique (FR ou WO)
-          setIsTranscribing(true);
-          let rawTranscript = '';
-          let detectedLang = 'fr';
-          try {
-            const data = await transcribeAudio(audioBlob, 'fr');
-            rawTranscript = data.text || '';
-            if (data?.detected_lang === 'fr' || data?.detected_lang === 'wo') {
-              detectedLang = data.detected_lang;
-            } else if (rawTranscript) {
-              detectedLang = detecterLangueClient(rawTranscript, 'fr');
-            }
-          } catch {
-            rawTranscript = '';
-          } finally {
-            setIsTranscribing(false);
-          }
-
-          sendVoiceMessage(rawTranscript || "Message vocal", audioUrl, finalDuration || 4, false, detectedLang);
+          // Mode WhatsApp : Arrêté pour pré-écoute et contrôle avant envoi dans la zone de discussion
+          setVoiceDraft({
+            blob: audioBlob,
+            url: audioUrl,
+            duration: finalDuration || 4,
+          });
         }
       };
 
@@ -963,6 +1001,7 @@ export default function ChatPageBody() {
 
   // Annuler l'enregistrement vocal (Corbeille)
   const cancelVoiceRecording = () => {
+    directSendVoiceRef.current = false;
     if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.onstop = null; // Ne pas traiter
@@ -977,13 +1016,66 @@ export default function ChatPageBody() {
     setRecordingDuration(0);
   };
 
-  // Arrêter et envoyer l'enregistrement vocal
-  const stopAndSendVoiceRecording = () => {
+  // Arrêter l'enregistrement pour pré-écoute WhatsApp
+  const stopVoiceRecordingToPreview = () => {
+    directSendVoiceRef.current = false;
     if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
     }
     setIsRecording(false);
+  };
+
+  // Arrêter et envoyer directement l'enregistrement vocal
+  const stopAndSendVoiceRecording = () => {
+    directSendVoiceRef.current = true;
+    if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+    setIsRecording(false);
+  };
+
+  // Lecture / Pause du brouillon vocal pour pré-écoute avant envoi
+  const toggleVoiceDraftPlay = () => {
+    if (!voiceDraft?.url) return;
+    if (voiceDraftAudioRef.current) {
+      if (isVoiceDraftPlaying) {
+        voiceDraftAudioRef.current.pause();
+        setIsVoiceDraftPlaying(false);
+      } else {
+        voiceDraftAudioRef.current
+          .play()
+          .then(() => setIsVoiceDraftPlaying(true))
+          .catch(() => setIsVoiceDraftPlaying(false));
+      }
+      return;
+    }
+    const audio = new Audio(voiceDraft.url);
+    voiceDraftAudioRef.current = audio;
+    audio.ontimeupdate = () => setVoiceDraftProgress(audio.currentTime);
+    audio.onended = () => {
+      setIsVoiceDraftPlaying(false);
+      setVoiceDraftProgress(0);
+    };
+    audio.onerror = () => setIsVoiceDraftPlaying(false);
+    audio
+      .play()
+      .then(() => setIsVoiceDraftPlaying(true))
+      .catch(() => setIsVoiceDraftPlaying(false));
+  };
+
+  // Supprimer le brouillon vocal
+  const clearVoiceDraft = () => {
+    if (voiceDraftAudioRef.current) {
+      try {
+        voiceDraftAudioRef.current.pause();
+      } catch {}
+      voiceDraftAudioRef.current = null;
+    }
+    setIsVoiceDraftPlaying(false);
+    setVoiceDraftProgress(0);
+    setVoiceDraft(null);
   };
 
   // Envoi effectif d'un message vocal (supporte photo attachée simultanément)
@@ -1081,17 +1173,16 @@ export default function ChatPageBody() {
               </p>
             </div>
 
-            {/* Boutons d'en-tête : Badge Bilingue & Nouvelle discussion */}
+            {/* Boutons d'en-tête : Badge Bilingue invisible (sr-only pour accessibilité/tests) & Nouvelle discussion */}
             <div className="flex items-center gap-2 shrink-0 flex-wrap">
-              {/* Sélecteur / Badge de langue (Bilingue Wolof & Français) */}
               <button
                 type="button"
                 onClick={toggleLangue}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-white text-xs font-bold border border-white/20 transition cursor-pointer shadow-xs"
+                className="sr-only"
                 title="Basculer entre Français et Wolof / Wéccal làkk bi"
+                aria-label="Basculer entre Français et Wolof"
               >
-                <Languages size={14} className="text-cyan-300" />
-                <span>{langue === 'wo' ? '🇸🇳 Wolof (Tànn)' : '🇫🇷 Français (Choisi)'}</span>
+                {langue === 'wo' ? '🇸🇳 Wolof (Tànn)' : '🇫🇷 Français (Choisi)'}
               </button>
 
               <button
@@ -1906,6 +1997,47 @@ export default function ChatPageBody() {
               </div>
             )}
 
+            {/* Brouillon vocal WhatsApp pour pré-écoute et contrôle avant envoi */}
+            {voiceDraft && (
+              <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-red-50/90 dark:bg-navy-900 border border-red-200 dark:border-navy-700 shadow-2xs mb-2 animate-in fade-in">
+                <button
+                  type="button"
+                  onClick={toggleVoiceDraftPlay}
+                  className="w-10 h-10 rounded-full bg-[#CC131A] hover:bg-red-700 active:scale-95 text-white flex items-center justify-center shrink-0 transition shadow-sm cursor-pointer"
+                  title={isVoiceDraftPlaying ? "Pause" : "Écouter l'enregistrement"}
+                  aria-label={isVoiceDraftPlaying ? "Pause" : "Écouter"}
+                >
+                  {isVoiceDraftPlaying ? <Pause size={17} /> : <Play size={17} className="ml-0.5" />}
+                </button>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between text-xs font-bold text-navy-900 dark:text-navy-100 mb-1">
+                    <span className="flex items-center gap-1.5 truncate">
+                      <Mic size={14} className="text-[#CC131A] shrink-0" />
+                      <span>{langue === 'wo' ? 'Bataaxal bu ñu wax' : 'Message vocal'} ({formatTimer(voiceDraft.duration)})</span>
+                    </span>
+                    <span className="text-slate-500 font-mono text-[11px]">
+                      {formatTimer(voiceDraftProgress)} / {formatTimer(voiceDraft.duration)}
+                    </span>
+                  </div>
+                  <div className="w-full bg-slate-200 dark:bg-navy-700 h-2 rounded-full overflow-hidden">
+                    <div
+                      className="bg-[#CC131A] h-full transition-all duration-150"
+                      style={{ width: `${voiceDraft.duration > 0 ? (voiceDraftProgress / voiceDraft.duration) * 100 : 0}%` }}
+                    />
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={clearVoiceDraft}
+                  className="w-9 h-9 rounded-xl border border-slate-200 dark:border-navy-700 text-slate-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 flex items-center justify-center shrink-0 transition cursor-pointer"
+                  title="Supprimer la note vocale"
+                  aria-label="Supprimer"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            )}
+
             {/* Formulaire de saisie utilisateur */}
             <form
               onSubmit={handleFormSubmit}
@@ -1942,6 +2074,17 @@ export default function ChatPageBody() {
                     aria-label="Annuler l'enregistrement"
                   >
                     <Trash2 size={18} />
+                  </button>
+
+                  {/* Bouton Arrêter & Réécouter avant envoi */}
+                  <button
+                    type="button"
+                    onClick={stopVoiceRecordingToPreview}
+                    className="w-11 h-11 rounded-xl bg-white dark:bg-navy-900 border border-navy-200 dark:border-navy-700 text-navy-700 dark:text-navy-200 hover:bg-navy-100 dark:hover:bg-navy-800 flex items-center justify-center shrink-0 transition active:scale-95 cursor-pointer shadow-2xs"
+                    title={langue === 'wo' ? 'Teejeel ngir déglou' : 'Arrêter et réécouter le message'}
+                    aria-label="Arrêter et réécouter"
+                  >
+                    <Square size={16} className="fill-[#CC131A] text-[#CC131A]" />
                   </button>
 
                   {/* Bouton Envoyer le vocal - min 44px */}
@@ -2032,7 +2175,7 @@ export default function ChatPageBody() {
                   {/* Bouton envoyer (min 44px) */}
                   <button
                     type="submit"
-                    disabled={(!input.trim() && !attachedPhoto && !attachedLocation) || mutation.isPending || isSignalementSubmitting}
+                    disabled={(!input.trim() && !attachedPhoto && !attachedLocation && !voiceDraft) || mutation.isPending || isSignalementSubmitting}
                     className="w-11 h-11 rounded-xl bg-gradient-to-r from-red-600 to-[#CC131A] hover:from-red-700 hover:to-[#b01016] active:scale-95 text-white flex items-center justify-center flex-shrink-0 disabled:opacity-50 transition cursor-pointer shadow-md"
                     aria-label="Envoyer"
                   >

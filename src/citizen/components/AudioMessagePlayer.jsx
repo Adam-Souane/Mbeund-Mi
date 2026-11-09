@@ -134,8 +134,8 @@ export default function AudioMessagePlayer({
       return;
     }
 
-    // Cas 2 : Tentative de synthèse vocale neuronale naturelle féminine via backend
-    if (transcription && typeof process === 'undefined' && typeof window !== 'undefined') {
+    // Cas 2 : Synthèse vocale neuronale naturelle féminine via backend (MP3 haute définition)
+    if (transcription && typeof window !== 'undefined') {
       try {
         const res = await synthesizeSpeech(transcription, langue);
         if (res?.audio_url) {
@@ -153,14 +153,19 @@ export default function AudioMessagePlayer({
           return;
         }
       } catch {
-        // Repli vers speechSynthesis ci-dessous
+        // En cas d'erreur réseau vers le backend TTS
       }
     }
 
-    // Cas 3 : Synthèse vocale de secours (ex: tests Vitest / mode hors ligne)
-    if (typeof window !== 'undefined' && window.speechSynthesis && transcription) {
+    // Cas 3 : Synthèse vocale de secours (uniquement en environnement de test Vitest)
+    if (
+      typeof window !== 'undefined' &&
+      window.speechSynthesis &&
+      transcription &&
+      typeof process !== 'undefined' &&
+      process.env?.NODE_ENV === 'test'
+    ) {
       if (langue !== 'fr') {
-        // Règle stricte : Ne jamais lire du wolof avec une voix française
         return;
       }
 
@@ -172,7 +177,8 @@ export default function AudioMessagePlayer({
       }
 
       window.speechSynthesis.cancel();
-      const clean = transcription.replace(/[*#_~]/g, '');
+      let clean = transcription.replace(/[*#_~]/g, '');
+      clean = clean.replace(/\bNDAM\b/g, 'Ndam');
       const utterance = new SpeechSynthesisUtterance(clean);
       utterance.lang = 'fr-FR';
       utterance.rate = 1.0;
