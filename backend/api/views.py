@@ -580,8 +580,9 @@ class ItineraireSecuriseView(APIView):
     évitant autant que possible les tronçons à risque élevé jusqu'à la
     zone à faible risque la plus proche du réseau connu (voir
     api/services/routing_service.py — Dijkstra pondéré par le risque).
+    Accessible à tout citoyen (avec ou sans compte) en situation d'urgence.
     """
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def get(self, request):
         try:

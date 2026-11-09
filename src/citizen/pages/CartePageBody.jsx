@@ -454,7 +454,7 @@ export default function CartePageBody() {
 
   return (
     <CitizenShell fullHeight={true}>
-      <div className="w-full flex-1 min-h-0 h-full flex flex-col gap-2 pb-1">
+      <div className="w-full flex-1 min-h-0 h-full flex flex-col gap-1.5 sm:gap-2">
         {/* En-tête de page compact sur une seule ligne : libère un maximum de surface pour la carte */}
         <div className="flex items-center justify-between gap-2 pb-1.5 border-b border-navy-100 dark:border-navy-800/80 flex-shrink-0">
           <div className="flex items-center gap-2 min-w-0">
@@ -588,7 +588,7 @@ export default function CartePageBody() {
           {/* CARTE INTERACTIVE : Prend TOUTE la hauteur disponible (zéro vide en bas) */}
           <div
             ref={mapSectionRef}
-            className="order-2 lg:order-1 w-full flex-1 min-h-[380px] h-full relative rounded-2xl overflow-hidden shadow-sm border border-navy-100 dark:border-navy-800 isolate z-10 scroll-mt-4"
+            className="order-2 lg:order-1 w-full flex-1 min-h-[360px] h-full relative rounded-xl sm:rounded-2xl overflow-hidden shadow-sm border border-navy-100 dark:border-navy-800 isolate z-10 scroll-mt-4"
           >
             {isLoading ? (
               <div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-navy-900">

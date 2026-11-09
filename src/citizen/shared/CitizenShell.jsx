@@ -85,7 +85,7 @@ export default function CitizenShell({ children, fullHeight = false }) {
       <div
         className={`flex-1 max-w-4xl w-full mx-auto px-2.5 sm:px-6 ${
           fullHeight
-            ? 'pt-2 pb-16 flex flex-col min-h-0 overflow-hidden'
+            ? 'pt-1.5 pb-[52px] sm:pb-16 flex flex-col min-h-0 overflow-hidden'
             : 'py-4 sm:py-6 pb-28 sm:pb-24 flex flex-col gap-4 sm:gap-6'
         }`}
       >

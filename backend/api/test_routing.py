@@ -105,9 +105,9 @@ def test_find_safe_route_prefers_lower_risk_zone_even_if_farther():
 
 
 @pytest.mark.django_db
-def test_itineraire_securise_view_requires_auth(api_client):
+def test_itineraire_securise_view_accessible_unauthenticated(api_client):
     response = api_client.get('/api/itineraire-securise/', {'lat': 14.75, 'lon': -17.38})
-    assert response.status_code == 401
+    assert response.status_code != 401
 
 
 @pytest.mark.django_db
