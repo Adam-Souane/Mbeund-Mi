@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Camera, CloudRain, MapPin, ShieldCheck, ChevronRight, Users } from 'lucide-react';
 import CitizenShell from '../shared/CitizenShell';
@@ -63,6 +64,9 @@ export default function AccueilPageBody() {
   const navigate = useNavigate();
   const { username } = useAuth();
 
+  // Optimisation mobile : onglets segmentés légers pour éviter 1 200px de défilement vertical
+  const [mobileMeteoTab, setMobileMeteoTab] = useState('meteo'); // 'meteo' | 'echos'
+  const [mobileRadarTab, setMobileRadarTab] = useState('capteurs'); // 'capteurs' | 'radar'
 
   const { data: zonesData, isLoading: zonesLoading } = useZones();
   const { data: predictions } = usePredictions();
@@ -143,7 +147,7 @@ export default function AccueilPageBody() {
         const theme = THEMES[riskLevel] || THEMES.vert;
         const quartierAffiche = topZone?.quartier || 'Thiaroye-sur-Mer';
         return (
-          <div className="relative w-auto -mx-3.5 sm:-mx-6 lg:-mx-8 -mt-4 sm:-mt-6 lg:-mt-8 px-4 sm:px-8 lg:px-12 pt-8 sm:pt-12 pb-14 sm:pb-20 overflow-hidden mb-3 min-h-[240px] sm:min-h-[280px] flex flex-col justify-center">
+          <div className="relative w-auto -mx-3.5 sm:-mx-6 lg:-mx-8 -mt-4 sm:-mt-6 lg:-mt-8 px-4 sm:px-8 lg:px-12 pt-5 sm:pt-12 pb-7 sm:pb-20 overflow-hidden mb-2 sm:mb-3 min-h-[175px] sm:min-h-[280px] flex flex-col justify-center">
             {/* 1. Photographie panoramique du littoral de Thiaroye-sur-Mer (Cadrage centré sur la plage dorée et les pirogues) */}
             <img
               src="/images/hero-littoral-thiaroye.jpg"
@@ -162,45 +166,45 @@ export default function AccueilPageBody() {
             <div className={`absolute top-0 right-0 w-96 h-96 bg-gradient-to-br ${theme.bgAura} rounded-full blur-3xl pointer-events-none opacity-40`} />
 
             {/* 5. Contenu textuel et indicateurs flottant librement dans l'espace ouvert */}
-            <div className="w-full max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center justify-between gap-8 lg:gap-12 xl:gap-16 relative z-10 text-white">
+            <div className="w-full max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center justify-between gap-3.5 sm:gap-8 lg:gap-12 xl:gap-16 relative z-10 text-white">
               {/* Salutation humaine & territoriale */}
-              <div className="space-y-2 flex-1 min-w-0 max-w-2xl">
+              <div className="space-y-1 sm:space-y-2 flex-1 min-w-0 max-w-2xl">
                 {/* Pastille territoriale */}
-                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/20 dark:bg-white/10 backdrop-blur-md border border-white/25 text-xs font-bold text-white shadow-xs">
-                  <MapPin size={13} className="text-[#CC131A] flex-shrink-0" />
+                <div className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-0.5 sm:py-1 rounded-full bg-white/20 dark:bg-white/10 backdrop-blur-md border border-white/25 text-[11px] sm:text-xs font-bold text-white shadow-xs">
+                  <MapPin size={12} className="text-[#CC131A] flex-shrink-0 sm:w-3.5 sm:h-3.5" />
                   <span>{quartierAffiche}</span>
                   <span className="text-white/60">·</span>
-                  <span className="flex items-center gap-1.5 text-emerald-300 font-extrabold text-[11px]">
+                  <span className="flex items-center gap-1 sm:gap-1.5 text-emerald-300 font-extrabold text-[10px] sm:text-[11px]">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                     En direct
                   </span>
                 </div>
 
                 {/* Grand titre chaleureux et accueillant */}
-                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight drop-shadow-md break-words">
+                <h1 className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight drop-shadow-md break-words">
                   Bonjour, <span className="bg-gradient-to-r from-amber-300 via-orange-300 to-white bg-clip-text text-transparent">{nomCitoyen}</span>
                 </h1>
-                <p className="text-xs sm:text-sm font-extrabold text-amber-300 drop-shadow-xs">
+                <p className="text-[11px] sm:text-sm font-extrabold text-amber-300 drop-shadow-xs">
                   Dalal ak jamm · Votre sentinelle veille sur Thiaroye
                 </p>
 
-                <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-medium drop-shadow-xs max-w-lg">
+                <p className="text-[11px] sm:text-sm text-slate-200 leading-snug sm:leading-relaxed font-medium drop-shadow-xs max-w-lg">
                   {theme.summary}
                 </p>
               </div>
 
               {/* Statut de vigilance organique et flottant bien ancré à droite avec marge garantie */}
-              <div className="flex items-center gap-3.5 self-start lg:self-center flex-shrink-0 bg-slate-900/75 dark:bg-navy-950/80 backdrop-blur-md px-4 py-3 rounded-2xl border border-white/20 shadow-xl text-white lg:ml-4">
-                <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 border ${theme.iconBg}`}>
-                  <ShieldCheck size={24} />
+              <div className="flex items-center gap-2.5 sm:gap-3.5 self-start lg:self-center flex-shrink-0 bg-slate-900/75 dark:bg-navy-950/80 backdrop-blur-md px-3 sm:px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl border border-white/20 shadow-xl text-white lg:ml-4">
+                <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0 border ${theme.iconBg}`}>
+                  <ShieldCheck size={20} className="sm:w-6 sm:h-6" />
                 </div>
                 <div>
-                  <span className="block text-[10px] uppercase font-black tracking-wider text-slate-300">
+                  <span className="block text-[9px] sm:text-[10px] uppercase font-black tracking-wider text-slate-300">
                     Niveau actuel
                   </span>
-                  <span className="text-sm font-black text-white capitalize flex items-center gap-2 mt-0.5">
+                  <span className="text-xs sm:text-sm font-black text-white capitalize flex items-center gap-1.5 sm:gap-2 mt-0.5">
                     <span>Risque {riskLevel}</span>
-                    <span className={`text-[10px] uppercase tracking-wider px-2.5 py-0.5 rounded-full font-black border ${theme.pillBg}`}>
+                    <span className={`text-[9px] sm:text-[10px] uppercase tracking-wider px-2 sm:px-2.5 py-0.5 rounded-full font-black border ${theme.pillBg}`}>
                       {theme.tagLabel}
                     </span>
                   </span>
@@ -245,45 +249,45 @@ export default function AccueilPageBody() {
           </span>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5 w-full">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3.5 w-full">
           {/* Capsule 1 : Signaler */}
           <Link
             to="/citoyen/signaler"
-            className="group relative overflow-hidden flex items-center gap-3 p-3 sm:p-3.5 rounded-2xl bg-white dark:bg-[#071322] border border-red-200/80 dark:border-red-950/60 hover:border-red-400 dark:hover:border-red-700 shadow-xs hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer"
+            className="group relative overflow-hidden flex items-center gap-2 sm:gap-3 p-2 sm:p-3.5 rounded-xl sm:rounded-2xl bg-white dark:bg-[#071322] border border-red-200/80 dark:border-red-950/60 hover:border-red-400 dark:hover:border-red-700 shadow-xs hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer"
           >
             {/* Shimmer lumineux au survol */}
             <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
 
-            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-red-500 to-[#CC131A] text-white flex items-center justify-center flex-shrink-0 shadow-sm shadow-red-500/30 group-hover:scale-105 transition-transform">
-              <Camera size={19} />
+            <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-gradient-to-br from-red-500 to-[#CC131A] text-white flex items-center justify-center flex-shrink-0 shadow-sm shadow-red-500/30 group-hover:scale-105 transition-transform">
+              <Camera size={16} className="sm:w-5 sm:h-5" />
             </div>
             <div className="min-w-0 flex-1 relative z-10">
               <h3 className="text-xs sm:text-sm font-black text-navy-900 dark:text-white group-hover:text-red-600 transition-colors leading-tight truncate">
                 Signaler
               </h3>
-              <p className="text-[10px] sm:text-[11px] text-navy-500 dark:text-navy-400 font-medium truncate mt-0.5">
+              <p className="text-[9px] sm:text-[11px] text-navy-500 dark:text-navy-400 font-medium truncate mt-0.5">
                 Zone inondée
               </p>
             </div>
-            <span className="w-2 h-2 rounded-full bg-[#CC131A] animate-pulse flex-shrink-0 mr-0.5" title="Action prioritaire" />
+            <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#CC131A] animate-pulse flex-shrink-0 mr-0.5" title="Action prioritaire" />
           </Link>
 
           {/* Capsule 2 : Carte */}
           <Link
             to="/citoyen/carte"
-            className="group relative overflow-hidden flex items-center gap-3 p-3 sm:p-3.5 rounded-2xl bg-white dark:bg-[#071322] border border-blue-200/80 dark:border-blue-950/60 hover:border-blue-400 dark:hover:border-blue-700 shadow-xs hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer"
+            className="group relative overflow-hidden flex items-center gap-2 sm:gap-3 p-2 sm:p-3.5 rounded-xl sm:rounded-2xl bg-white dark:bg-[#071322] border border-blue-200/80 dark:border-blue-950/60 hover:border-blue-400 dark:hover:border-blue-700 shadow-xs hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer"
           >
             {/* Shimmer lumineux au survol */}
             <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
 
-            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm shadow-blue-500/30 group-hover:scale-105 transition-transform">
-              <MapPin size={19} />
+            <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm shadow-blue-500/30 group-hover:scale-105 transition-transform">
+              <MapPin size={16} className="sm:w-5 sm:h-5" />
             </div>
             <div className="min-w-0 flex-1 relative z-10">
               <h3 className="text-xs sm:text-sm font-black text-navy-900 dark:text-white group-hover:text-blue-600 transition-colors leading-tight truncate">
                 Carte
               </h3>
-              <p className="text-[10px] sm:text-[11px] text-navy-500 dark:text-navy-400 font-medium truncate mt-0.5">
+              <p className="text-[9px] sm:text-[11px] text-navy-500 dark:text-navy-400 font-medium truncate mt-0.5">
                 Ruelles & risques
               </p>
             </div>
@@ -292,19 +296,19 @@ export default function AccueilPageBody() {
           {/* Capsule 3 : Entraide */}
           <Link
             to="/citoyen/communaute"
-            className="group relative overflow-hidden flex items-center gap-3 p-3 sm:p-3.5 rounded-2xl bg-white dark:bg-[#071322] border border-emerald-200/80 dark:border-emerald-950/60 hover:border-emerald-400 dark:hover:border-emerald-700 shadow-xs hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer"
+            className="group relative overflow-hidden flex items-center gap-2 sm:gap-3 p-2 sm:p-3.5 rounded-xl sm:rounded-2xl bg-white dark:bg-[#071322] border border-emerald-200/80 dark:border-emerald-950/60 hover:border-emerald-400 dark:hover:border-emerald-700 shadow-xs hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer"
           >
             {/* Shimmer lumineux au survol */}
             <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
 
-            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm shadow-emerald-500/30 group-hover:scale-105 transition-transform">
-              <Users size={19} />
+            <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center flex-shrink-0 shadow-sm shadow-emerald-500/30 group-hover:scale-105 transition-transform">
+              <Users size={16} className="sm:w-5 sm:h-5" />
             </div>
             <div className="min-w-0 flex-1 relative z-10">
               <h3 className="text-xs sm:text-sm font-black text-navy-900 dark:text-white group-hover:text-emerald-600 transition-colors leading-tight truncate">
                 Entraide
               </h3>
-              <p className="text-[10px] sm:text-[11px] text-navy-500 dark:text-navy-400 font-medium truncate mt-0.5">
+              <p className="text-[9px] sm:text-[11px] text-navy-500 dark:text-navy-400 font-medium truncate mt-0.5">
                 Stories du quartier
               </p>
             </div>
@@ -313,19 +317,19 @@ export default function AccueilPageBody() {
           {/* Capsule 4 : Prévisions */}
           <Link
             to="/citoyen/alertes"
-            className="group relative overflow-hidden flex items-center gap-3 p-3 sm:p-3.5 rounded-2xl bg-white dark:bg-[#071322] border border-amber-200/80 dark:border-amber-950/60 hover:border-amber-400 dark:hover:border-amber-700 shadow-xs hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer"
+            className="group relative overflow-hidden flex items-center gap-2 sm:gap-3 p-2 sm:p-3.5 rounded-xl sm:rounded-2xl bg-white dark:bg-[#071322] border border-amber-200/80 dark:border-amber-950/60 hover:border-amber-400 dark:hover:border-amber-700 shadow-xs hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98] cursor-pointer"
           >
             {/* Shimmer lumineux au survol */}
             <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
 
-            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 text-white flex items-center justify-center flex-shrink-0 shadow-sm shadow-amber-500/30 group-hover:scale-105 transition-transform">
-              <CloudRain size={19} />
+            <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 text-white flex items-center justify-center flex-shrink-0 shadow-sm shadow-amber-500/30 group-hover:scale-105 transition-transform">
+              <CloudRain size={16} className="sm:w-5 sm:h-5" />
             </div>
             <div className="min-w-0 flex-1 relative z-10">
               <h3 className="text-xs sm:text-sm font-black text-navy-900 dark:text-white group-hover:text-amber-600 transition-colors leading-tight truncate">
                 Prévisions
               </h3>
-              <p className="text-[10px] sm:text-[11px] text-navy-500 dark:text-navy-400 font-medium truncate mt-0.5">
+              <p className="text-[9px] sm:text-[11px] text-navy-500 dark:text-navy-400 font-medium truncate mt-0.5">
                 Pluies & alertes
               </p>
             </div>
@@ -461,11 +465,39 @@ export default function AccueilPageBody() {
       </div>
 
       {/* 6. Duo Météo (Gauche, largeur contenue) & Fil d'Actualité (Droite, spacieux) à hauteur rigoureusement identique */}
+      {/* Contrôle d'onglets ergonomique visible uniquement sur Mobile pour éviter 1 200px de scroll vertical */}
+      <div className="lg:hidden flex items-center bg-navy-100/80 dark:bg-navy-900/80 p-1 rounded-2xl border border-navy-200/60 dark:border-navy-800 mb-2 shadow-2xs">
+        <button
+          type="button"
+          onClick={() => setMobileMeteoTab('meteo')}
+          className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            mobileMeteoTab === 'meteo'
+              ? 'bg-white dark:bg-[#071322] text-navy-950 dark:text-white shadow-xs'
+              : 'text-navy-500 hover:text-navy-800 dark:hover:text-white'
+          }`}
+        >
+          <CloudRain size={14} className={mobileMeteoTab === 'meteo' ? 'text-blue-500' : ''} />
+          <span>Météo côtière</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobileMeteoTab('echos')}
+          className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            mobileMeteoTab === 'echos'
+              ? 'bg-white dark:bg-[#071322] text-navy-950 dark:text-white shadow-xs'
+              : 'text-navy-500 hover:text-navy-800 dark:hover:text-white'
+          }`}
+        >
+          <Users size={14} className={mobileMeteoTab === 'echos' ? 'text-emerald-500' : ''} />
+          <span>Vie du quartier</span>
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] xl:grid-cols-[400px_1fr] gap-4 sm:gap-6 w-full items-stretch auto-rows-fr">
-        <div className="h-full flex flex-col min-h-0">
+        <div className={`h-full flex flex-col min-h-0 ${mobileMeteoTab === 'meteo' ? 'block' : 'hidden lg:flex'}`}>
           <WeatherWidget previsions={previsionsData?.results ?? []} zone={topZone} variant="vertical" className="h-full flex-1" />
         </div>
-        <div className="h-full flex flex-col min-h-0">
+        <div className={`h-full flex flex-col min-h-0 ${mobileMeteoTab === 'echos' ? 'block' : 'hidden lg:flex'}`}>
           <FilActualiteStoriesWidget className="h-full flex-1" />
         </div>
       </div>
@@ -476,9 +508,41 @@ export default function AccueilPageBody() {
       </div>
 
       {/* Cockpit Cartographique (Radar SIG) & Réseau de Capteurs IoT Thiaroye-sur-Mer */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full pt-4 pb-1">
-        <MiniRadarThiaroye className="h-full min-h-[340px]" />
-        <CockpitCapteursIoT className="h-full min-h-[340px]" />
+      {/* Contrôle d'onglets ergonomique visible uniquement sur Mobile pour basculer entre Capteurs et Radar */}
+      <div className="lg:hidden flex items-center bg-navy-100/80 dark:bg-navy-900/80 p-1 rounded-2xl border border-navy-200/60 dark:border-navy-800 mt-2 mb-2 shadow-2xs">
+        <button
+          type="button"
+          onClick={() => setMobileRadarTab('capteurs')}
+          className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            mobileRadarTab === 'capteurs'
+              ? 'bg-white dark:bg-[#071322] text-navy-950 dark:text-white shadow-xs'
+              : 'text-navy-500 hover:text-navy-800 dark:hover:text-white'
+          }`}
+        >
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span>Capteurs IoT (Direct)</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobileRadarTab('radar')}
+          className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            mobileRadarTab === 'radar'
+              ? 'bg-white dark:bg-[#071322] text-navy-950 dark:text-white shadow-xs'
+              : 'text-navy-500 hover:text-navy-800 dark:hover:text-white'
+          }`}
+        >
+          <MapPin size={14} className={mobileRadarTab === 'radar' ? 'text-red-500' : ''} />
+          <span>Radar SIG</span>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full pt-1 sm:pt-4 pb-1">
+        <div className={mobileRadarTab === 'radar' ? 'block' : 'hidden lg:block'}>
+          <MiniRadarThiaroye className="h-full min-h-[300px] sm:min-h-[340px]" />
+        </div>
+        <div className={mobileRadarTab === 'capteurs' ? 'block' : 'hidden lg:block'}>
+          <CockpitCapteursIoT className="h-full min-h-[300px] sm:min-h-[340px]" />
+        </div>
       </div>
 
       {/* 8. Bandeau d'engagement & Réflexes d'urgence 24/7 (Élément de fin de page interactif et animé) */}
