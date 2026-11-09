@@ -266,40 +266,42 @@ export default function MesSignalementsPageBody() {
     <CitizenShell>
       <div className="flex flex-col gap-6 w-full pb-8">
         {/* En-tête de la page */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-navy-100 dark:border-navy-800">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pb-2 border-b border-navy-100 dark:border-navy-800">
+          <div className="flex items-center gap-2.5 sm:gap-3">
             <button
               type="button"
               onClick={() => navigate('/citoyen/signaler')}
-              className="p-2.5 rounded-xl bg-white dark:bg-navy-800 border border-navy-200 dark:border-navy-700 hover:border-[#CC131A] text-navy-700 dark:text-navy-200 hover:text-[#CC131A] transition shadow-xs cursor-pointer active:scale-95"
+              className="p-2 sm:p-2.5 rounded-xl bg-white dark:bg-navy-800 border border-navy-200 dark:border-navy-700 hover:border-[#CC131A] text-navy-700 dark:text-navy-200 hover:text-[#CC131A] transition shadow-xs cursor-pointer active:scale-95 shrink-0"
               title="Retour au formulaire de signalement"
               aria-label="Retour au signalement"
             >
-              <ArrowLeft size={18} />
+              <ArrowLeft size={16} />
             </button>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-black text-navy-900 dark:text-white tracking-tight">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-lg sm:text-2xl font-black text-navy-900 dark:text-white tracking-tight truncate">
                   Historique de mes signalements
                 </h1>
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-[#CC131A]/10 text-[#CC131A] border border-[#CC131A]/20">
+                <span className="px-2 py-0.5 rounded-full text-xs font-black bg-[#CC131A]/10 text-[#CC131A] border border-[#CC131A]/20 shrink-0">
                   {signalementsList.length}
                 </span>
               </div>
-              <p className="text-xs sm:text-sm text-navy-600 dark:text-navy-300 mt-0.5">
+              <p className="text-[11px] sm:text-sm text-navy-600 dark:text-navy-300 mt-0.5">
                 Suivez en temps réel l'état d'avancement de vos observations à Thiaroye-sur-Mer.
               </p>
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => navigate('/citoyen/signaler')}
-            className="self-start sm:self-auto px-4 py-2.5 rounded-xl bg-[#CC131A] hover:bg-red-700 text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 shadow-sm transition active:scale-95 cursor-pointer"
-          >
-            <PlusCircle size={16} />
-            <span>Nouveau signalement</span>
-          </button>
+          <div className="flex justify-end sm:justify-start">
+            <button
+              type="button"
+              onClick={() => navigate('/citoyen/signaler')}
+              className="self-end sm:self-auto px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-[#CC131A] hover:bg-red-700 text-white font-extrabold text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 shadow-sm transition active:scale-95 cursor-pointer"
+            >
+              <PlusCircle size={15} />
+              <span>Nouveau signalement</span>
+            </button>
+          </div>
         </div>
 
         {/* Barre d'outils : Recherche temps réel & Filtres par statut */}
