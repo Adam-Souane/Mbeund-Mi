@@ -453,49 +453,42 @@ export default function CartePageBody() {
   };
 
   return (
-    <CitizenShell>
-      <div className="w-full flex flex-col gap-4 sm:gap-5 pb-8">
-        {/* En-tête de page moderne et aéré */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 pb-2 border-b border-navy-100 dark:border-navy-800/80">
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-lg sm:text-2xl font-black text-navy-950 dark:text-white tracking-tight">
-                Carte des risques · Thiaroye
-              </h1>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                En direct
-              </span>
-            </div>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-1">
-              <span className="hidden sm:inline">Fil d’actualité citoyen, signalements géolocalisés et entraide solidaire entre voisins</span>
-              <span className="sm:hidden">Signalements et refuges en direct</span>
-            </p>
+    <CitizenShell fullHeight={true}>
+      <div className="w-full flex-1 min-h-0 h-full flex flex-col gap-2 pb-1">
+        {/* En-tête de page compact sur une seule ligne : libère un maximum de surface pour la carte */}
+        <div className="flex items-center justify-between gap-2 pb-1.5 border-b border-navy-100 dark:border-navy-800/80 flex-shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <h1 className="text-base sm:text-xl font-black text-navy-950 dark:text-white tracking-tight truncate">
+              Carte des risques
+            </h1>
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 shrink-0">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              En direct
+            </span>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+          <div className="flex items-center gap-2 shrink-0">
             {itineraire.data ? (
-              <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="flex items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => setIsNavigating((prev) => !prev)}
-                  className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition active:scale-95 cursor-pointer flex-1 sm:flex-initial shadow-xs ${
+                  className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition active:scale-95 cursor-pointer shadow-xs ${
                     isNavigating
                       ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
                       : 'bg-[#2563EB] hover:bg-blue-700 text-white'
                   }`}
                 >
-                  <Navigation size={15} />
+                  <Navigation size={13} />
                   <span>{isNavigating ? 'Guidage actif' : 'Démarrer le guidage'}</span>
                 </button>
                 <button
                   type="button"
                   onClick={handleCloseItineraire}
-                  className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-navy-800 dark:hover:bg-navy-700 text-navy-950 dark:text-white text-xs sm:text-sm font-bold border border-slate-200 dark:border-navy-700 transition active:scale-95 cursor-pointer"
+                  className="inline-flex items-center justify-center p-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-navy-800 dark:hover:bg-navy-700 text-navy-950 dark:text-white text-xs font-bold border border-slate-200 dark:border-navy-700 transition active:scale-95 cursor-pointer"
                   title="Fermer l’itinéraire"
                 >
-                  <X size={15} />
-                  <span className="hidden md:inline">Fermer</span>
+                  <X size={14} />
                 </button>
               </div>
             ) : (
@@ -503,12 +496,11 @@ export default function CartePageBody() {
                 type="button"
                 onClick={handleItineraire}
                 disabled={itineraire.isPending}
-                className="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white text-xs sm:text-sm font-bold shadow-xs transition active:scale-95 disabled:opacity-60 cursor-pointer w-full sm:w-auto"
+                className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white text-xs font-bold shadow-xs transition active:scale-95 disabled:opacity-60 cursor-pointer"
                 title="Calculer un itinéraire sécurisé contournant les voies inondées"
               >
-                {itineraire.isPending ? <Loader2 size={15} className="animate-spin" /> : <Navigation size={15} />}
-                <span className="hidden sm:inline">Mode Déviations & Voies Sûres</span>
-                <span className="sm:hidden">Itinéraire sécurisé</span>
+                {itineraire.isPending ? <Loader2 size={13} className="animate-spin" /> : <Navigation size={13} />}
+                <span>Itinéraire sécurisé</span>
               </button>
             )}
           </div>
@@ -516,19 +508,19 @@ export default function CartePageBody() {
 
         {/* Bandeau indicateur lorsque le mode déviations/navigation est actif */}
         {itineraire.data && (
-          <div className="flex items-center justify-between gap-3 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-blue-950 dark:text-blue-100 text-xs animate-in fade-in slide-in-from-top-1 duration-200">
+          <div className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-blue-950 dark:text-blue-100 text-xs animate-in fade-in slide-in-from-top-1 duration-200 flex-shrink-0">
             <div className="flex items-center gap-2 min-w-0">
-              <span className="w-2.5 h-2.5 rounded-full bg-blue-600 dark:bg-blue-400 animate-pulse shrink-0" />
-              <p className="font-bold truncate">
-                <span className="font-extrabold text-[#2563EB] dark:text-blue-300">Mode Déviations :</span>{' '}
-                <span className="hidden sm:inline">Les voies inondées sont automatiquement contournées pour un trajet sécurisé.</span>
-                <span className="sm:hidden">Voies inondées contournées</span>
+              <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400 animate-pulse shrink-0" />
+              <p className="font-bold truncate text-[11px] sm:text-xs">
+                <span className="font-extrabold text-[#2563EB] dark:text-blue-300">Déviations :</span>{' '}
+                <span className="hidden sm:inline">Voies inondées contournées pour un trajet sécurisé.</span>
+                <span className="sm:hidden">Voies inondées évitées</span>
               </p>
             </div>
             <button
               type="button"
               onClick={handleCloseItineraire}
-              className="text-xs font-bold text-blue-700 dark:text-blue-300 hover:underline shrink-0 cursor-pointer"
+              className="text-[11px] font-bold text-blue-700 dark:text-blue-300 hover:underline shrink-0 cursor-pointer"
             >
               Désactiver
             </button>
@@ -536,133 +528,126 @@ export default function CartePageBody() {
         )}
 
         {itineraire.isError && (
-          <div className="flex items-start gap-2 px-3.5 py-2 rounded-lg bg-red-50 dark:bg-red/15 text-red-900 dark:text-red-200 text-xs flex-shrink-0">
-            <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
+          <div className="flex items-start gap-2 px-3 py-1.5 rounded-lg bg-red-50 dark:bg-red/15 text-red-900 dark:text-red-200 text-xs flex-shrink-0">
+            <AlertTriangle size={13} className="flex-shrink-0 mt-0.5" />
             <span>{flattenApiErrors(itineraire.error)[0]}</span>
           </div>
         )}
 
-        {geoStatus === 'error' && !itineraire.data && !itineraire.isError && (
-          <p className="text-xs text-navy-400 flex-shrink-0">
-            Localisez-vous pour calculer un itinéraire — la géolocalisation a été refusée ou est indisponible.
-          </p>
-        )}
-
-        <div className="w-full flex flex-col gap-2.5">
-          {/* ========================================================= */}
-          {/* CARTE + FILTRES TEMPORELS RÉORGANISÉS RESPONSIVEMENT */}
-          {/* Mobile : filtres au-dessus (order-1) pour voir l'effet immédiatement */}
-          {/* Desktop : filtres à droite (lg:order-2) en colonne latérale */}
-          {/* ========================================================= */}
-          <div className="w-full flex flex-col lg:flex-row gap-2.5 items-stretch lg:items-start">
-            {/* FILTRES TEMPORELS (order-1 sur mobile, lg:order-2 sur desktop) */}
-            <aside
-              aria-label="Filtres temporels"
-              className="order-1 lg:order-2 w-full lg:w-28 xl:w-32 flex lg:flex-col items-center lg:items-stretch justify-start gap-1.5 p-1.5 sm:p-2 bg-white dark:bg-navy-900 rounded-2xl border border-navy-100 dark:border-navy-800 shadow-2xs shrink-0 h-fit overflow-x-auto lg:overflow-x-visible no-scrollbar"
-            >
-              <div className="flex items-center gap-1.5 px-2 py-1 text-[11px] font-bold text-navy-400 dark:text-navy-300 select-none shrink-0">
-                <Clock size={12} className="text-[#CC131A] shrink-0" />
-                <span className="hidden sm:inline">Période</span>
-              </div>
-
-              <div className="flex lg:flex-col gap-1 sm:gap-1.5 flex-1 w-full min-w-0">
-                {[
-                  { id: 'aujourdhui', label: "Aujourd'hui" },
-                  { id: 'semaine', label: '7 jours' },
-                  { id: 'mois', label: '30 jours' },
-                  { id: 'anciens', label: 'Anciens' },
-                  { id: 'tous', label: 'Tous' },
-                ].map((tab) => {
-                  const isActive = timeFilter === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => setTimeFilter(tab.id)}
-                      className={`text-center px-2.5 py-1.5 lg:py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap active:scale-95 ${
-                        isActive
-                          ? 'bg-navy-950 dark:bg-white text-white dark:text-navy-950 shadow-xs'
-                          : 'bg-slate-50 dark:bg-navy-950/70 text-slate-600 dark:text-slate-400 hover:text-navy-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-navy-800'
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Compteur d'observations discret */}
-              <div className="flex items-center justify-center px-2 py-1 lg:p-1.5 lg:mt-auto bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-200/60 dark:border-emerald-800/40 shrink-0 ml-auto lg:ml-0">
-                <span className="text-[10px] sm:text-[11px] font-bold text-emerald-700 dark:text-emerald-400 text-center leading-tight whitespace-nowrap">
-                  {filteredSignalements.length} obs.
-                </span>
-              </div>
-            </aside>
-
-            {/* CARTE INTERACTIVE (order-2 sur mobile, lg:order-1 sur desktop) */}
-            <div
-              ref={mapSectionRef}
-              className="order-2 lg:order-1 w-full flex-1 min-w-0 h-[62vh] min-h-[400px] sm:h-[500px] lg:h-[720px] relative rounded-2xl overflow-hidden shadow-sm border border-navy-100 dark:border-navy-800 isolate z-10 scroll-mt-4"
-            >
-              {isLoading ? (
-                <div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-navy-900">
-                  <p className="text-sm text-navy-400 flex items-center gap-2 font-semibold">
-                    <Loader2 size={16} className="animate-spin text-[#CC131A]" />
-                    Chargement de la carte de Thiaroye-sur-Mer…
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <InteractiveMap
-                    data={{
-                      zones: zonesData,
-                      segments: segmentsData,
-                      inondations: inondationsData,
-                      signalements: filteredSignalements,
-                      refuges: refugesData,
-                    }}
-                    userLocation={currentUserLocation}
-                    visibleLayers={layersVisibility}
-                    onToggleLayer={handleToggleLayer}
-                    onToggleFullscreen={() => setIsMapFullscreen((prev) => !prev)}
-                    isFullscreen={isMapFullscreen}
-                    route={itineraire.data?.route}
-                    itineraireInstructions={itineraire.data?.instructions}
-                    isNavigating={isNavigating}
-                    currentStepIndex={currentStepIndex}
-                    height="100%"
-                    selectedSignalementId={activeSignalementId || urlSignalementId}
-                    selectedQuartier={selectedQuartier}
-                    onResetUserPosition={handleResetPositionToOrigin}
-                    focusAvoidedRoadTrigger={focusAvoidedRoadTrigger}
-                    onCalculateRouteFromPoint={({ lat, lon }) => {
-                      setIsNavigating(false);
-                      setCurrentStepIndex(0);
-                      itineraire.mutate({ lat, lon });
-                    }}
-                  />
-
-                  {/* OVERLAY INTERACTIF SUR LA MAP : APERÇU ITINÉRAIRE + BOUTON « SUIVRE » + GUIDAGE PAS-À-PAS */}
-                  <ItineraireNavigationOverlay
-                    itineraireData={itineraire.data}
-                    isNavigating={isNavigating}
-                    onStartNavigation={() => {
-                      setIsNavigating(true);
-                      setCurrentStepIndex(0);
-                    }}
-                    onClose={handleCloseItineraire}
-                    onFinishNavigation={handleFinishNavigation}
-                    onFocusAvoidedRoads={() => setFocusAvoidedRoadTrigger((prev) => prev + 1)}
-                    currentStepIndex={currentStepIndex}
-                    onPrevStep={() => setCurrentStepIndex((prev) => Math.max(0, prev - 1))}
-                    onNextStep={() => {
-                      const total = itineraire.data?.instructions?.length || 0;
-                      setCurrentStepIndex((prev) => Math.min(total - 1, prev + 1));
-                    }}
-                  />
-                </>
-              )}
+        {/* ========================================================= */}
+        {/* CARTE PLEIN ÉCRAN + FILTRES TEMPORELS PROPRES ET NON SUPERPOSÉS */}
+        {/* ========================================================= */}
+        <div className="w-full flex-1 min-h-0 flex flex-col lg:flex-row gap-2 items-stretch lg:items-start">
+          {/* FILTRES TEMPORELS (order-1 sur mobile au-dessus, order-2 à droite sur desktop) */}
+          <aside
+            aria-label="Filtres temporels"
+            className="order-1 lg:order-2 w-full lg:w-28 xl:w-32 flex lg:flex-col items-center lg:items-stretch justify-start gap-1 sm:gap-1.5 p-1 sm:p-2 bg-white dark:bg-navy-900 rounded-xl border border-navy-100 dark:border-navy-800 shadow-2xs shrink-0 flex-shrink-0"
+          >
+            <div className="flex items-center gap-1.5 px-1.5 text-[11px] font-bold text-navy-500 dark:text-navy-400 select-none shrink-0">
+              <Clock size={12} className="text-[#CC131A] shrink-0" />
+              <span className="hidden sm:inline">Période</span>
+              <span className="inline-flex sm:hidden px-1.5 py-0.2 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 font-extrabold text-[10px] border border-emerald-200/50">
+                {filteredSignalements.length} obs.
+              </span>
             </div>
+
+            <div className="flex lg:flex-col gap-1 sm:gap-1.5 flex-1 min-w-0 overflow-x-auto no-scrollbar py-0.5">
+              {[
+                { id: 'aujourdhui', label: "Aujourd'hui" },
+                { id: 'semaine', label: '7 jours' },
+                { id: 'mois', label: '30 jours' },
+                { id: 'anciens', label: 'Anciens' },
+                { id: 'tous', label: 'Tous' },
+              ].map((tab) => {
+                const isActive = timeFilter === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setTimeFilter(tab.id)}
+                    className={`text-center px-2.5 py-1 lg:py-2 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap active:scale-95 shrink-0 ${
+                      isActive
+                        ? 'bg-navy-950 dark:bg-white text-white dark:text-navy-950 shadow-xs'
+                        : 'bg-slate-50 dark:bg-navy-950/70 text-slate-600 dark:text-slate-400 hover:text-navy-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-navy-800'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Compteur d'observations discret pour desktop */}
+            <div className="hidden lg:flex items-center justify-center p-1.5 mt-auto bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-200/60 dark:border-emerald-800/40">
+              <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 text-center leading-tight">
+                {filteredSignalements.length} obs.
+              </span>
+            </div>
+          </aside>
+
+          {/* CARTE INTERACTIVE : Prend TOUTE la hauteur disponible (zéro vide en bas) */}
+          <div
+            ref={mapSectionRef}
+            className="order-2 lg:order-1 w-full flex-1 min-h-[380px] h-full relative rounded-2xl overflow-hidden shadow-sm border border-navy-100 dark:border-navy-800 isolate z-10 scroll-mt-4"
+          >
+            {isLoading ? (
+              <div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-navy-900">
+                <p className="text-sm text-navy-400 flex items-center gap-2 font-semibold">
+                  <Loader2 size={16} className="animate-spin text-[#CC131A]" />
+                  Chargement de la carte de Thiaroye-sur-Mer…
+                </p>
+              </div>
+            ) : (
+              <>
+                <InteractiveMap
+                  data={{
+                    zones: zonesData,
+                    segments: segmentsData,
+                    inondations: inondationsData,
+                    signalements: filteredSignalements,
+                    refuges: refugesData,
+                  }}
+                  userLocation={currentUserLocation}
+                  visibleLayers={layersVisibility}
+                  onToggleLayer={handleToggleLayer}
+                  onToggleFullscreen={() => setIsMapFullscreen((prev) => !prev)}
+                  isFullscreen={isMapFullscreen}
+                  route={itineraire.data?.route}
+                  itineraireInstructions={itineraire.data?.instructions}
+                  isNavigating={isNavigating}
+                  currentStepIndex={currentStepIndex}
+                  height="100%"
+                  selectedSignalementId={activeSignalementId || urlSignalementId}
+                  selectedQuartier={selectedQuartier}
+                  onResetUserPosition={handleResetPositionToOrigin}
+                  focusAvoidedRoadTrigger={focusAvoidedRoadTrigger}
+                  onCalculateRouteFromPoint={({ lat, lon }) => {
+                    setIsNavigating(false);
+                    setCurrentStepIndex(0);
+                    itineraire.mutate({ lat, lon });
+                  }}
+                />
+
+                {/* OVERLAY INTERACTIF SUR LA MAP : APERÇU ITINÉRAIRE + BOUTON « SUIVRE » + GUIDAGE PAS-À-PAS */}
+                <ItineraireNavigationOverlay
+                  itineraireData={itineraire.data}
+                  isNavigating={isNavigating}
+                  onStartNavigation={() => {
+                    setIsNavigating(true);
+                    setCurrentStepIndex(0);
+                  }}
+                  onClose={handleCloseItineraire}
+                  onFinishNavigation={handleFinishNavigation}
+                  onFocusAvoidedRoads={() => setFocusAvoidedRoadTrigger((prev) => prev + 1)}
+                  currentStepIndex={currentStepIndex}
+                  onPrevStep={() => setCurrentStepIndex((prev) => Math.max(0, prev - 1))}
+                  onNextStep={() => {
+                    const total = itineraire.data?.instructions?.length || 0;
+                    setCurrentStepIndex((prev) => Math.min(total - 1, prev + 1));
+                  }}
+                />
+              </>
+            )}
           </div>
         </div>
 

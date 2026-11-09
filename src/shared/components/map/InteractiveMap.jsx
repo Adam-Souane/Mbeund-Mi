@@ -396,7 +396,7 @@ function createRefugePinIcon({ type, nom, capacite, zoomLevel, isFront = false }
 }
 
 /**
- * Totem SIG d'en-tête de Zone à Risque
+ * Totem SIG d'en-tête de Zone à Risque — pastille compacte et aérée pour éviter toute obstruction de la carte
  */
 function createZoneTotemIcon({ quartier, niveauRisque, scorePct, isFront = false }) {
   if (typeof window === 'undefined' || typeof L === 'undefined' || !L?.divIcon) {
@@ -407,19 +407,14 @@ function createZoneTotemIcon({ quartier, niveauRisque, scorePct, isFront = false
   return L.divIcon({
     className: `zone-totem-wrapper-div ${isFront ? 'is-front-marker' : ''}`,
     html: `
-      <div class="zone-totem-card ${isFront ? 'is-front-marker' : ''}" style="--zone-color: ${hex}; border-color: ${hex};">
-        <div class="zone-totem-pulse" style="background-color: ${hex};"></div>
-        <div class="zone-totem-body font-sans">
-          <span class="zone-totem-title">${quartier}</span>
-          <span class="zone-totem-badge" style="background-color: ${hex}25; color: ${hex};">
-            ${label} · ${scorePct}%
-          </span>
-        </div>
+      <div class="zone-totem-card ${isFront ? 'is-front-marker' : ''}" style="--zone-color: ${hex}; border-color: ${hex};" title="${quartier} · Risque ${label} (${scorePct}%)">
+        <span class="zone-totem-pulse" style="background-color: ${hex};"></span>
+        <span class="zone-totem-title font-sans">${quartier}</span>
       </div>
     `,
-    iconSize: [160, 42],
-    iconAnchor: [80, 21],
-    popupAnchor: [0, -20],
+    iconSize: [110, 24],
+    iconAnchor: [55, 12],
+    popupAnchor: [0, -14],
   });
 }
 
