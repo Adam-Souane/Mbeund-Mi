@@ -100,6 +100,19 @@ export function AuthProvider({ children }) {
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth doit être utilisé à l’intérieur de <AuthProvider>.');
+  if (!ctx) {
+    return {
+      isAuthenticated: false,
+      user: null,
+      tokens: null,
+      login: () => {},
+      logout: () => {},
+      refreshProfile: () => {},
+      register: () => {},
+      changePassword: () => {},
+      synchroniserSignalementsAnonymes: () => {},
+      updateProfileData: () => {},
+    };
+  }
   return ctx;
 }

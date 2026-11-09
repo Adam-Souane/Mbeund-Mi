@@ -29,6 +29,11 @@ vi.mock('../shared/hooks/useGeolocation', () => ({
 
 vi.mock('react-router-dom', () => ({
   useNavigate: () => navigateMock,
+  Link: ({ children, to, ...props }) => <a href={to} {...props}>{children}</a>,
+}));
+
+vi.mock('../auth/AuthContext', () => ({
+  useAuth: () => ({ isAuthenticated: true, user: { username: 'citoyen' } }),
 }));
 
 vi.mock('../shared/contexts/NotificationContext', () => ({

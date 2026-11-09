@@ -27,6 +27,7 @@ function monter() {
         <ThemeProvider>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/otp-verify" element={<PageOtp />} />
             <Route path="/verify-otp" element={<PageOtp />} />
           </Routes>
         </ThemeProvider>

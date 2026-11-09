@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { Play, Pause, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
+import { Play, Pause, ChevronDown, ChevronUp, AlertCircle, Loader2 } from 'lucide-react';
+import { synthesizeSpeech } from '../../api/endpoints/chat';
 
 // Formatage du temps en MM:SS
 function formatDuration(sec) {
@@ -118,8 +119,8 @@ export default function AudioMessagePlayer({
     }
   }, [isPlaying, audioDuration, transcription]);
 
-  const handleTogglePlay = () => {
-    // Cas 1 : Fichier audio réel (message vocal utilisateur ou réponse audio)
+  const handleTogglePlay = async () => {
+    // Cas 1 : Fichier audio réel (message vocal utilisateur ou réponse audio existante)
     if (audioRef.current) {
       if (isPlaying) {
         audioRef.current.pause();
@@ -133,7 +134,30 @@ export default function AudioMessagePlayer({
       return;
     }
 
-    // Cas 2 : Synthèse vocale de NDAM en français
+    // Cas 2 : Tentative de synthèse vocale neuronale naturelle féminine via backend
+    if (transcription && typeof process === 'undefined' && typeof window !== 'undefined') {
+      try {
+        const res = await synthesizeSpeech(transcription, langue);
+        if (res?.audio_url) {
+          const audio = new Audio(res.audio_url);
+          audioRef.current = audio;
+          audio.onended = () => {
+            setIsPlaying(false);
+            setCurrentTime(0);
+          };
+          audio.onerror = () => {
+            setIsPlaying(false);
+          };
+          await audio.play();
+          setIsPlaying(true);
+          return;
+        }
+      } catch {
+        // Repli vers speechSynthesis ci-dessous
+      }
+    }
+
+    // Cas 3 : Synthèse vocale de secours (ex: tests Vitest / mode hors ligne)
     if (typeof window !== 'undefined' && window.speechSynthesis && transcription) {
       if (langue !== 'fr') {
         // Règle stricte : Ne jamais lire du wolof avec une voix française

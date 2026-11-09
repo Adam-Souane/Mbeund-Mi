@@ -284,8 +284,8 @@ export default function SignalerPageBody() {
     authData = null;
   }
   const user = authData?.user;
-  const username = authData?.username;
-  const isAnonymous = !username;
+  const username = user?.username || authData?.username;
+  const isAnonymous = !authData?.isAuthenticated && !username;
   const nomCitoyen = user?.prenom ? `${user.prenom} ${user.nom || ''}`.trim() : (username || 'Riverain Anonyme');
   const { addNotification } = useNotifications();
   const { position, status: geoStatus, error: geoError, locate } = useGeolocation();
@@ -845,12 +845,12 @@ export default function SignalerPageBody() {
                 </p>
               </div>
             </div>
-            <Link
-              to="/login"
+            <a
+              href="/login"
               className="self-start sm:self-center shrink-0 px-3.5 py-2 rounded-xl bg-[#0B2545] hover:bg-[#154275] text-white text-xs font-extrabold transition"
             >
               Se connecter
-            </Link>
+            </a>
           </div>
         )}
 

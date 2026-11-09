@@ -224,6 +224,26 @@ export default function ChatPageBody() {
   const [speakingIndex, setSpeakingIndex] = useState(null);
   const [isLocating, setIsLocating] = useState(false);
 
+  // Historique des sessions de discussion NDAM
+  const [currentSessionId, setCurrentSessionId] = useState(() => {
+    try {
+      return localStorage.getItem('mbeund_mi_ndam_current_session_id') || `session_${Date.now()}`;
+    } catch {
+      return `session_${Date.now()}`;
+    }
+  });
+
+  const [chatHistory, setChatHistory] = useState(() => {
+    try {
+      const saved = localStorage.getItem('mbeund_mi_ndam_chat_history');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+    return [];
+  });
+
   // États pour l'enregistrement vocal (style WhatsApp)
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
@@ -263,12 +283,47 @@ export default function ChatPageBody() {
   const currentPrecip = current?.precipitation_mm ?? current?.precipitation;
   const currentWind = current?.vitesse_vent;
 
-  // Sauvegarde automatique du chat et de la langue dans le localStorage
+  // Sauvegarde automatique du chat, de la session et synchronisation dans l'historique
   useEffect(() => {
     try {
       localStorage.setItem('mbeund_mi_ndam_current_chat', JSON.stringify(messages));
+      localStorage.setItem('mbeund_mi_ndam_current_session_id', currentSessionId);
+
+      // Si la discussion contient au moins un échange utilisateur, on met à jour l'historique
+      if (messages.length > 1) {
+        const firstUserMsg = messages.find((m) => m.role === 'user');
+        const title = firstUserMsg ? firstUserMsg.text.slice(0, 36) : 'Discussion avec NDAM';
+        setChatHistory((prev) => {
+          const now = new Date();
+          const dateStr = now.toLocaleDateString('fr-FR', {
+            day: 'numeric',
+            month: 'short',
+            hour: '2-digit',
+            minute: '2-digit',
+          });
+          const sessionObj = {
+            id: currentSessionId,
+            title,
+            date: dateStr,
+            messages,
+            timestamp: Date.now(),
+          };
+          const idx = prev.findIndex((s) => s.id === currentSessionId);
+          let next;
+          if (idx >= 0) {
+            next = [...prev];
+            next[idx] = sessionObj;
+          } else {
+            next = [sessionObj, ...prev.slice(0, 19)];
+          }
+          try {
+            localStorage.setItem('mbeund_mi_ndam_chat_history', JSON.stringify(next));
+          } catch {}
+          return next;
+        });
+      }
     } catch {}
-  }, [messages]);
+  }, [messages, currentSessionId]);
 
   useEffect(() => {
     try {
@@ -685,12 +740,41 @@ export default function ChatPageBody() {
   };
 
   const handleNewChat = () => {
+    const newId = `session_${Date.now()}`;
+    setCurrentSessionId(newId);
     const initialGreeting = langue === 'wo' ? GREETING_WO : GREETING;
     setMessages([initialGreeting]);
     stopAllAudioPlayback();
+    removeAttachedPhoto();
+    setAttachedLocation(null);
+    setPendingVoiceReview(null);
     try {
       localStorage.removeItem('mbeund_mi_ndam_current_chat');
+      localStorage.setItem('mbeund_mi_ndam_current_session_id', newId);
     } catch {}
+  };
+
+  const loadSession = (session) => {
+    stopAllAudioPlayback();
+    setCurrentSessionId(session.id);
+    setMessages(session.messages);
+    removeAttachedPhoto();
+    setAttachedLocation(null);
+    setPendingVoiceReview(null);
+  };
+
+  const deleteSession = (e, sessionId) => {
+    e.stopPropagation();
+    setChatHistory((prev) => {
+      const filtered = prev.filter((s) => s.id !== sessionId);
+      try {
+        localStorage.setItem('mbeund_mi_ndam_chat_history', JSON.stringify(filtered));
+      } catch {}
+      return filtered;
+    });
+    if (currentSessionId === sessionId) {
+      handleNewChat();
+    }
   };
 
   const toggleLangue = () => {
@@ -902,14 +986,33 @@ export default function ChatPageBody() {
     setIsRecording(false);
   };
 
-  // Envoi effectif d'un message vocal
-  const sendVoiceMessage = (transcriptText, audioUrl, duration, isUncertain = false, forcedLang = null) => {
+  // Envoi effectif d'un message vocal (supporte photo attachée simultanément)
+  const sendVoiceMessage = async (transcriptText, audioUrl, duration, isUncertain = false, forcedLang = null) => {
     const cleanTranscript = transcriptText?.trim();
     const detectedLang = forcedLang || detecterLangueClient(cleanTranscript, langue);
     if (detectedLang && detectedLang !== langue) {
       setLangue(detectedLang);
     }
     const textToSend = cleanTranscript || (detectedLang === 'wo' ? "Bataaxal bu ñu wax (vocal)" : "Message vocal");
+
+    // Si une photo est attachée en même temps que le vocal, on enregistre le signalement
+    const currentPhoto = attachedPhoto;
+    if (currentPhoto) {
+      try {
+        const lat = attachedLocation?.lat ?? 14.75;
+        const lng = attachedLocation?.lng ?? -17.38;
+        await createSignalement({
+          description: textToSend,
+          categorie: signalementCategory,
+          latitude: lat,
+          longitude: lng,
+          photos: [currentPhoto.file],
+        });
+      } catch (err) {
+        console.warn('Erreur transmission signalement avec vocal:', err);
+      }
+    }
+
     setMessages((m) => [
       ...m,
       {
@@ -919,16 +1022,22 @@ export default function ChatPageBody() {
         audioUrl,
         duration: duration || 4,
         isUncertain,
+        photoUrl: currentPhoto?.previewUrl || null,
+        photoName: currentPhoto?.name || null,
         timestamp: new Date().toISOString(),
       },
     ]);
     setPendingVoiceReview(null);
+    if (currentPhoto) {
+      removeAttachedPhoto();
+      setAttachedLocation(null);
+    }
     setInput('');
 
     mutation.mutate({
       question: textToSend,
       isVoice: true,
-      localisation: null,
+      localisation: attachedLocation ? { lat: attachedLocation.lat, lng: attachedLocation.lng } : null,
       effectiveLang: detectedLang,
     });
   };
@@ -972,22 +1081,23 @@ export default function ChatPageBody() {
               </p>
             </div>
 
+            {/* Boutons d'en-tête : Badge Bilingue & Nouvelle discussion */}
             <div className="flex items-center gap-2 shrink-0 flex-wrap">
-              {/* Sélecteur de langue Wolof / Français */}
+              {/* Sélecteur / Badge de langue (Bilingue Wolof & Français) */}
               <button
                 type="button"
                 onClick={toggleLangue}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-white text-xs font-bold border border-white/20 transition cursor-pointer shadow-xs"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-white text-xs font-bold border border-white/20 transition cursor-pointer shadow-xs"
                 title="Basculer entre Français et Wolof / Wéccal làkk bi"
               >
-                <Languages size={14} className="text-white/80" />
-                <span>{langue === 'wo' ? '🇸🇳 Wolof' : '🇫🇷 Français'}</span>
+                <Languages size={14} className="text-cyan-300" />
+                <span>{langue === 'wo' ? '🇸🇳 Wolof (Tànn)' : '🇫🇷 Français (Choisi)'}</span>
               </button>
 
               <button
                 type="button"
                 onClick={handleNewChat}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-white text-xs font-bold border border-white/20 transition cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#CC131A] hover:bg-[#b01016] active:scale-95 text-white text-xs font-bold transition cursor-pointer shadow-xs"
                 title="Démarrer une nouvelle conversation"
               >
                 <PlusCircle size={15} />
@@ -1113,14 +1223,23 @@ export default function ChatPageBody() {
                           )}
                         </div>
                       ) : m.isVoice ? (
-                        <AudioMessagePlayer
-                          audioUrl={m.audioUrl}
-                          duration={m.duration}
-                          senderRole="user"
-                          transcription={m.text}
-                          isUncertain={m.isUncertain}
-                          langue={langue}
-                        />
+                        <div className="space-y-2">
+                          {m.photoUrl && (
+                            <img
+                              src={m.photoUrl}
+                              alt="Photo jointe"
+                              className="w-full max-h-48 object-cover rounded-xl border border-white/20 mb-1"
+                            />
+                          )}
+                          <AudioMessagePlayer
+                            audioUrl={m.audioUrl}
+                            duration={m.duration}
+                            senderRole="user"
+                            transcription={m.text}
+                            isUncertain={m.isUncertain}
+                            langue={langue}
+                          />
+                        </div>
                       ) : (
                         <div>{m.text}</div>
                       )}
@@ -1266,6 +1385,25 @@ export default function ChatPageBody() {
                     <X size={15} />
                   </button>
                 </div>
+
+                {/* Miniature de photo jointe avec le vocal si présente */}
+                {attachedPhoto && (
+                  <div className="flex items-center gap-2.5 p-2 rounded-xl bg-white dark:bg-navy-950 border border-amber-200 dark:border-navy-800">
+                    <img
+                      src={attachedPhoto.previewUrl}
+                      alt="Miniature"
+                      className="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-navy-700"
+                    />
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs font-bold text-navy-950 dark:text-white truncate">
+                        {attachedPhoto.name}
+                      </span>
+                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                        {langue === 'wo' ? 'Nataal dina dem ak vocal bi' : 'Photo transmise avec votre note vocale'}
+                      </span>
+                    </div>
+                  </div>
+                )}
 
                 {/* Lecteur pour réécouter sa voix */}
                 <AudioMessagePlayer
@@ -1910,85 +2048,76 @@ export default function ChatPageBody() {
           </div>
 
 
-          {/* Panneau de contexte latéral (Desktop) */}
+          {/* Panneau latéral : Historique des discussions NDAM (Desktop) */}
           <div className="hidden lg:flex flex-col gap-3.5 sticky top-6">
-            {/* Boîte Contexte Territorial */}
-            <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-2xl p-4 shadow-xs">
-              <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-2.5 flex items-center gap-1.5">
-                <ShieldAlert size={14} className="text-[#CC131A]" />
-                Contexte analysé par NDAM
-              </h3>
+            <div className="bg-white dark:bg-navy border border-navy-100 dark:border-navy-800 rounded-2xl p-4 shadow-xs">
+              <div className="flex items-center justify-between mb-3 pb-2.5 border-b border-slate-100 dark:border-navy-800">
+                <h3 className="text-xs font-black uppercase tracking-wider text-navy-900 dark:text-white flex items-center gap-1.5">
+                  <RotateCcw size={14} className="text-[#CC131A]" />
+                  <span>Historique des échanges</span>
+                </h3>
+                <button
+                  type="button"
+                  onClick={handleNewChat}
+                  className="px-2.5 py-1 rounded-lg bg-navy-50 hover:bg-navy-100 dark:bg-navy-800 dark:hover:bg-navy-700 text-navy-800 dark:text-navy-200 text-[11px] font-bold flex items-center gap-1 transition cursor-pointer"
+                  title="Nouvelle discussion"
+                >
+                  <PlusCircle size={12} className="text-[#CC131A]" />
+                  <span>Nouveau</span>
+                </button>
+              </div>
 
-              {topZone ? (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-1">
-                    <span className="text-sm font-extrabold text-navy-950 dark:text-white flex items-center gap-1">
-                      <MapPin size={13} className="text-[#CC131A]" />
-                      {topZone.quartier}
-                    </span>
-                    <RiskBadge niveau={topZone.niveau_risque} />
-                  </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                    Zone surveillée prioritairement par les algorithmes prédictifs.
-                  </p>
-                  <div className="flex items-center justify-between text-xs font-semibold bg-slate-50 dark:bg-navy-900/60 p-2 rounded-lg">
-                    <span className="text-slate-500">Score de vulnérabilité :</span>
-                    <span className="text-navy-950 dark:text-white font-black">
-                      {Math.round(Number(topZone.score_risque_moyen ?? 0) * 100)}%
-                    </span>
-                  </div>
+              {chatHistory.length > 0 ? (
+                <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1 scrollbar-none">
+                  {chatHistory.map((session) => (
+                    <div
+                      key={session.id}
+                      onClick={() => loadSession(session)}
+                      className={`group p-2.5 rounded-xl border text-xs transition cursor-pointer flex items-center justify-between gap-2 ${
+                        currentSessionId === session.id
+                          ? 'bg-red-50/70 dark:bg-red-950/30 border-red-300 dark:border-red-900/60 text-navy-950 dark:text-white font-bold'
+                          : 'bg-white dark:bg-navy-900/60 border-navy-100 dark:border-navy-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-navy-700'
+                      }`}
+                    >
+                      <div className="flex flex-col min-w-0 flex-1">
+                        <span className="truncate text-xs font-bold text-navy-950 dark:text-white">
+                          {session.title}
+                        </span>
+                        <span className="text-[10px] text-slate-400 mt-0.5">
+                          {session.date} · {session.messages?.length || 0} messages
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => deleteSession(e, session.id)}
+                        className="opacity-0 group-hover:opacity-100 p-1 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 transition cursor-pointer"
+                        title="Supprimer cette discussion"
+                        aria-label="Supprimer"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               ) : (
-                <p className="text-xs text-navy-400">Aucune zone enregistrée pour l’instant.</p>
+                <div className="py-6 text-center text-xs text-slate-400 space-y-1.5">
+                  <Sparkles size={20} className="mx-auto text-slate-300 dark:text-navy-700" />
+                  <p className="font-semibold text-slate-500 dark:text-slate-400">Aucun historique pour l'instant</p>
+                  <p className="text-[11px] text-slate-400 max-w-[200px] mx-auto">
+                    Vos échanges avec NDAM seront sauvegardés ici pour les retrouver facilement.
+                  </p>
+                </div>
               )}
             </div>
 
-            {/* Boîte Météo & Capteurs */}
-            <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-2xl p-4 shadow-xs">
-              <h3 className="text-[11px] font-black uppercase tracking-wider text-slate-400 mb-2.5 flex items-center gap-1.5">
-                <CloudRain size={14} className="text-[#CC131A]" />
-                Météo en direct
-              </h3>
-
-              <div className="space-y-2.5 text-xs text-slate-600 dark:text-slate-300">
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <Thermometer size={14} className="text-amber-500" />
-                    Température :
-                  </span>
-                  <span className="font-black text-navy-950 dark:text-white">
-                    {currentTemp != null ? `${Math.round(Number(currentTemp))}°C` : '30°C'}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <CloudRain size={14} className="text-[#CC131A]" />
-                    Précipitations :
-                  </span>
-                  <span className="font-black text-navy-950 dark:text-white">
-                    {currentPrecip != null ? `${Number(currentPrecip).toFixed(1)} mm` : '0.0 mm'}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <Wind size={14} className="text-teal-500" />
-                    Vent :
-                  </span>
-                  <span className="font-black text-navy-950 dark:text-white">
-                    {currentWind != null ? `${Math.round(Number(currentWind))} km/h` : '18 km/h'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Assistance d'urgence */}
-            <div className="bg-gradient-to-br from-slate-900 to-navy-950 text-white rounded-2xl p-4 border border-blue-900/30 space-y-2 shadow-xs">
+            {/* Assistance d'urgence 18 */}
+            <div className="bg-gradient-to-br from-[#0B192C] to-[#0B2545] text-white rounded-2xl p-4 border border-blue-900/40 space-y-2 shadow-xs">
               <span className="text-[10px] font-black uppercase tracking-wider text-red-400 flex items-center gap-1">
                 <PhoneCall size={12} />
-                Lignes de secours immédiat
+                Lignes d'urgence 24h/24
               </span>
               <p className="text-[11px] text-slate-300 leading-snug">
-                En cas de danger immédiat ou de montée brutale des eaux, contactez sans attendre les secours :
+                En cas de montée brutale des eaux ou de danger vital à Thiaroye :
               </p>
               <div className="flex items-center justify-between pt-1 font-bold text-xs">
                 <span>Pompiers : <strong className="text-red-400">18</strong></span>
