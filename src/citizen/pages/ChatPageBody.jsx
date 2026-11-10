@@ -251,6 +251,17 @@ export default function ChatPageBody() {
   // État du tiroir latéral mobile (sidebar style ChatGPT)
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
+  // Verrouillage du scroll d'arrière-plan lorsque la sidebar mobile d'historique est ouverte
+  useEffect(() => {
+    if (isMobileSidebarOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [isMobileSidebarOpen]);
+
   // États pour l'enregistrement vocal (style WhatsApp)
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
@@ -1141,12 +1152,12 @@ export default function ChatPageBody() {
   const currentSuggestions = langue === 'wo' ? SUGGESTIONS_WO : SUGGESTIONS;
 
   return (
-    <CitizenShell>
-      <div className="w-full flex flex-col gap-3 sm:gap-4 lg:gap-5 pb-8">
+    <CitizenShell fullHeight={true}>
+      <div className="w-full flex-1 min-h-0 flex flex-col gap-2 sm:gap-3 lg:gap-4 pb-1">
         {/* ═══════════════════════════════════════════════════════════════ */}
         {/* BARRE SUPÉRIEURE MOBILE STYLE CHATGPT / CLAUDE (FINE & ÉPURÉE) */}
         {/* ═══════════════════════════════════════════════════════════════ */}
-        <div className="lg:hidden flex items-center justify-between gap-2 px-1 py-0.5">
+        <div className="lg:hidden flex items-center justify-between gap-2 px-1 py-1 shrink-0">
           <div className="flex items-center gap-2 min-w-0">
             <button
               type="button"
@@ -1182,21 +1193,23 @@ export default function ChatPageBody() {
         {/* ═══════════════════════════════════════════════════════════════ */}
         {isMobileSidebarOpen && (
           <div className="fixed inset-0 z-[1000] lg:hidden animate-in fade-in duration-200">
-            {/* Fond obscurci cliquable pour fermer */}
+            {/* Fond obscurci cliquable pour fermer - bloque la propagation du défilement au body */}
             <div
-              className="fixed inset-0 bg-navy-950/70 backdrop-blur-xs transition-opacity"
+              className="fixed inset-0 bg-navy-950/70 backdrop-blur-xs transition-opacity touch-none"
               onClick={() => setIsMobileSidebarOpen(false)}
+              onTouchMove={(e) => e.preventDefault()}
               aria-hidden="true"
             />
 
-            {/* Volet coulissant depuis la gauche */}
+            {/* Volet coulissant depuis la gauche - défilement strictement interne */}
             <aside
               aria-label="Historique et options NDAM"
-              className="fixed inset-y-0 left-0 w-[290px] max-w-[85vw] bg-white dark:bg-[#071322] border-r border-navy-100 dark:border-navy-800 shadow-2xl flex flex-col justify-between p-4 z-50 animate-in slide-in-from-left duration-300"
+              onClick={(e) => e.stopPropagation()}
+              className="fixed inset-y-0 left-0 w-[290px] max-w-[85vw] h-full bg-white dark:bg-[#071322] border-r border-navy-100 dark:border-navy-800 shadow-2xl flex flex-col justify-between p-4 z-50 animate-in slide-in-from-left duration-300 overscroll-contain"
             >
-              <div className="space-y-4 flex-1 min-h-0 flex flex-col">
+              <div className="space-y-4 flex-1 min-h-0 flex flex-col overflow-hidden">
                 {/* En-tête du volet */}
-                <div className="flex items-center justify-between pb-3 border-b border-navy-100 dark:border-navy-800">
+                <div className="flex items-center justify-between pb-3 border-b border-navy-100 dark:border-navy-800 shrink-0">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#0B2545] to-[#154275] text-cyan-300 flex items-center justify-center shadow-xs">
                       <Waves size={16} />
@@ -1228,14 +1241,14 @@ export default function ChatPageBody() {
                     handleNewChat();
                     setIsMobileSidebarOpen(false);
                   }}
-                  className="w-full py-2.5 px-3.5 rounded-xl bg-[#CC131A] hover:bg-red-700 text-white font-black text-xs flex items-center justify-center gap-2 shadow-xs transition active:scale-95 cursor-pointer"
+                  className="w-full py-2.5 px-3.5 rounded-xl bg-[#CC131A] hover:bg-red-700 text-white font-black text-xs flex items-center justify-center gap-2 shadow-xs transition active:scale-95 cursor-pointer shrink-0"
                 >
                   <PlusCircle size={15} />
                   <span>Nouvelle discussion</span>
                 </button>
 
                 {/* Titre Historique */}
-                <div className="flex items-center justify-between pt-1">
+                <div className="flex items-center justify-between pt-1 shrink-0">
                   <span className="text-[11px] font-black uppercase tracking-wider text-navy-400 flex items-center gap-1.5">
                     <RotateCcw size={12} className="text-[#CC131A]" />
                     <span>Discussions récentes</span>
@@ -1247,8 +1260,11 @@ export default function ChatPageBody() {
                   )}
                 </div>
 
-                {/* Liste scrollable des sessions de chat */}
-                <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pr-1 no-scrollbar">
+                {/* Liste scrollable des sessions de chat : défilement 100% capturé à l'intérieur */}
+                <div
+                  className="flex-1 min-h-0 overflow-y-auto space-y-2 pr-1 no-scrollbar overscroll-contain touch-pan-y"
+                  style={{ WebkitOverflowScrolling: 'touch' }}
+                >
                   {chatHistory.length > 0 ? (
                     chatHistory.map((session) => (
                       <div
@@ -1372,10 +1388,10 @@ export default function ChatPageBody() {
         </div>
 
         {/* Grille principale : Chat + Panneau Contexte Desktop */}
-        <div className="w-full flex flex-col gap-4 lg:grid lg:grid-cols-[1.45fr_1fr] lg:gap-5 lg:items-start">
-          {/* Fenêtre de discussion principale */}
-          <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-2xl p-3 sm:p-4 lg:p-5 flex flex-col gap-3 sm:gap-4 shadow-xs">
-            <div className="h-[calc(100dvh-235px)] min-h-[340px] sm:h-[58vh] lg:h-[460px] overflow-y-auto flex flex-col gap-3.5 pr-1 sm:pr-1.5 scrollbar-thin">
+        <div className="w-full flex-1 min-h-0 flex flex-col gap-3 lg:grid lg:grid-cols-[1.45fr_1fr] lg:gap-5 lg:items-start">
+          {/* Fenêtre de discussion principale - 100% hauteur disponible */}
+          <div className="bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-2xl p-3 sm:p-4 lg:p-5 flex flex-col flex-1 min-h-0 shadow-xs overflow-hidden">
+            <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-3.5 pr-1 sm:pr-1.5 scrollbar-thin">
               {messages.map((m, i) => {
                 const prevLower = (i > 0 && messages[i - 1]?.role === 'user' ? messages[i - 1].text || '' : '').toLowerCase();
                 const userAskedEmergency =
@@ -2386,7 +2402,10 @@ export default function ChatPageBody() {
               </div>
 
               {chatHistory.length > 0 ? (
-                <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1 scrollbar-none">
+                <div
+                  className="space-y-2 max-h-[380px] overflow-y-auto pr-1 scrollbar-none overscroll-contain touch-pan-y"
+                  style={{ WebkitOverflowScrolling: 'touch' }}
+                >
                   {chatHistory.map((session) => (
                     <div
                       key={session.id}
