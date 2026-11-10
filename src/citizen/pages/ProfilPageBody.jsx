@@ -233,9 +233,9 @@ export default function ProfilPageBody() {
         )}
 
         {/* 2. Ligne : Carte d'Identité Citoyenne pleine largeur */}
-        <div className="w-full bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-2xl p-6 shadow-xs">
+        <div className="w-full bg-white dark:bg-navy border border-navy-50 dark:border-navy-800 rounded-2xl p-4 sm:p-6 shadow-xs">
           {/* Entête de carte avec Avatar + Crayon direct */}
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 pb-6 border-b border-navy-100 dark:border-navy-700/80">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-5 pb-5 sm:pb-6 border-b border-navy-100 dark:border-navy-700/80">
             <div className="relative w-20 h-20 flex-shrink-0 group">
               <button
                 type="button"
@@ -307,43 +307,43 @@ export default function ProfilPageBody() {
             )}
           </div>
 
-          {/* Informations personnelles par ligne */}
+          {/* Informations personnelles compactes en 2 colonnes sur smartphone */}
           {!isEditing ? (
             <div className="pt-5 flex flex-col gap-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
                 {/* Prénom */}
-                <div className="p-3.5 rounded-xl bg-navy-50/60 dark:bg-navy-900/60 border border-navy-100/70 dark:border-navy-800">
+                <div className="p-3 sm:p-3.5 rounded-xl bg-navy-50/60 dark:bg-navy-900/60 border border-navy-100/70 dark:border-navy-800">
                   <span className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-0.5">
                     Prénom
                   </span>
-                  <span className="text-sm font-bold text-navy-950 dark:text-white">
+                  <span className="text-sm font-bold text-navy-950 dark:text-white truncate block">
                     {firstName || '—'}
                   </span>
                 </div>
 
                 {/* Nom */}
-                <div className="p-3.5 rounded-xl bg-navy-50/60 dark:bg-navy-900/60 border border-navy-100/70 dark:border-navy-800">
+                <div className="p-3 sm:p-3.5 rounded-xl bg-navy-50/60 dark:bg-navy-900/60 border border-navy-100/70 dark:border-navy-800">
                   <span className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-0.5">
                     Nom
                   </span>
-                  <span className="text-sm font-bold text-navy-950 dark:text-white">
+                  <span className="text-sm font-bold text-navy-950 dark:text-white truncate block">
                     {lastName || '—'}
                   </span>
                 </div>
 
                 {/* Téléphone */}
-                <div className="p-3.5 rounded-xl bg-navy-50/60 dark:bg-navy-900/60 border border-navy-100/70 dark:border-navy-800">
+                <div className="col-span-2 sm:col-span-1 p-3 sm:p-3.5 rounded-xl bg-navy-50/60 dark:bg-navy-900/60 border border-navy-100/70 dark:border-navy-800">
                   <span className="flex items-center gap-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-0.5">
                     <Phone size={11} className="text-[#CC131A]" />
                     <span>Téléphone alertes SMS</span>
                   </span>
-                  <span className="text-sm font-bold text-navy-950 dark:text-white">
+                  <span className="text-sm font-bold text-navy-950 dark:text-white truncate block">
                     {telephone || 'Non renseigné'}
                   </span>
                 </div>
 
                 {/* Email */}
-                <div className="p-3.5 rounded-xl bg-navy-50/60 dark:bg-navy-900/60 border border-navy-100/70 dark:border-navy-800">
+                <div className="col-span-2 sm:col-span-1 p-3 sm:p-3.5 rounded-xl bg-navy-50/60 dark:bg-navy-900/60 border border-navy-100/70 dark:border-navy-800">
                   <span className="flex items-center gap-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-0.5">
                     <Mail size={11} className="text-blue-500" />
                     <span>Email</span>
@@ -390,7 +390,7 @@ export default function ProfilPageBody() {
                 </div>
               )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
                 <label className="block">
                   <span className="block text-xs font-semibold mb-1">Prénom</span>
                   <input
@@ -413,7 +413,7 @@ export default function ProfilPageBody() {
                   />
                 </label>
 
-                <label className="block">
+                <label className="block col-span-2 sm:col-span-1">
                   <span className="block text-xs font-semibold mb-1">Téléphone</span>
                   <input
                     type="tel"
@@ -424,7 +424,7 @@ export default function ProfilPageBody() {
                   />
                 </label>
 
-                <label className="block">
+                <label className="block col-span-2 sm:col-span-1">
                   <span className="block text-xs font-semibold mb-1">Email</span>
                   <input
                     type="email"
@@ -436,18 +436,18 @@ export default function ProfilPageBody() {
                 </label>
               </div>
 
-              <div className="flex items-center justify-end gap-2.5 pt-2">
+              <div className="flex items-center justify-end gap-2.5 pt-2 flex-wrap">
                 <button
                   type="button"
                   onClick={() => setIsEditing(false)}
-                  className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white border border-slate-200 dark:border-navy-700 transition cursor-pointer"
+                  className="flex-1 sm:flex-initial text-center px-4 py-2.5 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white border border-slate-200 dark:border-navy-700 transition cursor-pointer"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
                   disabled={updateCurrentUserMutation.isPending}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-[#0B2545] hover:bg-[#103565] text-white shadow-xs transition cursor-pointer disabled:opacity-50"
+                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl text-xs font-bold bg-[#0B2545] hover:bg-[#103565] text-white shadow-xs transition cursor-pointer disabled:opacity-50"
                 >
                   {updateCurrentUserMutation.isPending && <Loader2 size={13} className="animate-spin" />}
                   <span>Enregistrer</span>

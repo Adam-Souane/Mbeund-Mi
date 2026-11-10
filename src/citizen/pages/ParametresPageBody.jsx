@@ -317,11 +317,11 @@ export default function ParametresPageBody() {
               </div>
             )}
 
-            <div className="flex items-center gap-3 mt-4">
+            <div className="flex items-center gap-3 mt-4 flex-wrap">
               <button
                 type="submit"
                 disabled={saveProfil.isPending}
-                className="flex items-center gap-1.5 bg-[#CC131A] hover:bg-red-700 text-white font-bold text-sm px-5 py-2.5 rounded-xl transition shadow-xs disabled:opacity-60 cursor-pointer"
+                className="w-full sm:w-auto flex items-center justify-center gap-1.5 bg-[#CC131A] hover:bg-red-700 text-white font-bold text-sm px-5 py-2.5 rounded-xl transition shadow-xs disabled:opacity-60 cursor-pointer"
               >
                 {saveProfil.isPending && <Loader2 size={14} className="animate-spin" />}
                 Enregistrer les personnes vulnérables
@@ -376,7 +376,7 @@ export default function ParametresPageBody() {
                 <select
                   value={relaisZone}
                   onChange={(e) => setRelaisZone(e.target.value)}
-                  className="px-3.5 py-2.5 rounded-xl border border-navy-200 dark:border-navy-700 bg-white dark:bg-navy text-sm font-medium focus:ring-1 focus:ring-[#CC131A] focus:outline-none"
+                  className="w-full sm:w-auto px-3.5 py-2.5 rounded-xl border border-navy-200 dark:border-navy-700 bg-white dark:bg-navy text-sm font-medium focus:ring-1 focus:ring-[#CC131A] focus:outline-none"
                 >
                   <option value="">Choisir un quartier</option>
                   {zones.map((z) => (
@@ -389,7 +389,7 @@ export default function ParametresPageBody() {
                   type="button"
                   onClick={handleDevenirRelais}
                   disabled={!relaisZone || createRelais.isPending}
-                  className="flex items-center gap-1.5 bg-[#0B2545] hover:bg-[#103565] text-white font-bold text-sm px-4 py-2.5 rounded-xl transition disabled:opacity-60 cursor-pointer shadow-xs"
+                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 bg-[#0B2545] hover:bg-[#103565] text-white font-bold text-sm px-4 py-2.5 rounded-xl transition disabled:opacity-60 cursor-pointer shadow-xs"
                 >
                   {createRelais.isPending && <Loader2 size={14} className="animate-spin" />}
                   Devenir relais de quartier
@@ -521,11 +521,11 @@ export default function ParametresPageBody() {
               </label>
             </div>
 
-            <div className="flex items-center gap-3 mt-4">
+            <div className="flex items-center gap-3 mt-4 flex-wrap">
               <button
                 type="submit"
                 disabled={saveSurvivalKit.isPending}
-                className="flex items-center gap-1.5 bg-[#CC131A] hover:bg-red-700 text-white font-bold text-sm px-5 py-2.5 rounded-xl transition shadow-xs disabled:opacity-60 cursor-pointer"
+                className="w-full sm:w-auto flex items-center justify-center gap-1.5 bg-[#CC131A] hover:bg-red-700 text-white font-bold text-sm px-5 py-2.5 rounded-xl transition shadow-xs disabled:opacity-60 cursor-pointer"
               >
                 {saveSurvivalKit.isPending && <Loader2 size={14} className="animate-spin" />}
                 Enregistrer le kit
@@ -610,11 +610,11 @@ export default function ParametresPageBody() {
               </label>
             </div>
 
-            <div className="flex items-center gap-3 mt-4">
+            <div className="flex items-center gap-3 mt-4 flex-wrap">
               <button
                 type="submit"
                 disabled={saveEmergencyContact.isPending}
-                className="flex items-center gap-1.5 bg-[#CC131A] hover:bg-red-700 text-white font-bold text-sm px-5 py-2.5 rounded-xl transition shadow-xs disabled:opacity-60 cursor-pointer"
+                className="w-full sm:w-auto flex items-center justify-center gap-1.5 bg-[#CC131A] hover:bg-red-700 text-white font-bold text-sm px-5 py-2.5 rounded-xl transition shadow-xs disabled:opacity-60 cursor-pointer"
               >
                 {saveEmergencyContact.isPending && <Loader2 size={14} className="animate-spin" />}
                 Enregistrer le contact
